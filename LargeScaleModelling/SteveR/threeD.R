@@ -365,7 +365,7 @@ y  <- array(dim = c(grid, grid, grid), data = 0)     # starting concentrations
 BND   <- matrix(nrow = grid, ncol = grid, 5)      # boundary concentration at upstream point
 
 
-filled.contour(y[, , 1], main=i,color.palette = terrain.colors)
+filled.contour(y[, , 1], main="this",color.palette = terrain.colors)
 
 
 ## parameters and space for IB model############################
