@@ -1,0 +1,83 @@
+\documentclass[mathserif,handout]{beamer}
+%\documentclass{beamer}
+\usetheme{Warsaw}
+\usecolortheme{seahorse}
+\usecolortheme{orchid}
+\usepackage{amsmath,verbatim}
+\usepackage{listings}
+\usepackage[english]{babel}
+\usepackage{movie15}
+\setbeamercovered{transparent}
+
+\newcommand{\Deltap}{\ensuremath{\Delta^{\!+}}}
+\newcommand{\trans}{\ensuremath{{}^\mathrm{T}}}
+\newcommand{\eps}{\varepsilon}
+\newcommand*{\approxdist}{\mathrel{\vcenter{\offinterlineskip
+\vskip-.25ex\hbox{\hskip.55ex$\cdot$}\vskip-.25ex\hbox{$\sim$}
+\vskip-.5ex\hbox{\hskip.55ex$\cdot$}}}}
+
+% \lstMakeShortInline[language=myR]¬
+
+\lstdefinelanguage{myR}
+{
+   language=R,
+   otherkeywords={read.table, set.seed, head},
+   deletekeywords={url,codes, t, dt, Call, formula,Q, R, on,by,hat,is,
+col, set,start,end,deltat,zip},
+   sensitive=true,
+   breaklines=true,
+   morecomment=[l]{\#},
+   morestring=[b]",
+   morestring=[b]',
+   basicstyle =\ttfamily\small,
+   keywordstyle=\bfseries,
+   showtabs=false,
+   showstringspaces=false,
+   literate= {~}{$\sim$}{2},
+   numberstyle=\sffamily\scriptsize,
+   stepnumber=2
+ }
+
+
+
+
+\title{A tutorial introduction to computer models}
+\author[Darren Wilkinson --- NUFEB, 3/6/2014]{\textbf{\large Darren 
+Wilkinson} \\
+\alert{\url{http://tinyurl.com/darrenjw}}\\
+School of Mathematics \& Statistics, \\
+Newcastle University, UK}
+\date{NUFEB Seminar\\Newcastle University\\3rd June, 2014}
+
+\begin{document}
+
+
+\frame{\titlepage}
+
+
+
+\section{Introduction}
+
+%\subsection{Stochastic chemical kinetics}
+
+
+
+\subsection{Introduction}
+
+\frame{
+\frametitle{Overview}
+\begin{itemize}
+\item Sequential Monte Carlo
+\item Applications
+\item Importance sampling and resampling
+\item From state space models to backward kernels
+\item ABC--SMC
+\end{itemize}
+}
+
+
+
+\end{document}
+
+% eof
+
