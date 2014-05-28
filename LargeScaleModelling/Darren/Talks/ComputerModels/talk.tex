@@ -41,7 +41,7 @@ col, set,start,end,deltat,zip},
 
 
 
-\title{A tutorial introduction to computer models}
+\title[An introduction to computer models]{A tutorial introduction to the analysis of complex computer models}
 \author[Darren Wilkinson --- NUFEB, 3/6/2014]{\textbf{\large Darren 
 Wilkinson} \\
 \alert{\url{http://tinyurl.com/darrenjw}}\\
@@ -51,30 +51,71 @@ Newcastle University, UK}
 
 \begin{document}
 
+\section{Introduction}
 
 \frame{\titlepage}
 
+\subsection{Preamble}
+
+\frame{
+\frametitle{About this presentation...}
+\begin{itemize}
+\item This talk is written using the \LaTeX\ documentation preparation system (\url{http://www.latex-project.org/})
+\item All computations and figures were produced using the R statistical programming language (\url{http://www.r-project.org/})
+\item The \LaTeX\ source code for the talk and the R scripts for carrying out all computations and generating the figures are in the NUFEB GitHub repository in the directory \url{LargeScaleModelling/Darren/Talks/ComputerModels}
+\item There is a \texttt{Makefile} in the directory which can be used for generating all plots and compiling the PDF of this presentation using GNU Make (\url{http://www.gnu.org/software/make/})
+%\item Reproducible research is a good thing
+\end{itemize}
+}
+
+\frame{
+\frametitle{What to talk about?}
+NUFEB brings together a large number of my research interests, so there are lots of different things that I \emph{could} have talked about today...
+\begin{itemize}
+\item Noise, stochasticity and heterogeneity in biological systems
+\item Stochastic computational modelling in systems biology
+\item Multiscale stochastic modelling
+\item Bayesian parameter estimation for complex stochastic biological models
+\item Bayesian network modelling
+\item Bayesian hierarchical statistical modelling of large and complex high-throughput experimental data
+\item \alert{The design and analysis of complex computer models}
+\end{itemize}
+}
 
 
-\section{Introduction}
-
-%\subsection{Stochastic chemical kinetics}
-
-
-
-\subsection{Introduction}
+\subsection{Overview}
 
 \frame{
 \frametitle{Overview}
 \begin{itemize}
-\item Sequential Monte Carlo
-\item Applications
-\item Importance sampling and resampling
-\item From state space models to backward kernels
-\item ABC--SMC
+\item Complex computer models
+\item Emulation of a computer model (using Gaussian processes)
+\item The design of computer experiments
+\item History matching
+\item Calibration/parameter estimation
+\item Model ``bias" and measurement error --- estimating the bias
+\item Bayesian inference
 \end{itemize}
+
+The main aim of the talk today is to get people to understand what these words mean!
 }
 
+
+
+
+
+\frame{
+\frametitle{Further information}
+\begin{itemize}
+\item
+An excellent source of further information on computer models is the Managing Uncertainty in Complex Models (MUCM) Community: \url{http://www.mucm.ac.uk/} --- see especially the \alert{MUCM Toolkit} (a set of tutorials on computer models)
+\item Also see the ReDICE Consortium: \url{http://www.redice-project.org/} --- especially their DICE R packages
+\item Kennedy, M.C., and A. O'Hagan. ``Bayesian calibration of computer models." \emph{Journal of the Royal Statistical Society: Series B (Statistical Methodology)} \textbf{63}.3 (2001): 425-464. \url{http://dx.doi.org/10.1111/1467-9868.00294}
+\item Santner, T.J., B.J. Williams, and W.I. Notz. \emph{The design and analysis of computer experiments.} Springer, 2003.
+\end{itemize}
+
+
+}
 
 
 \end{document}
