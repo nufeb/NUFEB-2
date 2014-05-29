@@ -97,6 +97,19 @@ for (i in 1:length(Obs)) {
   }
 par(op)
 
+# bias example
+ObsLoc=seq(0,1,0.13)
+Obs=exp(-ObsLoc)
+plotAdjust(Grid,ObsLoc,Obs,ylim=c(0,1))
+abline(0.6,0,col=2,lwd=2)
+points(rep(c(0.2,0.5,0.8),each=3),c(0.85,0.87,0.9,0.62,0.66,0.68,0.48,0.51,0.55),pch=4)
+
+# latin hypercube designs
+# If SLHD not installed, install by executing:
+# install.packages("SLHD")
+library(SLHD)
+plot(maximinSLHD(1,50,2)$D/50,pch=19,xlab="x1",ylab="x2",main="LHD for 2 factors with 50 design points")
+
 
 # eof
 

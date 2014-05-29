@@ -8,7 +8,7 @@ view: talk.pdf
 	acroread talk.pdf &
 
 edit:
-	gedit talk.tex &
+	gedit talk.tex gp.R &
 
 
 clean:
