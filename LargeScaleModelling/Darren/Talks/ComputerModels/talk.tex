@@ -12,13 +12,15 @@
 \newcommand{\Deltap}{\ensuremath{\Delta^{\!+}}}
 \newcommand{\trans}{\ensuremath{{}^\mathrm{T}}}
 \newcommand{\eps}{\varepsilon}
+\newcommand{\ex}[1]{{\operatorname{E}\left[#1\right]}}
+\newcommand{\var}[1]{{\operatorname{Var}\left[#1\right]}}
 \newcommand*{\approxdist}{\mathrel{\vcenter{\offinterlineskip
 \vskip-.25ex\hbox{\hskip.55ex$\cdot$}\vskip-.25ex\hbox{$\sim$}
 \vskip-.5ex\hbox{\hskip.55ex$\cdot$}}}}
 
 % \lstMakeShortInline[language=myR]¬
 
-\lstdefinelanguage{myR}
+\lstdefinelanguage{myR} 
 {
    language=R,
    otherkeywords={read.table, set.seed, head},
@@ -55,7 +57,7 @@ Newcastle University, UK}
 
 \frame{\titlepage}
 
-\subsection{Preamble}
+\subsection{Overview}
 
 \frame{
 \frametitle{About this presentation...}
@@ -64,7 +66,6 @@ Newcastle University, UK}
 \item All computations and figures were produced using the R statistical programming language (\url{http://www.r-project.org/})
 \item The \LaTeX\ source code for the talk and the R scripts for carrying out all computations and generating the figures are in the NUFEB GitHub repository in the directory \url{LargeScaleModelling/Darren/Talks/ComputerModels}
 \item There is a \texttt{Makefile} in the directory which can be used for generating all plots and compiling the PDF of this presentation using GNU Make (\url{http://www.gnu.org/software/make/})
-%\item Reproducible research is a good thing
 \end{itemize}
 }
 
@@ -82,27 +83,211 @@ NUFEB brings together a large number of my research interests, so there are lots
 \end{itemize}
 }
 
-
-\subsection{Overview}
-
 \frame{
 \frametitle{Overview}
 \begin{itemize}
 \item Complex computer models
 \item Emulation of a computer model (using Gaussian processes)
 \item The design of computer experiments
-\item History matching
+\item Confronting reality: history matching
 \item Calibration/parameter estimation
-\item Model ``bias" and measurement error --- estimating the bias
-\item Bayesian inference
+\item Model discrepancy versus measurement error --- estimating the \emph{bias} term
+\item Bayesian inference...
 \end{itemize}
 
 The main aim of the talk today is to get people to understand what these words mean!
 }
 
 
+\subsection{Computer models and emulators}
+
+\frame{
+\frametitle{Computer models}
+\begin{itemize}
+\item The ultimate goal of NUFEB is to develop techniques for building computer models of real, complex physical systems, and for using such models to better understand how to control and manipulate real systems with minimal physical experimentation
+\item Computer models are \alert{simulators} --- they represent the physical system, and can be used to predict the behaviour of a physical system under varying scenarios
+\item To be useful, it must be quicker, easier and cheaper to run the computer model for a given scenario than to perform a physical experiment, and they must also be a sufficiently good representation of reality
+\item However, complex models can be computationally \alert{expensive}, often taking hours or days to perform a single run for a single given scenario
+\end{itemize}
+}
+
+\frame{
+\frametitle{Computer experiments}
+\begin{itemize}
+\item Due to the expense of running complex codes, it is necessary to carefully \alert{design experiments} for computer models, somewhat analagous to physical designed experiments
+\item Just as we perform real experiments to reduce our uncertainty about the behaviour of physical systems, we can perform experiments on computer models to reduce our uncertainty about their (pre-determined, but unknown) behaviour
+\item Computer models often have various \alert{input parameters}, which we denote by $\mathbf{x}$, which alter the behaviour of the computer model
+\item Models will often generate lots of output. For this talk, we will consider a \alert{single output} of primary interest, $y$, which is a \alert{deterministic} function of the inputs (even if there is some \alert{stochasticity} internal to the computer model)
+\end{itemize}
+}
+
+\frame{
+\frametitle{Model inputs: control variables}
+\begin{itemize}
+\item \alert{Control variables}, often $\mathbf{x}$ or $\mathbf{x}_c$, are present in both the computer model and the corresponding physical system, and can be set by the engineer to control the product or process
+\item Examples relevant to bioreactors include the recycling ratio, purge ratio, dissolved oxygen content (controlled by aeration), etc.
+\end{itemize}
+}
+
+\frame{
+\frametitle{Model inputs: environmental variables}
+\begin{itemize}
+\item \alert{Environmental variables}, often $\mathbf{x}_e$, like control variables, are also present in both the physical system and the computer model, but in the physical system they are outside the control of the engineer
+\item Sometimes confusingly referred to as ``noise" variables
+\item Examples relevant to bioreactors include the composition of the incomining raw sewage and water temperature
+\end{itemize}
+}
+
+\frame{
+\frametitle{Model inputs: model variables}
+\begin{itemize}
+\item \alert{Model variables} or \alert{model parameters}, often $\boldsymbol{\theta}$ or $\mathbf{x}_m$, don't really exist in the physical system, but are considered to have some ``true" or ``best" setting, initially unknown, which makes the simulator match reality as well as possible
+\item Sometimes referred to as \alert{tuning parameters}
+\item Much controversy about the existance and interpretation of model parameters corresponding to constants with a physical interpretation which could in principle be measured (\emph{in vitro} if not \emph{in vivo})
+\item Due to inadequacy of a model, it may behave better when parameters with a physical interpretation are tuned to non-physical values (cf. climate models)
+\item Examples relevant to bioreactors include rates of biochemicial process, rates of cellular processes, viscosity of water, adhesive strength of a particular biofilm, etc.
+\end{itemize}
+}
+
+\frame{
+\frametitle{Model output}
+\begin{itemize}
+\item \alert{Output}, often $y$, is a key (deterministic) system output of interest, corresponding to something measurable on the physical system being modelled
+\item Although simulation models often generate large amounts of output, there are often a relatively small number of outputs of main interest corresponding to measureable quantities on the corresponding physical system
+\item This talk will focus on a single output --- extensions to multiple outputs are well studied
+\item Examples relevant to bioreactors include output BOD, output COD, heterotroph fraction, average floc size, ammonia concentration, etc.
+\item The simulator maps inputs $\mathbf{x}$ deterministically to output $y$, and can therefore be considered a \alert{function}, $f(\cdot)$, governing the mapping $y=f(\mathbf{x})$, which is expensive to evaluate
+\end{itemize}
+}
+
+\frame{
+\frametitle{A multi-scale model of a bioreactor}
+\begin{itemize}
+\item Let's jump \alert{forward in time two years}...
+\item We've appointed a modeller and we've built the most ambitious and realistic multiscale model of a bioreactor ever attempted (hurray!!!)
+\item We've worked hard to make the code as efficient as we can, and it now takes just 24 hours to do a single run of the code for a single set of model inputs on our computer cluster
+\item Although there is stochasticity in the model, our key output of interest is a long run average of a stationary quantity (say, BOD), which can be considered to be deterministic
+\item However, there's one model parameter that we aren't too sure about how to set...
+\end{itemize}
+}
+
+\frame{
+\frametitle{Evaluating the simulator at multiple inputs}
+PLOTS OF SIMULATOR OUTPUT ARRIVING SEQUENTIALLY
+}
+
+\frame{
+\frametitle{Emulating a computer model}
+\begin{itemize}
+\item An \alert{emulator} is a \alert{cheap} (fast) surrogate for the computer model, which has many potential uses
+\item Principally, it can be used instead of the real model in algorithms that require many evaluations of the simulator at many different input configurations
+\item Some emulators are good and some are bad --- to be useful, they should have a measure of \alert{uncertainty} associated with them
+\item \alert{Stochastic process} emulators define a probability distribution on the space of functions consistent with any known evaluations of the simulator
+\item \alert{Gaussian processes} (GPs) are one of the simplest and most tractable stochastic processes on function space
+\end{itemize}
+}
+
+\frame{
+\frametitle{Sequential updating of a GP emulator}
+PLOTS OF EMULATOR UPDATING SEQUENTIALLY
+}
+
+\frame{
+\frametitle{Samples from a GP posterior distribution}
+PLOTS OF SAMPLES FROM THE EMULATOR
+}
+
+\frame{
+\frametitle{Gaussian processes}
+\begin{itemize}
+\item A GP is a probability distribution on functions defined so that the marginal distribution of any finite number of points always has a multivariate normal (MVN) distribution
+\item Points close together in input space are typically more highly correlated than points far away
+\item Stationary GPs are defined by a \alert{covariance function} --- many different possible choices - here I've used a Gaussian kernel
+\[
+\operatorname{Cov}[f(\mathbf{x}),f(\mathbf{x}')] = K(\mathbf{x},\mathbf{x}') = \sigma^2\exp\left\{-\left(\frac{\Vert \mathbf{x}-\mathbf{x}'\Vert_2}{r}\right)^2\right\},
+\]
+containing two parameters: an asymptotic variance, $\sigma^2$, and a correlation length scale, $r$.
+\item A GP conditioned on observations is also a GP (\alert{Kriging})
+\end{itemize}
+}
+
+\subsection{Design of computer experiments}
+
+\frame{
+\frametitle{Design of computer experiments}
+STUFF HERE ON WHY LATIN HYPERCUBES ARE BETTER THAN PARAMETER SCANS
+}
+
+\section{Linking computer models to reality}
+
+\subsection{History matching}
+
+\frame{
+\frametitle{History matching}
+\begin{itemize}
+\item Suppose now that we have $n$ measurements on the real physical system: $\{(z_1,\mathbf{x}_1),(z_2,\mathbf{x}_2),\ldots,(z_n,\mathbf{x}_n)\}$
+\item $z_i$ is the measured value of the output variable $y$ obtained when the physical system has control parameters set to $\mathbf{x}_i$
+\item Let $y(\mathbf{x})$ denote the true state of the output variable (reality) when the control parameters at set to $\mathbf{x}$
+\item Then the measurements and reality are related by
+\[
+z_i = y(\mathbf{x}_i) + e_i,
+\]
+where $e_i$ is (typically, Gaussian) measurement error
+\end{itemize}
+}
+
+\frame{
+\frametitle{Linking the simulator to physical measurements}
+\begin{itemize}
+\item The computer model and reality are related by
+\[
+y(\mathbf{x}) = f(\mathbf{x},\boldsymbol{\theta}) + \delta(\mathbf{x}),
+\]
+where $\boldsymbol{\theta}$ represents the ``best" or ``true" value of the model parameters, $\boldsymbol{\theta}$, and $\delta(\mathbf{x})$ represents the \alert{discrepancy} between the simulator and reality when the control parameters are set to $\mathbf{x}$ (\alert{bias} term)
+\item The measurements and the simulator are therefore related by
+\[
+z_i = f(\mathbf{x}_i,\boldsymbol{\theta}) + \delta(\mathbf{x}_i) + e_i
+\]
+\item It is tempting to lump together $\delta(\mathbf{x}_i) + e_i$ into a single source of ``error", but we will see later why this is not necessarily a good idea
+\end{itemize}
+}
+
+\frame{
+\frametitle{Implausibility}
+\begin{itemize}
+\item For most settings of the model parameters, $\boldsymbol{\theta}$, the model will be inconsistent with the observed measurements
+\item Want to use emulator to rule out regions of parameter space which are \alert{implausible} (taking into account emulator uncertainty about the true similator output)
+\item Implausibility defined by
+\[
+I(\mathbf{x}) \equiv \frac{|\ex{f(\mathbf{x})}-z|}{\operatorname{SD}[\ex{f(\mathbf{x})}-z]} = \sqrt{\frac{(\ex{f(\mathbf{x})}-z)^2}{\var{f(\mathbf{x})}+\var{\delta(\mathbf{x})}+\var{e}}}
+\]
+\item Pukelsheim's three-sigma rule suggests ruling out parts of parameter space where the implausibility is larger than 3
+\end{itemize}
+}
+
+\frame{
+\frametitle{Implausibility plots}
+SEQUENTIALLY UPDATING IMPLAUSABILITY PLOTS HERE
+}
+
+\frame{
+\frametitle{Iterative re-focussing}
+}
+
+\subsection{Calibration, parameter estimation and Bayesian inference}
+
+\frame{
+\frametitle{Model calibration}
+}
+
+\subsection{The bias term}
+
+\frame{
+\frametitle{Model discrepancy}
+}
 
 
+\section{Conclusion}
 
 \frame{
 \frametitle{Further information}

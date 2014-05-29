@@ -5,10 +5,13 @@
 Grid=seq(0,1,0.01)
 
 # GP covariance kernel
-K=function(d,scale=50,lengthScale=0.4)
+K=function(d,scale=40,lengthScale=0.4)
 {
   (scale^2)*exp(-(d/lengthScale)^2)
 }
+
+# Implausibility
+# DEFINE HERE?
 
 # fit a mean zero GP
 GPAdjust=function(Grid,ObsLoc,Obs) 
@@ -41,7 +44,7 @@ GPAdjustLR=function(Grid,ObsLoc,Obs)
 # produce a plot illustrating the GP fit
 plotAdjust=function(Grid,ObsLoc,Obs,...)
 {
-  plot(ObsLoc,Obs,xlim=range(Grid),pch=19,...)
+  plot(ObsLoc,Obs,xlim=range(Grid),pch=19,xlab="x",ylab="y",...)
   Adj=GPAdjustLR(Grid,ObsLoc,Obs)
   Var=diag(Adj$Var)
   Upper=Adj$Ex+2*sqrt(Var)
@@ -49,6 +52,7 @@ plotAdjust=function(Grid,ObsLoc,Obs,...)
   polygon(c(Grid,rev(Grid),Grid[1]),c(Upper,rev(Lower),Upper[1]),col="gray",border=NA)
   lines(Grid,Adj$Ex,lwd=2)
   points(ObsLoc,Obs,pch=19)
+  Adj
 }
 
 # generate a sample from an adjusted object
@@ -64,7 +68,7 @@ Obs=c(10,11,8,12,12,13)
 
 # Show data progressively
 for (i in 1:length(Obs))
-  plot(ObsLoc[1:i],Obs[1:i],xlim=range(Grid),pch=19,ylim=c(0,20))
+  plot(ObsLoc[1:i],Obs[1:i],xlim=range(Grid),pch=19,ylim=c(0,20),xlab="x",ylab="y")
 
 # Show a progressive GP fit
 for (i in 1:length(Obs))
@@ -73,12 +77,26 @@ for (i in 1:length(Obs))
 # Now show some samples from a GP
 
 for (i in 10^(0:2)) {
-  plot(ObsLoc,Obs,xlim=range(Grid),pch=19,ylim=c(0,20))
+  plot(ObsLoc,Obs,xlim=range(Grid),pch=19,ylim=c(0,20),xlab="x",ylab="y")
   Adj=GPAdjustLR(Grid,ObsLoc,Obs)
   for (j in 1:i)
     lines(Grid,sampleGP(Adj),col="gray")
   points(ObsLoc,Obs,pch=19)
   }
+
+# history matching using implausibility
+op=par(mfrow=c(2,1))
+Measurement=10
+MeasurementError=0.1
+for (i in 1:length(Obs)) {
+  Adj=plotAdjust(Grid,ObsLoc[1:i],Obs[1:i],ylim=c(0,20))
+  abline(Measurement,0,col=2,lwd=2)
+  Imp=sqrt((Adj$Ex-Measurement)^2/(diag(Adj$Var)+MeasurementError^2))
+  plot(Grid,Imp,ylim=c(0,10),type="l",lwd=2,xlab="x",ylab="Implausibility")
+  abline(3,0,col=3)
+  }
+par(op)
+
 
 # eof
 
