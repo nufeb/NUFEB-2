@@ -1,6 +1,10 @@
 # Makefile
 
 
+talk.pdf: talk.tex sim1.pdf lhd.pdf
+	pdflatex talk
+	pdflatex talk
+
 lhd.pdf: lhd.R
 	Rscript lhd.R
 	mv Rplots.pdf lhd.pdf
@@ -8,9 +12,10 @@ lhd.pdf: lhd.R
 sim1.pdf: gp.R
 	Rscript gp.R
 
-talk.pdf: talk.tex sim1.pdf lhd.pdf
-	pdflatex talk
-	pdflatex talk
+
+
+
+
 
 view: talk.pdf
 	acroread talk.pdf &
