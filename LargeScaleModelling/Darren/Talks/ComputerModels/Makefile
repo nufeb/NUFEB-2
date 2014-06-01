@@ -1,6 +1,14 @@
 # Makefile
 
-talk.pdf: talk.tex
+
+lhd.pdf: lhd.R
+	Rscript lhd.R
+	mv Rplots.pdf lhd.pdf
+
+sim1.pdf: gp.R
+	Rscript gp.R
+
+talk.pdf: talk.tex sim1.pdf lhd.pdf
 	pdflatex talk
 	pdflatex talk
 
