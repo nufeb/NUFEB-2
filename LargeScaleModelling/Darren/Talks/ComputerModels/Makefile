@@ -21,7 +21,7 @@ view: talk.pdf
 	acroread talk.pdf &
 
 edit:
-	gedit talk.tex gp.R &
+	gedit Makefile talk.tex *.R &
 
 
 clean:
