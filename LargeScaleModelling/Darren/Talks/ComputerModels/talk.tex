@@ -243,6 +243,20 @@ The main aim of the talk today is to get people to understand what these words m
 }
 
 \frame{
+\frametitle{Gaussian processes}
+\begin{itemize}
+\item A GP is a probability distribution on functions defined so that the marginal distribution of any finite number of points always has a multivariate normal (MVN) distribution
+\item Points close together in input space are typically more highly correlated than points far away
+\item Stationary GPs are defined by a \alert{covariance function} --- many different possible choices - here I've used a Gaussian kernel
+\[
+\operatorname{Cov}[f(\mathbf{x}),f(\mathbf{x}')] = K(\mathbf{x},\mathbf{x}') = \sigma^2\exp\left\{-\left(\frac{\Vert \mathbf{x}-\mathbf{x}'\Vert_2}{r}\right)^2\right\},
+\]
+containing two parameters: an asymptotic variance, $\sigma^2$, and a correlation length scale, $r$.
+\item A GP conditioned on observations is also a GP (\alert{Kriging})
+\end{itemize}
+}
+
+\frame{
 \frametitle{Samples from a GP posterior distribution}
 \centerline{\includegraphics[height=0.9\textheight]{sample1}}
 }
@@ -255,20 +269,6 @@ The main aim of the talk today is to get people to understand what these words m
 \frame{
 \frametitle{Samples from a GP posterior distribution}
 \centerline{\includegraphics[height=0.9\textheight]{sample100}}
-}
-
-\frame{
-\frametitle{Gaussian processes}
-\begin{itemize}
-\item A GP is a probability distribution on functions defined so that the marginal distribution of any finite number of points always has a multivariate normal (MVN) distribution
-\item Points close together in input space are typically more highly correlated than points far away
-\item Stationary GPs are defined by a \alert{covariance function} --- many different possible choices - here I've used a Gaussian kernel
-\[
-\operatorname{Cov}[f(\mathbf{x}),f(\mathbf{x}')] = K(\mathbf{x},\mathbf{x}') = \sigma^2\exp\left\{-\left(\frac{\Vert \mathbf{x}-\mathbf{x}'\Vert_2}{r}\right)^2\right\},
-\]
-containing two parameters: an asymptotic variance, $\sigma^2$, and a correlation length scale, $r$.
-\item A GP conditioned on observations is also a GP (\alert{Kriging})
-\end{itemize}
 }
 
 \subsection{Design of computer experiments}
