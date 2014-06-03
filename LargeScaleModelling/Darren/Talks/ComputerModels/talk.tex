@@ -422,7 +422,7 @@ analysis --- another talk...
 }
 
 
-\subsection{The bias term}
+\subsection{The bias term and fast simulators}
 
 \frame{
 \frametitle{Model discrepancy}
@@ -440,8 +440,42 @@ analysis --- another talk...
 \centerline{\includegraphics[height=0.9\textheight]{disc}}
 }
 
+\frame{
+\frametitle{Fast simulators}
+\begin{itemize}
+\item Often it will be possible to speed up a simulator by coarsening grids, introducing mean field approximations, etc.
+\item The \alert{fast} simulator is likely to be less accurate than the \alert{slow} simulator, but if it exhibits similar characteristics over a range of inputs then it could still be very useful, as it will be easier to obtain a large number of function evaluations
+\item Just as we can make improved predictions about the real physical system by understanding the discrepancy between the simulator and experimental observations, we can also develop an improved emulator of the slow simulator by understanding the discrepancy between the slow simulator and a fast approximation for which many (more) function evaluations are available --- the principles are very similar
+\end{itemize}
+}
+
 
 \section{Conclusion}
+
+\subsection{Discussion}
+
+\frame{
+\frametitle{Discussion}
+\begin{itemize}
+\item Building large and complex computer models of a physical system is fun, interesting and challenging, but understanding the model and its relationship with the actual real system is equally challenging
+\item There is a large body of Bayesian statistical theory concerned with the design and analysis of computer experiments which can help considerably
+\item Combining measurements of the physical system with function evaluations from a computer model (and more function evaluations from a fast approximate model) can be a very efficient way to develop an understanding of how to control a physical system 
+\end{itemize}
+}
+
+\frame{
+\frametitle{Some take away messages}
+  \begin{itemize}
+  \item Building (Gaussian process) \alert{emulators} of expensive computer models is a good idea
+  \item Naive \alert{parameter scans} are an inefficient way to understand a computer model --- carefully \alert{designed experiments} are better
+  \item \alert{History matching} and \alert{model calibration} are different and complementary ways to understand the adequacy of a computer model and to tune it to better match reality
+  \item Bayesian model calibration is a very powerful technique for parameter estimation (another talk)
+  \item Acknowledging the \alert{discrepancy} between the computer model and reality is not an admission of failure --- doing so allows improved understanding of the physical system
+
+  \end{itemize}
+}
+
+\subsection{Further information}
 
 \frame{
 \frametitle{Further information}
