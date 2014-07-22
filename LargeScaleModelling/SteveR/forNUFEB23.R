@@ -7,6 +7,15 @@ library(ReacTran)
 library(deSolve)
 library(FME)
 library(lattice)
+
+communitychars<-matrix(0,nrow=species,ncol=vars)
+temp.com<-read.table("communitydata.csv", header=TRUE, sep=",")
+communitychars[,1]=temp.com$species
+communitychars[,2]=temp.com$abundance
+communitychars[,3]=temp.com$LHS
+communitychars[,4]=temp.com$mumax
+communitychars[,5]=temp.com$ks
+communitychars[,6]=temp.com$maint
 #####################################################################################################
 #                         MODEL STRUCTURE
 #
@@ -580,8 +589,8 @@ nstart<-sample(grid*(subgrid-1),1)
 #sizestart<-sample(6,1)
 sizestart=6
 speco<-sample(species,1)
-invrate=1
-runno=2
+invrate=10
+runno=10
 allmics<-matrix(data=c( 1, estart, nstart,  1,   speco,   sizestart,   1,   0), nrow=1, ncol=8, byrow=TRUE)
 
 # create storage
