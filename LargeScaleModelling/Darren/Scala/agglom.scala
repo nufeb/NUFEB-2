@@ -43,8 +43,25 @@ class Canvas extends Panel {
  }
 
  @tailrec final def agglom(x0: Int,y0: Int,n: Int,r: Random,g: Graphics2D): Unit = {
+  def adjacent(x: Int,y: Int): Boolean = {
+    val up=g.getRGB(x,y)
+    true
+  }
   if (n>0) {
-    g.drawLine((r.nextDouble*100).toInt,(r.nextDouble*100).toInt,(r.nextDouble*100).toInt,(r.nextDouble*100).toInt)
+    @tailrec def wander(x: Int,y: Int): (Int,Int) = {
+      val u=r.nextDouble
+      val xp=if (u<0.5) {x-1} else {x+1}
+      val yp=if ((u>0.25)&(u<0.75)) {y-1} else {y+1}
+      val xn=min(max(x,0),size.width)
+      val yn=min(max(y,0),size.height)
+      if (adjacent(xn,yn)) {
+        g.drawLine(xn,yn,xn,yn)
+        (xn,yn)
+      } else {
+        wander(xn,yn)
+      }
+    }
+    wander(x0,y0)
     agglom(x0,y0,n-1,r,g)
   }
  }
