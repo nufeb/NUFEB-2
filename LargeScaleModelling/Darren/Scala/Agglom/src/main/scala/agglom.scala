@@ -1,6 +1,7 @@
 import scala.swing._
 import scala.swing.event._
 import java.awt.{Graphics2D,Color,BasicStroke}
+import java.awt.image.{BufferedImage,WritableRaster}
 import scala.math._
 import scala.util.Random
 import scala.annotation.tailrec
@@ -12,9 +13,7 @@ object MySwingApp extends SimpleSwingApplication {
   val button=new Button {
    text="Generate"
   }
-  val panel=new Canvas {
-   preferredSize=new Dimension(500,500)
-  }
+  val panel=ImagePanel(500,500)
   contents=new BoxPanel(Orientation.Vertical) {
    contents+=button
    contents+=panel
@@ -32,19 +31,35 @@ object MySwingApp extends SimpleSwingApplication {
 }
 
 
-class Canvas extends Panel {
+object ImagePanel {
+ def apply(x:Int,y:Int)={
+  var ip=new ImagePanel()
+  ip.preferredSize=new Dimension(x,y)
+  ip.bi=new BufferedImage(x,y,BufferedImage.TYPE_BYTE_GRAY)
+  ip
+ }
+}
+
+class ImagePanel extends Panel {
+
+ private var bi:BufferedImage=null
 
  override def paintComponent(g: Graphics2D) = {
   g.clearRect(0,0,size.width,size.height)
-  g.setColor(Color.blue)
+  //g.setColor(Color.blue)
   // g.plotPoint(400,300)
   val r=Random
-  agglom(size.width/2,0,100,r,g)
+  var wr=bi.getRaster()
+  var big=bi.createGraphics()
+  big.setColor(new Colour("white"))
+  big.fillRect(0,0,size.width,size.height)
+  agglom(size.width/2,0,100,r,wr)
+  g.drawImage(bi,0,0,null)
  }
 
- @tailrec final def agglom(x0: Int,y0: Int,n: Int,r: Random,g: Graphics2D): Unit = {
+ @tailrec final def agglom(x0: Int,y0: Int,n: Int,r: Random,wr:WritableRaster): Unit = {
   def adjacent(x: Int,y: Int): Boolean = {
-    val up=g.getRGB(x,y)
+    val byte=wr.getSample(x,y,0)
     true
   }
   if (n>0) {
@@ -55,14 +70,14 @@ class Canvas extends Panel {
       val xn=min(max(x,0),size.width)
       val yn=min(max(y,0),size.height)
       if (adjacent(xn,yn)) {
-        g.drawLine(xn,yn,xn,yn)
+        wr.setSample(xn,yn,0,100)
         (xn,yn)
       } else {
         wander(xn,yn)
       }
     }
     wander(x0,y0)
-    agglom(x0,y0,n-1,r,g)
+    agglom(x0,y0,n-1,r,wr)
   }
  }
 
