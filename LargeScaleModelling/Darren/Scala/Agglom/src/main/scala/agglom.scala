@@ -51,27 +51,31 @@ class ImagePanel extends Panel {
   val r=Random
   var wr=bi.getRaster()
   var big=bi.createGraphics()
-  big.setColor(new Colour("white"))
+  big.setColor(Color.white)
   big.fillRect(0,0,size.width,size.height)
-  agglom(size.width/2,0,100,r,wr)
+  wr.setSample(250,300,0,100)
+  agglom(size.width/2,0,1000,r,wr)
   g.drawImage(bi,0,0,null)
  }
 
  @tailrec final def agglom(x0: Int,y0: Int,n: Int,r: Random,wr:WritableRaster): Unit = {
-  def adjacent(x: Int,y: Int): Boolean = {
+  //println("agglom "+x0+","+y0)
+  def clash(x: Int,y: Int): Boolean = {
     val byte=wr.getSample(x,y,0)
-    true
+    (byte!=255)
   }
   if (n>0) {
     @tailrec def wander(x: Int,y: Int): (Int,Int) = {
+      //println("wander "+x+","+y)
       val u=r.nextDouble
       val xp=if (u<0.5) {x-1} else {x+1}
       val yp=if ((u>0.25)&(u<0.75)) {y-1} else {y+1}
-      val xn=min(max(x,0),size.width)
-      val yn=min(max(y,0),size.height)
-      if (adjacent(xn,yn)) {
-        wr.setSample(xn,yn,0,100)
-        (xn,yn)
+      val xn=min(max(xp,0),size.width-1)
+      val yn=min(max(yp,0),size.height-1)
+      if (clash(xn,yn)) {
+        //println("clash "+xn+","+yn)
+        wr.setSample(x,y,0,100)
+        (x,y)
       } else {
         wander(xn,yn)
       }
