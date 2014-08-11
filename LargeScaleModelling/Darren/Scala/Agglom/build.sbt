@@ -5,9 +5,9 @@ version := "0.1"
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
 
 libraryDependencies  ++= Seq(
-            "org.scalacheck" %% "scalacheck" % "1.10.0" % "test",
-            "org.scalatest" %% "scalatest" % "2.0.M5b" % "test",
-            "org.scala-lang" % "scala-swing" % "2.10.3"
+            "org.scalacheck" %% "scalacheck" % "1.11.4" % "test",
+            "org.scalatest" %% "scalatest" % "2.1.7" % "test",
+            "org.scala-lang" % "scala-swing" % "2.11.0-M7"
 )
 
 resolvers ++= Seq(
@@ -17,9 +17,8 @@ resolvers ++= Seq(
             "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/"
 )
 
-// Scala 2.9.2 is still supported for 0.2.1, but is dropped afterwards.
-// Don't use an earlier version of 2.10, you will probably get weird compiler crashes.
-scalaVersion := "2.10.3"
+
+scalaVersion := "2.11.0"
 
 
 
