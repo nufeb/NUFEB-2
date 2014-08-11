@@ -10,9 +10,8 @@ import scala.annotation.tailrec
 
 object MySwingApp extends SimpleSwingApplication {
 
-  val width = 1000
-  val height = 800
-  val iters = 100
+  val width = 900
+  val height = 700
   val r = Random
 
   def top = new MainFrame {
@@ -50,7 +49,6 @@ object MySwingApp extends SimpleSwingApplication {
   }
 
   @tailrec def agglom(x0: Int, y0: Int, n: Int, panel: ImagePanel, index: Int): Unit = {
-    //val wr = panel.bi.getRaster()
     def clash(x: Int, y: Int): Boolean = {
       val byte = panel.bi.getRGB(x, y)
       (byte != new Color(255,255,255).getRGB)
@@ -62,16 +60,14 @@ object MySwingApp extends SimpleSwingApplication {
       val xn = min(max(xp, 0), width - 1)
       val yn = min(max(yp, 0), height - 1)
       if (clash(xn, yn)) {
-        println("clash " + xn + "," + yn)
-        //wr.setSample(x, y, 0, 0)
-        panel.bi.setRGB(x,y,new Color(0,index/50,255-index/50).getRGB)
+        // println("clash " + xn + "," + yn)
+        panel.bi.setRGB(x,y,new Color(0,(index/10) % 256,(255-index/10).abs % 256).getRGB)
         (x, y)
       } else {
         wander(xn, yn)
       }
     }
-    println("agglom " + x0 + "," + y0 + "," + n)
-    //panel.repaint() // Should repaint each time called, but doesn't seem to work...
+    // println("agglom " + x0 + "," + y0 + "," + n)
     if (n > 0) {
       wander(x0, y0)
       agglom(x0, y0, n - 1, panel,index+1)
