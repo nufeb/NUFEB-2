@@ -61,7 +61,7 @@ object MySwingApp extends SimpleSwingApplication {
       val yn = min(max(yp, 0), height - 1)
       if (clash(xn, yn)) {
         // println("clash " + xn + "," + yn)
-        panel.bi.setRGB(x,y,new Color(0,(index/10) % 256,(255-index/10).abs % 256).getRGB)
+        panel.bi.setRGB(x,y,new Color(0,(index/20) % 256,(255-index/20).abs % 256).getRGB)
         (x, y)
       } else {
         wander(xn, yn)
