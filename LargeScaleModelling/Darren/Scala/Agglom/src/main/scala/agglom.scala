@@ -85,7 +85,10 @@ object ImagePanel {
     var big = ip.bi.createGraphics()
     big.setColor(Color.white)
     big.fillRect(0, 0, x, y)
-    wr.setSample(x / 2, y / 2, 0, 0) // seed the agglomeration with a single pixel in the centre
+    //wr.setSample(x / 2, y / 2, 0, 0) // seed the agglomeration with a single pixel in the centre
+    //wr.setSample(x / 2, y -1, 0, 0) // seed the agglomeration with a single pixel at the base
+    big.setColor(Color.black)
+    big.drawLine(0,y-1,x,y-1) // seed with a line at the base
     ip
   }
 }
