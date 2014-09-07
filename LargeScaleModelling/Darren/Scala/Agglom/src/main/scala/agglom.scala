@@ -60,14 +60,12 @@ object MySwingApp extends SimpleSwingApplication {
       val xn = min(max(xp, 0), width - 1)
       val yn = min(max(yp, 0), height - 1)
       if (clash(xn, yn)) {
-        // println("clash " + xn + "," + yn)
         panel.bi.setRGB(x,y,new Color(0,(index/20) % 256,(255-index/20).abs % 256).getRGB)
         (x, y)
       } else {
         wander(xn, yn)
       }
     }
-    // println("agglom " + x0 + "," + y0 + "," + n)
     if (n > 0) {
       wander(x0, y0)
       agglom(x0, y0, n - 1, panel,index+1)
@@ -78,11 +76,11 @@ object MySwingApp extends SimpleSwingApplication {
 
 object ImagePanel {
   def apply(x: Int, y: Int) = {
-    var ip = new ImagePanel()
+    val bi = new BufferedImage(x, y, BufferedImage.TYPE_INT_RGB)
+    val wr = bi.getRaster()
+    val big = bi.createGraphics()
+    val ip = new ImagePanel(bi)
     ip.preferredSize = new Dimension(x, y)
-    ip.bi = new BufferedImage(x, y, BufferedImage.TYPE_INT_RGB)
-    var wr = ip.bi.getRaster()
-    var big = ip.bi.createGraphics()
     big.setColor(Color.white)
     big.fillRect(0, 0, x, y)
     //wr.setSample(x / 2, y / 2, 0, 0) // seed the agglomeration with a single pixel in the centre
@@ -93,10 +91,10 @@ object ImagePanel {
   }
 }
 
-class ImagePanel extends Panel {
+class ImagePanel(bi_f: BufferedImage) extends Panel {
 
-  var bi: BufferedImage = null
-
+  val bi=bi_f
+  
   override def paintComponent(g: Graphics2D) = {
     g.drawImage(bi, 0, 0, null)
   }
