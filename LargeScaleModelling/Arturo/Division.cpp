@@ -1,3 +1,8 @@
+// ------------------------------------------------ Master Project ------------------------------------------ 
+// -------------------------------------------- Division process ----------------------------------------
+// --------------------------------------------Arturo Alvarez-Arenas ----------------------------------------
+// ------------------------------------------- Newcastle University -----------------------------------------
+
 #include <iostream>     // std::cout
 #include <cstddef>      // std::size_t
 #include <valarray>     // std::valarray
@@ -183,6 +188,9 @@ void EPS_excretion(int i){
 	/* Recalculating some properties previous cell*/
 	Bac_e_d[i] *= (1-fraction);
 	Bac_r[i] = sqrt((Bac_m[i]/bac_rho + Bac_e_d[i]/bac_rhoe)/PI/bac_h);
+	
+	/* Updating indexs*/
+	//Index_cells[3].push_back(Bac_x.size()-1);  --------- INCLUDE THIS IN THE WASTEWATER
 }
 
 void Division(int i){
@@ -226,6 +234,9 @@ void Division(int i){
 	Bac_e_d[i] *= (1-fraction1);
 	Bac_ra[i] = sqrt((Bac_m[i]/bac_rho)/PI/bac_h);
 	Bac_r[i] = sqrt((Bac_m[i]/bac_rho + Bac_e_d[i]/bac_rhoe)/PI/bac_h);
+	
+	/* Updating indexs*/
+	//Index_cells[Bac_s[i]].push_back(Bac_x.size()-1);  --------- INCLUDE THIS IN THE WASTEWATER
 	
 		
 }

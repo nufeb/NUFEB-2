@@ -1,3 +1,8 @@
+// ------------------------------------------------ Master Project ------------------------------------------ 
+// -------------------------------------------- Growth-Decay process ----------------------------------------
+// --------------------------------------------Arturo Alvarez-Arenas ----------------------------------------
+// ------------------------------------------- Newcastle University -----------------------------------------
+
 #include <iostream>     // std::cout
 #include <cstddef>      // std::size_t
 #include <valarray>     // std::valarray
@@ -49,7 +54,9 @@ const int bac_rhoe = 25;
 // kinetic constants and others
 
 // kinetic parameters
-long double mu_max_het = 6;     // 1/d miu_max HET  (Henze ASM2d and others - but consider that here there is no storage
+
+long double mu_max_het = 4;     // 1/d miu_max HET  (Henze ASM2d and others - but consider that here there is no storage
+
 long double mu_max_aob = 0.76;   // 1/d miu_max AOB (Rittmann and McCarty, 2001) at 20 degrees
 long double mu_max_nob = 0.81;    // 1/d miu_max NOB (Rittmann and McCarty, 2001) at 20 degrees
 long double K_o2_het  = 0.81e-3; //kg/m3
@@ -110,12 +117,7 @@ vector<double> Bac_theta,Bac_R;
 
 
 
-//       1.6) Parameters single attach process
-
-				   /* pHET pAOB pNOB */ 
-const float prob[] = {0.6, 0.2, 0.2};  /* probabilities for the new cell in single attach process*/
-const long double mass_new_cell[] = {mass_het,mass_aob,mass_nob}; 
-const long double eps_new_cell[]={mass_eps,0,0};	
+	
 
 //       1.9) Parameters for growth_decay
 
@@ -130,8 +132,15 @@ vector<long double> Total_decay (total_decay, total_decay + sizeof(total_decay) 
 long double m_decay[3] = { 0 , 0 , 0 };
 vector<long double> M_decay (m_decay, m_decay + sizeof(m_decay) / sizeof(m_decay[0]));
 
+long double m_substrate = 0;
+
 /* Vector of vectors with the indexs of each type of cell */		
 vector<vector<double> > Index_cells(4,vector<double>(0,0.0)); /* 1st vector -> HET; 2nd -> AOB; 3rd -> NOB*; 4rd -> EPS */
+vector<vector<double> > c_s(450,vector<double>(450,0.01));
+vector<vector<double> > c_o2(450,vector<double>(450,0.01));
+vector<vector<double> > c_no2(450,vector<double>(450,0.025));
+vector<vector<double> > c_no3(450,vector<double>(450,0.01));
+vector<vector<double> > c_nh4(450,vector<double>(450,0.01));
 
 
 
@@ -155,6 +164,7 @@ int main(){
 	rates_decay = reset_rates;
 	vector<vector<double> > reset_index(4,vector<double>(0,0.0));
 	Index_cells = reset_index;
+	
 	
 	for(unsigned int i=0; i<Bac_m.size(); ++i){
 		cout << "\n i: " << i;
@@ -214,7 +224,7 @@ void growth_decay()
 	// Eliminate random cells if the total mass decay exceeds the normal mass		
 	for (unsigned i=0; i<M_decay.size();++i){
 		while (M_decay[i]>mass_cells[i] && Index_cells[i].size()>0){
-			int ran = ((double) rand()/(RAND_MAX))*Index_cells[Bac_s[i]].size(); /* generating an integer random number between 0 and Index_cells[Bac_s[i]].size() */
+			int ran = ((double) rand()/(RAND_MAX))*Index_cells[i].size(); /* generating an integer random number between 0 and Index_cells[i].size() */
 			int decay_index = Index_cells[i][ran]; /* We have choose a random index of that kind of cells*/
 			if (Bac_m[decay_index]!=0){
 				decay_one_cell(decay_index,ran); /* That cell will be dead */
@@ -236,18 +246,18 @@ void growth_decay()
 		Bac_e_d[i] += rates_growth_eps[i]*dt;
 	}
 	// Recalculating radium for each cell
-	for (unsigned int i=0; i<4;++i){
-		for (unsigned int j=0; j<Index_cells[i].size();++j){
-			int indx = Index_cells[i][j]; 
-			if (Bac_s[indx] == 0||3){
-				Bac_r[indx] = (sqrt((Bac_m[indx]/bac_rho + Bac_e_d[indx]/bac_rhoe)/PI/bac_h));
-			}if(Bac_s[indx] == 1||2){
-				Bac_r[indx] = (sqrt((Bac_m[indx]/bac_rho )/PI/bac_h));
-			}if(Bac_s[indx] == 4){
-				Bac_r[indx] = sqrt(Bac_e_d[indx]/bac_rhod/PI/bac_h);
-			}
-			Bac_ra[indx] = (sqrt((Bac_m[indx]/bac_rho)/PI/bac_h));
+//	for (unsigned int i=0; i<4;++i){ /* 4 for each type of cell HET AOB NOB EPS*/
+/*		for (unsigned int j=0; j<Index_cells[i].size();++j){
+			int indx = Index_cells[i][j]; */
+	for (unsigned int i=0;i<Bac_x.size();++i){
+		if (Bac_s[i] == 0||3){
+			Bac_r[i] = (sqrt((Bac_m[i]/bac_rho + Bac_e_d[i]/bac_rhoe)/PI/bac_h));
+		}if(Bac_s[i] == 1||2){
+			Bac_r[i] = (sqrt((Bac_m[i]/bac_rho )/PI/bac_h));
+		}if(Bac_s[i] == 4){
+			Bac_r[i] = sqrt(Bac_e_d[i]/bac_rhod/PI/bac_h);
 		}
+		Bac_ra[i] = (sqrt((Bac_m[i]/bac_rho)/PI/bac_h));
 	}
 }
 
@@ -266,16 +276,16 @@ void calculate_rates_index(int i){
 	int jj = floor(Bac_x[i]/dx)+1;
 	int ii = floor(Bac_y[i]/dy)+1;
 	if (Bac_s[i] == 0){
-		rates_growth[i] = (bac_m[i]*mu_max_het*c_s[ii][jj]/(K_s_het+c_s[ii][jj])*c_o2[ii][jj]/(K_o2_het+c_o2[ii][jj]) + bac_m[i]*eta_het*mu_max_het*c_s[ii][jj]/(K_s_het+c_s[ii][jj])*c_no2[ii][jj]/(K_no2_het+c_no2[ii][jj])*K_o2_het/(K_o2_het+c_o2[ii][jj]) + bac_m[i]*eta_het*mu_max_het*c_s[ii][jj]/(K_s_het+c_s[ii][jj])*c_no3[ii][jj]/(K_no3_het+c_no3[ii][jj])*K_o2_het/(K_o2_het+c_o2[ii][jj]));
+		rates_growth[i] = (Bac_m[i]*mu_max_het*c_s[ii][jj]/(K_s_het+c_s[ii][jj])*c_o2[ii][jj]/(K_o2_het+c_o2[ii][jj]) + Bac_m[i]*eta_het*mu_max_het*c_s[ii][jj]/(K_s_het+c_s[ii][jj])*c_no2[ii][jj]/(K_no2_het+c_no2[ii][jj])*K_o2_het/(K_o2_het+c_o2[ii][jj]) + Bac_m[i]*eta_het*mu_max_het*c_s[ii][jj]/(K_s_het+c_s[ii][jj])*c_no3[ii][jj]/(K_no3_het+c_no3[ii][jj])*K_o2_het/(K_o2_het+c_o2[ii][jj]));
 		rates_growth_eps[i] = (rates_growth[i]*Y_eps_het);
 		rates_decay[i] = (b_het*Bac_m[i]);
 	}
 	if (Bac_s[i] == 1){
-		rates_growth[i] = (bac_m[i]*mu_max_aob*c_nh4[ii][jj]/(K_nh4_aob+c_nh4[ii][jj])*c_o2[ii][jj]/(K_o2_aob+c_o2[ii][jj]));
+		rates_growth[i] = (Bac_m[i]*mu_max_aob*c_nh4[ii][jj]/(K_nh4_aob+c_nh4[ii][jj])*c_o2[ii][jj]/(K_o2_aob+c_o2[ii][jj]));
 		rates_decay[i] = (b_aob*Bac_m[i]);
 	}
 	if (Bac_s[i] == 2){
-		rates_growth[i] = (bac_m[i]*mu_max_nob*c_no2[ii][jj]/(K_no2_nob+c_no2[ii][jj])*c_o2[ii][jj]/(K_o2_nob+c_o2[ii][jj]));
+		rates_growth[i] = (Bac_m[i]*mu_max_nob*c_no2[ii][jj]/(K_no2_nob+c_no2[ii][jj])*c_o2[ii][jj]/(K_o2_nob+c_o2[ii][jj]));
 		rates_decay[i] = (b_nob*Bac_m[i]);
 	}
 	if (Bac_s[i] == 3){

@@ -1,3 +1,8 @@
+// ------------------------------------------------ Master Project ------------------------------------------ 
+// -------------------------------------------- Attachment 1 cell----------------------------------------
+// --------------------------------------------Arturo Alvarez-Arenas ----------------------------------------
+// ------------------------------------------- Newcastle University -----------------------------------------
+
 #include <iostream>     // std::cout
 #include <cstddef>      // std::size_t
 #include <valarray>     // std::valarray
@@ -8,6 +13,8 @@
 #include <stdio.h>      /* printf */
 #include <math.h>       /* pow */
 #include <algorithm>    // std::min_element, std::max_element
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
 
 #define PI 3.1415926535897932384626433832795
 
@@ -16,6 +23,8 @@ using namespace std;
 
 void attachment_single_cell(vector<long double> &Bac_m,vector<long double> &Bac_e_d,vector<int> &Bac_s,vector<int> &Bac_c, vector<long double> &Bac_r,double Rmax);
 
+// create a rng in order to create random numbers
+gsl_rng * r = gsl_rng_alloc(gsl_rng_mt19937);
 
 const long double mass_het = 1e-16;
 const long double mass_aob = 1e-16;
@@ -76,8 +85,12 @@ const long double eps_new_cell[]={mass_eps,0,0};
 
 
 
+
 int main()
 {
+	// initialise the rng
+	srand(time(NULL));	
+	
 	Bac_r.clear();
 	Bac_ra.clear();
 	for (unsigned int i=0; i<Bac_x.size();++i){
@@ -109,8 +122,9 @@ int main()
 		cout << "\n Bac_theta: " << Bac_theta[i];
 	
 	}	
-		
-	for(int i=0;i<3;++i){
+
+	
+	for(int i=0;i<100;++i){
 			
 		/* calculating Rmax*/	
 		vector<double>::const_iterator it, RmaxVector;
@@ -152,38 +166,47 @@ void attachment_single_cell(vector<long double> &Bac_m,vector<long double> &Bac_
 	
 		
 	/* generate a random position for the new cell*/
-		double fi_atta =  ((double) rand() / (RAND_MAX)) * 2 * PI;
+	
+		gsl_rng_set (r, rand() + 1);
+		// generates a uniform in 0,2PI
+		double fi_atta =  gsl_rng_uniform (r)*2*PI;
 		long double R_atta = Rmax + 5*Bac_r[0]; 
 		
 
 	/* attracting the new cell to the center of the floc*/
-	for(int j=0;j<1;--j){
-
+	int j=0;
+	while (j!=1){
 		R_atta = R_atta - Bac_r[0];
+		if(R_atta<0){
+			Bac_x.push_back(0);
+			Bac_y.push_back(0);
+			j=1;
+			break;
+		}
 		long double x_atta = R_atta * cos(fi_atta);
 		long double y_atta = R_atta * sin(fi_atta);
-
 
 		for (unsigned int i=0; i<Bac_x.size();++i){					
 			long double dist = sqrt(pow((Bac_x[i] - x_atta),2) + pow((Bac_y[i] - y_atta),2));
 			if ((dist - 3*Bac_r[i])<0){ /* means new cell is close enough to that cell */
 				Bac_x.push_back(x_atta);
 				Bac_y.push_back(y_atta);
-				j=2;	                  /* breaks the initial for*/
+				j=1;	                  /* breaks the initial for*/
 				break;                    /* breaks this for */
 			}
-		}
-			 
+		}				 
 	}
 
 	/* choosing type of the new cell*/
 	
-	double r  = ((double) rand() / (RAND_MAX)); /* generating a random number between 0,1*/
-
 	
+	gsl_rng_set (r, rand() + 1);
+	// generates a uniform in 0,1
+	double ra  = gsl_rng_uniform (r); 
+
 	for(int j=1; j<4; ++j){
 		valarray<float> prob1 (prob,j);
-		if (r< prob1.sum()){			
+		if (ra< prob1.sum()){			
 			/* adding the new cells with its properties to the floc*/	
 		
 			Bac_m.push_back(mass_new_cell[(j-1)]);
@@ -201,19 +224,11 @@ void attachment_single_cell(vector<long double> &Bac_m,vector<long double> &Bac_
 		}			
 	} 
 	
-	
+	//Bac_inf.push_back("att_single_cell");
 	Bac_r.push_back(sqrt((Bac_m.back()/bac_rho + Bac_e_d.back()/bac_rhoe)/PI/bac_h));
 	Bac_ra.push_back(sqrt((Bac_m.back()/bac_rho)/PI/bac_h));
-	if (Bac_x.back()==0){
-		if (Bac_y.back()==0){
-			Bac_theta.push_back (0);
-		}else{
-			Bac_theta.push_back (PI/2);
-		}
-	}else{
-		Bac_theta.push_back (atan(Bac_y.back()/Bac_x.back()));
-	}
 	
+	Bac_theta.push_back(atan2(Bac_y.back(),Bac_x.back()));
 	Bac_R.push_back (sqrt(pow(Bac_x.back(),2) + pow(Bac_y.back(),2)));
 	
 	++number_bacterium;

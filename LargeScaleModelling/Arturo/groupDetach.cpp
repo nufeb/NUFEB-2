@@ -1,3 +1,8 @@
+// ------------------------------------------------ Master Project ------------------------------------------ 
+// -------------------------------------------- Detachment group cells ----------------------------------------
+// --------------------------------------------Arturo Alvarez-Arenas ----------------------------------------
+// ------------------------------------------- Newcastle University -----------------------------------------
+
 #include <numeric> // accumulate
 #include <iostream>     // std::cout
 #include <cstddef>      // std::size_t
@@ -9,11 +14,15 @@
 #include <numeric>
 #include <boost/range/numeric.hpp>
 #include <cmath>        // std::abs
-
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
 #define PI 3.1415926535897932384626433832795
 
 
 using namespace std;
+
+// create a rng in order to create random numbers
+gsl_rng * r = gsl_rng_alloc(gsl_rng_mt19937);
 /* group detach*/
 
 
@@ -80,7 +89,9 @@ vector<double> Bac_R;
 
 int main(){
 	
-	
+	// initialise the rng
+	srand(time(NULL));	
+		
 	for (unsigned int i=0; i<Bac_x.size();++i){
 		Bac_r.push_back(sqrt((Bac_m[i]/bac_rho + Bac_e_d[i]/bac_rhoe)/PI/bac_h));
 		Bac_ra.push_back(sqrt((Bac_m[i]/bac_rho)/PI/bac_h));
@@ -147,7 +158,12 @@ void detachment_group_cell(double Rmax){
 	
 	/* A random angle is selected and we check if there is any cell in that angle +-10% and store them in ind_theta*/
 	while(ind_theta.size()==0){
-			double fi_atta = ((double) rand()/(RAND_MAX))*2*PI - PI;
+			
+
+			gsl_rng_set (r, rand() + 1);
+			// generates a uniform in [-PI PI]	
+			double fi_atta = gsl_rng_uniform (r)*2*PI - PI;
+			
 			for (unsigned int i=0; i<Bac_theta.size();++i){
 					if (abs(Bac_theta[i]-fi_atta)<= (PI/10)){
 						ind_theta.push_back(i);
@@ -159,7 +175,11 @@ void detachment_group_cell(double Rmax){
 			}
 	}	
 	/* Select a random number in [0.5*radio_largest , radio largest] */
-	double random_radio = (((double) rand()/(RAND_MAX))*0.5 + 0.5)*largest_radio;
+	
+
+	gsl_rng_set (r, rand() + 1);
+	// generates a uniform in [0.5*radio_largest , radio largest]
+	double random_radio = (gsl_rng_uniform (r)*0.5 + 0.5)*largest_radio;
 	
 	/* All the cells saved before with a radio larger than random_radio are removed */
 	
