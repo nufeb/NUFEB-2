@@ -7,7 +7,7 @@ package shoving
 
 import scala.swing._
 import scala.swing.event._
-import java.awt.{ Graphics2D, Color, BasicStroke }
+import java.awt.{ Graphics2D, Color, BasicStroke, Shape }
 import java.awt.geom.Ellipse2D
 import java.awt.image.{ BufferedImage, WritableRaster }
 import scala.annotation.tailrec
@@ -77,11 +77,22 @@ object shoving extends SimpleSwingApplication {
     val h = bi.getHeight
     val scaleFactor = 50 // height of window on original scale
     def scale(x: Double): Double = x * h / scaleFactor
+    def shape(c: Cell): Shape = {
+      val xc = h / 2 + scale(c.x)
+      val yc = h / 2 + scale(c.y)
+      val r = scale(math.pow(c.s, 1.0 / 3))
+      new Ellipse2D.Double(xc - r / 2, yc - r / 2, r, r)
+    }
+    def colour(c: Cell): Color = {
+      val shade=(255*c.a/(c.a+100)).round.toInt
+      //println(shade)
+      new Color(255-shade,0,shade)
+      }
     val big = bi.createGraphics()
     big.setColor(Color.white)
     big.fillRect(0, 0, w, h)
     big.setColor(Color.black)
-    cp map { c => big.draw(new Ellipse2D.Double(h / 2 + scale(c.x), h / 2 + scale(c.y), scale(math.pow(c.s, 1.0 / 3)), scale(math.pow(c.s, 1.0 / 3)))) }
+    cp map { c => { big.setColor(colour(c)); big.draw(shape(c)) } }
   }
 
   // ImagePanel class
