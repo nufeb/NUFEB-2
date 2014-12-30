@@ -66,9 +66,9 @@ object shoving extends SimpleSwingApplication {
   }
 
   def step(cp: List[Cell]): List[Cell] = {
-    val newCp = cp.par.map { _.drift }.map { _.grow }.map { _.age }.flatMap { _.divide }.flatMap { _.die }
+    val newCp = cp.par.map { _.drift }.map { _.grow }.map { _.age }.flatMap { _.divide }.flatMap { _.die }.map { _.rotate(0.01) }
     val shovedCp = newCp.map { c => c.shift(cp.map { _.force(c) }.reduce(_.add(_))) }
-    shovedCp.toList
+    shovedCp.toList.sortWith(_.z < _.z)
   }
 
   // Function to draw the cell pop on the BufferedImage
@@ -81,18 +81,18 @@ object shoving extends SimpleSwingApplication {
       val xc = h / 2 + scale(c.x)
       val yc = h / 2 + scale(c.y)
       val r = scale(math.pow(c.s, 1.0 / 3))
-      new Ellipse2D.Double(xc - r / 2, yc - r / 2, r, r)
+      new Ellipse2D.Double(xc - r , yc - r , 2*r, 2*r)
     }
     def colour(c: Cell): Color = {
-      val shade=(255*c.a/(c.a+100)).round.toInt
+      val shade = (255 * c.a / (c.a + 100)).round.toInt
       //println(shade)
-      new Color(255-shade,0,shade)
-      }
+      new Color(255 - shade, 0, shade)
+    }
     val big = bi.createGraphics()
     big.setColor(Color.white)
     big.fillRect(0, 0, w, h)
     big.setColor(Color.black)
-    cp map { c => { big.setColor(colour(c)); big.draw(shape(c)) } }
+    cp map { c => { big.setColor(colour(c)); big.fill(shape(c)) } }
   }
 
   // ImagePanel class

@@ -49,6 +49,8 @@ case class Cell(x: Double, y: Double, z: Double, s: Double, a: Double) {
 
   def shift(f: Force): Cell = Cell(x - f.dx, y - f.dy, z - f.dz, s, a)
 
+  def rotate(th: Double): Cell = Cell(x*math.cos(th)-z*math.sin(th),y,x*math.sin(th)+z*math.cos(th),s,a)
+  
 }
 
 case class Force(dx: Double, dy: Double, dz: Double) {
