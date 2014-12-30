@@ -1,11 +1,12 @@
 package shoving
 
-import breeze.stats.distributions.Uniform
+import breeze.stats.distributions.{ Uniform, Gaussian }
 
 case class Cell(x: Double, y: Double, z: Double, s: Double, a: Double) {
 
   def drift: Cell = {
-    Cell(x + Uniform(-0.001, 0.001).draw, y + Uniform(-0.001, 0.001).draw, z + Uniform(-0.001, 0.001).draw, s, a)
+    val dc = 0.01
+    Cell(x + Gaussian(0, dc).draw, y + Gaussian(0, dc).draw, z + Gaussian(0, dc).draw, s, a)
   }
 
   def grow: Cell = {
@@ -19,13 +20,14 @@ case class Cell(x: Double, y: Double, z: Double, s: Double, a: Double) {
   def divide: List[Cell] = {
     if (s < 2.0)
       List(this)
-    else
-      // TODO: randomly displace
-      List(Cell(x - 0.1, y, z, 1.0, a/2), Cell(x + 0.1, y, z, 1.0, 0))
+    else {
+      val jit = Gaussian(0, 0.1).sample(3)
+      List(Cell(x - jit(0), y - jit(1), z - jit(2), 1.0, a / 4), Cell(x + jit(0), y + jit(1), z + jit(2), 1.0, 0))
+    }
   }
 
   def die: List[Cell] = {
-    if (Uniform(0, 1).draw < 0.0001 * math.log(a + 1))
+    if (Uniform(0, 1).draw < 0.0005 * math.log(a + 1))
       List()
     else
       List(this)
@@ -49,8 +51,8 @@ case class Cell(x: Double, y: Double, z: Double, s: Double, a: Double) {
 
   def shift(f: Force): Cell = Cell(x - f.dx, y - f.dy, z - f.dz, s, a)
 
-  def rotate(th: Double): Cell = Cell(x*math.cos(th)-z*math.sin(th),y,x*math.sin(th)+z*math.cos(th),s,a)
-  
+  def rotate(th: Double): Cell = Cell(x * math.cos(th) - z * math.sin(th), y, x * math.sin(th) + z * math.cos(th), s, a)
+
 }
 
 case class Force(dx: Double, dy: Double, dz: Double) {

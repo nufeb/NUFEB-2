@@ -81,7 +81,7 @@ object shoving extends SimpleSwingApplication {
       val xc = h / 2 + scale(c.x)
       val yc = h / 2 + scale(c.y)
       val r = scale(math.pow(c.s, 1.0 / 3))
-      new Ellipse2D.Double(xc - r , yc - r , 2*r, 2*r)
+      new Ellipse2D.Double(xc - r, yc - r, 2 * r, 2 * r)
     }
     def colour(c: Cell): Color = {
       val shade = (255 * c.a / (c.a + 100)).round.toInt
