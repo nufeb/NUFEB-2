@@ -13,7 +13,7 @@ The examples use "sbt" - the "simple build tool" for Scala. You can "install" sb
 
 For example, from the "shoving" directory, you should be able to type "../sbt.sh" on Linux or any other Unix-like system (including Macs) in order to run sbt. Similarly, on Windows, you should be able to type "..\sbt" in order to run sbt.
 
-From the sbt prompt, typing "run" will compile and run the code, typing "test" will compile and run any tests, and typing "console" will give a Scala REPL with a properly configured classpath for interactive use.
+From the sbt prompt, typing "run" will compile and run the code, typing "test" will compile and run any tests, typing "doc" will generate the ScalaDoc documentation (which will be stored in ./target/scala-2.xx/api/), and typing "console" will give a Scala REPL with a properly configured classpath for interactive use.
 
 
 
