@@ -1,4 +1,4 @@
-# The NUFEB Cocktail book
+# The NUFEB cocktail book
 
 ## Mojito
 Mint
