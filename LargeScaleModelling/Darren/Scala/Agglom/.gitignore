@@ -5,6 +5,10 @@
 # sbt specific
 .cache
 .history
+.classpath
+.project
+.settings
+
 .lib/
 dist/*
 target/
