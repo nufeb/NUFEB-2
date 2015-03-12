@@ -14,3 +14,7 @@ Dry vermouth
 Olive
 Stir ingriedients together.
 
+##Cosmopolitan
+2 parts cranberry juice
+1 part vodka
+1 part cointreau
