@@ -1,3 +1,0 @@
-Testing, testing, 1 2 3...
-
-Now I've added another line
