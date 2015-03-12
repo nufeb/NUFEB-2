@@ -1,4 +1,4 @@
-# The NUFEB Cocktail book
+# The NUFEB cocktail book
 
 ## Mojito
 Mint
@@ -9,7 +9,7 @@ Lots of Ice
 Crush the mint and ice. Add other ingriedients. Serve in tumbler.
 
 ##Dry Martini
-Bomby Saphire
+Gin
 Dry vermouth
 Olive
 Stir ingriedients together.
