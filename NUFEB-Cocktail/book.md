@@ -2,7 +2,7 @@
 
 ## Mojito
 Mint
-White Run
+White Rum
 Brown Sugar
 Lime juice
 Lots of Ice
