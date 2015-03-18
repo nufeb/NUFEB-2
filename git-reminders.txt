@@ -1,0 +1,26 @@
+Git reminders
+-------------
+
+Global config - do once on each machine that you use:
+
+git config --global user.name "Firstname Lastname"
+git config --global user.email foo@bar.com
+
+Checkout into the current directory:
+git clone git@github.com:darrenjw/nufeb.git
+
+
+
+Commonly used git commands:
+
+git pull       (update your repo to the latest version on github)
+git add file.c (add a file to the repo)
+git commit -a  (commit locally)
+git push       (push local commits back to github)
+
+
+
+
+% eof
+
+
