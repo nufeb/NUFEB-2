@@ -1,3 +1,5 @@
+SRCS := $(wildcard *.cpp)
+OBJS := $(addsuffix .o, $(basename $(SRCS)))
 NUFEB_EXE = ../bin/nufeb
 
 all: $(NUFEB_EXE)
@@ -13,5 +15,4 @@ $(NUFEB_EXE): $(SRCS) $(OBJS)
 .PHONY: clean
 
 clean:
-	rm -rf $(shell cat .cvsignore)
 	rm -rf $(OBJS) $(NUFEB_EXE) *~
