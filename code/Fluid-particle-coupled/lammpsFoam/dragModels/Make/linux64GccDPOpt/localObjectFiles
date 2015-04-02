@@ -1,0 +1,12 @@
+LOCAL_OBJECTS = \
+dragModel.o\
+newDragModel.o\
+polyDragModel.o\
+newPolyDragModel.o\
+SyamlalOBrien.o\
+ErgunWenYu.o\
+Stokes.o\
+DiFelice.o\
+Beetstra2007.o\
+SyamlalOBrienCorrectionFactor.o\
+polyVBK.o

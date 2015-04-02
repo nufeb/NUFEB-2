@@ -1,0 +1,60 @@
+\begin{thebibliography}{1}
+
+\bibitem{sun09}
+J.~Sun, H.~Xiao, and D.~Gao.
+\newblock Numerical study of segregation using multiscale models.
+\newblock {\em International Journal of Computational Fluid Dynamics},
+  23:81--92, 2009.
+
+\bibitem{xiao-cicp}
+H.~Xiao and J.~Sun.
+\newblock Algorithms in a robust hybrid {CFD--DEM} solver for particle-laden
+  flows.
+\newblock {\em Communications in Computational Physics}, 9:297--323, 2011.
+
+\bibitem{gupta11a}
+P.~Gupta, J.~Sun, and J.~Ooi.
+\newblock Segregation studies in bidisperse fluidsed beds: {CFD--DEM} approach
+  with {DNS} based drag force models.
+\newblock In {\em UK China Particle Technology Forum, Birmingham}, July 2011.
+
+\bibitem{gupta11b}
+P.~Gupta, J.~Sun, and J.~Ooi.
+\newblock Study of drag force models in simulation of bidisperse gas--solid
+  fluidised beds using a {CFD--DEM} approach.
+\newblock In {\em The 8th European Congress of Chemical Engineering, Berlin},
+  September 2011.
+
+\bibitem{gxs11a}
+P.~Gupta, H.~Xiao, and J.~Sun.
+\newblock Effect of drag force models on simulation of segregation in
+  gas--solid fluidised beds using a {CFD--DEM} approach.
+\newblock In {\em UK--China Particle Technology Forum}, July 2011.
+
+\bibitem{gupta13a}
+P.~Gupta, M.~Ebrahimi, M.~Robinson, M.~Crapper, J.~Sun, M.~Ramaioli, S.~Luding,
+  and J.Y. Ooi.
+\newblock Comparison of coupled {CFD--DEM} and {SPH--DEM} methods in single and
+  multiple particle sedimentation test cases.
+\newblock In {\em {PARTICLES}}, Stuttgart, Germany, September 2013.
+
+\bibitem{gupta12}
+P.~Gupta, J.~Sun, and J.~Ooi.
+\newblock Effect of hydrodynamic interactions on the segregation rate in
+  bi-disperse gas--solid fluidised bed and validation studies.
+\newblock In {\em 7th International Conference for Conveying and Handling of
+  Particulate Solids -- CHoPS}, September 2012.
+
+\bibitem{part1}
+R.~Sun and H.~Xiao.
+\newblock Diffusion-based coarse graining in hybrid continuum--discrete
+  solvers: Theoretical formulation and a priori tests.
+\newblock Submitted, 2014.
+
+\bibitem{part2}
+R.~Sun and H.~Xiao.
+\newblock Diffusion-based coarse graining in hybrid continuum--discrete
+  solvers: Application in {CFD--DEM} solvers for particle laden flows.
+\newblock Submitted, 2014.
+
+\end{thebibliography}
