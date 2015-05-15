@@ -495,7 +495,7 @@ void FixDiaAdapt::change_settings()
       density = rmass[i] / (4.0*MY_PI/3.0 *
                       radius[i]*radius[i]*radius[i]);
       double oldMass = rmass[i];
-      rmass[i] += value * nevery;
+      rmass[i] = rmass[i]*(1 + (value*nevery));
       if (rmass[i] <= 0) {
         rmass[i] = oldMass;
       }
