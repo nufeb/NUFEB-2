@@ -16,6 +16,7 @@
 #include "stdlib.h"
 #include "fix_diaadapt.h"
 #include "atom.h"
+#include "atom_vec.h"
 #include "update.h"
 #include "group.h"
 #include "modify.h"
@@ -42,7 +43,7 @@ using namespace MathConst;
 
 FixDiaAdapt::FixDiaAdapt(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
-  if (narg != 5) error->all(FLERR,"Illegal fix diaadapt command");
+  if (narg != 6) error->all(FLERR,"Illegal fix diaadapt command");
 
   nevery = force->inumeric(FLERR,arg[3]);
   if (nevery < 0) error->all(FLERR,"Illegal fix diaadapt command");
@@ -50,6 +51,8 @@ FixDiaAdapt::FixDiaAdapt(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg
   int n = strlen(&arg[4][2]) + 1;
   var = new char[n];
   strcpy(var,&arg[4][2]);
+
+  growthFactor = atof(arg[5]);
 
   // dynamic_group_allow = 1;
   // create_attribute = 1;
@@ -198,7 +201,7 @@ int FixDiaAdapt::setmask()
   int mask = 0;
   mask |= PRE_FORCE;
   mask |= POST_RUN;
-  mask |= PRE_FORCE_RESPA;
+  mask |= PRE_EXCHANGE;
   return mask;
 }
 
@@ -418,6 +421,81 @@ void FixDiaAdapt::pre_force(int vflag)
   change_settings();
 }
 
+
+void FixDiaAdapt::pre_exchange()
+{
+  double density;
+
+  double *radius = atom->radius;
+  double *rmass = atom->rmass;
+  int *mask = atom->mask;
+  int nlocal = atom->nlocal;
+  int nall = nlocal + atom->nghost;
+  int i;
+  double averageMass = 0.0;
+  int numAtoms = 0;
+
+
+  for (i = 0; i < nall; i++) {
+    if (mask[i] & groupbit) {
+      averageMass += rmass[i];
+      numAtoms ++;
+    }
+  }
+
+  averageMass /= numAtoms;
+
+  for (i = 0; i < nall; i++) {
+    if (mask[i] & groupbit) {
+      density = rmass[i] / (4.0*MY_PI/3.0 *
+                      radius[i]*radius[i]*radius[i]);
+      if (rmass[i] >= growthFactor*averageMass) {
+        double splitF = 0.5;//0.3 + (random->uniform() * 0.4);
+        double parentMass = rmass[i] * splitF;
+        double childMass = rmass[i] - parentMass;
+
+        double thetaD = MY_PI/2;//random->uniform() * MY_PI;
+        double phiD = MY_PI/4;//random->uniform() * (MY_PI/2);
+
+        double oldX = atom->x[i][0];
+        double oldY = atom->x[i][1];
+        double oldZ = atom->x[i][2];
+
+
+        //Update parent
+        rmass[i] = parentMass;
+        radius[i] = pow(((6*rmass[i])/(density*MY_PI)),(1.0/3.0))*0.5;
+        atom->x[i][0] = oldX + radius[i]*cos(thetaD)*sin(phiD);
+        atom->x[i][1] = oldY + radius[i]*sin(thetaD)*sin(phiD);
+        atom->x[i][2] = oldZ + radius[i]*cos(phiD);
+
+
+        //create child
+        double childRadius = pow(((6*childMass)/(density*MY_PI)),(1.0/3.0))*0.5;
+        double* coord = new double[3];
+        coord[0] = oldX - childRadius*cos(thetaD)*sin(phiD);
+        coord[1] = oldY - childRadius*sin(thetaD)*sin(phiD);
+        coord[2] = oldZ - childRadius*cos(phiD);
+        atom->avec->create_atom(mask[i],coord);
+        int n = atom->nlocal - 1;
+        atom->tag[n] = n+1;
+        atom->type[n] = atom->type[i];
+        atom->mask[n] = mask[i];
+        atom->image[n] = atom->image[i];
+        atom->v[n][0] = atom->v[i][0];
+        atom->v[n][1] = atom->v[i][1];
+        atom->v[n][2] = atom->v[i][2];
+        rmass[n] = childMass;
+        radius[n] = childRadius;
+        modify->create_attribute(n);
+
+        atom->natoms++;
+
+      }
+    }
+  }
+}
+
 /* ---------------------------------------------------------------------- */
 
 // void FixDiaAdapt::pre_force_respa(int vflag, int ilevel, int)
@@ -501,7 +579,6 @@ void FixDiaAdapt::change_settings()
       }
       radius[i] = pow(((6*rmass[i])/(density*MY_PI)),(1.0/3.0))*0.5;
     }
-
   }
 
     // if (mflag == 0) {
@@ -520,6 +597,8 @@ void FixDiaAdapt::change_settings()
     // }
 
   modify->addstep_compute(update->ntimestep + nevery);
+
+  pre_exchange();
 
   // re-initialize pair styles if any PAIR settings were changed
   // this resets other coeffs that may depend on changed values,
