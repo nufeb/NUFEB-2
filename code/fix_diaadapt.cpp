@@ -54,6 +54,8 @@ FixDiaAdapt::FixDiaAdapt(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg
 
   growthFactor = atof(arg[5]);
 
+  preExchangeCalled = false;
+
   // dynamic_group_allow = 1;
   // create_attribute = 1;
 
@@ -199,9 +201,9 @@ FixDiaAdapt::~FixDiaAdapt()
 int FixDiaAdapt::setmask()
 {
   int mask = 0;
+  //mask |= PRE_EXCHANGE;
   mask |= PRE_FORCE;
-  mask |= POST_RUN;
-  mask |= PRE_EXCHANGE;
+  mask |= END_OF_STEP;
   return mask;
 }
 
@@ -276,6 +278,11 @@ int FixDiaAdapt::setmask()
 // }
 
 /* ---------------------------------------------------------------------- */
+
+void FixDiaAdapt::end_of_step() {
+	fprintf(stdout, "End called\n");
+	preExchangeCalled = false;
+}
 
 void FixDiaAdapt::init()
 {
@@ -399,10 +406,10 @@ void FixDiaAdapt::init()
 
 /* ---------------------------------------------------------------------- */
 
-void FixDiaAdapt::setup_pre_force(int vflag)
-{
-  change_settings();
-}
+// void FixDiaAdapt::setup_pre_force(int vflag)
+// {
+//   change_settings();
+// }
 
 /* ---------------------------------------------------------------------- */
 
@@ -418,12 +425,18 @@ void FixDiaAdapt::pre_force(int vflag)
 {
   if (nevery == 0) return;
   if (update->ntimestep % nevery) return;
+  // fprintf(stdout, "change_settings called\n");
   change_settings();
+  // fprintf(stdout, "In between\n");
+  if (preExchangeCalled == false) {
+  	pre_exchange();
+  }
 }
 
 
 void FixDiaAdapt::pre_exchange()
 {
+  preExchangeCalled = true;
   double density;
 
   double *radius = atom->radius;
@@ -468,7 +481,9 @@ void FixDiaAdapt::pre_exchange()
         atom->x[i][0] = oldX + radius[i]*cos(thetaD)*sin(phiD);
         atom->x[i][1] = oldY + radius[i]*sin(thetaD)*sin(phiD);
         atom->x[i][2] = oldZ + radius[i]*cos(phiD);
+        fprintf(stdout, "Diameter of atom: %f\n", radius[i]*2);
 
+        // fprintf(stdout, "Moved and resized parent\n");
 
         //create child
         double childRadius = pow(((6*childMass)/(density*MY_PI)),(1.0/3.0))*0.5;
@@ -477,6 +492,7 @@ void FixDiaAdapt::pre_exchange()
         coord[1] = oldY - childRadius*sin(thetaD)*sin(phiD);
         coord[2] = oldZ - childRadius*cos(phiD);
         atom->avec->create_atom(mask[i],coord);
+        // fprintf(stdout, "Created atom\n");
         int n = atom->nlocal - 1;
         atom->tag[n] = n+1;
         atom->type[n] = atom->type[i];
@@ -487,13 +503,17 @@ void FixDiaAdapt::pre_exchange()
         atom->v[n][2] = atom->v[i][2];
         rmass[n] = childMass;
         radius[n] = childRadius;
+        // fprintf(stdout, "Set fields\n");
         modify->create_attribute(n);
+        fprintf(stdout, "Diameter of atom: %f\n", radius[n]*2);
 
         atom->natoms++;
-
       }
     }
   }
+
+  fprintf(stdout, "Number of atoms: %i\n", atom->natoms);
+  fprintf(stdout, "pre_exchange called\n");
 }
 
 /* ---------------------------------------------------------------------- */
@@ -598,7 +618,6 @@ void FixDiaAdapt::change_settings()
 
   modify->addstep_compute(update->ntimestep + nevery);
 
-  pre_exchange();
 
   // re-initialize pair styles if any PAIR settings were changed
   // this resets other coeffs that may depend on changed values,
