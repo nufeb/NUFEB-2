@@ -65,7 +65,7 @@ FixDiaAdapt::FixDiaAdapt(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg
 
     if (seed <= 0) error->all(FLERR,"Illegal fix dia-adapt command: seed should be greater than 0");
 
-  preExchangeCalled = false;
+  // preExchangeCalled = false;
 
   // Random number generator, same for all procs
   random = new RanPark(lmp,seed);  
@@ -236,7 +236,7 @@ int FixDiaAdapt::setmask()
   int mask = 0;
   mask |= PRE_EXCHANGE;
   mask |= PRE_FORCE;
-  mask |= END_OF_STEP;
+  // mask |= END_OF_STEP;
   return mask;
 }
 
@@ -312,10 +312,10 @@ int FixDiaAdapt::setmask()
 
 /* ---------------------------------------------------------------------- */
 
-void FixDiaAdapt::end_of_step() {
-	fprintf(stdout, "End called\n");
-	preExchangeCalled = false;
-}
+// void FixDiaAdapt::end_of_step() {
+// 	fprintf(stdout, "End called\n");
+// 	preExchangeCalled = false;
+// }
 
 void FixDiaAdapt::init()
 {
@@ -339,15 +339,15 @@ void FixDiaAdapt::pre_force(int vflag)
  //  fprintf(stdout, "change_settings called\n");
   change_dia();
  //  fprintf(stdout, "before preexchange call\n");
-  if (preExchangeCalled == false) {
- 	pre_exchange();
-  }
+  // if (preExchangeCalled == false) {
+ 	// pre_exchange();
+  // }
 }
 
 
 void FixDiaAdapt::pre_exchange()
 {
-  preExchangeCalled = true;
+  // preExchangeCalled = true;
   double density;
 
   double *radius = atom->radius;

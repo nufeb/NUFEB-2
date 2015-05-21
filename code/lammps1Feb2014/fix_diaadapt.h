@@ -35,7 +35,7 @@ class FixDiaAdapt : public Fix {
   // void setup_pre_force(int);
   void pre_force(int);
   void pre_exchange();
-  void end_of_step();
+  // void end_of_step();
   // void post_run();
   // void setup_pre_force_respa(int,int);
   // void pre_force_respa(int,int,int);
@@ -47,7 +47,7 @@ class FixDiaAdapt : public Fix {
   int ivar;
   double growthFactor;
   int seed;
-  bool preExchangeCalled;
+  // bool preExchangeCalled;
   class RanPark *random;
 
   int me,nprocs;

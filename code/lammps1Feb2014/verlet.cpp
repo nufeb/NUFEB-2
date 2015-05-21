@@ -238,12 +238,17 @@ void Verlet::run(int n)
 
     nflag = neighbor->decide();
 
+    fprintf(stdout, "\n\nNeighbor flag: %i\n\n", nflag);
+
     if (nflag == 0) {
       timer->stamp();
       comm->forward_comm();
       timer->stamp(TIME_COMM);
     } else {
-      if (n_pre_exchange) modify->pre_exchange();
+      if (n_pre_exchange) {
+        fprintf(stdout, "\n\nCall pre_exchange\n\n");
+        modify->pre_exchange();
+      }
       if (triclinic) domain->x2lamda(atom->nlocal);
       domain->pbc();
       if (domain->box_change) {
