@@ -337,7 +337,9 @@ void FixDivide::init()
 
 void FixDivide::pre_exchange()
 {
-  // preExchangeCalled = true;
+
+
+
   double density;
 
   double *radius = atom->radius;
@@ -345,21 +347,71 @@ void FixDivide::pre_exchange()
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
-  int i;
-  double averageMass = 0.0;
-  int numAtoms = 0;
+  int i, j;
+  int nfix = modify->nfix;
+  Fix **fix = modify->fix;
 
- // fprintf(stdout, "reached here?\n");
-  for (i = 0; i < nall; i++) {
-    if (mask[i] & groupbit) {
-      averageMass += rmass[i];
-      numAtoms ++;
-    }
+
+  double averageMass = getAverageMass();
+  int nnew = countNewAtoms(averageMass);
+
+
+
+
+  // ncount = # of my atoms that overlap the insertion region
+  // nprevious = total of ncount across all procs
+
+  int ncount = atom->nlocal;
+
+  int nprevious;
+  MPI_Allreduce(&ncount,&nprevious,1,MPI_INT,MPI_SUM,world);
+
+  // xmine is for my atoms
+  // xnear is for atoms from all procs + atoms to be inserted
+
+  double **xmine,**xnear;
+  memory->create(xmine,ncount,4,"fix_divide:xmine");
+  memory->create(xnear,nprevious+nnew,4,"fix_divide:xnear");
+
+  // setup for allgatherv
+
+  int n = 4*ncount;
+  MPI_Allgather(&n,1,MPI_INT,recvcounts,1,MPI_INT,world);
+
+  displs[0] = 0;
+  for (int iproc = 1; iproc < nprocs; iproc++)
+    displs[iproc] = displs[iproc-1] + recvcounts[iproc-1];
+
+  // load up xmine array
+
+  double **x = atom->x;
+
+  ncount = 0;
+  for (i = 0; i < atom->nlocal; i++)
+  {
+    xmine[ncount][0] = x[i][0];
+    xmine[ncount][1] = x[i][1];
+    xmine[ncount][2] = x[i][2];
+    xmine[ncount][3] = radius[i];
+    ncount++;
   }
 
-  averageMass /= numAtoms;
+  // perform allgatherv to acquire list of nearby particles on all procs
 
- // fprintf(stdout, "reached here 2?\n");
+  double *ptr = NULL;
+  if (ncount) ptr = xmine[0];
+  MPI_Allgatherv(ptr,4*ncount,MPI_DOUBLE,
+                 xnear[0],recvcounts,displs,MPI_DOUBLE,world);
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -408,6 +460,9 @@ void FixDivide::pre_exchange()
         atom->v[n][2] = atom->v[i][2];
         rmass[n] = childMass;
         radius[n] = childRadius;
+
+        for (j = 0; j < nfix; j++)
+          if (fix[j]->create_attribute) fix[j]->set_arrays(n);
         // fprintf(stdout, "Set fields\n");
       //  modify->create_attribute(n);
        // fprintf(stdout, "Diameter of atom: %f\n", radius[n]*2);
@@ -417,8 +472,78 @@ void FixDivide::pre_exchange()
     }
   }
 
+
+
+
+
+
+
+
+
+
+
+  // free local memory
+
+  memory->destroy(xmine);
+  memory->destroy(xnear);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   fprintf(stdout, "pre_exchange called\n");
   next_reneighbor += nevery;
+}
+
+double FixDivide::getAverageMass()
+{
+  int *mask = atom->mask;
+  int nall = atom->nlocal + atom->nghost;
+  double *rmass = atom->rmass;
+  double averageMass = 0.0;
+  int numAtoms = 0;
+  int i;
+
+  for (i = 0; i < nall; i++) {
+    if (mask[i] & groupbit) {
+      averageMass += rmass[i];
+      numAtoms ++;
+    }
+  }
+
+  averageMass /= numAtoms;
+
+  return averageMass;
+}
+
+int FixDivide::countNewAtoms(double averageMass)
+{
+  int *mask = atom->mask;
+  int nall = atom->nlocal + atom->nghost;
+  double *rmass = atom->rmass;
+  int i;
+  int counter = 0;
+
+  for (i = 0; i < nall; i++) {
+    if (mask[i] & groupbit) {
+      if (rmass[i] >= growthFactor*averageMass) {
+        counter++;
+      }
+    }
+  }
+  return counter;
 }
 
 /* ---------------------------------------------------------------------- */

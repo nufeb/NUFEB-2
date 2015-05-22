@@ -59,6 +59,8 @@ class FixDivide : public Fix {
   void find_maxid();
   int overlap(int);
   int outside(int, double, double, double);
+  double getAverageMass();
+  int countNewAtoms(double averageMass);
 
 };
 
