@@ -43,8 +43,6 @@ class FixDivide : public Fix {
 
  private:
 
-  char *var;
-  int ivar;
   double growthFactor;
   int seed;
   // bool preExchangeCalled;

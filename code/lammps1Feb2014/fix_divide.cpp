@@ -52,18 +52,15 @@ using namespace MathConst;
 
 FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
-  if (narg != 7) error->all(FLERR,"Illegal fix diaadapt command: Missing arguments");
+  if (narg != 6) error->all(FLERR,"Illegal fix divide command: Missing arguments");
 
   nevery = force->inumeric(FLERR,arg[3]);
-  if (nevery < 0) error->all(FLERR,"Illegal fix diaadapt command: calling steps should be positive integer");
+  if (nevery < 0) error->all(FLERR,"Illegal fix divide command: calling steps should be positive integer");
 
-  int n = strlen(&arg[4][2]) + 1;
-  var = new char[n];
-  strcpy(var,&arg[4][2]);
-  growthFactor = atof(arg[5]);
-  seed = atoi(arg[6]);
+  growthFactor = atof(arg[4]);
+  seed = atoi(arg[5]);
 
-    if (seed <= 0) error->all(FLERR,"Illegal fix dia-adapt command: seed should be greater than 0");
+    if (seed <= 0) error->all(FLERR,"Illegal fix divide command: seed should be greater than 0");
 
   // preExchangeCalled = false;
 
@@ -206,7 +203,6 @@ FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 
 FixDivide::~FixDivide()
 {
-  delete [] var;
   delete random;
   delete [] recvcounts;
   delete [] displs;
@@ -321,13 +317,7 @@ void FixDivide::init()
 {
      // fprintf(stdout, "called once?\n");
   if (!atom->radius_flag)
-    error->all(FLERR,"Fix diaadapt requires atom attribute diameter");
-
-  ivar = input->variable->find(var);
-  if (ivar < 0)
-    error->all(FLERR,"Variable name for fix adapt does not exist");
-  if (!input->variable->equalstyle(ivar))
-    error->all(FLERR,"Variable for fix adapt is invalid style");
+    error->all(FLERR,"Fix divide requires atom attribute diameter");
 
 }
 
