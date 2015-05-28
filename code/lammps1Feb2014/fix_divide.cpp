@@ -66,6 +66,8 @@ FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 
   // Random number generator, same for all procs
   random = new RanPark(lmp,seed);  
+
+  find_maxid();
    
 
   // All gather arrays: fix pour
@@ -355,6 +357,8 @@ void FixDivide::pre_exchange()
   double averageMass = getAverageMass();
   int nnew = countNewAtoms(averageMass);
 
+  find_maxid();
+
 
 
 
@@ -372,6 +376,7 @@ void FixDivide::pre_exchange()
   double **xmine,**xnear;
   memory->create(xmine,ncount,4,"fix_divide:xmine");
   memory->create(xnear,nprevious+nnew,4,"fix_divide:xnear");
+  int nnear = nprevious;
 
   // setup for allgatherv
 
@@ -415,11 +420,12 @@ void FixDivide::pre_exchange()
 
 
 
-  for (i = 0; i < nall; i++) {
+
+  for (i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
       density = rmass[i] / (4.0*MY_PI/3.0 *
                       radius[i]*radius[i]*radius[i]);
-      if (rmass[i] >= growthFactor*averageMass) {
+      if (rmass[i] >= growthFactor*averageMass && rmass[i] >= 1e-10) {
         double splitF = 0.3 + (random->uniform()*0.4);
         double parentMass = rmass[i] * splitF;
         double childMass = rmass[i] - parentMass;
@@ -461,8 +467,9 @@ void FixDivide::pre_exchange()
         rmass[n] = childMass;
         radius[n] = childRadius;
 
-        for (j = 0; j < nfix; j++)
-          if (fix[j]->create_attribute) fix[j]->set_arrays(n);
+        // for (j = 0; j < nfix; j++)
+        //   if (fix[j]->create_attribute) fix[j]->set_arrays(n);
+
         // fprintf(stdout, "Set fields\n");
       //  modify->create_attribute(n);
        // fprintf(stdout, "Diameter of atom: %f\n", radius[n]*2);
@@ -472,6 +479,8 @@ void FixDivide::pre_exchange()
     }
   }
 
+  fprintf(stdout, "Got Here\n");
+  fprintf(stdout, "natoms: %i\n", atom->natoms);
 
 
 
@@ -480,12 +489,17 @@ void FixDivide::pre_exchange()
 
 
 
+    if (atom->map_style) {
+      atom->nghost = 0;
+      atom->map_init();
+      atom->map_set();
+    }
 
 
   // free local memory
 
-  memory->destroy(xmine);
-  memory->destroy(xnear);
+  // memory->destroy(xmine);
+  // memory->destroy(xnear);
 
 
 
@@ -503,7 +517,6 @@ void FixDivide::pre_exchange()
 
 
 
-  fprintf(stdout, "pre_exchange called\n");
   next_reneighbor += nevery;
 }
 
@@ -538,7 +551,7 @@ int FixDivide::countNewAtoms(double averageMass)
 
   for (i = 0; i < nall; i++) {
     if (mask[i] & groupbit) {
-      if (rmass[i] >= growthFactor*averageMass) {
+      if (rmass[i] >= growthFactor*averageMass && rmass[i] >= 1e-10) {
         counter++;
       }
     }
@@ -570,6 +583,7 @@ int FixDivide::countNewAtoms(double averageMass)
 void FixDivide::find_maxid()
 {
   tagint *tag = atom->tag;
+  tagint *molecule = atom->molecule;
   int nlocal = atom->nlocal;
 
   tagint max = 0;
