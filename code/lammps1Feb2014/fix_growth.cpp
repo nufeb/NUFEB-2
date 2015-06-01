@@ -74,9 +74,9 @@ void FixGrowth::init()
 
   ivar = input->variable->find(var);
   if (ivar < 0)
-    error->all(FLERR,"Variable name for fix adapt does not exist");
+    error->all(FLERR,"Variable name for fix growth does not exist");
   if (!input->variable->equalstyle(ivar))
-    error->all(FLERR,"Variable for fix adapt is invalid style");
+    error->all(FLERR,"Variable for fix growth is invalid style");
 }
 
 /* ---------------------------------------------------------------------- */

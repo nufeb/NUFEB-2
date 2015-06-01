@@ -464,6 +464,9 @@ void FixDivide::pre_exchange()
         atom->v[n][0] = atom->v[i][0];
         atom->v[n][1] = atom->v[i][1];
         atom->v[n][2] = atom->v[i][2];
+        atom->omega[n][0] = atom->omega[i][0];
+        atom->omega[n][1] = atom->omega[i][1];
+        atom->omega[n][2] = atom->omega[i][2];
         rmass[n] = childMass;
         radius[n] = childRadius;
 
