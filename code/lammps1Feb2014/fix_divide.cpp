@@ -341,6 +341,9 @@ void FixDivide::pre_exchange()
 {
 
 
+  if (next_reneighbor != update->ntimestep) return;
+
+
 
   double density;
 
@@ -481,9 +484,6 @@ void FixDivide::pre_exchange()
       }
     }
   }
-
-  fprintf(stdout, "Got Here\n");
-  fprintf(stdout, "natoms: %i\n", atom->natoms);
 
 
 
