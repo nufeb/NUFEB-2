@@ -37,7 +37,7 @@ ncol = varargin{3}; %number of columns
 
 i=1;
   % Put atom type yourself accodring to situations 
-Diam = 1;
+Diam = 1e-4;
 Dens = 1100;
 nm = 4;  % Type of species. 
 sub = 0.04;
@@ -176,7 +176,7 @@ varargout{1}.atom_data = atom_data;
 % save('myfile.txt', 'atom_data_lammps', '-ASCII')
 %fprintf(file_1,'Example formatted output \n\n')
 
-fd = fopen('IC350norm.in', 'wt'); % Open for writing
+fd = fopen('IC350nut.in', 'wt'); % Open for writing
 fprintf(fd,'  Granular Flow Simulation \n\n');
 fprintf(fd,'       ');
 fprintf(fd,'%d', Num(1,1));
