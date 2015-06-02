@@ -29,7 +29,7 @@
 using namespace LAMMPS_NS;
 using namespace MathConst;
 
-#define DELTA 10000
+#define DELTA 200000
 
 /* ---------------------------------------------------------------------- */
 
