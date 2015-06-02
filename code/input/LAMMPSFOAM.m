@@ -37,9 +37,14 @@ ncol = varargin{3}; %number of columns
 
 i=1;
   % Put atom type yourself accodring to situations 
-Diam = 0.0001;
+Diam = 1;
 Dens = 1100;
-nm = 4;
+nm = 4;  % Type of species. 
+sub = 0.04;
+o2 = 0.005;
+no2 = 0.001;
+no3 = 0.001;
+nh4 = 0.04;
 
 t=0;
 done = 0;
@@ -132,7 +137,7 @@ end
   
   sz =size(atom_data);
   sz(1)
-atom_data_lammps  = atom_data;
+%atom_data_lammps  = atom_data;
 
 atom_data_lammps(:,1) = (1:sz(1))';
 atom_data_lammps(:,2) = randi([1 nm],1,sz(1))';
@@ -142,6 +147,11 @@ atom_data_lammps(:,4) = Dens*ones(sz(1),1);
 atom_data_lammps(:,ncol-2) = Diam*atom_data(:,ncol-1);
 atom_data_lammps(:,ncol-1) = Diam*atom_data(:,ncol); 
 atom_data_lammps(:,ncol) = Diam*atom_data(:,ncol-2);
+atom_data_lammps(:,ncol+1) = sub*1e-4*randi([0 1e+4],1,sz(1))';
+atom_data_lammps(:,ncol+2) = o2*1e-4*randi([0 1e+4],1,sz(1))';
+atom_data_lammps(:,ncol+3) = nh4*1e-4*randi([0 1e+4],1,sz(1))';
+atom_data_lammps(:,ncol+4) = no2*1e-4*randi([0 1e+4],1,sz(1))';
+atom_data_lammps(:,ncol+5) = no3*1e-4*randi([0 1e+4],1,sz(1))';
 
 Numofatomtype = max(atom_data_lammps(:,2))
 
@@ -166,7 +176,7 @@ varargout{1}.atom_data = atom_data;
 % save('myfile.txt', 'atom_data_lammps', '-ASCII')
 %fprintf(file_1,'Example formatted output \n\n')
 
-fd = fopen('IC350.in', 'wt'); % Open for writing
+fd = fopen('IC350norm.in', 'wt'); % Open for writing
 fprintf(fd,'  Granular Flow Simulation \n\n');
 fprintf(fd,'       ');
 fprintf(fd,'%d', Num(1,1));
@@ -203,7 +213,7 @@ fprintf(fd,' Atoms\n\n');
 
 for i=1:Natoms
  fprintf(fd,'     ');
- fprintf(fd, '%d   %d %d  %d   %d   %d   %d\n', atom_data_lammps(i,:));
+ fprintf(fd, '%d %d %d  %d %d %d %d %d %d %d %d %d \n', atom_data_lammps(i,:));
 end
 
 % for i=10:99
