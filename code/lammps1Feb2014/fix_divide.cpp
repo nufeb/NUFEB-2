@@ -339,11 +339,7 @@ void FixDivide::init()
 
 void FixDivide::pre_exchange()
 {
-
-
   if (next_reneighbor != update->ntimestep) return;
-
-
 
   double density;
 
@@ -428,7 +424,7 @@ void FixDivide::pre_exchange()
     if (mask[i] & groupbit) {
       density = rmass[i] / (4.0*MY_PI/3.0 *
                       radius[i]*radius[i]*radius[i]);
-      if (rmass[i] >= growthFactor*averageMass && rmass[i] >= 1e-10) {
+      if (rmass[i] >= growthFactor*averageMass && rmass[i] >= 1e-19) {
         double splitF = 0.3 + (random->uniform()*0.4);
         double parentMass = rmass[i] * splitF;
         double childMass = rmass[i] - parentMass;
