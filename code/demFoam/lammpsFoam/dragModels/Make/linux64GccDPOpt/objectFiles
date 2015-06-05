@@ -1,0 +1,12 @@
+OBJECTS = \
+$(OBJECTS_DIR)/dragModel.o\
+$(OBJECTS_DIR)/newDragModel.o\
+$(OBJECTS_DIR)/polyDragModel.o\
+$(OBJECTS_DIR)/newPolyDragModel.o\
+$(OBJECTS_DIR)/SyamlalOBrien.o\
+$(OBJECTS_DIR)/ErgunWenYu.o\
+$(OBJECTS_DIR)/Stokes.o\
+$(OBJECTS_DIR)/DiFelice.o\
+$(OBJECTS_DIR)/Beetstra2007.o\
+$(OBJECTS_DIR)/SyamlalOBrienCorrectionFactor.o\
+$(OBJECTS_DIR)/polyVBK.o

@@ -1,0 +1,12 @@
+DEPENDENCIES = \
+dragModel/dragModel.dep\
+dragModel/newDragModel.dep\
+polyDragModel/polyDragModel.dep\
+polyDragModel/newPolyDragModel.dep\
+SyamlalOBrien/SyamlalOBrien.dep\
+ErgunWenYu/ErgunWenYu.dep\
+Stokes/Stokes.dep\
+DiFelice/DiFelice.dep\
+Beetstra2007/Beetstra2007.dep\
+SyamlalOBrienCorrectionFactor/SyamlalOBrienCorrectionFactor.dep\
+polyVBK/polyVBK.dep

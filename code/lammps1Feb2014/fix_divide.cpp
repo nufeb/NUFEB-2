@@ -339,8 +339,6 @@ void FixDivide::init()
 
 void FixDivide::pre_exchange()
 {
-
-
   if (next_reneighbor != update->ntimestep) return;
 
   double density;
@@ -425,10 +423,34 @@ void FixDivide::pre_exchange()
     if (mask[i] & groupbit) {
       density = rmass[i] / (4.0*MY_PI/3.0 *
                       radius[i]*radius[i]*radius[i]);
-      if (rmass[i] >= growthFactor*averageMass && rmass[i] >= 1e-10) {
+      if (rmass[i] >= growthFactor*averageMass && rmass[i] >= 1e-19) {
         double splitF = 0.3 + (random->uniform()*0.4);
         double parentMass = rmass[i] * splitF;
         double childMass = rmass[i] - parentMass;
+
+        double parentSub = atom->sub[i] * splitF;
+        double childSub =  atom->sub[i] - parentSub;
+
+        double parentO2 = atom->o2[i] * splitF;
+        double childO2 =  atom->o2[i] - parentO2;
+
+        double parentNH4 = atom->nh4[i] * splitF;
+        double childNH4 =  atom->nh4[i] - parentNH4;
+
+        double parentNO2 = atom->no2[i] * splitF;
+        double childNO2 =  atom->no2[i] - parentNO2;
+
+        double parentNO3 = atom->no3[i] * splitF;
+        double childNO3 =  atom->no3[i] - parentNO3;
+
+        double parentfx = atom->f[i][0] * splitF;
+        double childfx =  atom->f[i][0] - parentfx;
+
+        double parentfy = atom->f[i][1] * splitF;
+        double childfy =  atom->f[i][1] - parentfy;
+
+        double parentfz = atom->f[i][2] * splitF;
+        double childfz =  atom->f[i][2] - parentfz;
 
         double thetaD = random->uniform() * 2*MY_PI;
         double phiD = random->uniform() * (MY_PI);
@@ -437,9 +459,19 @@ void FixDivide::pre_exchange()
         double oldY = atom->x[i][1];
         double oldZ = atom->x[i][2];
 
+        //double separation = radius[i] * 0.005;
+
 
         //Update parent
         rmass[i] = parentMass;
+        atom->sub[i] = parentSub;
+        atom->o2[i] = parentO2;
+        atom->nh4[i] = parentNH4;
+        atom->no2[i] = parentNO2;
+        atom->no3[i] = parentNO3;
+        atom->f[i][0] = parentfx;
+        atom->f[i][1] = parentfy;
+        atom->f[i][2] = parentfz;
         radius[i] = pow(((6*rmass[i])/(density*MY_PI)),(1.0/3.0))*0.5;
         atom->x[i][0] = oldX + radius[i]*cos(thetaD)*sin(phiD);
         atom->x[i][1] = oldY + radius[i]*sin(thetaD)*sin(phiD);
@@ -464,10 +496,24 @@ void FixDivide::pre_exchange()
         atom->v[n][0] = atom->v[i][0];
         atom->v[n][1] = atom->v[i][1];
         atom->v[n][2] = atom->v[i][2];
+        atom->f[n][0] = atom->f[i][0];
+        atom->f[n][1] = atom->f[i][1];
+        atom->f[n][2] = atom->f[i][2];
         atom->omega[n][0] = atom->omega[i][0];
         atom->omega[n][1] = atom->omega[i][1];
         atom->omega[n][2] = atom->omega[i][2];
         rmass[n] = childMass;
+        atom->sub[n] = childSub;
+        atom->o2[n] = childO2;
+        atom->nh4[n] = childNH4;
+        atom->no2[n] = childNO2;
+        atom->no3[n] = childNO3;
+        atom->f[n][0] = childfx;
+        atom->f[n][1] = childfy;
+        atom->f[n][2] = childfz;
+        atom->torque[n][0] = atom->torque[i][0];
+        atom->torque[n][1] = atom->torque[i][1];
+        atom->torque[n][2] = atom->torque[i][2];
         radius[n] = childRadius;
 
         // for (j = 0; j < nfix; j++)

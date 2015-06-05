@@ -42,6 +42,7 @@ enum{ID,MOL,TYPE,ELEMENT,MASS,
      Q,MUX,MUY,MUZ,MU,RADIUS,DIAMETER,
      OMEGAX,OMEGAY,OMEGAZ,ANGMOMX,ANGMOMY,ANGMOMZ,
      TQX,TQY,TQZ,SPIN,ERADIUS,ERVEL,ERFORCE,
+     SUB,O2,NH4,NO2,NO3,
      COMPUTE,FIX,VARIABLE};
 enum{LT,LE,GT,GE,EQ,NEQ};
 enum{INT,DOUBLE,STRING,BIGINT};    // same as in DumpCFG
@@ -1190,6 +1191,21 @@ int DumpCustom::parse_fields(int narg, char **arg)
         error->all(FLERR,"Dumping an atom quantity that isn't allocated");
       pack_choice[i] = &DumpCustom::pack_erforce;
       vtype[i] = DOUBLE;
+    } else if (strcmp(arg[iarg],"sub") == 0) {
+      pack_choice[i] = &DumpCustom::pack_sub;
+      vtype[i] = DOUBLE;
+    } else if (strcmp(arg[iarg],"o2") == 0) {
+      pack_choice[i] = &DumpCustom::pack_o2;
+      vtype[i] = DOUBLE;
+    } else if (strcmp(arg[iarg],"nh4") == 0) {
+      pack_choice[i] = &DumpCustom::pack_nh4;
+      vtype[i] = DOUBLE;
+    } else if (strcmp(arg[iarg],"no2") == 0) {
+      pack_choice[i] = &DumpCustom::pack_no2;
+      vtype[i] = DOUBLE;
+    } else if (strcmp(arg[iarg],"no3") == 0) {
+      pack_choice[i] = &DumpCustom::pack_no3;
+      vtype[i] = DOUBLE;
 
     // compute value = c_ID
     // if no trailing [], then arg is set to 0, else arg is int between []
@@ -1509,6 +1525,12 @@ int DumpCustom::modify_param(int narg, char **arg)
     else if (strcmp(arg[1],"eradius") == 0) thresh_array[nthresh] = ERADIUS;
     else if (strcmp(arg[1],"ervel") == 0) thresh_array[nthresh] = ERVEL;
     else if (strcmp(arg[1],"erforce") == 0) thresh_array[nthresh] = ERFORCE;
+
+    else if (strcmp(arg[1],"sub") == 0) thresh_array[nthresh] = SUB;
+    else if (strcmp(arg[1],"o2") == 0) thresh_array[nthresh] = O2;
+    else if (strcmp(arg[1],"nh4") == 0) thresh_array[nthresh] = NH4;
+    else if (strcmp(arg[1],"no2") == 0) thresh_array[nthresh] = NO2;
+    else if (strcmp(arg[1],"no3") == 0) thresh_array[nthresh] = NO3;
 
     // compute value = c_ID
     // if no trailing [], then arg is set to 0, else arg is between []
@@ -2462,6 +2484,66 @@ void DumpCustom::pack_erforce(int n)
 
   for (int i = 0; i < nchoose; i++) {
     buf[n] = erforce[clist[i]];
+    n += size_one;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpCustom::pack_sub(int n)
+{
+  double *sub = atom->sub;
+
+  for (int i = 0; i < nchoose; i++) {
+    buf[n] = sub[clist[i]];
+    n += size_one;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpCustom::pack_o2(int n)
+{
+  double *o2 = atom->o2;
+
+  for (int i = 0; i < nchoose; i++) {
+    buf[n] = o2[clist[i]];
+    n += size_one;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpCustom::pack_nh4(int n)
+{
+  double *nh4 = atom->nh4;
+
+  for (int i = 0; i < nchoose; i++) {
+    buf[n] = nh4[clist[i]];
+    n += size_one;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpCustom::pack_no2(int n)
+{
+  double *n02 = atom->no2;
+
+  for (int i = 0; i < nchoose; i++) {
+    buf[n] = n02[clist[i]];
+    n += size_one;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpCustom::pack_no3(int n)
+{
+  double *n03 = atom->no3;
+
+  for (int i = 0; i < nchoose; i++) {
+    buf[n] = n03[clist[i]];
     n += size_one;
   }
 }
