@@ -343,10 +343,7 @@ void FixDivide::pre_exchange()
 
   if (next_reneighbor != update->ntimestep) return;
 
-
-
   double density;
-
   double *radius = atom->radius;
   double *rmass = atom->rmass;
   int *mask = atom->mask;
