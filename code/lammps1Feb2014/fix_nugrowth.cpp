@@ -136,6 +136,7 @@ void FixNuGrowth::change_dia()
   double *no2 = atom->no2;
   double *no3 = atom->no3;
   int *mask = atom->mask;
+  int *type = atom->type;
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
   int i;
@@ -146,16 +147,16 @@ void FixNuGrowth::change_dia()
       double gAOB = 0;
       double gNOB = 0;
       double gEPS = 0;
-      if (mask[i] == 1) {
+      if (type[i] == 1) {
         gHET = 1;
       }
-      if (mask[i] == 2) {
+      if (type[i] == 2) {
         gAOB = 1;
       }
-      if (mask[i] == 3) {
+      if (type[i] == 3) {
         gNOB = 1;
       }
-      if (mask[i] == 4) {
+      if (type[i] == 4) {
         gEPS = 1;
       }
 

@@ -424,13 +424,13 @@ void FixDivide::pre_exchange()
       density = rmass[i] / (4.0*MY_PI/3.0 *
                       radius[i]*radius[i]*radius[i]);
       if (mask[i] == 1 || mask[i] == 2 || mask[i] == 3) {
-        averageMass = 1e-13;
+        averageMass = 1e-16;
       }
       if (mask[i] == 4) {
-        averageMass = 2.6e-14;
+        averageMass = 2.6e-17;
       }
       if (mask[i] == 5) {
-        averageMass = 1.1e-13;
+        averageMass = 1.1e-16;
       }
       if (rmass[i] >= growthFactor*averageMass) {
         double splitF = 0.3 + (random->uniform()*0.4);
@@ -538,7 +538,7 @@ void FixDivide::pre_exchange()
     }
   }
 
-  fprintf(stdout, "Divided: %i\n", divided);
+  //fprintf(stdout, "Divided: %i\n", divided);
 
 
 

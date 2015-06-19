@@ -40,22 +40,22 @@ using namespace MathConst;
 
 FixDeath::FixDeath(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
-  if (narg != 9) error->all(FLERR,"Illegal fix death command");
+  if (narg != 7) error->all(FLERR,"Illegal fix death command");
 
   nevery = force->inumeric(FLERR,arg[3]);
   if (nevery < 0) error->all(FLERR,"Illegal fix death command");
 
-  var = new char*[4];
-  ivar = new int[4];
+  var = new char*[2];
+  ivar = new int[2];
 
   int i;
-  for (i = 0; i < 4; i++) {
+  for (i = 0; i < 2; i++) {
     int n = strlen(&arg[4+i][2]) + 1;
     var[i] = new char[n];
     strcpy(var[i],&arg[4+i][2]);
   }
 
-  seed = atoi(arg[8]);
+  seed = atoi(arg[6]);
 
   if (seed <= 0) error->all(FLERR,"Illegal fix death command: seed should be greater than 0");
 
@@ -69,7 +69,7 @@ FixDeath::~FixDeath()
 {
   delete random;
   int i;
-  for (i = 0; i < 4; i++) {
+  for (i = 0; i < 2; i++) {
     delete [] var[i];
   }
   delete [] var;
@@ -93,7 +93,7 @@ void FixDeath::init()
     error->all(FLERR,"Fix death requires atom attribute diameter");
 
   int i;
-  for (i = 0; i < 4; i++) {
+  for (i = 0; i < 2; i++) {
     ivar[i] = input->variable->find(var[i]);
     if (ivar[i] < 0)
       error->all(FLERR,"Variable name for fix death does not exist");
@@ -118,40 +118,28 @@ void FixDeath::death()
 
   modify->clearstep_compute();
 
-  double R6 = input->variable->compute_equal(ivar[0]);
-  double R7 = input->variable->compute_equal(ivar[1]);
-  double R8 = input->variable->compute_equal(ivar[2]);
-  double factor = input->variable->compute_equal(ivar[3]);
+  double decay = input->variable->compute_equal(ivar[0]);
+  double factor = input->variable->compute_equal(ivar[1]);
 
   double virtualMass = 0.0;
-  double averageMass = 1e-13;
+  double averageMass = 1e-16;
 
   double *rmass = atom->rmass;
+  int *type = atom->type;
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
   int i;
 
   for (i = 0; i < nall; i++) {
+  //  fprintf(stdout, "Id, Type, Mask: %i, %i, %i\n", i, type[i], mask[i]);
     if (mask[i] & groupbit) {
-      double gHET = 0;
-      double gAOB = 0;
-      double gNOB = 0;
-      if (mask[i] == 1) {
-        gHET = 1;
-      }
-      if (mask[i] == 2) {
-        gAOB = 1;
-      }
-      if (mask[i] == 3) {
-        gNOB = 1;
-      }
-      virtualMass += ((gHET * R6) + (gAOB * R7) + (gNOB * R8)) * rmass[i];
-  
-
+      virtualMass += (decay * rmass[i]);
     }
 
   }
+
+  // fprintf(stdout, "Virtual Mass: %e\n", virtualMass);
 
   int kill = (random->uniform() * (nall - 1));
 
@@ -159,24 +147,15 @@ void FixDeath::death()
 
   double VM = virtualMass/averageMass;
 
-  fprintf(stdout, "Virtual Mass ratio: %f\n", VM);
+  //fprintf(stdout, "Virtual Mass ratio: %f\n", VM);
 
-  while (virtualMass > factor * averageMass) {
-  	if (mask[kill] == groupbit) {
-  		double gHET = 0;
-        double gAOB = 0;
-        double gNOB = 0;
-        if (mask[kill] == 1) {
-          gHET = 1;
-        }
-        if (mask[kill] == 2) {
-          gAOB = 1;
-        }
-        if (mask[kill] == 3) {
-          gNOB = 1;
-        }
-  		mask[kill] = 5;
-  		virtualMass -= ((gHET * R6) + (gAOB * R7) + (gNOB * R8)) * rmass[kill];
+  while (virtualMass > (factor * averageMass)) {
+    //fprintf(stdout, "Virtual Mass ratio: %f\n", VM);
+  	if (mask[kill] & groupbit) {
+      //fprintf(stdout, "Killed\n");
+  		type[kill] = 5;
+      mask[kill] = 33;
+  		virtualMass -= (decay * rmass[kill]);
   		kill = (random->uniform() * (nall - 1));
   		killed ++;
   	}
@@ -188,7 +167,7 @@ void FixDeath::death()
   	}
   }
 
-  fprintf(stdout, "Killed: %i\n", killed);
+  //fprintf(stdout, "Killed: %i\n", killed);
 
 
   modify->addstep_compute(update->ntimestep + nevery);
