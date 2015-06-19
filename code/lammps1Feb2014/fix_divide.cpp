@@ -352,7 +352,7 @@ void FixDivide::pre_exchange()
   Fix **fix = modify->fix;
 
 
-  double averageMass = getAverageMass();
+  double averageMass;// = getAverageMass();
   int nnew = countNewAtoms(averageMass);
 
   find_maxid();
@@ -416,14 +416,23 @@ void FixDivide::pre_exchange()
 
 
 
-
+  int divided = 0;
 
 
   for (i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
       density = rmass[i] / (4.0*MY_PI/3.0 *
                       radius[i]*radius[i]*radius[i]);
-      if (rmass[i] >= growthFactor*averageMass && rmass[i] >= 1e-19) {
+      if (mask[i] == 1 || mask[i] == 2 || mask[i] == 3) {
+        averageMass = 1e-13;
+      }
+      if (mask[i] == 4) {
+        averageMass = 2.6e-14;
+      }
+      if (mask[i] == 5) {
+        averageMass = 1.1e-13;
+      }
+      if (rmass[i] >= growthFactor*averageMass) {
         double splitF = 0.3 + (random->uniform()*0.4);
         double parentMass = rmass[i] * splitF;
         double childMass = rmass[i] - parentMass;
@@ -524,9 +533,12 @@ void FixDivide::pre_exchange()
        // fprintf(stdout, "Diameter of atom: %f\n", radius[n]*2);
 
         atom->natoms++;
+        divided ++;
       }
     }
   }
+
+  fprintf(stdout, "Divided: %i\n", divided);
 
 
 
@@ -566,26 +578,26 @@ void FixDivide::pre_exchange()
   next_reneighbor += nevery;
 }
 
-double FixDivide::getAverageMass()
-{
-  int *mask = atom->mask;
-  int nall = atom->nlocal + atom->nghost;
-  double *rmass = atom->rmass;
-  double averageMass = 0.0;
-  int numAtoms = 0;
-  int i;
+// double FixDivide::getAverageMass()
+// {
+//   int *mask = atom->mask;
+//   int nall = atom->nlocal + atom->nghost;
+//   double *rmass = atom->rmass;
+//   double averageMass = 0.0;
+//   int numAtoms = 0;
+//   int i;
 
-  for (i = 0; i < nall; i++) {
-    if (mask[i] & groupbit) {
-      averageMass += rmass[i];
-      numAtoms ++;
-    }
-  }
+//   for (i = 0; i < nall; i++) {
+//     if (mask[i] & groupbit) {
+//       averageMass += rmass[i];
+//       numAtoms ++;
+//     }
+//   }
 
-  averageMass /= numAtoms;
+//   averageMass /= numAtoms;
 
-  return averageMass;
-}
+//   return averageMass;
+// }
 
 int FixDivide::countNewAtoms(double averageMass)
 {
