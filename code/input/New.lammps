@@ -1,13 +1,8 @@
 
 atom_style	bio
 #atom_style	sphere
-<<<<<<< HEAD
-atom_modify map array
-#atom_modify map array sort 1 1e-4
-=======
 #atom_modify map array
 atom_modify map array sort 1 1e-5
->>>>>>> d3700312ec05d20e486366dccf8a80a85b4c4b28
 boundary	pp pp pp
 newton		off
 communicate     single vel yes
@@ -17,11 +12,7 @@ units si
 read_data 	IC5nut.in
 #read_data 	IC350_2.in
 
-<<<<<<< HEAD
-neighbor       1e-3 bin
-=======
 neighbor       1e-5 bin
->>>>>>> d3700312ec05d20e486366dccf8a80a85b4c4b28
 #neigh_modify delay 0 every 1 check yes page 500000 one 50000
 neigh_modify   delay 0
 
@@ -29,13 +20,8 @@ neigh_modify   delay 0
 group ch1 type 1
 
 #fix		garv all gravity 0.09 spherical 0.0 -180.0
-<<<<<<< HEAD
 pair_style      gran/hooke/history 2000.0 NULL 50.0 NULL 0.5 0
 pair_coeff      * *
-=======
-#pair_style      gran/hooke/history 2000.0 NULL 50.0 NULL 0.5 0
-#pair_coeff      * *
->>>>>>> d3700312ec05d20e486366dccf8a80a85b4c4b28
 
 #Defining affinity variables: list from Jaya 
 variable KsHET equal 0.01
@@ -62,31 +48,24 @@ variable bAOB equal 0.00000127314
 variable bNOB equal 0.00000127314
 variable bEPS equal 0.00000196759
 
-#variable rate1 equal 0.001
-<<<<<<< HEAD
-fix g1 all nugrowth 10 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bHET v_bAOB v_bNOB v_bEPS
-fix d1 all divide 10 0.5 1952
+variable fact equal 2.0
 
-timestep	1e-3
-fix		1 all nve/sphere  
-dump		id all custom 10 snapshot2.bubblemd id type diameter x y z vx vy vz
-=======
+#variable rate1 equal 0.001
 fix g1 all nugrowth 1 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bHET v_bAOB v_bNOB v_bEPS
+
+
+fix dt1 all death 1 v_bHET v_bAOB v_bNOB v_fact
+
 fix d1 all divide 100 0.5 1952
 
 timestep	1e-6
 fix		1 all nve/sphere  
 dump		id all custom 10 snapshot2.bubblemd id type diameter x y z vx vy vz sub o2 nh4 no2 no3
->>>>>>> d3700312ec05d20e486366dccf8a80a85b4c4b28
 #dump		id all custom 1 snapshot2.bubblemd id type diameter x y z fx fy fz
 
 thermo_style    custom step atoms ke vol
  
 thermo		1
-<<<<<<< HEAD
-thermo_modify	lost error
-=======
 thermo_modify	lost ignore
->>>>>>> d3700312ec05d20e486366dccf8a80a85b4c4b28
 
 run 5000
