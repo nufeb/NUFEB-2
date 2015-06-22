@@ -437,20 +437,20 @@ void FixDivide::pre_exchange()
         double parentMass = rmass[i] * splitF;
         double childMass = rmass[i] - parentMass;
 
-        double parentSub = atom->sub[i] * splitF;
-        double childSub =  atom->sub[i] - parentSub;
+        double parentSub = atom->sub[i];
+        double childSub =  atom->sub[i];
 
-        double parentO2 = atom->o2[i] * splitF;
-        double childO2 =  atom->o2[i] - parentO2;
+        double parentO2 = atom->o2[i];
+        double childO2 =  atom->o2[i];
 
-        double parentNH4 = atom->nh4[i] * splitF;
-        double childNH4 =  atom->nh4[i] - parentNH4;
+        double parentNH4 = atom->nh4[i];
+        double childNH4 =  atom->nh4[i];
 
-        double parentNO2 = atom->no2[i] * splitF;
-        double childNO2 =  atom->no2[i] - parentNO2;
+        double parentNO2 = atom->no2[i];
+        double childNO2 =  atom->no2[i];
 
-        double parentNO3 = atom->no3[i] * splitF;
-        double childNO3 =  atom->no3[i] - parentNO3;
+        double parentNO3 = atom->no3[i];
+        double childNO3 =  atom->no3[i];
 
         double parentfx = atom->f[i][0] * splitF;
         double childfx =  atom->f[i][0] - parentfx;
