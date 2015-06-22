@@ -53,6 +53,11 @@ void AtomVecBio::init()
       comm_x_only = 0;
       size_forward = 5;
     }
+
+  virtualMass = memory->grow(atom->virtualMass,4,"atom:virtualMass");
+  for (int i = 0; i < 4; i++) {
+    virtualMass[i] = 0;
+  }
 }
 
 void AtomVecBio::grow(int n)
@@ -63,6 +68,7 @@ void AtomVecBio::grow(int n)
   nh4 = memory->grow(atom->nh4,nmax,"atom:nh4");
   no2 = memory->grow(atom->no2,nmax,"atom:no2");
   no3 = memory->grow(atom->no3,nmax,"atom:no3");
+  outerRadius = memory->grow(atom->outerRadius,nmax,"atom:outerRadius");
 }
 
 void AtomVecBio::data_atom(double *coord, imageint imagetmp, char **values)

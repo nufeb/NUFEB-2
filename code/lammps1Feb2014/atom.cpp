@@ -251,6 +251,16 @@ Atom::~Atom()
   memory->destroy(improper_atom3);
   memory->destroy(improper_atom4);
 
+  memory->destroy(sub);
+  memory->destroy(o2);
+  memory->destroy(nh4);
+  memory->destroy(no2);
+  memory->destroy(no3);
+
+  memory->destroy(virtualMass);
+
+  memory->destroy(outerRadius);
+
   // delete user-defined molecules
 
   for (int i = 0; i < nmolecule; i++) delete molecules[i];

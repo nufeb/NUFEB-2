@@ -56,6 +56,7 @@ class Atom : protected Pointers {
   double *q,**mu;
   double **omega,**angmom,**torque;
   double *radius,*rmass,*vfrac,*s0;
+  double *outerRadius;
   double **x0;
   int *ellipsoid,*line,*tri,*body;
   int *spin;
@@ -68,6 +69,8 @@ class Atom : protected Pointers {
   double *cv;
 
   double *sub, *o2, *nh4, *no2, *no3;
+
+  double *virtualMass;
 
   int **nspecial;               // 0,1,2 = cummulative # of 1-2,1-3,1-4 neighs
   tagint **special;             // IDs of 1-2,1-3,1-4 neighs of each atom

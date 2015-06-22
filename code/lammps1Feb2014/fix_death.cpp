@@ -121,7 +121,6 @@ void FixDeath::death()
   double decay = input->variable->compute_equal(ivar[0]);
   double factor = input->variable->compute_equal(ivar[1]);
 
-  double virtualMass = 0.0;
   double averageMass = 1e-16;
 
   double *rmass = atom->rmass;
@@ -131,8 +130,12 @@ void FixDeath::death()
   int nall = nlocal + atom->nghost;
   int i;
 
+  int typeVal = log2(groupbit);
+
+  double virtualMass = atom->virtualMass[typeVal];
+
   for (i = 0; i < nall; i++) {
-  //  fprintf(stdout, "Id, Type, Mask: %i, %i, %i\n", i, type[i], mask[i]);
+    // fprintf(stdout, "Id, Type, Mask: %i, %i, %i\n", i, type[i], mask[i]);
     if (mask[i] & groupbit) {
       virtualMass += (decay * rmass[i]);
     }
@@ -147,15 +150,15 @@ void FixDeath::death()
 
   double VM = virtualMass/averageMass;
 
-  //fprintf(stdout, "Virtual Mass ratio: %f\n", VM);
+  // fprintf(stdout, "Virtual Mass ratio: %f\n", VM);
 
   while (virtualMass > (factor * averageMass)) {
-    //fprintf(stdout, "Virtual Mass ratio: %f\n", VM);
+    // fprintf(stdout, "Virtual Mass ratio: %f\n", VM);
   	if (mask[kill] & groupbit) {
       //fprintf(stdout, "Killed\n");
+  		virtualMass -= rmass[kill];
   		type[kill] = 5;
-      mask[kill] = 33;
-  		virtualMass -= (decay * rmass[kill]);
+        mask[kill] = 32;
   		kill = (random->uniform() * (nall - 1));
   		killed ++;
   	}
@@ -168,6 +171,8 @@ void FixDeath::death()
   }
 
   //fprintf(stdout, "Killed: %i\n", killed);
+
+  atom->virtualMass[typeVal] = virtualMass;
 
 
   modify->addstep_compute(update->ntimestep + nevery);
