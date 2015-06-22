@@ -14,10 +14,10 @@ read_data 	IC5nut.in
 
 
 group HET type 1
-#group AOB type 2
-#group NOB type 3 
-#group EPS type 4
-#group inert type 5
+group AOB type 2
+group NOB type 3 
+group EPS type 4
+group inert type 5
 
 
 
@@ -69,9 +69,9 @@ variable factor equal 2.0
 
 #variable rate1 equal 0.001
 fix g1 all nugrowth 1 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bEPS
-#fix dt1 HET death 1 v_bHET v_factor 1952467
-#fix dt2 AOB death 1 v_bAOB v_factor 1234312
-#fix dt3 NOB death 1 v_bNOB v_factor 1325352
+fix dt1 HET death 1 v_bHET v_factor 1952467
+fix dt2 AOB death 1 v_bAOB v_factor 1234312
+fix dt3 NOB death 1 v_bNOB v_factor 1325352
 fix d1 all divide 1 2.0 1242242
 
 
