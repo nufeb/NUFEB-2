@@ -70,14 +70,16 @@ class AtomVecSphere : public AtomVec {
 
  private:
   tagint *tag;
-  int *type,*mask;
+  int *mask;
   imageint *image;
   double **x,**v,**f;
-  double *radius,*density,*rmass;
+  double *density,*rmass;
   double **omega,**torque;
 
  protected:
   int radvary;
+  double *radius;
+  int *type;
 };
 
 }

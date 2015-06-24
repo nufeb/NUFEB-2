@@ -43,6 +43,7 @@ enum{ID,MOL,TYPE,ELEMENT,MASS,
      OMEGAX,OMEGAY,OMEGAZ,ANGMOMX,ANGMOMY,ANGMOMZ,
      TQX,TQY,TQZ,SPIN,ERADIUS,ERVEL,ERFORCE,
      SUB,O2,NH4,NO2,NO3,
+     OUTERRADIUS,OUTERMASS,
      COMPUTE,FIX,VARIABLE};
 enum{LT,LE,GT,GE,EQ,NEQ};
 enum{INT,DOUBLE,STRING,BIGINT};    // same as in DumpCFG
@@ -830,7 +831,27 @@ int DumpCustom::count()
                      "Threshhold for an atom property that isn't allocated");
         ptr = atom->erforce;
         nstride = 1;
-
+      } else if (thresh_array[ithresh] == OUTERRADIUS) {
+        ptr = atom->outerRadius;
+        nstride = 1;
+      } else if (thresh_array[ithresh] == OUTERMASS) {
+        ptr = atom->outerMass;
+        nstride = 1;
+      } else if (thresh_array[ithresh] == SUB) {
+        ptr = atom->sub;
+        nstride = 1;
+      } else if (thresh_array[ithresh] == O2) {
+        ptr = atom->o2;
+        nstride = 1;
+      } else if (thresh_array[ithresh] == NH4) {
+        ptr = atom->nh4;
+        nstride = 1;
+      } else if (thresh_array[ithresh] == NO3) {
+        ptr = atom->no3;
+        nstride = 1;
+      } else if (thresh_array[ithresh] == NO2) {
+        ptr = atom->no2;
+        nstride = 1;
       } else if (thresh_array[ithresh] == COMPUTE) {
         i = nfield + ithresh;
         if (argindex[i] == 0) {
@@ -1206,6 +1227,12 @@ int DumpCustom::parse_fields(int narg, char **arg)
     } else if (strcmp(arg[iarg],"no3") == 0) {
       pack_choice[i] = &DumpCustom::pack_no3;
       vtype[i] = DOUBLE;
+    } else if (strcmp(arg[iarg],"outerradius") == 0) {
+      pack_choice[i] = &DumpCustom::pack_outerradius;
+      vtype[i] = DOUBLE;
+    } else if (strcmp(arg[iarg],"outermass") == 0) {
+      pack_choice[i] = &DumpCustom::pack_outermass;
+      vtype[i] = DOUBLE;
 
     // compute value = c_ID
     // if no trailing [], then arg is set to 0, else arg is int between []
@@ -1531,6 +1558,9 @@ int DumpCustom::modify_param(int narg, char **arg)
     else if (strcmp(arg[1],"nh4") == 0) thresh_array[nthresh] = NH4;
     else if (strcmp(arg[1],"no2") == 0) thresh_array[nthresh] = NO2;
     else if (strcmp(arg[1],"no3") == 0) thresh_array[nthresh] = NO3;
+
+    else if (strcmp(arg[1],"outermass") == 0) thresh_array[nthresh] = OUTERMASS;
+    else if (strcmp(arg[1],"outerradius") == 0) thresh_array[nthresh] = OUTERRADIUS;
 
     // compute value = c_ID
     // if no trailing [], then arg is set to 0, else arg is between []
@@ -2544,6 +2574,26 @@ void DumpCustom::pack_no3(int n)
 
   for (int i = 0; i < nchoose; i++) {
     buf[n] = n03[clist[i]];
+    n += size_one;
+  }
+}
+
+void DumpCustom::pack_outerradius(int n)
+{
+  double *outerRadius = atom->outerRadius;
+
+  for (int i = 0; i < nchoose; i++) {
+    buf[n] = outerRadius[clist[i]];
+    n += size_one;
+  }
+}
+
+void DumpCustom::pack_outermass(int n)
+{
+  double *outerMass = atom->outerMass;
+
+  for (int i = 0; i < nchoose; i++) {
+    buf[n] = outerMass[clist[i]];
     n += size_one;
   }
 }

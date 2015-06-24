@@ -39,16 +39,16 @@ using namespace MathConst;
 
 FixNuGrowth::FixNuGrowth(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
-  if (narg != 17) error->all(FLERR,"Illegal fix growth command");
+  if (narg != 20) error->all(FLERR,"Illegal fix growth command");
 
   nevery = force->inumeric(FLERR,arg[3]);
   if (nevery < 0) error->all(FLERR,"Illegal fix growth command");
 
-  var = new char*[13];
-  ivar = new int[13];
+  var = new char*[16];
+  ivar = new int[16];
 
   int i;
-  for (i = 0; i < 13; i++) {
+  for (i = 0; i < 16; i++) {
     int n = strlen(&arg[4+i][2]) + 1;
     var[i] = new char[n];
     strcpy(var[i],&arg[4+i][2]);
@@ -60,7 +60,7 @@ FixNuGrowth::FixNuGrowth(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg
 FixNuGrowth::~FixNuGrowth()
 {
   int i;
-  for (i = 0; i < 13; i++) {
+  for (i = 0; i < 16; i++) {
     delete [] var[i];
   }
   delete [] var;
@@ -84,7 +84,7 @@ void FixNuGrowth::init()
     error->all(FLERR,"Fix growth requires atom attribute diameter");
 
   int i;
-  for (i = 0; i < 13; i++) {
+  for (i = 0; i < 16; i++) {
     ivar[i] = input->variable->find(var[i]);
     if (ivar[i] < 0)
       error->all(FLERR,"Variable name for fix nugrowth does not exist");
@@ -125,11 +125,16 @@ void FixNuGrowth::change_dia()
   // double bAOB = input->variable->compute_equal(ivar[13]);
   // double bNOB = input->variable->compute_equal(ivar[14]);
   double bEPS = input->variable->compute_equal(ivar[12]);
+  double YEPS = input->variable->compute_equal(ivar[13]);
+  double YHET = input->variable->compute_equal(ivar[14]);
+  double EPSdens = input->variable->compute_equal(ivar[15]);
 
   double density;
 
   double *radius = atom->radius;
   double *rmass = atom->rmass;
+  double *outerMass = atom->outerMass;
+  double *outerRadius = atom->outerRadius;
   double *sub = atom->sub;
   double *o2 = atom->o2;
   double *nh4 = atom->nh4;
@@ -171,7 +176,7 @@ void FixNuGrowth::change_dia()
       double R9 = bEPS;
 
       double value = update->dt * (gHET*(R1+R4+R5) + gAOB*R2 + gNOB*R3 - gEPS*R9);
-      
+
       density = rmass[i] / (4.0*MY_PI/3.0 *
                       radius[i]*radius[i]*radius[i]);
       double oldMass = rmass[i];
@@ -179,6 +184,17 @@ void FixNuGrowth::change_dia()
       if (rmass[i] <= 0) {
         rmass[i] = oldMass;
       }
+
+      // fprintf(stdout, "Radius: %e Outer Radius: %e\n", radius[i], outerRadius[i]);
+      // fprintf(stdout, "ID: %i Type: %i Outer Mass: %e\n", atom->tag[i], atom->type[i], outerMass[i]);
+      
+
+      outerMass[i] = (4.0*MY_PI/3.0)*((outerRadius[i]*outerRadius[i]*outerRadius[i])-(radius[i]*radius[i]*radius[i]))*EPSdens;
+      double value2 = update->dt * ((YEPS/YHET)*(R1+R4+R5));
+      outerMass[i] = outerMass[i]*(1 + (value2*nevery));
+
+      outerRadius[i] = pow((3.0/(4.0*MY_PI))*((rmass[i]/density)+(outerMass[i]/EPSdens)),(1.0/3.0));
+
       radius[i] = pow(((6*rmass[i])/(density*MY_PI)),(1.0/3.0))*0.5;
     }
 

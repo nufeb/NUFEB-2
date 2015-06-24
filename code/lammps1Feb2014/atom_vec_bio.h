@@ -36,6 +36,7 @@ class AtomVecBio : public AtomVecSphere {
   double *sub, *o2, *nh4, *no2, *no3;
   double *virtualMass;
   double *outerRadius;
+  double *outerMass;
 };
 
 }

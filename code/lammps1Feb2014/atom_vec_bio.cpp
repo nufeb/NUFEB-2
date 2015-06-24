@@ -35,7 +35,7 @@ using namespace MathConst;
 
 AtomVecBio::AtomVecBio(LAMMPS *lmp) : AtomVecSphere(lmp)
 {
-  size_data_atom = 12;
+  size_data_atom = 13;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -54,8 +54,8 @@ void AtomVecBio::init()
       size_forward = 5;
     }
 
-  virtualMass = memory->grow(atom->virtualMass,4,"atom:virtualMass");
-  for (int i = 0; i < 4; i++) {
+  virtualMass = memory->grow(atom->virtualMass,3,"atom:virtualMass");
+  for (int i = 0; i < 3; i++) {
     virtualMass[i] = 0;
   }
 }
@@ -69,6 +69,7 @@ void AtomVecBio::grow(int n)
   no2 = memory->grow(atom->no2,nmax,"atom:no2");
   no3 = memory->grow(atom->no3,nmax,"atom:no3");
   outerRadius = memory->grow(atom->outerRadius,nmax,"atom:outerRadius");
+  outerMass = memory->grow(atom->outerMass,nmax,"atom:outerMass");
 }
 
 void AtomVecBio::data_atom(double *coord, imageint imagetmp, char **values)
@@ -76,9 +77,19 @@ void AtomVecBio::data_atom(double *coord, imageint imagetmp, char **values)
   int nlocal = atom->nlocal;
   AtomVecSphere::data_atom(coord, imagetmp, values);
 
-  sub[nlocal] = atof(values[7]);
-  o2[nlocal] = atof(values[8]);
-  nh4[nlocal] = atof(values[9]);
-  no2[nlocal] = atof(values[10]);
-  no3[nlocal] = atof(values[11]);
+  outerRadius[nlocal] = 0.5 * atof(values[7]);
+  if (type[nlocal] != 1 && outerRadius[nlocal] != radius[nlocal]) {
+    error->one(FLERR,"Outer radius must be equal to radius for all AOB, NOB, EPS, and inert particles");
+  }
+  else if (outerRadius[nlocal] < radius[nlocal]) {
+    error->one(FLERR,"Outer radius must be greater than or equal to radius");
+  }
+  sub[nlocal] = atof(values[8]);
+  o2[nlocal] = atof(values[9]);
+  nh4[nlocal] = atof(values[10]);
+  no2[nlocal] = atof(values[11]);
+  no3[nlocal] = atof(values[12]);
+
+  outerMass[nlocal] = (4.0*MY_PI/3.0)*((outerRadius[nlocal]*outerRadius[nlocal]*outerRadius[nlocal])-(radius[nlocal]*radius[nlocal]*radius[nlocal]))*30;
+
 }

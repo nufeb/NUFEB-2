@@ -57,6 +57,7 @@ class Atom : protected Pointers {
   double **omega,**angmom,**torque;
   double *radius,*rmass,*vfrac,*s0;
   double *outerRadius;
+  double *outerMass;
   double **x0;
   int *ellipsoid,*line,*tri,*body;
   int *spin;

@@ -260,6 +260,7 @@ Atom::~Atom()
   memory->destroy(virtualMass);
 
   memory->destroy(outerRadius);
+  memory->destroy(outerMass);
 
   // delete user-defined molecules
 

@@ -52,15 +52,19 @@ using namespace MathConst;
 
 FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
-  if (narg != 6) error->all(FLERR,"Illegal fix divide command: Missing arguments");
+  if (narg != 7) error->all(FLERR,"Illegal fix divide command: Missing arguments");
 
   nevery = force->inumeric(FLERR,arg[3]);
   if (nevery < 0) error->all(FLERR,"Illegal fix divide command: calling steps should be positive integer");
 
-  growthFactor = atof(arg[4]);
-  seed = atoi(arg[5]);
+  int n = strlen(&arg[4][2]) + 1;
+  var = new char[n];
+  strcpy(var,&arg[4][2]);
 
-    if (seed <= 0) error->all(FLERR,"Illegal fix divide command: seed should be greater than 0");
+  growthFactor = atof(arg[5]);
+  seed = atoi(arg[6]);
+
+  if (seed <= 0) error->all(FLERR,"Illegal fix divide command: seed should be greater than 0");
 
   // preExchangeCalled = false;
 
@@ -208,6 +212,7 @@ FixDivide::~FixDivide()
   delete random;
   delete [] recvcounts;
   delete [] displs;
+  delete [] var;
 
   // for (int m = 0; m < nadapt; m++) {
   //   delete [] adapt[m].var;
@@ -321,6 +326,12 @@ void FixDivide::init()
   if (!atom->radius_flag)
     error->all(FLERR,"Fix divide requires atom attribute diameter");
 
+  ivar = input->variable->find(var);
+  if (ivar < 0)
+    error->all(FLERR,"Variable name for fix divide does not exist");
+  if (!input->variable->equalstyle(ivar))
+    error->all(FLERR,"Variable for fix divide is invalid style");
+
 }
 
 
@@ -341,9 +352,12 @@ void FixDivide::pre_exchange()
 {
   if (next_reneighbor != update->ntimestep) return;
 
+  double EPSdens = input->variable->compute_equal(ivar);
   double density;
   double *radius = atom->radius;
   double *rmass = atom->rmass;
+  double *outerRadius = atom->outerRadius;
+  double *outerMass = atom->outerMass;
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
@@ -433,9 +447,12 @@ void FixDivide::pre_exchange()
         averageMass = 1.1e-16;
       }
       if (rmass[i] >= growthFactor*averageMass) {
-        double splitF = 0.3 + (random->uniform()*0.4);
+        double splitF = 0.4 + (random->uniform()*0.2);
         double parentMass = rmass[i] * splitF;
         double childMass = rmass[i] - parentMass;
+
+        double parentOuterMass = outerMass[i] * splitF;
+        double childOuterMass = outerMass[i] - parentOuterMass;
 
         double parentSub = atom->sub[i];
         double childSub =  atom->sub[i];
@@ -473,6 +490,7 @@ void FixDivide::pre_exchange()
 
         //Update parent
         rmass[i] = parentMass;
+        outerMass[i] = parentOuterMass;
         atom->sub[i] = parentSub;
         atom->o2[i] = parentO2;
         atom->nh4[i] = parentNH4;
@@ -482,6 +500,7 @@ void FixDivide::pre_exchange()
         atom->f[i][1] = parentfy;
         atom->f[i][2] = parentfz;
         radius[i] = pow(((6*rmass[i])/(density*MY_PI)),(1.0/3.0))*0.5;
+        outerRadius[i] = pow((3.0/(4.0*MY_PI))*((rmass[i]/density)+(parentOuterMass/EPSdens)),(1.0/3.0));
         atom->x[i][0] = oldX + radius[i]*cos(thetaD)*sin(phiD);
         atom->x[i][1] = oldY + radius[i]*sin(thetaD)*sin(phiD);
         atom->x[i][2] = oldZ + radius[i]*cos(phiD);
@@ -512,6 +531,7 @@ void FixDivide::pre_exchange()
         atom->omega[n][1] = atom->omega[i][1];
         atom->omega[n][2] = atom->omega[i][2];
         rmass[n] = childMass;
+        outerMass[n] = childOuterMass;
         atom->sub[n] = childSub;
         atom->o2[n] = childO2;
         atom->nh4[n] = childNH4;
@@ -524,6 +544,7 @@ void FixDivide::pre_exchange()
         atom->torque[n][1] = atom->torque[i][1];
         atom->torque[n][2] = atom->torque[i][2];
         radius[n] = childRadius;
+        outerRadius[n] = pow((3.0/(4.0*MY_PI))*((rmass[n]/density)+(childOuterMass/EPSdens)),(1.0/3.0));
 
         // for (j = 0; j < nfix; j++)
         //   if (fix[j]->create_attribute) fix[j]->set_arrays(n);

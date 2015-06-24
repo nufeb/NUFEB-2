@@ -46,6 +46,8 @@ class FixDivide : public Fix {
   double growthFactor;
   int seed;
   // bool preExchangeCalled;
+  char *var;
+  int ivar;
   class RanPark *random;
 
   int me,nprocs;

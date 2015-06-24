@@ -178,6 +178,9 @@ class DumpCustom : public Dump {
   void pack_nh4(int);
   void pack_no2(int);
   void pack_no3(int);
+
+  void pack_outermass(int);
+  void pack_outerradius(int);
 };
 
 }
