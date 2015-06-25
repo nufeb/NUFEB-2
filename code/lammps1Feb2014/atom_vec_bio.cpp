@@ -90,6 +90,21 @@ void AtomVecBio::data_atom(double *coord, imageint imagetmp, char **values)
   no2[nlocal] = atof(values[11]);
   no3[nlocal] = atof(values[12]);
 
-  outerMass[nlocal] = (4.0*MY_PI/3.0)*((outerRadius[nlocal]*outerRadius[nlocal]*outerRadius[nlocal])-(radius[nlocal]*radius[nlocal]*radius[nlocal]))*30;
+  outerMass[nlocal] = 0.0;
+
+  //outerMass[nlocal] = (4.0*MY_PI/3.0)*((outerRadius[nlocal]*outerRadius[nlocal]*outerRadius[nlocal])-(radius[nlocal]*radius[nlocal]*radius[nlocal]))*30;
+}
+
+void AtomVecBio::copy(int i, int j, int delflag)
+{
+  sub[j] = sub[i];
+  o2[j] = o2[i];
+  nh4[j] = nh4[i];
+  no2[j] = no2[i];
+  no3[j] = no3[i];
+  outerMass[j] = outerMass[i];
+  outerRadius[j] = outerRadius[i];
+
+  AtomVecSphere::copy(i, j, delflag);
 
 }

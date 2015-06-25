@@ -31,6 +31,7 @@ class AtomVecBio : public AtomVecSphere {
   void init();
   void grow(int);
   void data_atom(double *, imageint, char **);
+  void copy(int, int, int);
 
  private:
   double *sub, *o2, *nh4, *no2, *no3;

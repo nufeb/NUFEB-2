@@ -558,6 +558,9 @@ void FixDivide::pre_exchange()
       }
     }
   }
+  if (divided > 0) {
+    
+  }
 
   //fprintf(stdout, "Divided: %i\n", divided);
 
