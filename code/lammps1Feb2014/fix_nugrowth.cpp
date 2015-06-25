@@ -191,7 +191,7 @@ void FixNuGrowth::change_dia()
 
       outerMass[i] = (4.0*MY_PI/3.0)*((outerRadius[i]*outerRadius[i]*outerRadius[i])-(radius[i]*radius[i]*radius[i]))*EPSdens;
       double value2 = update->dt * ((YEPS/YHET)*(R1+R4+R5));
-      outerMass[i] = outerMass[i]*(1 + (value2*nevery));
+      outerMass[i] = outerMass[i]+(value2*nevery);
 
       outerRadius[i] = pow((3.0/(4.0*MY_PI))*((rmass[i]/density)+(outerMass[i]/EPSdens)),(1.0/3.0));
 
