@@ -189,9 +189,8 @@ void FixNuGrowth::change_dia()
       // fprintf(stdout, "ID: %i Type: %i Outer Mass: %e\n", atom->tag[i], atom->type[i], outerMass[i]);
       
 
-      outerMass[i] = (4.0*MY_PI/3.0)*((outerRadius[i]*outerRadius[i]*outerRadius[i])-(radius[i]*radius[i]*radius[i]))*EPSdens;
-      double value2 = update->dt * ((YEPS/YHET)*(R1+R4+R5));
-      outerMass[i] = outerMass[i]+(value2*nevery);
+      double value2 = update->dt * (YEPS/YHET)*(R1+R4+R5);
+      outerMass[i] = (((4.0*MY_PI/3.0)*((outerRadius[i]*outerRadius[i]*outerRadius[i])-(radius[i]*radius[i]*radius[i])))*EPSdens)+(value2*nevery*rmass[i]);
 
       outerRadius[i] = pow((3.0/(4.0*MY_PI))*((rmass[i]/density)+(outerMass[i]/EPSdens)),(1.0/3.0));
 
