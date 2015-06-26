@@ -63,24 +63,24 @@ variable bEPS equal 0.00000196759
 
 variable YEPS equal 0.18
 variable YHET equal 0.61
-variable EPSdens equal 150
+variable EPSdens equal 30
 variable EPSratio equal 1.25
 
 variable factor equal 2.0
 
 #variable rate1 equal 0.001
 fix g1 all nugrowth 1 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bEPS v_YEPS v_YHET v_EPSdens
-#fix dt1 HET death 1 v_bHET v_factor 1952467
+fix dt1 HET death 1 v_bHET v_factor 1952467
 #fix dt2 AOB death 1 v_bAOB v_factor 1234312
 #fix dt3 NOB death 1 v_bNOB v_factor 1325352
 fix d1 all divide 1 v_EPSdens 2.0 1242242
 fix e1 HET eps_extract 1 v_EPSratio v_EPSdens 1242242
 
 
-#dump		id1 HET custom 1000 HET.bubblemd mass
+dump		id1 HET custom 2000 HET.bubblemd radius outerradius
 #dump		id2 HET custom 172800 HETdeath.bubblemd type radius outerradius mass outermass
 #dump		id2 EPS custom 1000 snapshot2.bubblemd id type diameter mass x y z vx vy vz
-dump		id all custom 2000 snapshot.bubblemd id type radius x y z outerradius outermass
+dump		id all custom 2000 snapshot.bubblemd id type radius vx vy vz x y z outerradius outermass
 
 
 #dump d0 all image 100 dump.*.jpg type type
@@ -90,8 +90,8 @@ thermo_style    custom step atoms ke vol
 
 #thermo_style  granular # not work. syntax change?
 #thermo_style  one   # granular does not work
-thermo		10000
-thermo_modify	lost ignore
+thermo		1
+thermo_modify	lost error
 #restart		1000000  restart.*.bubblemd
 
 run 172800
