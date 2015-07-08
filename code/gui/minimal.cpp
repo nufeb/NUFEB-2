@@ -181,266 +181,302 @@ MyFrame::MyFrame(const wxString& title)
 #endif // wxUSE_STATUSBAR
 
 
-    new wxStaticText(
-        this, -1, "All units should be specified in SI",
-        wxPoint(0,0), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
+    wxPanel *panel = new wxPanel(this, -1);
 
+    wxBoxSizer *main = new wxBoxSizer(wxVERTICAL);
 
-    new wxStaticText(
-        this, -1, "Boundary",
-        wxPoint(0,40), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
+    wxBoxSizer *sizer = new wxBoxSizer(wxVERTICAL);
 
-    new wxStaticText(
-        this, -1, "x",
-        wxPoint(85,40), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
 
-    new wxStaticText(
-        this, -1, "y",
-        wxPoint(145,40), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
+    sizer->Add(new wxStaticText(
+        panel, -1, "All units should be specified in SI"));
 
-    new wxStaticText(
-        this, -1, "z",
-        wxPoint(205,40), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
+    sizer->Add(new wxStaticText(
+        panel, -1, "", wxDefaultPosition));
 
-    new wxStaticText(
-        this, -1, "Periodic",
-        wxPoint(0,60), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
+    wxBoxSizer *vbox1 = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *vbox2 = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *vbox3 = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *vbox4 = new wxBoxSizer(wxVERTICAL);
 
-    new wxStaticText(
-        this, -1, "Fixed",
-        wxPoint(0,80), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-    wxRadioButton *periodicX = new wxRadioButton(this, -1, 
-        "", wxPoint(80, 60), wxDefaultSize, wxRB_GROUP);
-    wxRadioButton *fixedX = new wxRadioButton(this, -1, 
-        "", wxPoint(80, 80));
-    wxRadioButton *periodicY = new wxRadioButton(this, -1, 
-        "", wxPoint(140, 60), wxDefaultSize, wxRB_GROUP);
-    wxRadioButton *fixedY = new wxRadioButton(this, -1, 
-        "", wxPoint(140, 80));
-    wxRadioButton *periodicZ = new wxRadioButton(this, -1, 
-        "", wxPoint(200, 60), wxDefaultSize, wxRB_GROUP);
-    wxRadioButton *fixedZ = new wxRadioButton(this, -1, 
-        "", wxPoint(200, 80));
-
-
-    new wxStaticText(
-        this, -1, "Input File:",
-        wxPoint(0,120), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-
-    inputFile = new wxTextCtrl(this, -1, "", wxPoint(100,120), wxSize(400,-1),  
-    wxTE_LEFT | wxTE_READONLY , wxDefaultValidator, wxTextCtrlNameStr);
-
-    wxButton *inputFileBrowse = new wxButton(this, BUTTON_Browse, _T("Browse"), wxPoint(500,120), wxDefaultSize, 0);
-
-
-
-    new wxStaticText(
-        this, -1, "Neighbor Skin Distance (m):",
-        wxPoint(0,160), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-
-    wxTextCtrl *neighbor = new wxTextCtrl(this, -1, "1.0e-5", wxPoint(200,160), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-
-
-
-    new wxStaticText(
-        this, -1, "Time Step (s):",
-        wxPoint(0,200), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-
-    wxTextCtrl *timestep = new wxTextCtrl(this, -1, "1.0", wxPoint(100,200), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-
-
-    new wxStaticText(
-        this, -1, "HET",
-        wxPoint(200,260), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
+    wxBoxSizer *hboxBoundary = new wxBoxSizer(wxHORIZONTAL);
 
-    new wxStaticText(
-        this, -1, "AOB",
-        wxPoint(300,260), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-    new wxStaticText(
-        this, -1, "NOB",
-        wxPoint(400,260), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-    new wxStaticText(
-        this, -1, "EPS",
-        wxPoint(500,260), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-    new wxStaticText(
-        this, -1, "Maximum Growth Rate (1/s):",
-        wxPoint(0,290), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-    new wxStaticText(
-        this, -1, "Decay Rate (1/s):",
-        wxPoint(0,320), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-    new wxStaticText(
-        this, -1, "Yield Coefficient (-):",
-        wxPoint(0,350), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-
-    wxTextCtrl *hetGrowthRate = new wxTextCtrl(this, -1, "6.944e-5", wxPoint(200,290), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-    wxTextCtrl *aobGrowthRate = new wxTextCtrl(this, -1, "3.4722e-5", wxPoint(300,290), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-    wxTextCtrl *nobGrowthRate = new wxTextCtrl(this, -1, "3.4722e-5", wxPoint(400,290), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-    wxTextCtrl *hetDecayRate = new wxTextCtrl(this, -1, "4.6296e-6", wxPoint(200,320), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-    wxTextCtrl *aobDecayRate = new wxTextCtrl(this, -1, "1.2731e-6", wxPoint(300,320), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-    wxTextCtrl *nobDecayRate = new wxTextCtrl(this, -1, "1.2731e-6", wxPoint(400,320), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-    wxTextCtrl *epsDecayRate = new wxTextCtrl(this, -1, "1.9676e-6", wxPoint(500,320), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-    wxTextCtrl *hetYieldRate = new wxTextCtrl(this, -1, "0.61", wxPoint(200,350), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-    wxTextCtrl *aobYieldRate = new wxTextCtrl(this, -1, "0.33", wxPoint(300,350), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-    wxTextCtrl *nobYieldRate = new wxTextCtrl(this, -1, "0.083", wxPoint(400,350), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-    wxTextCtrl *epsYieldRate = new wxTextCtrl(this, -1, "0.18", wxPoint(500,350), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-
-
-
-    new wxStaticText(
-        this, -1, "Dissolved Oxygen Affinity (kg/m^3):",
-        wxPoint(0,400), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-    new wxStaticText(
-        this, -1, "HET:",
-        wxPoint(250,400), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-    wxTextCtrl *hetOxygen = new wxTextCtrl(this, -1, "8.1e-4", wxPoint(290,400), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-
-    new wxStaticText(
-        this, -1, "AOB:",
-        wxPoint(410,400), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-    wxTextCtrl *aobOxygen = new wxTextCtrl(this, -1, "5e-4", wxPoint(450,400), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-
-    new wxStaticText(
-        this, -1, "NOB:",
-        wxPoint(570,400), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-    wxTextCtrl *nobOxygen = new wxTextCtrl(this, -1, "6.8e-4", wxPoint(610,400), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-
-
-    new wxStaticText(
-        this, -1, "Nitrite Affinity (kg/m^3):",
-        wxPoint(0,440), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-    new wxStaticText(
-        this, -1, "HET:",
-        wxPoint(250,440), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-    wxTextCtrl *hetNitrite = new wxTextCtrl(this, -1, "3e-4", wxPoint(290,440), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-
-    new wxStaticText(
-        this, -1, "NOB:",
-        wxPoint(410,440), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-    wxTextCtrl *nobNitrite = new wxTextCtrl(this, -1, "1.3e-3", wxPoint(450,440), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-
-    new wxStaticText(
-        this, -1, "HET Carbon Source Affinity (kg/m^3):",
-        wxPoint(0,480), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-    wxTextCtrl *hetCarbon = new wxTextCtrl(this, -1, "1e-2", wxPoint(250,480), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-
-
-    new wxStaticText(
-        this, -1, "HET Nitrate Affinity (kg/m^3):",
-        wxPoint(0,520), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-    wxTextCtrl *hetNitrate = new wxTextCtrl(this, -1, "3e-4", wxPoint(250,520), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-
-    new wxStaticText(
-        this, -1, "AOB Ammonia Affinity (kg/m^3):",
-        wxPoint(0,560), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-    wxTextCtrl *aobAmmonia = new wxTextCtrl(this, -1, "1e-3", wxPoint(250,560), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-
-
-    new wxStaticText(
-        this, -1, "HET Reduction Factor (-):",
-        wxPoint(0,600), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-    wxTextCtrl *hetReduction = new wxTextCtrl(this, -1, "0.6", wxPoint(250,600), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-
-
-    new wxStaticText(
-        this, -1, "Death Factor (-):",
-        wxPoint(0,640), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-    wxTextCtrl *deathFactor = new wxTextCtrl(this, -1, "2.0", wxPoint(250,640), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-
-
-    new wxStaticText(
-        this, -1, "EPS:",
-        wxPoint(0,680), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-    new wxStaticText(
-        this, -1, "Density (kg/m^3):",
-        wxPoint(50,680), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-    wxTextCtrl *epsDensity = new wxTextCtrl(this, -1, "30", wxPoint(200,680), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
-
-    new wxStaticText(
-        this, -1, "Extraction Ratio (-):",
-        wxPoint(320,680), wxDefaultSize,
-        wxST_NO_AUTORESIZE);
-
-    wxTextCtrl *epsRatio = new wxTextCtrl(this, -1, "1.25", wxPoint(470,680), wxDefaultSize,  
-    wxTE_LEFT , wxDefaultValidator, wxTextCtrlNameStr);
+
+    wxRadioButton *periodicX = new wxRadioButton(panel, -1, 
+        "", wxDefaultPosition, wxDefaultSize, wxRB_GROUP);
+    wxRadioButton *fixedX = new wxRadioButton(panel, -1, 
+        "");
+    wxRadioButton *periodicY = new wxRadioButton(panel, -1, 
+        "", wxDefaultPosition, wxDefaultSize, wxRB_GROUP);
+    wxRadioButton *fixedY = new wxRadioButton(panel, -1, 
+        "");
+    wxRadioButton *periodicZ = new wxRadioButton(panel, -1, 
+        "", wxDefaultPosition, wxDefaultSize, wxRB_GROUP);
+    wxRadioButton *fixedZ = new wxRadioButton(panel, -1, 
+        "");
+
+    vbox1->Add(new wxStaticText(
+        panel, -1, "Boundary"));
+
+    vbox1->Add(new wxStaticText(
+        panel, -1, "Periodic"));
+
+    vbox1->Add(new wxStaticText(
+        panel, -1, "Fixed"));
+
+    vbox2->Add(new wxStaticText(
+        panel, -1, "x"), 0, wxALIGN_CENTER);
+
+    vbox2->Add(periodicX, 0, wxALIGN_CENTER);
+
+    vbox2->Add(fixedX, 0, wxALIGN_CENTER);
+
+    vbox3->Add(new wxStaticText(
+        panel, -1, "y"), 0, wxALIGN_CENTER);
+
+    vbox3->Add(periodicY, 0, wxALIGN_CENTER);
+
+    vbox3->Add(fixedY, 0, wxALIGN_CENTER);
+
+    vbox4->Add(new wxStaticText(
+        panel, -1, "z"), 0, wxALIGN_CENTER);
+
+    vbox4->Add(periodicZ, 0, wxALIGN_CENTER);
+
+    vbox4->Add(fixedZ, 0, wxALIGN_CENTER);
+
+    hboxBoundary->Add(vbox1);
+    hboxBoundary->Add(vbox2);
+    hboxBoundary->Add(vbox3);
+    hboxBoundary->Add(vbox4);
+
+    sizer->Add(hboxBoundary);
+
+    sizer->Add(new wxStaticText(
+        panel, -1, "", wxDefaultPosition));
+
+
+    wxBoxSizer *hboxInput = new wxBoxSizer(wxHORIZONTAL);
+
+
+    inputFile = new wxTextCtrl(panel, -1, "", wxDefaultPosition, wxSize(400,-1),  
+    wxTE_LEFT | wxTE_READONLY);
+
+    wxButton *inputFileBrowse = new wxButton(panel, BUTTON_Browse, _T("Browse"));
+
+    hboxInput->Add(new wxStaticText(
+        panel, -1, "Input File:"));
+    hboxInput->Add(inputFile);
+    hboxInput->Add(inputFileBrowse);
+
+    sizer->Add(hboxInput);
+
+
+    wxBoxSizer *hboxNeighbor = new wxBoxSizer(wxHORIZONTAL);
+
+
+    wxTextCtrl *neighbor = new wxTextCtrl(panel, -1, "1.0e-5");
+
+    hboxNeighbor->Add(new wxStaticText(
+        panel, -1, "Neighbor Skin Distance (m):"));
+    hboxNeighbor->Add(neighbor);
+
+    sizer->Add(hboxNeighbor);
+
+
+    wxBoxSizer *hboxTimestep = new wxBoxSizer(wxHORIZONTAL);
+
+
+    wxTextCtrl *timestep = new wxTextCtrl(panel, -1, "1.0");
+
+    hboxTimestep->Add(new wxStaticText(
+        panel, -1, "Time Step (s):"));
+    hboxTimestep->Add(timestep);
+
+    sizer->Add(hboxTimestep);
+
+    sizer->Add(new wxStaticText(
+        panel, -1, "", wxDefaultPosition));
+
+
+    wxBoxSizer *vbox5 = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *vbox6 = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *vbox7 = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *vbox8 = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *vbox9 = new wxBoxSizer(wxVERTICAL);
+
+    wxBoxSizer *hboxRates = new wxBoxSizer(wxHORIZONTAL);
+
+    vbox5->Add(new wxStaticText(
+        panel, -1, ""));
+    vbox5->Add(new wxStaticText(
+        panel, -1, "Maximum Growth Rate (1/s):", wxDefaultPosition, wxSize(-1, 34)));
+    vbox5->Add(new wxStaticText(
+        panel, -1, "Decay Rate (1/s):", wxDefaultPosition, wxSize(-1, 34)));
+    vbox5->Add(new wxStaticText(
+        panel, -1, "Yield Coefficient (-):", wxDefaultPosition, wxSize(-1, 34)));
+
+
+    wxTextCtrl *hetGrowthRate = new wxTextCtrl(panel, -1, "6.944e-5");
+
+    wxTextCtrl *hetDecayRate = new wxTextCtrl(panel, -1, "4.6296e-6");
+
+    wxTextCtrl *hetYieldRate = new wxTextCtrl(panel, -1, "0.61");
+
+    vbox6->Add(new wxStaticText(
+        panel, -1, "HET"), 0, wxALIGN_CENTER);
+    vbox6->Add(hetGrowthRate, 0, wxALIGN_CENTER);
+    vbox6->Add(hetDecayRate, 0, wxALIGN_CENTER);
+    vbox6->Add(hetYieldRate, 0, wxALIGN_CENTER);
+
+
+    wxTextCtrl *aobGrowthRate = new wxTextCtrl(panel, -1, "3.4722e-5");
+
+    wxTextCtrl *aobDecayRate = new wxTextCtrl(panel, -1, "1.2731e-6");
+
+    wxTextCtrl *aobYieldRate = new wxTextCtrl(panel, -1, "0.33");
+
+
+    vbox7->Add(new wxStaticText(
+        panel, -1, "AOB"), 0, wxALIGN_CENTER);
+    vbox7->Add(aobGrowthRate, 0, wxALIGN_CENTER);
+    vbox7->Add(aobDecayRate, 0, wxALIGN_CENTER);
+    vbox7->Add(aobYieldRate, 0, wxALIGN_CENTER);
+
+
+    wxTextCtrl *nobGrowthRate = new wxTextCtrl(panel, -1, "3.4722e-5");
+
+    wxTextCtrl *nobDecayRate = new wxTextCtrl(panel, -1, "1.2731e-6");
+
+    wxTextCtrl *nobYieldRate = new wxTextCtrl(panel, -1, "0.083");
+
+
+    vbox8->Add(new wxStaticText(
+        panel, -1, "NOB"), 0, wxALIGN_CENTER);
+    vbox8->Add(nobGrowthRate, 0, wxALIGN_CENTER);
+    vbox8->Add(nobDecayRate, 0, wxALIGN_CENTER);
+    vbox8->Add(nobYieldRate, 0, wxALIGN_CENTER);
+
+
+    wxTextCtrl *epsDecayRate = new wxTextCtrl(panel, -1, "1.9676e-6");
+
+    wxTextCtrl *epsYieldRate = new wxTextCtrl(panel, -1, "0.18");
+
+
+    vbox9->Add(new wxStaticText(
+        panel, -1, "EPS"), 0, wxALIGN_CENTER);
+    vbox9->Add(new wxStaticText(
+        panel, -1, "", wxDefaultPosition, wxSize(-1, 34)), 0, wxALIGN_CENTER);
+    vbox9->Add(epsDecayRate, 0, wxALIGN_CENTER);
+    vbox9->Add(epsYieldRate, 0, wxALIGN_CENTER);
+
+    hboxRates->Add(vbox5);
+    hboxRates->Add(vbox6);
+    hboxRates->Add(vbox7);
+    hboxRates->Add(vbox8);
+    hboxRates->Add(vbox9);
+
+
+    sizer->Add(hboxRates);
+
+    sizer->Add(new wxStaticText(
+        panel, -1, "", wxDefaultPosition));
+
+
+    wxBoxSizer *vbox10 = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *vbox11 = new wxBoxSizer(wxVERTICAL);
+
+    wxBoxSizer *hboxAffinities = new wxBoxSizer(wxHORIZONTAL);
+
+    vbox10->Add(new wxStaticText(
+        panel, -1, "Dissolved Oxygen Affinity (kg/m^3):", wxDefaultPosition, wxSize(-1, 34)));
+    vbox10->Add(new wxStaticText(
+        panel, -1, "Nitrite Affinity (kg/m^3):", wxDefaultPosition, wxSize(-1, 34)));
+    vbox10->Add(new wxStaticText(
+        panel, -1, "HET Carbon Source Affinity (kg/m^3):", wxDefaultPosition, wxSize(-1, 34)));
+    vbox10->Add(new wxStaticText(
+        panel, -1, "HET Nitrate Affinity (kg/m^3):", wxDefaultPosition, wxSize(-1, 34)));
+    vbox10->Add(new wxStaticText(
+        panel, -1, "AOB Ammonia Affinity (kg/m^3):", wxDefaultPosition, wxSize(-1, 34)));
+    vbox10->Add(new wxStaticText(
+        panel, -1, "HET Reduction Factor (-):", wxDefaultPosition, wxSize(-1, 34)));
+    vbox10->Add(new wxStaticText(
+        panel, -1, "Death Factor (-):", wxDefaultPosition, wxSize(-1, 34)));
+
+
+    wxBoxSizer *hboxOxygen = new wxBoxSizer(wxHORIZONTAL);
+
+    wxTextCtrl *hetOxygen = new wxTextCtrl(panel, -1, "8.1e-4");
+    wxTextCtrl *aobOxygen = new wxTextCtrl(panel, -1, "5e-4");
+    wxTextCtrl *nobOxygen = new wxTextCtrl(panel, -1, "6.8e-4");
+
+    hboxOxygen->Add(new wxStaticText(
+        panel, -1, "HET:"));
+    hboxOxygen->Add(hetOxygen);
+    hboxOxygen->Add(new wxStaticText(
+        panel, -1, "AOB:"));
+    hboxOxygen->Add(aobOxygen);
+    hboxOxygen->Add(new wxStaticText(
+        panel, -1, "NOB:"));
+    hboxOxygen->Add(nobOxygen);
+
+
+    wxBoxSizer *hboxNitrite = new wxBoxSizer(wxHORIZONTAL);
+
+    wxTextCtrl *hetNitrite = new wxTextCtrl(panel, -1, "3e-4");
+    wxTextCtrl *nobNitrite = new wxTextCtrl(panel, -1, "1.3e-3");
+
+    hboxNitrite->Add(new wxStaticText(
+        panel, -1, "HET:"));
+    hboxNitrite->Add(hetNitrite);
+    hboxNitrite->Add(new wxStaticText(
+        panel, -1, "NOB:"));
+    hboxNitrite->Add(nobNitrite);
+
+    wxTextCtrl *hetCarbon = new wxTextCtrl(panel, -1, "1e-2");
+    wxTextCtrl *hetNitrate = new wxTextCtrl(panel, -1, "3e-4");
+    wxTextCtrl *aobAmmonia = new wxTextCtrl(panel, -1, "1e-3");
+    wxTextCtrl *hetReduction = new wxTextCtrl(panel, -1, "0.6");
+    wxTextCtrl *deathFactor = new wxTextCtrl(panel, -1, "2.0");
+
+
+    vbox11->Add(hboxOxygen);
+    vbox11->Add(hboxNitrite);
+    vbox11->Add(hetCarbon);
+    vbox11->Add(hetNitrate);
+    vbox11->Add(aobAmmonia);
+    vbox11->Add(hetReduction);
+    vbox11->Add(deathFactor);
+
+    hboxAffinities->Add(vbox10);
+    hboxAffinities->Add(vbox11);
+
+    sizer->Add(hboxAffinities);
+
+
+    wxBoxSizer *hboxEPS = new wxBoxSizer(wxHORIZONTAL);
+
+    wxTextCtrl *epsDensity = new wxTextCtrl(panel, -1, "30");
+    wxTextCtrl *epsRatio = new wxTextCtrl(panel, -1, "1.25");
+
+    hboxEPS->Add(new wxStaticText(
+        panel, -1, "EPS:"));
+    hboxEPS->Add(new wxStaticText(
+        panel, -1, "Density (kg/m^3):"));
+    hboxEPS->Add(epsDensity);
+    hboxEPS->Add(new wxStaticText(
+        panel, -1, "Extraction Ratio (-):"));
+    hboxEPS->Add(epsRatio);
+
+
+    sizer->Add(hboxEPS);
+
+
+    main->Add(sizer, 1, wxEXPAND | wxALL, 20);
+
+    panel->SetSizer(main);
+
+    Centre();
 
 
 
