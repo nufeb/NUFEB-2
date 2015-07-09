@@ -70,12 +70,32 @@ public:
     void OnQuit(wxCommandEvent& event);
     void OnAbout(wxCommandEvent& event);
     void Browse(wxCommandEvent& event);
+    void ClickGrowth(wxCommandEvent& event);
+    void ClickDeath(wxCommandEvent& event);
+    void ClickDivision(wxCommandEvent& event);
 
 private:
     // any class wishing to process wxWidgets events must use this macro
     wxDECLARE_EVENT_TABLE();
 
     wxTextCtrl *inputFile;
+
+    wxCheckBox *hetGrowth;
+    wxCheckBox *hetDeath;
+    wxCheckBox *hetDivision;
+    wxCheckBox *hetEPSExcretion;
+
+    wxCheckBox *aobGrowth;
+    wxCheckBox *aobDeath;
+    wxCheckBox *aobDivision;
+
+    wxCheckBox *nobGrowth;
+    wxCheckBox *nobDeath;
+    wxCheckBox *nobDivision;
+
+    wxCheckBox *allGrowth;
+    wxCheckBox *allDeath;
+    wxCheckBox *allDivision;
 };
 
 // ----------------------------------------------------------------------------
@@ -92,7 +112,10 @@ enum
     // this standard value as otherwise it won't be handled properly under Mac
     // (where it is special and put into the "Apple" menu)
     Minimal_About = wxID_ABOUT,
-    BUTTON_Browse = wxID_HIGHEST + 1
+    BUTTON_Browse = wxID_HIGHEST + 1,
+    CHECKBOX_Growth = wxID_HIGHEST + 2,
+    CHECKBOX_Death = wxID_HIGHEST + 3,
+    CHECKBOX_Division = wxID_HIGHEST + 4
 };
 
 // ----------------------------------------------------------------------------
@@ -106,6 +129,9 @@ wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
     EVT_MENU(Minimal_Quit,  MyFrame::OnQuit)
     EVT_MENU(Minimal_About, MyFrame::OnAbout)
     EVT_BUTTON ( BUTTON_Browse, MyFrame::Browse )
+    EVT_CHECKBOX ( CHECKBOX_Growth, MyFrame::ClickGrowth )
+    EVT_CHECKBOX ( CHECKBOX_Death, MyFrame::ClickDeath )
+    EVT_CHECKBOX ( CHECKBOX_Division, MyFrame::ClickDivision )
 wxEND_EVENT_TABLE()
 
 // Create a new application object: this macro will allow wxWidgets to create
@@ -188,11 +214,9 @@ MyFrame::MyFrame(const wxString& title)
     wxBoxSizer *sizer = new wxBoxSizer(wxVERTICAL);
 
 
-    sizer->Add(new wxStaticText(
-        panel, -1, "All units should be specified in SI"));
+    sizer->Add(new wxStaticText(panel, -1, "All units should be specified in SI"));
 
-    sizer->Add(new wxStaticText(
-        panel, -1, "", wxDefaultPosition));
+    sizer->Add(new wxStaticText(panel, -1, "", wxDefaultPosition));
 
     wxBoxSizer *vbox1 = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *vbox2 = new wxBoxSizer(wxVERTICAL);
@@ -202,47 +226,27 @@ MyFrame::MyFrame(const wxString& title)
     wxBoxSizer *hboxBoundary = new wxBoxSizer(wxHORIZONTAL);
 
 
-    wxRadioButton *periodicX = new wxRadioButton(panel, -1, 
-        "", wxDefaultPosition, wxDefaultSize, wxRB_GROUP);
-    wxRadioButton *fixedX = new wxRadioButton(panel, -1, 
-        "");
-    wxRadioButton *periodicY = new wxRadioButton(panel, -1, 
-        "", wxDefaultPosition, wxDefaultSize, wxRB_GROUP);
-    wxRadioButton *fixedY = new wxRadioButton(panel, -1, 
-        "");
-    wxRadioButton *periodicZ = new wxRadioButton(panel, -1, 
-        "", wxDefaultPosition, wxDefaultSize, wxRB_GROUP);
-    wxRadioButton *fixedZ = new wxRadioButton(panel, -1, 
-        "");
+    wxRadioButton *periodicX = new wxRadioButton(panel, -1, "", wxDefaultPosition, wxDefaultSize, wxRB_GROUP);
+    wxRadioButton *fixedX = new wxRadioButton(panel, -1, "");
+    wxRadioButton *periodicY = new wxRadioButton(panel, -1, "", wxDefaultPosition, wxDefaultSize, wxRB_GROUP);
+    wxRadioButton *fixedY = new wxRadioButton(panel, -1, "");
+    wxRadioButton *periodicZ = new wxRadioButton(panel, -1, "", wxDefaultPosition, wxDefaultSize, wxRB_GROUP);
+    wxRadioButton *fixedZ = new wxRadioButton(panel, -1, "");
 
-    vbox1->Add(new wxStaticText(
-        panel, -1, "Boundary"));
+    vbox1->Add(new wxStaticText(panel, -1, "Boundary"));
+    vbox1->Add(new wxStaticText(panel, -1, "Periodic:", wxDefaultPosition, wxSize(-1, 26)));
+    vbox1->Add(new wxStaticText(panel, -1, "Fixed:", wxDefaultPosition, wxSize(-1, 26)));
 
-    vbox1->Add(new wxStaticText(
-        panel, -1, "Periodic"));
-
-    vbox1->Add(new wxStaticText(
-        panel, -1, "Fixed"));
-
-    vbox2->Add(new wxStaticText(
-        panel, -1, "x"), 0, wxALIGN_CENTER);
-
+    vbox2->Add(new wxStaticText(panel, -1, "x"), 0, wxALIGN_CENTER);
     vbox2->Add(periodicX, 0, wxALIGN_CENTER);
-
     vbox2->Add(fixedX, 0, wxALIGN_CENTER);
 
-    vbox3->Add(new wxStaticText(
-        panel, -1, "y"), 0, wxALIGN_CENTER);
-
+    vbox3->Add(new wxStaticText(panel, -1, "y"), 0, wxALIGN_CENTER);
     vbox3->Add(periodicY, 0, wxALIGN_CENTER);
-
     vbox3->Add(fixedY, 0, wxALIGN_CENTER);
 
-    vbox4->Add(new wxStaticText(
-        panel, -1, "z"), 0, wxALIGN_CENTER);
-
+    vbox4->Add(new wxStaticText(panel, -1, "z"), 0, wxALIGN_CENTER);
     vbox4->Add(periodicZ, 0, wxALIGN_CENTER);
-
     vbox4->Add(fixedZ, 0, wxALIGN_CENTER);
 
     hboxBoundary->Add(vbox1);
@@ -252,20 +256,17 @@ MyFrame::MyFrame(const wxString& title)
 
     sizer->Add(hboxBoundary);
 
-    sizer->Add(new wxStaticText(
-        panel, -1, "", wxDefaultPosition));
+    sizer->Add(new wxStaticText(panel, -1, "", wxDefaultPosition));
 
 
     wxBoxSizer *hboxInput = new wxBoxSizer(wxHORIZONTAL);
 
 
-    inputFile = new wxTextCtrl(panel, -1, "", wxDefaultPosition, wxSize(400,-1),  
-    wxTE_LEFT | wxTE_READONLY);
+    inputFile = new wxTextCtrl(panel, -1, "", wxDefaultPosition, wxSize(400,-1), wxTE_LEFT | wxTE_READONLY);
 
     wxButton *inputFileBrowse = new wxButton(panel, BUTTON_Browse, _T("Browse"));
 
-    hboxInput->Add(new wxStaticText(
-        panel, -1, "Input File:"));
+    hboxInput->Add(new wxStaticText(panel, -1, "Input File:"));
     hboxInput->Add(inputFile);
     hboxInput->Add(inputFileBrowse);
 
@@ -277,8 +278,7 @@ MyFrame::MyFrame(const wxString& title)
 
     wxTextCtrl *neighbor = new wxTextCtrl(panel, -1, "1.0e-5");
 
-    hboxNeighbor->Add(new wxStaticText(
-        panel, -1, "Neighbor Skin Distance (m):"));
+    hboxNeighbor->Add(new wxStaticText(panel, -1, "Neighbor Skin Distance (m):"));
     hboxNeighbor->Add(neighbor);
 
     sizer->Add(hboxNeighbor);
@@ -289,14 +289,82 @@ MyFrame::MyFrame(const wxString& title)
 
     wxTextCtrl *timestep = new wxTextCtrl(panel, -1, "1.0");
 
-    hboxTimestep->Add(new wxStaticText(
-        panel, -1, "Time Step (s):"));
+    hboxTimestep->Add(new wxStaticText(panel, -1, "Time Step (s):"));
     hboxTimestep->Add(timestep);
 
     sizer->Add(hboxTimestep);
 
-    sizer->Add(new wxStaticText(
-        panel, -1, "", wxDefaultPosition));
+    sizer->Add(new wxStaticText(panel, -1, "", wxDefaultPosition));
+
+    wxBoxSizer *vbox12 = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *vbox13 = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *vbox14 = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *vbox15 = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *vbox16 = new wxBoxSizer(wxVERTICAL);
+
+    wxBoxSizer *hboxFixes = new wxBoxSizer(wxHORIZONTAL);
+
+
+    vbox12->Add(new wxStaticText(panel, -1, ""));
+    vbox12->Add(new wxStaticText(panel, -1, "Growth:", wxDefaultPosition, wxSize(-1, 26)));
+    vbox12->Add(new wxStaticText(panel, -1, "Death:", wxDefaultPosition, wxSize(-1, 26)));
+    vbox12->Add(new wxStaticText(panel, -1, "Division:", wxDefaultPosition, wxSize(-1, 26)));
+    vbox12->Add(new wxStaticText(panel, -1, "EPS Excretion:", wxDefaultPosition, wxSize(-1, 26)));
+
+
+    hetGrowth = new wxCheckBox(panel, -1, "");
+    hetDeath = new wxCheckBox(panel, -1, "");
+    hetDivision = new wxCheckBox(panel, -1, "");
+    hetEPSExcretion = new wxCheckBox(panel, -1, "");
+
+    vbox13->Add(new wxStaticText(panel, -1, "HET"), 0, wxALIGN_CENTER);
+    vbox13->Add(hetGrowth, 0, wxALIGN_CENTER);
+    vbox13->Add(hetDeath, 0, wxALIGN_CENTER);
+    vbox13->Add(hetDivision, 0, wxALIGN_CENTER);
+    vbox13->Add(hetEPSExcretion, 0, wxALIGN_CENTER);
+
+    aobGrowth = new wxCheckBox(panel, -1, "");
+    aobDeath = new wxCheckBox(panel, -1, "");
+    aobDivision = new wxCheckBox(panel, -1, "");
+
+    vbox14->Add(new wxStaticText(panel, -1, "AOB"), 0, wxALIGN_CENTER);
+    vbox14->Add(aobGrowth, 0, wxALIGN_CENTER);
+    vbox14->Add(aobDeath, 0, wxALIGN_CENTER);
+    vbox14->Add(aobDivision, 0, wxALIGN_CENTER);
+    vbox14->Add(new wxStaticText(panel, -1, ""), 0, wxALIGN_CENTER);
+
+    nobGrowth = new wxCheckBox(panel, -1, "");
+    nobDeath = new wxCheckBox(panel, -1, "");
+    nobDivision = new wxCheckBox(panel, -1, "");
+
+    vbox15->Add(new wxStaticText(panel, -1, "NOB"), 0, wxALIGN_CENTER);
+    vbox15->Add(nobGrowth, 0, wxALIGN_CENTER);
+    vbox15->Add(nobDeath, 0, wxALIGN_CENTER);
+    vbox15->Add(nobDivision, 0, wxALIGN_CENTER);
+    vbox15->Add(new wxStaticText(panel, -1, ""), 0, wxALIGN_CENTER);
+
+    allGrowth = new wxCheckBox(panel, CHECKBOX_Growth, "");
+    allDeath = new wxCheckBox(panel, CHECKBOX_Death, "");
+    allDivision = new wxCheckBox(panel, CHECKBOX_Division, "");
+
+    vbox16->Add(new wxStaticText(panel, -1, "All"), 0, wxALIGN_CENTER);
+    vbox16->Add(allGrowth, 0, wxALIGN_CENTER);
+    vbox16->Add(allDeath, 0, wxALIGN_CENTER);
+    vbox16->Add(allDivision, 0, wxALIGN_CENTER);
+    vbox16->Add(new wxStaticText(panel, -1, ""), 0, wxALIGN_CENTER);
+
+    hboxFixes->Add(vbox12);
+    hboxFixes->Add(vbox13);
+    hboxFixes->Add(new wxStaticText(panel, -1, "  "));
+    hboxFixes->Add(vbox14);
+    hboxFixes->Add(new wxStaticText(panel, -1, "  "));
+    hboxFixes->Add(vbox15);
+    hboxFixes->Add(new wxStaticText(panel, -1, "  "));
+    hboxFixes->Add(vbox16);
+
+    sizer->Add(hboxFixes);
+
+    sizer->Add(new wxStaticText(panel, -1, "", wxDefaultPosition));
 
 
     wxBoxSizer *vbox5 = new wxBoxSizer(wxVERTICAL);
@@ -307,66 +375,50 @@ MyFrame::MyFrame(const wxString& title)
 
     wxBoxSizer *hboxRates = new wxBoxSizer(wxHORIZONTAL);
 
-    vbox5->Add(new wxStaticText(
-        panel, -1, ""));
-    vbox5->Add(new wxStaticText(
-        panel, -1, "Maximum Growth Rate (1/s):", wxDefaultPosition, wxSize(-1, 34)));
-    vbox5->Add(new wxStaticText(
-        panel, -1, "Decay Rate (1/s):", wxDefaultPosition, wxSize(-1, 34)));
-    vbox5->Add(new wxStaticText(
-        panel, -1, "Yield Coefficient (-):", wxDefaultPosition, wxSize(-1, 34)));
+    vbox5->Add(new wxStaticText(panel, -1, ""));
+    vbox5->Add(new wxStaticText(panel, -1, "Maximum Growth Rate (1/s):", wxDefaultPosition, wxSize(-1, 34)));
+    vbox5->Add(new wxStaticText(panel, -1, "Decay Rate (1/s):", wxDefaultPosition, wxSize(-1, 34)));
+    vbox5->Add(new wxStaticText(panel, -1, "Yield Coefficient (-):", wxDefaultPosition, wxSize(-1, 34)));
 
 
     wxTextCtrl *hetGrowthRate = new wxTextCtrl(panel, -1, "6.944e-5");
-
     wxTextCtrl *hetDecayRate = new wxTextCtrl(panel, -1, "4.6296e-6");
-
     wxTextCtrl *hetYieldRate = new wxTextCtrl(panel, -1, "0.61");
 
-    vbox6->Add(new wxStaticText(
-        panel, -1, "HET"), 0, wxALIGN_CENTER);
+    vbox6->Add(new wxStaticText(panel, -1, "HET"), 0, wxALIGN_CENTER);
     vbox6->Add(hetGrowthRate, 0, wxALIGN_CENTER);
     vbox6->Add(hetDecayRate, 0, wxALIGN_CENTER);
     vbox6->Add(hetYieldRate, 0, wxALIGN_CENTER);
 
 
     wxTextCtrl *aobGrowthRate = new wxTextCtrl(panel, -1, "3.4722e-5");
-
     wxTextCtrl *aobDecayRate = new wxTextCtrl(panel, -1, "1.2731e-6");
-
     wxTextCtrl *aobYieldRate = new wxTextCtrl(panel, -1, "0.33");
 
 
-    vbox7->Add(new wxStaticText(
-        panel, -1, "AOB"), 0, wxALIGN_CENTER);
+    vbox7->Add(new wxStaticText(panel, -1, "AOB"), 0, wxALIGN_CENTER);
     vbox7->Add(aobGrowthRate, 0, wxALIGN_CENTER);
     vbox7->Add(aobDecayRate, 0, wxALIGN_CENTER);
     vbox7->Add(aobYieldRate, 0, wxALIGN_CENTER);
 
 
     wxTextCtrl *nobGrowthRate = new wxTextCtrl(panel, -1, "3.4722e-5");
-
     wxTextCtrl *nobDecayRate = new wxTextCtrl(panel, -1, "1.2731e-6");
-
     wxTextCtrl *nobYieldRate = new wxTextCtrl(panel, -1, "0.083");
 
 
-    vbox8->Add(new wxStaticText(
-        panel, -1, "NOB"), 0, wxALIGN_CENTER);
+    vbox8->Add(new wxStaticText(panel, -1, "NOB"), 0, wxALIGN_CENTER);
     vbox8->Add(nobGrowthRate, 0, wxALIGN_CENTER);
     vbox8->Add(nobDecayRate, 0, wxALIGN_CENTER);
     vbox8->Add(nobYieldRate, 0, wxALIGN_CENTER);
 
 
     wxTextCtrl *epsDecayRate = new wxTextCtrl(panel, -1, "1.9676e-6");
-
     wxTextCtrl *epsYieldRate = new wxTextCtrl(panel, -1, "0.18");
 
 
-    vbox9->Add(new wxStaticText(
-        panel, -1, "EPS"), 0, wxALIGN_CENTER);
-    vbox9->Add(new wxStaticText(
-        panel, -1, "", wxDefaultPosition, wxSize(-1, 34)), 0, wxALIGN_CENTER);
+    vbox9->Add(new wxStaticText(panel, -1, "EPS"), 0, wxALIGN_CENTER);
+    vbox9->Add(new wxStaticText(panel, -1, "", wxDefaultPosition, wxSize(-1, 34)), 0, wxALIGN_CENTER);
     vbox9->Add(epsDecayRate, 0, wxALIGN_CENTER);
     vbox9->Add(epsYieldRate, 0, wxALIGN_CENTER);
 
@@ -379,8 +431,7 @@ MyFrame::MyFrame(const wxString& title)
 
     sizer->Add(hboxRates);
 
-    sizer->Add(new wxStaticText(
-        panel, -1, "", wxDefaultPosition));
+    sizer->Add(new wxStaticText(panel, -1, "", wxDefaultPosition));
 
 
     wxBoxSizer *vbox10 = new wxBoxSizer(wxVERTICAL);
@@ -388,20 +439,13 @@ MyFrame::MyFrame(const wxString& title)
 
     wxBoxSizer *hboxAffinities = new wxBoxSizer(wxHORIZONTAL);
 
-    vbox10->Add(new wxStaticText(
-        panel, -1, "Dissolved Oxygen Affinity (kg/m^3):", wxDefaultPosition, wxSize(-1, 34)));
-    vbox10->Add(new wxStaticText(
-        panel, -1, "Nitrite Affinity (kg/m^3):", wxDefaultPosition, wxSize(-1, 34)));
-    vbox10->Add(new wxStaticText(
-        panel, -1, "HET Carbon Source Affinity (kg/m^3):", wxDefaultPosition, wxSize(-1, 34)));
-    vbox10->Add(new wxStaticText(
-        panel, -1, "HET Nitrate Affinity (kg/m^3):", wxDefaultPosition, wxSize(-1, 34)));
-    vbox10->Add(new wxStaticText(
-        panel, -1, "AOB Ammonia Affinity (kg/m^3):", wxDefaultPosition, wxSize(-1, 34)));
-    vbox10->Add(new wxStaticText(
-        panel, -1, "HET Reduction Factor (-):", wxDefaultPosition, wxSize(-1, 34)));
-    vbox10->Add(new wxStaticText(
-        panel, -1, "Death Factor (-):", wxDefaultPosition, wxSize(-1, 34)));
+    vbox10->Add(new wxStaticText(panel, -1, "Dissolved Oxygen Affinity (kg/m^3):", wxDefaultPosition, wxSize(-1, 34)));
+    vbox10->Add(new wxStaticText(panel, -1, "Nitrite Affinity (kg/m^3):", wxDefaultPosition, wxSize(-1, 34)));
+    vbox10->Add(new wxStaticText(panel, -1, "HET Carbon Source Affinity (kg/m^3):", wxDefaultPosition, wxSize(-1, 34)));
+    vbox10->Add(new wxStaticText(panel, -1, "HET Nitrate Affinity (kg/m^3):", wxDefaultPosition, wxSize(-1, 34)));
+    vbox10->Add(new wxStaticText(panel, -1, "AOB Ammonia Affinity (kg/m^3):", wxDefaultPosition, wxSize(-1, 34)));
+    vbox10->Add(new wxStaticText(panel, -1, "HET Reduction Factor (-):", wxDefaultPosition, wxSize(-1, 34)));
+    vbox10->Add(new wxStaticText(panel, -1, "Death Factor (-):", wxDefaultPosition, wxSize(-1, 34)));
 
 
     wxBoxSizer *hboxOxygen = new wxBoxSizer(wxHORIZONTAL);
@@ -410,14 +454,11 @@ MyFrame::MyFrame(const wxString& title)
     wxTextCtrl *aobOxygen = new wxTextCtrl(panel, -1, "5e-4");
     wxTextCtrl *nobOxygen = new wxTextCtrl(panel, -1, "6.8e-4");
 
-    hboxOxygen->Add(new wxStaticText(
-        panel, -1, "HET:"));
+    hboxOxygen->Add(new wxStaticText(panel, -1, "HET:"));
     hboxOxygen->Add(hetOxygen);
-    hboxOxygen->Add(new wxStaticText(
-        panel, -1, "AOB:"));
+    hboxOxygen->Add(new wxStaticText(panel, -1, "AOB:"));
     hboxOxygen->Add(aobOxygen);
-    hboxOxygen->Add(new wxStaticText(
-        panel, -1, "NOB:"));
+    hboxOxygen->Add(new wxStaticText(panel, -1, "NOB:"));
     hboxOxygen->Add(nobOxygen);
 
 
@@ -426,11 +467,9 @@ MyFrame::MyFrame(const wxString& title)
     wxTextCtrl *hetNitrite = new wxTextCtrl(panel, -1, "3e-4");
     wxTextCtrl *nobNitrite = new wxTextCtrl(panel, -1, "1.3e-3");
 
-    hboxNitrite->Add(new wxStaticText(
-        panel, -1, "HET:"));
+    hboxNitrite->Add(new wxStaticText(panel, -1, "HET:"));
     hboxNitrite->Add(hetNitrite);
-    hboxNitrite->Add(new wxStaticText(
-        panel, -1, "NOB:"));
+    hboxNitrite->Add(new wxStaticText(panel, -1, "NOB:"));
     hboxNitrite->Add(nobNitrite);
 
     wxTextCtrl *hetCarbon = new wxTextCtrl(panel, -1, "1e-2");
@@ -459,17 +498,16 @@ MyFrame::MyFrame(const wxString& title)
     wxTextCtrl *epsDensity = new wxTextCtrl(panel, -1, "30");
     wxTextCtrl *epsRatio = new wxTextCtrl(panel, -1, "1.25");
 
-    hboxEPS->Add(new wxStaticText(
-        panel, -1, "EPS:"));
-    hboxEPS->Add(new wxStaticText(
-        panel, -1, "Density (kg/m^3):"));
+    hboxEPS->Add(new wxStaticText(panel, -1, "EPS:"));
+    hboxEPS->Add(new wxStaticText(panel, -1, "Density (kg/m^3):"));
     hboxEPS->Add(epsDensity);
-    hboxEPS->Add(new wxStaticText(
-        panel, -1, "Extraction Ratio (-):"));
+    hboxEPS->Add(new wxStaticText(panel, -1, "Extraction Ratio (-):"));
     hboxEPS->Add(epsRatio);
 
 
     sizer->Add(hboxEPS);
+
+    sizer->Add(new wxStaticText(panel, -1, "", wxDefaultPosition));
 
 
     main->Add(sizer, 1, wxEXPAND | wxALL, 20);
@@ -522,6 +560,23 @@ MyFrame::MyFrame(const wxString& title)
 void MyFrame::OnQuit(wxCommandEvent& WXUNUSED(event))
 {
 	delete inputFile;
+
+	delete hetGrowth;
+    delete hetDeath;
+    delete hetDivision;
+    delete hetEPSExcretion;
+
+    delete aobGrowth;
+    delete aobDeath;
+    delete aobDivision;
+
+    delete nobGrowth;
+    delete nobDeath;
+    delete nobDivision;
+
+    delete allGrowth;
+    delete allDeath;
+    delete allDivision;
     // true is to force the frame to close
     Close(true);
 }
@@ -557,4 +612,46 @@ void MyFrame::Browse(wxCommandEvent& WXUNUSED(event))
  
 	// Clean up after ourselves
 	OpenDialog->Destroy();
+}
+
+void MyFrame::ClickGrowth(wxCommandEvent& event)
+{
+	if (allGrowth->IsChecked()) {
+		hetGrowth->Enable(false);
+		aobGrowth->Enable(false);
+		nobGrowth->Enable(false);
+	}
+	else {
+		hetGrowth->Enable(true);
+		aobGrowth->Enable(true);
+		nobGrowth->Enable(true);
+	}
+}
+
+void MyFrame::ClickDeath(wxCommandEvent& event)
+{
+	if (allDeath->IsChecked()) {
+		hetDeath->Enable(false);
+		aobDeath->Enable(false);
+		nobDeath->Enable(false);
+	}
+	else {
+		hetDeath->Enable(true);
+		aobDeath->Enable(true);
+		nobDeath->Enable(true);
+	}
+}
+
+void MyFrame::ClickDivision(wxCommandEvent& event)
+{
+	if (allDivision->IsChecked()) {
+		hetDivision->Enable(false);
+		aobDivision->Enable(false);
+		nobDivision->Enable(false);
+	}
+	else {
+		hetDivision->Enable(true);
+		aobDivision->Enable(true);
+		nobDivision->Enable(true);
+	}
 }
