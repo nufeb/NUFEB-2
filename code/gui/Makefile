@@ -1,12 +1,12 @@
 SRCS := $(wildcard *.cpp)
 OBJS := $(addsuffix .o, $(basename $(SRCS)))
-GUI_EXE = minimal
+GUI_EXE = nufeb_model
 
 all: $(GUI_EXE)
 
 #GeneNet creation Tool Chain
 $(GUI_EXE): $(SRCS)
-	 g++ minimal.cpp `wx-config-3.0 --cxxflags --libs` -o minimal
+	 g++ nufeb_model.cpp `wx-config-3.0 --cxxflags --libs` -o nufeb_model
 
 .PHONY: clean
 
