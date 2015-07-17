@@ -31,6 +31,8 @@
 #endif
 
 #include <wx/grid.h>
+#include <iostream>
+#include <fstream>
 
 // ----------------------------------------------------------------------------
 // resources
@@ -71,6 +73,8 @@ public:
     void OnAbout(wxCommandEvent& event);
     void InputBrowse(wxCommandEvent& event);
     void OutputBrowse(wxCommandEvent& event);
+    void Generate(wxCommandEvent& event);
+    void Run(wxCommandEvent& event);
     void ClickGrowth(wxCommandEvent& event);
     void ClickDeath(wxCommandEvent& event);
     void ClickDivision(wxCommandEvent& event);
@@ -79,8 +83,21 @@ private:
     // any class wishing to process wxWidgets events must use this macro
     wxDECLARE_EVENT_TABLE();
 
+    wxRadioButton *periodicX;
+    wxRadioButton *fixedX;
+    wxRadioButton *periodicY;
+    wxRadioButton *fixedY;
+    wxRadioButton *periodicZ;
+    wxRadioButton *fixedZ;
+
+    wxTextCtrl *neighbor;
+    wxTextCtrl *timestep;
+
     wxTextCtrl *inputFile;
     wxTextCtrl *outputFile;
+
+    wxCheckBox *particlePhysics;
+    wxCheckBox *gravity;
 
     wxCheckBox *hetGrowth;
     wxCheckBox *hetDeath;
@@ -98,6 +115,37 @@ private:
     wxCheckBox *allGrowth;
     wxCheckBox *allDeath;
     wxCheckBox *allDivision;
+
+    wxTextCtrl *hetGrowthRate;
+    wxTextCtrl *hetDecayRate;
+    wxTextCtrl *hetYieldRate;
+
+    wxTextCtrl *aobGrowthRate;
+    wxTextCtrl *aobDecayRate;
+    wxTextCtrl *aobYieldRate;
+
+    wxTextCtrl *nobGrowthRate;
+    wxTextCtrl *nobDecayRate;
+    wxTextCtrl *nobYieldRate;
+
+    wxTextCtrl *epsDecayRate;
+    wxTextCtrl *epsYieldRate;
+
+    wxTextCtrl *hetOxygen;
+    wxTextCtrl *aobOxygen;
+    wxTextCtrl *nobOxygen;
+
+    wxTextCtrl *hetNitrite;
+    wxTextCtrl *nobNitrite;
+
+    wxTextCtrl *hetCarbon;
+    wxTextCtrl *hetNitrate;
+    wxTextCtrl *aobAmmonia;
+    wxTextCtrl *hetReduction;
+    wxTextCtrl *deathFactor;
+
+    wxTextCtrl *epsDensity;
+    wxTextCtrl *epsRatio;
 };
 
 // ----------------------------------------------------------------------------
@@ -116,9 +164,11 @@ enum
     Minimal_About = wxID_ABOUT,
     BUTTON_InputBrowse = wxID_HIGHEST + 1,
     BUTTON_OutputBrowse = wxID_HIGHEST + 2,
-    CHECKBOX_Growth = wxID_HIGHEST + 3,
-    CHECKBOX_Death = wxID_HIGHEST + 4,
-    CHECKBOX_Division = wxID_HIGHEST + 5
+    BUTTON_Generate = wxID_HIGHEST + 3,
+    BUTTON_Run = wxID_HIGHEST + 4,
+    CHECKBOX_Growth = wxID_HIGHEST + 5,
+    CHECKBOX_Death = wxID_HIGHEST + 6,
+    CHECKBOX_Division = wxID_HIGHEST + 7
 };
 
 // ----------------------------------------------------------------------------
@@ -133,6 +183,8 @@ wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
     EVT_MENU(Minimal_About, MyFrame::OnAbout)
     EVT_BUTTON ( BUTTON_InputBrowse, MyFrame::InputBrowse )
     EVT_BUTTON ( BUTTON_OutputBrowse, MyFrame::OutputBrowse )
+    EVT_BUTTON ( BUTTON_Generate, MyFrame::Generate )
+    EVT_BUTTON ( BUTTON_Run, MyFrame::Run )
     EVT_CHECKBOX ( CHECKBOX_Growth, MyFrame::ClickGrowth )
     EVT_CHECKBOX ( CHECKBOX_Death, MyFrame::ClickDeath )
     EVT_CHECKBOX ( CHECKBOX_Division, MyFrame::ClickDivision )
@@ -180,7 +232,7 @@ bool MyApp::OnInit()
 
 // frame constructor
 MyFrame::MyFrame(const wxString& title)
-       : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(2000,1000))
+       : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(1250,1250))
 {
     // set the frame icon
     SetIcon(wxICON(sample));
@@ -230,12 +282,12 @@ MyFrame::MyFrame(const wxString& title)
     wxBoxSizer *hboxBoundary = new wxBoxSizer(wxHORIZONTAL);
 
 
-    wxRadioButton *periodicX = new wxRadioButton(panel, -1, "", wxDefaultPosition, wxDefaultSize, wxRB_GROUP);
-    wxRadioButton *fixedX = new wxRadioButton(panel, -1, "");
-    wxRadioButton *periodicY = new wxRadioButton(panel, -1, "", wxDefaultPosition, wxDefaultSize, wxRB_GROUP);
-    wxRadioButton *fixedY = new wxRadioButton(panel, -1, "");
-    wxRadioButton *periodicZ = new wxRadioButton(panel, -1, "", wxDefaultPosition, wxDefaultSize, wxRB_GROUP);
-    wxRadioButton *fixedZ = new wxRadioButton(panel, -1, "");
+    periodicX = new wxRadioButton(panel, -1, "", wxDefaultPosition, wxDefaultSize, wxRB_GROUP);
+    fixedX = new wxRadioButton(panel, -1, "");
+    periodicY = new wxRadioButton(panel, -1, "", wxDefaultPosition, wxDefaultSize, wxRB_GROUP);
+    fixedY = new wxRadioButton(panel, -1, "");
+    periodicZ = new wxRadioButton(panel, -1, "", wxDefaultPosition, wxDefaultSize, wxRB_GROUP);
+    fixedZ = new wxRadioButton(panel, -1, "");
 
     vbox1->Add(new wxStaticText(panel, -1, "Boundary"));
     vbox1->Add(new wxStaticText(panel, -1, "Periodic:", wxDefaultPosition, wxSize(-1, 26)));
@@ -280,7 +332,7 @@ MyFrame::MyFrame(const wxString& title)
     wxBoxSizer *hboxNeighbor = new wxBoxSizer(wxHORIZONTAL);
 
 
-    wxTextCtrl *neighbor = new wxTextCtrl(panel, -1, "1.0e-5");
+    neighbor = new wxTextCtrl(panel, -1, "1.0e-5");
 
     hboxNeighbor->Add(new wxStaticText(panel, -1, "Neighbor Skin Distance (m):"));
     hboxNeighbor->Add(neighbor);
@@ -291,12 +343,21 @@ MyFrame::MyFrame(const wxString& title)
     wxBoxSizer *hboxTimestep = new wxBoxSizer(wxHORIZONTAL);
 
 
-    wxTextCtrl *timestep = new wxTextCtrl(panel, -1, "1.0");
+    timestep = new wxTextCtrl(panel, -1, "1.0");
 
     hboxTimestep->Add(new wxStaticText(panel, -1, "Time Step (s):"));
     hboxTimestep->Add(timestep);
 
     sizer->Add(hboxTimestep);
+
+    sizer->Add(new wxStaticText(panel, -1, "", wxDefaultPosition));
+
+    wxBoxSizer *hboxPhysics = new wxBoxSizer(wxHORIZONTAL);
+
+    particlePhysics = new wxCheckBox(panel, -1, "Particle Physics");
+    gravity = new wxCheckBox(panel, -1, "Gravity");
+
+    hboxPhysics->Add();
 
     sizer->Add(new wxStaticText(panel, -1, "", wxDefaultPosition));
 
@@ -385,9 +446,9 @@ MyFrame::MyFrame(const wxString& title)
     vbox5->Add(new wxStaticText(panel, -1, "Yield Coefficient (-):", wxDefaultPosition, wxSize(-1, 34)));
 
 
-    wxTextCtrl *hetGrowthRate = new wxTextCtrl(panel, -1, "6.944e-5");
-    wxTextCtrl *hetDecayRate = new wxTextCtrl(panel, -1, "4.6296e-6");
-    wxTextCtrl *hetYieldRate = new wxTextCtrl(panel, -1, "0.61");
+    hetGrowthRate = new wxTextCtrl(panel, -1, "6.944e-5");
+    hetDecayRate = new wxTextCtrl(panel, -1, "4.6296e-6");
+    hetYieldRate = new wxTextCtrl(panel, -1, "0.61");
 
     vbox6->Add(new wxStaticText(panel, -1, "HET"), 0, wxALIGN_CENTER);
     vbox6->Add(hetGrowthRate, 0, wxALIGN_CENTER);
@@ -395,9 +456,9 @@ MyFrame::MyFrame(const wxString& title)
     vbox6->Add(hetYieldRate, 0, wxALIGN_CENTER);
 
 
-    wxTextCtrl *aobGrowthRate = new wxTextCtrl(panel, -1, "3.4722e-5");
-    wxTextCtrl *aobDecayRate = new wxTextCtrl(panel, -1, "1.2731e-6");
-    wxTextCtrl *aobYieldRate = new wxTextCtrl(panel, -1, "0.33");
+    aobGrowthRate = new wxTextCtrl(panel, -1, "3.4722e-5");
+    aobDecayRate = new wxTextCtrl(panel, -1, "1.2731e-6");
+    aobYieldRate = new wxTextCtrl(panel, -1, "0.33");
 
 
     vbox7->Add(new wxStaticText(panel, -1, "AOB"), 0, wxALIGN_CENTER);
@@ -406,9 +467,9 @@ MyFrame::MyFrame(const wxString& title)
     vbox7->Add(aobYieldRate, 0, wxALIGN_CENTER);
 
 
-    wxTextCtrl *nobGrowthRate = new wxTextCtrl(panel, -1, "3.4722e-5");
-    wxTextCtrl *nobDecayRate = new wxTextCtrl(panel, -1, "1.2731e-6");
-    wxTextCtrl *nobYieldRate = new wxTextCtrl(panel, -1, "0.083");
+    nobGrowthRate = new wxTextCtrl(panel, -1, "3.4722e-5");
+    nobDecayRate = new wxTextCtrl(panel, -1, "1.2731e-6");
+    nobYieldRate = new wxTextCtrl(panel, -1, "0.083");
 
 
     vbox8->Add(new wxStaticText(panel, -1, "NOB"), 0, wxALIGN_CENTER);
@@ -417,8 +478,8 @@ MyFrame::MyFrame(const wxString& title)
     vbox8->Add(nobYieldRate, 0, wxALIGN_CENTER);
 
 
-    wxTextCtrl *epsDecayRate = new wxTextCtrl(panel, -1, "1.9676e-6");
-    wxTextCtrl *epsYieldRate = new wxTextCtrl(panel, -1, "0.18");
+    epsDecayRate = new wxTextCtrl(panel, -1, "1.9676e-6");
+    epsYieldRate = new wxTextCtrl(panel, -1, "0.18");
 
 
     vbox9->Add(new wxStaticText(panel, -1, "EPS"), 0, wxALIGN_CENTER);
@@ -454,9 +515,9 @@ MyFrame::MyFrame(const wxString& title)
 
     wxBoxSizer *hboxOxygen = new wxBoxSizer(wxHORIZONTAL);
 
-    wxTextCtrl *hetOxygen = new wxTextCtrl(panel, -1, "8.1e-4");
-    wxTextCtrl *aobOxygen = new wxTextCtrl(panel, -1, "5e-4");
-    wxTextCtrl *nobOxygen = new wxTextCtrl(panel, -1, "6.8e-4");
+    hetOxygen = new wxTextCtrl(panel, -1, "8.1e-4");
+    aobOxygen = new wxTextCtrl(panel, -1, "5e-4");
+    nobOxygen = new wxTextCtrl(panel, -1, "6.8e-4");
 
     hboxOxygen->Add(new wxStaticText(panel, -1, "HET:"));
     hboxOxygen->Add(hetOxygen);
@@ -468,19 +529,19 @@ MyFrame::MyFrame(const wxString& title)
 
     wxBoxSizer *hboxNitrite = new wxBoxSizer(wxHORIZONTAL);
 
-    wxTextCtrl *hetNitrite = new wxTextCtrl(panel, -1, "3e-4");
-    wxTextCtrl *nobNitrite = new wxTextCtrl(panel, -1, "1.3e-3");
+    hetNitrite = new wxTextCtrl(panel, -1, "3e-4");
+    nobNitrite = new wxTextCtrl(panel, -1, "1.3e-3");
 
     hboxNitrite->Add(new wxStaticText(panel, -1, "HET:"));
     hboxNitrite->Add(hetNitrite);
     hboxNitrite->Add(new wxStaticText(panel, -1, "NOB:"));
     hboxNitrite->Add(nobNitrite);
 
-    wxTextCtrl *hetCarbon = new wxTextCtrl(panel, -1, "1e-2");
-    wxTextCtrl *hetNitrate = new wxTextCtrl(panel, -1, "3e-4");
-    wxTextCtrl *aobAmmonia = new wxTextCtrl(panel, -1, "1e-3");
-    wxTextCtrl *hetReduction = new wxTextCtrl(panel, -1, "0.6");
-    wxTextCtrl *deathFactor = new wxTextCtrl(panel, -1, "2.0");
+    hetCarbon = new wxTextCtrl(panel, -1, "1e-2");
+    hetNitrate = new wxTextCtrl(panel, -1, "3e-4");
+    aobAmmonia = new wxTextCtrl(panel, -1, "1e-3");
+    hetReduction = new wxTextCtrl(panel, -1, "0.6");
+    deathFactor = new wxTextCtrl(panel, -1, "2.0");
 
 
     vbox11->Add(hboxOxygen);
@@ -499,8 +560,8 @@ MyFrame::MyFrame(const wxString& title)
 
     wxBoxSizer *hboxEPS = new wxBoxSizer(wxHORIZONTAL);
 
-    wxTextCtrl *epsDensity = new wxTextCtrl(panel, -1, "30");
-    wxTextCtrl *epsRatio = new wxTextCtrl(panel, -1, "1.25");
+    epsDensity = new wxTextCtrl(panel, -1, "30");
+    epsRatio = new wxTextCtrl(panel, -1, "1.25");
 
     hboxEPS->Add(new wxStaticText(panel, -1, "EPS:"));
     hboxEPS->Add(new wxStaticText(panel, -1, "Density (kg/m^3):"));
@@ -556,6 +617,17 @@ MyFrame::MyFrame(const wxString& title)
 
     sizer->Add(hboxOutput);
 
+    sizer->Add(new wxStaticText(panel, -1, "", wxDefaultPosition));
+
+    wxBoxSizer *hboxExecute = new wxBoxSizer(wxHORIZONTAL);
+
+    wxButton *generateButton = new wxButton(panel, BUTTON_Generate, _T("Generate Input Script"));
+    wxButton *runBrowse = new wxButton(panel, BUTTON_Run, _T("Run Model"));
+
+    hboxExecute->Add(generateButton);
+    hboxExecute->Add(runBrowse);
+
+    sizer->Add(hboxExecute);
 
     main->Add(sizer, 1, wxEXPAND | wxALL, 20);
 
@@ -606,6 +678,16 @@ MyFrame::MyFrame(const wxString& title)
 
 void MyFrame::OnQuit(wxCommandEvent& WXUNUSED(event))
 {
+	delete periodicX;
+    delete fixedX;
+    delete periodicY;
+    delete fixedY;
+    delete periodicZ;
+    delete fixedZ;
+
+    delete neighbor;
+    delete timestep;
+
 	delete inputFile;
 	delete outputFile;
 
@@ -625,6 +707,38 @@ void MyFrame::OnQuit(wxCommandEvent& WXUNUSED(event))
     delete allGrowth;
     delete allDeath;
     delete allDivision;
+
+    delete hetGrowthRate;
+    delete hetDecayRate;
+    delete hetYieldRate;
+
+    delete aobGrowthRate;
+    delete aobDecayRate;
+    delete aobYieldRate;
+
+    delete nobGrowthRate;
+    delete nobDecayRate;
+    delete nobYieldRate;
+
+    delete epsDecayRate;
+    delete epsYieldRate;
+
+    delete hetOxygen;
+    delete aobOxygen;
+    delete nobOxygen;
+
+    delete hetNitrite;
+    delete nobNitrite;
+
+    delete hetCarbon;
+    delete hetNitrate;
+    delete aobAmmonia;
+    delete hetReduction;
+    delete deathFactor;
+
+    delete epsDensity;
+    delete epsRatio;
+
     // true is to force the frame to close
     Close(true);
 }
@@ -677,6 +791,217 @@ void MyFrame::OutputBrowse(wxCommandEvent& WXUNUSED(event))
  
 	// Clean up after ourselves
 	OpenDialog->Destroy();
+}
+
+void MyFrame::Generate(wxCommandEvent& WXUNUSED(event))
+{
+	wxFileDialog* OpenDialog = new wxFileDialog(
+		this, "Choose a file to save", wxEmptyString, wxEmptyString, 
+		"LAMMPS Input Scripts (*.lammps)|*.lammps",
+		wxFD_SAVE, wxDefaultPosition);
+ 
+	// Creates a "open file" dialog with 4 file types
+	if (OpenDialog->ShowModal() == wxID_OK) // if the user click "Open" instead of "Cancel"
+	{
+		std::ofstream myfile (OpenDialog->GetPath());
+		myfile << "# NUFEB simulation\n\n";
+		myfile << "atom_style	bio\n";
+		myfile << "atom_modify	map array sort 10000 1e-5\n";
+		myfile << "boundary	";
+		if (periodicX->GetValue()) {
+			myfile << "pp	";
+		}
+		else {
+			myfile << "ff	";
+		}
+		if (periodicY->GetValue()) {
+			myfile << "pp	";
+		}
+		else {
+			myfile << "ff	";
+		}
+		if (periodicZ->GetValue()) {
+			myfile << "pp\n";
+		}
+		else {
+			myfile << "ff\n";
+		}
+		myfile << "newton		off\n\n";
+		myfile << "communicate single vel yes\n";
+		if (inputFile->GetValue().compare("") != 0) {}
+			myfile << "read_data 	";
+			myfile << inputFile->GetValue();
+			myfile << "\n\n";
+		}
+		else {
+			myfile << "\n";
+		}
+		myfile << "group HET type 1\n";
+		myfile << "group AOB type 2\n";
+		myfile << "group NOB type 3\n";
+		myfile << "group EPS type 4\n";
+		myfile << "group inert type 5\n\n";
+		myfile << "neighbor	";
+		myfile << neighbor->GetValue();
+		myfile << " bin\n";
+		myfile << "neigh_modify	delay 0\n\n";
+		myfile << "pair_style  gran/hooke/history 200000000 NULL 15000000 NULL 0.5 1\n";
+		myfile << "pair_coeff  * *\n";
+		myfile << "timestep	";
+		myfile << timestep->GetValue();
+		myfile << "\n\n";
+		myfile << "velocity    all set 0.0 0.0 0.0 units box\n\n";
+		myfile << "fix		1 all nve/sphere\n";
+		myfile << "fix		2 all gravity 9.8 vector 0 -1 0\n\n";
+		myfile << "variable KsHET equal ";
+		myfile << hetCarbon->GetValue();
+		myfile << "\n";
+		myfile << "variable Ko2HET equal ";
+		myfile << hetOxygen->GetValue();
+		myfile << "\n";
+		myfile << "variable Kno2HET equal ";
+		myfile << hetNitrite->GetValue();
+		myfile << "\n";
+		myfile << "variable Kno3HET equal ";
+		myfile << hetNitrate->GetValue();
+		myfile << "\n";
+		myfile << "variable Knh4AOB equal ";
+		myfile << aobAmmonia->GetValue();
+		myfile << "\n";
+		myfile << "variable Ko2AOB equal ";
+		myfile << aobOxygen->GetValue();
+		myfile << "\n";
+		myfile << "variable Kno2NOB equal ";
+		myfile << nobNitrite->GetValue();
+		myfile << "\n";
+		myfile << "variable Ko2NOB equal ";
+		myfile << nobOxygen->GetValue();
+		myfile << "\n";
+		myfile << "variable MumHET equal ";
+		myfile << hetGrowthRate->GetValue();
+		myfile << "\n";
+		myfile << "variable MumAOB equal ";
+		myfile << aobGrowthRate->GetValue();
+		myfile << "\n";
+		myfile << "variable MumNOB equal ";
+		myfile << nobGrowthRate->GetValue();
+		myfile << "\n";
+		myfile << "variable etaHET equal ";
+		myfile << hetReduction->GetValue();
+		myfile << "\n";
+		myfile << "variable bHET equal ";
+		myfile << hetDecayRate->GetValue();
+		myfile << "\n";
+		myfile << "variable bAOB equal ";
+		myfile << aobDecayRate->GetValue();
+		myfile << "\n";
+		myfile << "variable bNOB equal ";
+		myfile << nobDecayRate->GetValue();
+		myfile << "\n";
+		myfile << "variable bEPS equal ";
+		myfile << epsDecayRate->GetValue();
+		myfile << "\n";
+		myfile << "variable YEPS equal ";
+		myfile << epsYieldRate->GetValue();
+		myfile << "\n";
+		myfile << "variable YHET equal ";
+		myfile << hetYieldRate->GetValue();
+		myfile << "\n";
+		myfile << "variable EPSdens equal ";
+		myfile << epsDensity->GetValue();
+		myfile << "\n";
+		myfile << "variable EPSratio equal ";
+		myfile << epsRatio->GetValue();
+		myfile << "\n";
+		myfile << "variable factor equal ";
+		myfile << deathFactor->GetValue();
+		myfile << "\n\n";
+		if (allGrowth->IsChecked()) {
+			myfile << "fix g1 all nugrowth 1 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bEPS v_YEPS v_YHET v_EPSdens\n";
+		}
+		else {
+			if (hetGrowth->IsChecked()) {
+				myfile << "fix g1 HET nugrowth 1 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bEPS v_YEPS v_YHET v_EPSdens\n";
+			}
+			if (aobGrowth->IsChecked()) {
+				myfile << "fix g2 AOB nugrowth 1 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bEPS v_YEPS v_YHET v_EPSdens\n";
+			}
+			if (nobGrowth->IsChecked()) {
+				myfile << "fix g3 NOB nugrowth 1 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bEPS v_YEPS v_YHET v_EPSdens\n";
+			}
+		}
+		if (allDeath->IsChecked()) {
+			myfile << "fix dt1 HET death 1 v_bHET v_factor ";
+			myfile << rand();
+			myfile << "\n";
+			myfile << "fix dt2 AOB death 1 v_bAOB v_factor ";
+			myfile << rand();
+			myfile << "\n";
+			myfile << "fix dt3 NOB death 1 v_bNOB v_factor ";
+			myfile << rand();
+			myfile << "\n";
+		}
+		else {
+			if (hetDeath->IsChecked()) {
+				myfile << "fix dt1 HET death 1 v_bHET v_factor ";
+				myfile << rand();
+				myfile << "\n";
+			}
+			if (aobDeath->IsChecked()) {
+				myfile << "fix dt2 AOB death 1 v_bAOB v_factor ";
+				myfile << rand();
+				myfile << "\n";
+			}
+			if (nobDeath->IsChecked()) {
+				myfile << "fix dt3 NOB death 1 v_bNOB v_factor ";
+				myfile << rand();
+				myfile << "\n";
+			}
+		}
+		if (allDivision->IsChecked()) {
+			myfile << "fix d1 all divide 1 v_EPSdens 2.0 ";
+			myfile << rand();
+			myfile << "\n";
+		}
+		else {
+			if (hetDivision->IsChecked()) {
+				myfile << "fix d1 HET divide 1 v_EPSdens 2.0 ";
+				myfile << rand();
+				myfile << "\n";
+			}
+			if (aobDivision->IsChecked()) {
+				myfile << "fix d2 AOB divide 1 v_EPSdens 2.0 ";
+				myfile << rand();
+				myfile << "\n";
+			}
+			if (nobDivision->IsChecked()) {
+				myfile << "fix d3 NOB divide 1 v_EPSdens 2.0 ";
+				myfile << rand();
+				myfile << "\n";
+			}
+		}
+		if (hetEPSExcretion->IsChecked()) {
+			myfile << "fix e1 HET eps_extract 1 v_EPSratio v_EPSdens ";
+			myfile << rand();
+			myfile << "\n";
+		}
+		myfile << "\n";
+		myfile << "dump		id all custom 2000 snapshot.bubblemd id type radius vx vy vz x y z outerradius outermass\n\n";
+		myfile << "thermo_style    custom step atoms ke vol\n\n";
+		myfile << "thermo		1\n";
+		myfile << "thermo_modify	lost error\n\n";
+		myfile << "run 172800\n";
+  		myfile.close();
+	}
+ 
+	// Clean up after ourselves
+	OpenDialog->Destroy();
+
+}
+
+void MyFrame::Run(wxCommandEvent& WXUNUSED(event))
+{
+	
 }
 
 void MyFrame::ClickGrowth(wxCommandEvent& event)
