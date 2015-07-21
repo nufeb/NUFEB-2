@@ -78,6 +78,8 @@ public:
     void ClickGrowth(wxCommandEvent& event);
     void ClickDeath(wxCommandEvent& event);
     void ClickDivision(wxCommandEvent& event);
+    void ClickPhysics(wxCommandEvent& event);
+    void ClickGravity(wxCommandEvent& event);
 
 private:
     // any class wishing to process wxWidgets events must use this macro
@@ -97,7 +99,18 @@ private:
     wxTextCtrl *outputFile;
 
     wxCheckBox *particlePhysics;
+
+    wxTextCtrl *kn;
+    wxTextCtrl *kt;
+    wxTextCtrl *gamman;
+    wxTextCtrl *gammat;
+    wxTextCtrl *mu;
+    wxCheckBox *flag;
+
     wxCheckBox *gravity;
+
+    wxTextCtrl *magnitude;
+    wxComboBox *direction;
 
     wxCheckBox *hetGrowth;
     wxCheckBox *hetDeath;
@@ -168,7 +181,9 @@ enum
     BUTTON_Run = wxID_HIGHEST + 4,
     CHECKBOX_Growth = wxID_HIGHEST + 5,
     CHECKBOX_Death = wxID_HIGHEST + 6,
-    CHECKBOX_Division = wxID_HIGHEST + 7
+    CHECKBOX_Division = wxID_HIGHEST + 7,
+    CHECKBOX_Physics = wxID_HIGHEST + 8,
+    CHECKBOX_Gravity = wxID_HIGHEST + 9
 };
 
 // ----------------------------------------------------------------------------
@@ -188,6 +203,8 @@ wxBEGIN_EVENT_TABLE(MyFrame, wxFrame)
     EVT_CHECKBOX ( CHECKBOX_Growth, MyFrame::ClickGrowth )
     EVT_CHECKBOX ( CHECKBOX_Death, MyFrame::ClickDeath )
     EVT_CHECKBOX ( CHECKBOX_Division, MyFrame::ClickDivision )
+    EVT_CHECKBOX ( CHECKBOX_Physics, MyFrame::ClickPhysics )
+    EVT_CHECKBOX ( CHECKBOX_Gravity, MyFrame::ClickGravity )
 wxEND_EVENT_TABLE()
 
 // Create a new application object: this macro will allow wxWidgets to create
@@ -352,12 +369,59 @@ MyFrame::MyFrame(const wxString& title)
 
     sizer->Add(new wxStaticText(panel, -1, "", wxDefaultPosition));
 
+    particlePhysics = new wxCheckBox(panel, CHECKBOX_Physics, "Particle Physics");
+    particlePhysics->SetValue(true);
+
+    sizer->Add(particlePhysics);
+
     wxBoxSizer *hboxPhysics = new wxBoxSizer(wxHORIZONTAL);
 
-    particlePhysics = new wxCheckBox(panel, -1, "Particle Physics");
-    gravity = new wxCheckBox(panel, -1, "Gravity");
+    kn = new wxTextCtrl(panel, -1, "200000000");
+    kt = new wxTextCtrl(panel, -1, "");
+    gamman = new wxTextCtrl(panel, -1, "15000000");
+    gammat = new wxTextCtrl(panel, -1, "");
+    mu = new wxTextCtrl(panel, -1, "0.5");
+    flag = new wxCheckBox(panel, -1, "Flag");
+    flag->SetValue(true);
 
-    hboxPhysics->Add();
+    hboxPhysics->Add(new wxStaticText(panel, -1, "k_n:"));
+    hboxPhysics->Add(kn);
+    hboxPhysics->Add(new wxStaticText(panel, -1, "k_t:"));
+    hboxPhysics->Add(kt);
+    hboxPhysics->Add(new wxStaticText(panel, -1, "gamma_n:"));
+    hboxPhysics->Add(gamman);
+    hboxPhysics->Add(new wxStaticText(panel, -1, "gamma_t:"));
+    hboxPhysics->Add(gammat);
+    hboxPhysics->Add(new wxStaticText(panel, -1, "mu:"));
+    hboxPhysics->Add(mu);
+    hboxPhysics->Add(flag);
+
+    sizer->Add(hboxPhysics);
+
+    gravity = new wxCheckBox(panel, CHECKBOX_Gravity, "Gravity");
+    gravity->SetValue(true);
+
+    sizer->Add(gravity);
+
+    wxBoxSizer *hboxGravity = new wxBoxSizer(wxHORIZONTAL);
+
+    wxString dir[6];
+
+    magnitude = new wxTextCtrl(panel, -1, "9.8");
+    direction = new wxComboBox(panel, -1, "down", wxDefaultPosition, wxDefaultSize, 6, dir);
+    direction->SetString(0,"up");
+    direction->SetString(1,"down");
+    direction->SetString(2,"left");
+    direction->SetString(3,"right");
+    direction->SetString(4,"forward");
+    direction->SetString(5,"backward");
+
+    hboxGravity->Add(new wxStaticText(panel, -1, "magnitude (m/s^2):"));
+    hboxGravity->Add(magnitude);
+    hboxGravity->Add(new wxStaticText(panel, -1, "direction:"));
+    hboxGravity->Add(direction);
+
+    sizer->Add(hboxGravity);
 
     sizer->Add(new wxStaticText(panel, -1, "", wxDefaultPosition));
 
@@ -411,6 +475,20 @@ MyFrame::MyFrame(const wxString& title)
     allGrowth = new wxCheckBox(panel, CHECKBOX_Growth, "");
     allDeath = new wxCheckBox(panel, CHECKBOX_Death, "");
     allDivision = new wxCheckBox(panel, CHECKBOX_Division, "");
+
+    allGrowth->SetValue(true);
+    hetGrowth->Enable(false);
+	aobGrowth->Enable(false);
+	nobGrowth->Enable(false);
+	allDeath->SetValue(true);
+    hetDeath->Enable(false);
+	aobDeath->Enable(false);
+	nobDeath->Enable(false);
+	allDivision->SetValue(true);
+    hetDivision->Enable(false);
+	aobDivision->Enable(false);
+	nobDivision->Enable(false);
+	hetEPSExcretion->SetValue(true);
 
     vbox16->Add(new wxStaticText(panel, -1, "All"), 0, wxALIGN_CENTER);
     vbox16->Add(allGrowth, 0, wxALIGN_CENTER);
@@ -691,6 +769,20 @@ void MyFrame::OnQuit(wxCommandEvent& WXUNUSED(event))
 	delete inputFile;
 	delete outputFile;
 
+	delete particlePhysics;
+
+    delete kn;
+    delete kt;
+    delete gamman;
+    delete gammat;
+    delete mu;
+    delete flag;
+
+    delete gravity;
+
+    delete magnitude;
+    delete direction;
+
 	delete hetGrowth;
     delete hetDeath;
     delete hetDivision;
@@ -828,7 +920,7 @@ void MyFrame::Generate(wxCommandEvent& WXUNUSED(event))
 		}
 		myfile << "newton		off\n\n";
 		myfile << "communicate single vel yes\n";
-		if (inputFile->GetValue().compare("") != 0) {}
+		if (inputFile->GetValue().compare("") != 0) {
 			myfile << "read_data 	";
 			myfile << inputFile->GetValue();
 			myfile << "\n\n";
@@ -845,14 +937,77 @@ void MyFrame::Generate(wxCommandEvent& WXUNUSED(event))
 		myfile << neighbor->GetValue();
 		myfile << " bin\n";
 		myfile << "neigh_modify	delay 0\n\n";
-		myfile << "pair_style  gran/hooke/history 200000000 NULL 15000000 NULL 0.5 1\n";
-		myfile << "pair_coeff  * *\n";
+
+
+		if (particlePhysics->IsChecked()) {
+			myfile << "pair_style  gran/hooke/history ";
+			if (kn->GetValue().compare("") == 0) {
+				myfile << "NULL ";
+			}
+			else {
+				myfile << kn->GetValue();
+				myfile << " ";
+			}
+			if (kt->GetValue().compare("") == 0) {
+				myfile << "NULL ";
+			}
+			else {
+				myfile << kt->GetValue();
+				myfile << " ";
+			}
+			if (gamman->GetValue().compare("") == 0) {
+				myfile << "NULL ";
+			}
+			else {
+				myfile << gamman->GetValue();
+				myfile << " ";
+			}
+			if (gammat->GetValue().compare("") == 0) {
+				myfile << "NULL ";
+			}
+			else {
+				myfile << gammat->GetValue();
+				myfile << " ";
+			}
+			myfile << mu->GetValue();
+			myfile << " ";
+			if (flag->IsChecked()) {
+				myfile << "1";
+			}
+			else {
+				myfile << "0";
+			}
+			myfile << "\npair_coeff  * *\n";
+		}
 		myfile << "timestep	";
 		myfile << timestep->GetValue();
 		myfile << "\n\n";
 		myfile << "velocity    all set 0.0 0.0 0.0 units box\n\n";
 		myfile << "fix		1 all nve/sphere\n";
-		myfile << "fix		2 all gravity 9.8 vector 0 -1 0\n\n";
+		if (particlePhysics->IsChecked() && gravity->IsChecked()) {
+			myfile << "fix		2 all gravity ";
+			myfile << magnitude->GetValue();
+			myfile << " vector ";
+			if (direction->GetValue().compare("down") == 0) {
+				myfile << "0 -1 0\n";
+			}
+			else if (direction->GetValue().compare("up") == 0) {
+				myfile << "0 1 0\n";
+			}
+			else if (direction->GetValue().compare("left") == 0) {
+				myfile << "-1 0 0\n";				
+			}
+			else if (direction->GetValue().compare("right") == 0) {
+				myfile << "1 0 0\n";				
+			}
+			else if (direction->GetValue().compare("forward") == 0) {
+				myfile << "0 0 1\n";
+			}
+			else {
+				myfile << "0 0 -1\n";				
+			}
+		}
+		myfile << "\n";	
 		myfile << "variable KsHET equal ";
 		myfile << hetCarbon->GetValue();
 		myfile << "\n";
@@ -1043,5 +1198,42 @@ void MyFrame::ClickDivision(wxCommandEvent& event)
 		hetDivision->Enable(true);
 		aobDivision->Enable(true);
 		nobDivision->Enable(true);
+	}
+}
+
+void MyFrame::ClickPhysics(wxCommandEvent& event)
+{
+	if (particlePhysics->IsChecked()) {
+		kn->Enable(true);
+    	kt->Enable(true);
+    	gamman->Enable(true);
+    	gammat->Enable(true);
+    	mu->Enable(true);
+    	flag->Enable(true);
+    	gravity->Enable(true);
+    	ClickGravity(event);
+	}
+	else {
+		kn->Enable(false);
+    	kt->Enable(false);
+    	gamman->Enable(false);
+    	gammat->Enable(false);
+    	mu->Enable(false);
+    	flag->Enable(false);
+    	gravity->Enable(false);
+    	magnitude->Enable(false);
+    	direction->Enable(false);
+	}
+}
+
+void MyFrame::ClickGravity(wxCommandEvent& event)
+{
+	if (gravity->IsChecked()) {
+		magnitude->Enable(true);
+    	direction->Enable(true);
+	}
+	else {
+		magnitude->Enable(false);
+    	direction->Enable(false);
 	}
 }
