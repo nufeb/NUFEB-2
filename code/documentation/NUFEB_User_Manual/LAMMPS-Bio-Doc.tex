@@ -159,11 +159,11 @@
 
 \section{Introduction}
 
-Water is one of the most essential commodities to sustain life. Even though 71 percent of the earth is water and 97 percent exists in form of oceans, only 0.3 percent of the water can be used by us. Water demands has been growing steadily with ever increasing world population. Furthermore, uneven human population distribution on earth adds to the water distribution problem. Usable and portable water scarcity is a major problem for many societies (citations). The problem is widely discussed and demands a judicial usage of available resources. However, several countries (mostly under-developed and developing) suffer from extreme shortage of the water resources. Waste water treatment plants have served the societies for several decades now. Activated sludge process treatment plants are the most common types as it provides an advantage of better efficiency and economics.
+The portable water shortage problem is widely discussed and demands a judicial usage of available resources. However, several countries (mostly under-developed and developing) suffer from extreme shortage of the water resources. Waste water treatment plants have served the societies for several decades now. Activated sludge process treatment plants are the most common types as it provides an advantage of better efficiency and economics.
 
 \subsection{Activated Sludge process}
 
-Activated sludge is defined as a microbrial mass cultivated in order to break down the biomass into different components such as carbon dioxide, water and other nitrogen or phosphorous based compounds. Activated sludge process involves 3 different component mechanisms:
+Activated sludge is defined as a microbial mass cultivated in order to break down the biomass into different components such as carbon dioxide, water and other nitrogen or phosphorous based compounds. Activated sludge process involves 3 different component mechanisms:
 
 \begin{itemize}
 \item A reactor in which the microbes are kept in suspension, aerated, and in contact with the waste they are treating.
@@ -185,10 +185,6 @@ In present waste water industries, many variants of activated sludge processes, 
 \subsection{Floc formation}
 A floc is described as an aggregate of microbes bonded together by adhesive material (EPS) secreted by them. These clusters formations, often called as activated sludge, play a key role in the functioning of any waste water treatment plant (WWTP). Efficiency or the energy requirement of either of the primary and secondary tanks in an activated sludge process, depends upon the floc size, settlement or motility. Furthermore, the floc formation is governed by the microbial components adherence and cluster breakages.
 
-\subsubsection{Biological process}
-\subsubsection{Physical process}
-
-
 \section{Individual based modelling (IBm)}
 Pilot scale plants and laboratory scale experiments of WWTP are expensive, cumbersome, non-invasive and often can not provide information at the micro-scale, which is required for operational optimization of WWTP. Modelling of WWTP is challenging due to wide separation of temporal and spatial scales at which biological and physical processes key roles. Henceforth, a multi-scale modelling strategy is required to relate the microscopic microbial actions (often less than a micrometer size) to the macroscopic bulk WWTP operation (meter size scale). Identification of different length scales typical to a WWTP is presented can be shown in the figure \ref{fig:lscale}.  
 
@@ -201,10 +197,7 @@ Pilot scale plants and laboratory scale experiments of WWTP are expensive, cumbe
 \end{figure}  
  
 \subsection{Introduction}
-Discrete unit models such as the cellular automaton (Picioreanu et al., 1998a) or the individual-based models (Kreft et al., 1998), have been first developed and are now becoming widely applied to study effects of spatially multidimensional gradients in biofilms. Models which use individuals as a basic unit have occasionally been used in ecology since 1970s, but only since the visionary review of Huston et al. (1988) has individual-base modelling been an explicitly delineated approach of ecological modelling. Individual-based modelling refers in the following to simulation models that treat individuals as unique and discrete entities which have at least one property in addition to age that changes during the life cycle, e.g. weight, rank in a social hierarchy, etc. For biofilm modelling, Kreft et al. (1998, 2001) initially proposed the Individual-based Modelling (IbM) as a proper tool compared with existing Cellular Automaton (CA) method used for biofilm modelling. In CA models, the biofilm is represented by collection of bricks, in which each brick is represented by a Cartesian grid (Picioreanu et al., 1998a, 1998b,2000a; Knutson et al., 2005; Tang and Valocchi, 2013, Radu et al. 2010). In IbM, bacterial cells are represented as hard spheres, with each cell having, besides a variable volume and mass, a set of variable growth parameters, position, velocity, genotype etc. The IbM model consists of two parts: one deals with the growth and behaviour of individual bacteria as autonomous agents (i.e., biological processes); the other deals with the substrate and product diffusion and reaction and fluid flow (i.e., physical processes). Each cell grows by consuming the substrate and divides when a certain volume or mass is reached. The pressure build-up due to the growth of biomass is released by maintenance of a minimum distance between the neighbouring cells. In the traditional IbM approach, for each cell, the vector sum of all positive overlap radii with the neighbouring cells, which is called the shoving vector, is calculated and then the position of the cell is shifted in the direction opposite to this vector 3 sum. The substrate concentration is governed by a convection-diffusion-reaction equation and this transport equation is solved in a fixed Cartesian grid. Figure 1 shows the typical computation domain associated with IbM of biofilms. Basically it has three sub-domains each for biofilm, mass transfer boundary layer, and bulk fluid. Numerical simulations in 2D showed that the IbM produced a more confluent and rounded biofilm structures than the CA based models, due to its deterministic and directionally unconstrained spreading of the biomass (Wang and Zhang, 2010).
-
-
-\subsection{Model description}
+Discrete unit models such as the cellular automaton \citep{picioreanu1998mathematical} or the individual-based models \citep{kreft1998bacsim}, have been first developed and are now becoming widely applied to study effects of spatially multidimensional gradients in biofilms. Models which use individuals as a basic unit have occasionally been used in ecology since 1970s, but only since the visionary review of \citet{huston1988new} has individual-base modelling been an explicitly delineated approach of ecological modelling. Individual-based modelling refers in the following to simulation models that treat individuals as unique and discrete entities which have at least one property in addition to age that changes during the life cycle, e.g. weight, rank in a social hierarchy, etc. For biofilm modelling, \citet{kreft2001individual,picioreanu1998mathematical} initially proposed the Individual-based Modelling (IbM) as a proper tool compared with existing Cellular Automaton (CA) method used for biofilm modelling. In CA models, the biofilm is represented by collection of bricks, in which each brick is represented by a Cartesian grid (\citep{picioreanu1998mathematical,picioreanu1998new,picioreanu2000theoretical,eberl2000three}. In IbM, bacterial cells are represented as hard spheres, with each cell having, besides a variable volume and mass, a set of variable growth parameters, position, velocity, genotype etc. The IbM model consists of two parts: one deals with the growth and behaviour of individual bacteria as autonomous agents (i.e., biological processes); the other deals with the substrate and product diffusion and reaction and fluid flow (i.e., physical processes). Each cell grows by consuming the substrate and divides when a certain volume or mass is reached. The pressure build-up due to the growth of biomass is released by maintenance of a minimum distance between the neighbouring cells. In the traditional IbM approach, for each cell, the vector sum of all positive overlap radii with the neighbouring cells, which is called the shoving vector, is calculated and then the position of the cell is shifted in the direction opposite to this vector 3 sum. The substrate concentration is governed by a convection-diffusion-reaction equation and this transport equation is solved in a fixed Cartesian grid. Figure 1 shows the typical computation domain associated with IbM of biofilms. Basically it has three sub-domains each for biofilm, mass transfer boundary layer, and bulk fluid.
 
 \subsection{Purpose of the model}
 
@@ -229,7 +222,7 @@ Nutrients are treated as concentrations in dissolved and convected through the f
 
 \item Fluid: Fluid or the water phase is treated as a continuum media with microbes mostly suspended (neutrally buoyant). The fluid motion is solved in an Eulerian grid and takes into the account of the microbial suspension. Fluid and particle motion are tightly coupled by the hydrodynamics solver. 
 
-\item Nutrients: The nutrients are treated as concentrations of the food supply in the water phase. The fluid solver supplies these nutrients to the microbes and hence contributes to their metabolism. Following nutrients relevant to the waste water treatment plant are taken into the account: Carbon substrates ($S_s$), Oxygen supply ($O_2$), Nitrates ($NO_{2}$), Nitrites ($NO_{3}$) and Ammonia ($NH_{4}$).
+\item Nutrients: The nutrients are treated as concentrations of the food supply in the water phase. The fluid solver supplies these nutrients to the microbes and hence contributes to their metabolism. Following nutrients relevant to the waste water treatment plant are taken into the account: Carbon substrates (S$_s$), Oxygen supply (O$_2$), Nitrates (NO$_{2}$), Nitrites (NO$_{3}$) and Ammonia (NH$_{4}$).
 \end{itemize}
 
 \subsection{IBm submodels}
@@ -267,7 +260,7 @@ Reaction equations are primarily mass balance solved on the mesh discretization 
 \end{figure}  
 
 
-Each of the components of uptake or consumption is calculated separately and added together following superposition principle. The rate is defined according to Monod-kinetics where the kinetics factors are product together. Also, the rate of the growth/decay is proportional to the instantaneous mass of the substrate. The local nutrient availability for the growth of each cell is based upon the ambient conditions solved through the passive scalar transport of the nutrients. Fluid-biofilm coupling solver ensures that each cell is aware of its ambient nutrient conditions.Each of the cell has nutrient availability concentration attributes as: Soluble substrate (Ss), Oxygen ($O_2$), NO2, NO3, NH4. 
+Each of the components of uptake or consumption is calculated separately and added together following superposition principle. The rate is defined according to Monod-kinetics where the kinetics factors are product together. Also, the rate of the growth/decay is proportional to the instantaneous mass of the substrate. The local nutrient availability for the growth of each cell is based upon the ambient conditions solved through the passive scalar transport of the nutrients. Fluid-biofilm coupling solver ensures that each cell is aware of its ambient nutrient conditions.Each of the cell has nutrient availability concentration attributes as: Soluble substrate (S$_s$), Oxygen (O$_2$), NO$_2$, NO$_3$, NH$_4$. 
 
 \subsubsection{Cell Division}\label{divisionmol}
 Microbes can not grow forever (even with infinite food supply), division occurs due to sustenance of their sizes. Present model employs cell division rather empirically, by fixing up a maximum cell diameter, after which it divides. The model is implemented in following way: If the mass of a bacterial cell becomes greater than twice the mass of an inoculated individual bacterium, it divides into two daughter cells each. During the division process, the cell mass is split in a ratio randomly selected between 0.4-0.6. This generated two daughter cells from a parent cell. These daughter cells are oriented randomly around the centre of the parent cell. Figure \ref{fig:divcr} shows the division of daughter cells from the mother cell, randomly oriented around the centre of mother cell. This generation of newer particles occur at start of every time step and the forces equilibrated according to the overlaps, ensuring mechanical stability. The diameters of daughter cells are calculated using the cell mass and biomass density. Biomass density is constant for each species. 
@@ -308,7 +301,251 @@ Microbes secrete extracellular polymeric substances (EPS) every so often as a wa
 \end{figure}  
 
 \subsubsection{EPS-Adhesion forces}\label{adhmol}
-The excreted EPS mass from the HET particles can be employed as a parameter of adhesion force models between the particles. The EPS link between the particles are treated as much more stiffer springs, but only employing the attractive forces. Total effective EPS mass is calculated between the microbes ($Meps_{eff}$) and a spring stiffness is defined per unit mass ($k_{eps}$). Effective overlap between the EPS links are calculated and the forces calculated according to the effective spring stiffness ($Meps_{eff}$*$k_{eps}$) multiplied by the overlap. This approach was first applied by Head et al. to reproduce a mechanically stable biofilm. 
+The excreted EPS mass from the HET particles can be employed as a parameter of adhesion force models between the particles. The EPS link between the particles are treated as much more stiffer springs, but only employing the attractive forces. Total effective EPS mass is calculated between the microbes (Meps$_{e}$) and a spring stiffness is defined per unit mass (k$_{e}$). Effective overlap between the EPS links are calculated and the forces calculated according to the effective spring stiffness (Meps$_{e}$*k$_{e}$) multiplied by the overlap. This approach was first applied by Head et al. to reproduce a mechanically stable biofilm. 
+
+\subsection{Physical models}
+
+Present code employs physical modelling of 3 key aspects and coupling inbetween them: Microbes, fluid and nutrients. 
+Microbes are treated as spherical motile living organisms interacting with themselves and with the ambient fluid. Physics of the microbial rheology is solved by using discrete element modelling (DEM). Fluid momentum and continuity equations are coupled with the particle solvers and solved together. Passive scalar transport equations of nutrient transport is solved along with the fluid equations. The field operational library OpenFOAM is used to construct upon a fluid solver, which is based on an existing TFM multiphase model there within \citep{rusche2003computational}. The Molecular Dynamics (MD) code LAMMPS is used to solve the DEM equations \citep{plimpton1995fast}. Some of the key features of the hybrid DEM-CFD code include:
+
+\begin{itemize}
+\item Open-source C++ based libraries providing an open architecture are coupled together using MPI libraries. 
+
+\item BubbleFOAM, a TFM model based in OpenFOAM library \citep{rusche2003computational}, is modified to couple with the DEM equations. The solver employs the finite volume method for discretization. The momentum transfer terms are treated implicitly leading to an improved numerical stability. 
+
+\item Passive scalar transport is solved with the fluid solver using \href{https://openfoamwiki.net/index.php/ScalarTransportFoam}{ScalarTransportFOAM}.
+
+\item Unstructured meshes and complex geometries are within the capabilities of the OpenFOAM environment but not so straightforward in LAMMPS.
+
+\item A soft sphere approach employing various visco-elastic contact models is used to resolve particle collisions with a highly efficient DEM solver.
+
+\end{itemize}
+
+\subsubsection{Fluid equations}
+\label{sec:Fluid Equation}
+
+The fluid velocity at each point in space is replaced by its average, taken over a spatial domain large enough to contain many particles but still small compared to the whole region occupied by the flowing mixture. The locally averaged incompressible continuity and momentum equations for the gas phase are given by \citep{anderson1967fluid, jackson1997locally}:
+
+\begin{equation}
+\label{eq:FluidContinuity}
+\frac{\partial \epsilon} {\partial t} + \boldsymbol{\nabla} \cdot (\epsilon \mathbf{u}_{f}) =0 \text{,}
+\end{equation}
+and 
+\begin{equation}
+\label{eq:FluidMomentum}
+\rho _{f} \frac{\partial \epsilon \mathbf{u}_{f}}{\partial t} +  \rho _{f} \nabla \cdot (\epsilon \mathbf{u}_{f} \mathbf{u}_{f})= - \boldsymbol{\nabla} P + \boldsymbol{\nabla} \cdot \tau _{f}+\epsilon\rho_{f}\mathbf{g} - \mathbf{I}_{f} \text{,}
+\end{equation}
+where $ \epsilon$ is porosity, $\mathbf{u}_{f}$, $P$, $ \rho_{f} $ and $\tau_{f} $ are the fluid velocity, pressure, density and viscous stress tensor, respectively; $\mathbf{g}$ is the gravitational acceleration;  and $\mathbf{I}_{f}$ is the inter-phase momentum transfer term arising due to fluid--particle interactions. 
+
+The deviatoric stress tensor $\tau_{f}$ include the viscous stresses also. The porosity term $\epsilon$ is calculated from the microbial positions supplied by the DEM solver. An exact procedure for the porosity calculations will be presented at a later section. The fluid momentum equations are discretized and solved on an Eulerian grid by a finite volume method. The PISO solution procedure is followed to solve the fluid momentum equation and can be summarized as follows:
+
+\begin{itemize}
+\item Momentum prediction: solve the equation using the pressure field and the external forcing (like the interphase momentum term), available from the previous time step
+\item Pressure solution: solve the pressure equation, and update the pressure field.
+\item Velocity correction: correct the velocity field using the updated pressure field.
+\item Repeat step 2 and 3 until convergence. 
+\end{itemize}
+ 
+The inter-phase momentum equation terms are treated semi-implicitly to improve numerical stability (details can be found at \citet{xiao2011algorithms}). The convection and diffusion terms are discretized with a blend of central difference (with second-order accuracy) and upwind difference (with first order accuracy), respectively. An implicit first-order Euler scheme is used for the time integration of the momentum equation.
+
+\subsubsection{Discrete element method}
+\label{sec:DEM}
+The Newtonian equations of motion are solved for each particle in a Lagrangian framework \citep{cundall1979discrete}. The equations for the translational and rotational movement given by:
+
+\begin{equation}
+\label{eq:DEM_TranslationalEQ}
+m_{i}\frac{d}{dt}\mathbf{v}_i =\mathbf{f}_{\mathrm{c}i} + \mathbf{f}_{\mathrm{fp}i} + m_i \mathbf{g} + \mathbf{f}_{\mathrm{vdw}i}
+\end{equation}
+
+
+The total force acting on a microbe is calculated as the sum of total contact, adhesion, gravitational and fluid interaction forces. The contact force ($\mathbf{f}_c$) is calculated as a sum of all the forces due to interaction with neighbouring microbes. The adhesive force ($\mathbf{f}_{adh}$) is calculated as a sum of all pair-wise adhesive interaction due to the EPS. The fluid-particle interaction force ($\mathbf{f}_\mathrm{fp}$) is obtained from a drag model, which is based on coarse grained fluid and particle variables. 
+
+Following steps are enlisted to solve the dynamics of microbial motion by the DEM equations:
+
+\begin{itemize}
+\item Neighbour list building: Identify the neighbouring microbes that are in actual contact or in the vicinity of the EPS  sphere of influence, using the microbial positions information.
+\item Contact Model: Calculate the forces due to the inter-microbial collisions and the energy dissipation due to the frictional and viscous damping. 
+\item Adhesion Model: Calculate the adhesive forces resulting from EPS interactions.
+\item Time-step calculations: Estimate the microbial interaction time-step based on the contact model employed and its parameters. 
+\item Drag Model: Calculate the fluid-particle interaction force from the coarse-grained quantities. These calculations are done at the fluid time step which is much greater than the microbial interaction time step. 
+\item Time integration: Evolve the microbial positions and velocities to the next time-step using the forces calculated from above steps. 
+\end{itemize}
+
+These steps would be briefly discussed in following subsections. A detailed explanation and implementation of each step can be found at \citet{plimpton2005lammps}.
+
+\subsubsection{Neighbour lists}
+DEM time-step is typically of the order of $10^{-7}$ s. In order to calculate the forces by contact models on each microbes, one has to loop over each particle twice per time step. This makes the DEM computations very expensive. The computational load can be reduced by maintaining neighbour lists to keep a track of only the neighbouring particles of each particles in the system.  Efforts are done to minimize the neighbour list size without omitting any force pair: contact or cohesion. In literature, three such algorithms are employed to the build neighbour lists:
+
+\begin{itemize}
+\item Verlet Neighbour List (VNL): A maximum search radius is supplied as an input parameter, which is more than the cohesion influence of sphere. This radius is decided by: (1) the dynamics of the system (2) the particle time-step. A lower search radius can decrease computational times drastically, but there is a risk of omitting some force pairs. A conservative search radius would be around 2-2.5 times diameter of the average particle size in the domain. It should be noted that the neighbour list is updated only so often and not at every particle time step.
+
+\item Link Cells: The simulation domain is divided into a number of sub-domains with a bin size around 2-3 diameter of particle. A list of all the particles is maintained for every sub-domain and the contacts are only checked within the sub-domain. Computational costs of this method is slightly more than the VNL method due to extra costs associated with keeping a track of all the contacts across the boundaries. However, this algorithm can be employed more efficiently if the code is parallelized. LAMMPS employs a link cell algorithm for contact detection. 
+
+\item Lattices: Lattice points are defined within the domain. Each particle is indexed in relation to a lattice point and a neighbour list is created for all cells within a particle diameter $d$. 
+\end{itemize}
+
+
+\subsubsection{Collision model}
+ 
+Contact models are used to determine forces on the particles based on the particle's colliding velocities and material properties. Consider two contacting particles ($i$, $j$), with radii ({$a_i$, $a_j$}), at positions ($\mathbf{r}_i$, $\mathbf{r}_j$), with velocities ($\mathbf{v}_i$, $\mathbf{v}_j$) and angular velocities {$\bm{\omega}_i$, $\bm{\omega}_j$}. 
+
+ \begin{figure}[!htb]
+\begin{center}
+  \includegraphics[width=0.4\columnwidth]{Figs/contactingpart.pdf}
+\caption{Schematic of two particles $i$ and $j$ in contact and position vectors $\mathbf{r}_i$, $\mathbf{r}_j$, respectively, with overlap $\delta_{ij}$. Resultant normal and tangential forces acting on each particle are shown here.}
+\label{fig:chp2a1}       % Give a unique label
+\end{center}
+\end{figure}  
+
+The normal compression $\delta_{ij}$, relative normal velocity $\mathbf{v}_{\mathrm{n}_{ij}}$, and relative tangential velocity $\mathbf{v}_{\mathrm{t}_{ij}}$ can be given as follows:
+
+\begin{equation}
+		\delta_{ij}=d - r_{ij}\text{,}
+\end{equation}
+	%
+\begin{equation}
+		\mathbf{v}_{\mathrm{n}_{ij}}=(\mathbf{v}_{ij}\cdot \mathbf{n}_{ij})\mathbf{n}_{ij}\text{,}
+\end{equation}
+	%
+\begin{equation}
+\mathbf{v}_{\mathrm{t}_{ij}}=\mathbf{v}_{ij} - \mathbf{v}_{n_{ij}} -(a_i\bm{\omega}_i + a_j\bm{\omega}_j)\times \mathbf{n}_{ij}\text{,}
+\end{equation}
+	where $d = a_i + a_j$, $\mathbf{r}_{ij}= \mathbf{r}_i -
+        \mathbf{r}_j$, $\mathbf{n}_{ij} = \mathbf{r}_{ij}/r_{ij}$,
+        with $r_{ij} = |{\mathbf{r}_{ij}}|$ and $\mathbf{v}_{ij} =
+        \mathbf{v}_i - \mathbf{v}_j$. The rate of change of the
+		elastic tangential displacement $\mathbf{u}_{\mathrm{t}_{ij}}$, set to
+        zero at the initiation of a contact is:
+	%
+	\begin{equation}
+		\label{eqn-ut}
+		\frac{\mathrm{d}\mathbf{u}_{\mathrm{t}_{ij}}}{\mathrm{d}t} = \mathbf{v}_{\mathrm{t}_{ij}}
+		- \frac{(\mathbf{u}_{\mathrm{t}_{ij}}\cdot\mathbf{v}_{ij})\mathbf{r}_{ij}}{r^2_{ij}}\text{.}
+	\end{equation}
+	
+	
+The last term in equation~\eqref{eqn-ut} arise from the rigid body rotation around the contact point and ensures that $\mathbf{u}_{\mathrm{t}_{ij}}$ always lies in the local tangent plane of contact. Popular contact models that are employed in the literature are a combination of spring, slider and a dash-pot. This assembly is used to estimate the normal and tangential contact forces \citep{cundall1979discrete}. The capability of the model to capture collisional behaviour depends upon the force-displacement ($\mathbf{F}_{\mathrm{n}_{ij}}-\delta_{ij}$) relationships. A brief listing of different contact models is provided here. For a more comprehensive details on each model, readers are referred to LAMMPS user manual \citep{plimpton2005lammps}. 
+
+\begin{itemize}
+\item Cohesion-less normal contact models:  Common examples of these are linear spring dash-pot (first used by \citet{cundall1979discrete}). Hertz-midillin contact model \citep{tsuji1992lagrangian}, hysteretic spring models that dissipates energy \citep{walton1986viscosity} and models accounting for plastic deformations \citep{thornton1997coefficient}.  
+
+\item Elastic adhesive contact models: These model include effect of adhesive forces to simulate fine powders. Commonly used models are JKR \citep{johnson1971surface}, DMT \citep{derjaguin1980different} and models accounting for both adhesion and plasticity \citep{thornton1998theoretical},\citep{luding2008cohesive},\citep{thakur2014micromechanical}.   
+\end{itemize}
+
+In the present work, a linear spring-dashpot model is employed for the contact force model with the static friction between the microbes, modelled according to the Coulomb's law (given below). 
+
+	\begin{equation}
+		\mathbf{F}_{\mathrm{n}_{ij}} = f(\delta_{ij}/d)(k_{\mathrm{n}}\delta_{ij}\mathbf{n}_{ij} 
+		- \gamma_{\mathrm{n}} m_{\mathrm{eff}}\mathbf{v}_{\mathrm{n}_{ij}})\text{,}
+	\end{equation}
+	%
+	\begin{equation}
+		\mathbf{F}_{\mathrm{t}_{ij}} = f(\delta_{ij}/d)(-k_{\mathrm{t}}\mathbf{u}_{\mathrm{t}_{ij}} 
+		- \gamma_{\mathrm{t}}m_{\mathrm{eff}}\mathbf{v}_{\mathrm{t}_{ij}})\text{,}
+	\end{equation}
+	where $k_{\mathrm{n,t}}$ and $\gamma_{\mathrm{n,t}}$ are the spring stiffness
+        and viscoelastic constants, respectively, and
+        $m_{\mathrm{eff}} =m_im_j /(m_i + m_j)$ is the effective mass
+        of spheres with masses $m_i$ and $m_j$. The corresponding
+        contact force on particle $j$ is simply given by Newton's
+        third law, i.e., $\mathbf{F}_{ji} = -\mathbf{F}_{ij}$. The
+        function $f(\delta_{ij}/d)=1$ is for the linear spring-dashpot
+        model, and $f(\delta_{ij}/d)=\sqrt{\delta_{ij}/d}$ is for
+        Hertzian contacts with viscoelastic damping between spheres.
+
+
+
+\subsubsection{Interphase momentum transfer}
+\label{sec:Momentum}
+
+The coupling between the gas phase and particle motion is implemented through a volume averaged fluid--particle interaction term ($\mathbf{I}_{\mathrm f}$) in the gas momentum equation. According to the Newton's third law, negative of a similar term is added to the particle equation of motion ($\mathbf{f}_{\mathrm{fp}i}$):
+
+\begin{equation}
+	\label{eq:fpinteract}
+\mathbf{f}_{\mathrm{fp}i} = - V_{\mathrm{p}i} \boldsymbol{\nabla} p    + \frac{\beta_i V_{\mathrm{p}i} }{\phi}\left ( \mathbf{u}_{\mathrm{f}i} -\mathbf{v}_{i}\right )  \text{,}
+\end{equation}
+
+Here $V_{\mathrm{p}i}$ is the volume of particle $i$; $\phi = (1 -\epsilon)$ is the solid volume fraction; $\mathbf{u}_{\mathrm{f}i}$ is the fluid velocity extrapolated to the particle $i$ position and $\beta_i$ is the particle based drag coefficient. The total interaction $\mathbf{I}_{f}$ in a fluid cell is calculated by adding all particle--fluid interaction forces in the cell as 
+\begin{equation}
+\mathbf{I}_{f} = \frac{1}{V_{\mathrm{cell}}}\sum_{i=1}^{n}\mathbf{f}_{\mathrm{fp}i} W_i \text{,}
+\end{equation}
+where $V_{\mathrm{cell}}$ is the volume of the fluid cell and $W$ is the weighting function accounting for the contribution of a particle. The weights are calculated according to a Box-car or a Gaussian function \citep{xiao2011algorithms}. The drag force is first calculated on each individual particle and then volume averaged to give it back to the fluid cell. In order to calculate $\beta_i$, many different correlations derived in limited conditions are employed in ad-hoc ways, to dynamic conditions present in a fluidized bed.
+
+\subsubsection{Drag model closures \label{sec:Drag}}
+
+The drag coefficient used in the Eq.~\ref{eq:fpinteract} can be written as
+\begin{equation}
+\label{eq:Fbeta}
+\beta = 18 \mu \phi (1-\phi)\frac{F}{d^2} \text{,}
+\end{equation}
+where $F$ is the drag force, non-dimensionalized by the Stokes--Einstein drag force  ($3 \pi \mu d \left ( \mathbf{u}_{\mathrm{f}i} -\mathbf{v}_{i} \right ) (1-\phi) $); and $\mu$ is the fluid viscosity. This dimensionless drag force can be expressed as a function of solid fraction ($\phi$) and the particle Reynolds number ($Re = \epsilon \rho_{f}d_{i} \left | \mathbf{u}_{\mathrm{f}i} -v_{i} \right | / \mu$), for a particle of diameter $d$.
+
+
+\subsubsection{Drag models}
+
+Drag models correlations were traditionally deduced from the experiments \citep{ergun1952fluid,wen1966generalized,di1994voidage}:
+
+\begin{itemize}
+\item Measuring pressure drop across a fixed bed \citep{ergun1952fluid}, fluidized with different inlet fluid velocities. The pressure drop was related to the particle and fluid properties along with the operational conditions.  
+\item Sedimentation of small particles in a very dilute regime \citep{richardson1954sedimentation} and correlating the drag forces to the terminal velocity and voidage function (form $\epsilon^{n}$).
+\item \citet{wen1966generalized} used experimental data of \citet{richardson1954sedimentation} and correlated drag forces by a different function with a slightly better fit. 
+\item Sedimentation of mono-disperse particles in a dense phase regime \citep{di1994voidage}, and introducing an explicit function of voidage to take into account of restricted flow around many particles.
+\end{itemize}
+
+For a list of more drag models, readers are referred to the fluidization hand book by \citet{yang2003handbook}. A combinations of these drag models also been used to cover a wide range of solid fractions and flow conditions found in a fluidized bed. The most popular of these models are by \citet{gidaspow1994multiphase} which combines the \citet{ergun1952fluid} and the \citet{wen1966generalized} drag models, given by equation \ref{eq:ErgWenYu}. 
+
+\begin{equation}
+\label{eq:ErgWenYu}
+F_{\mathrm{EWY}}(\phi,Re) = \begin{cases} 
+(1+ 0.15Re^{0.687})(1-\phi)^{-3.65} &\,
+ \phi \leq 0.2 \\ 
+\frac{150}{18}\frac{\phi}{(1-\phi)^2}  + \frac{1.75}{18}\frac{Re}{(1-\phi)^2} &\, \phi > 0.2 
+\end{cases} \text{,}
+\end{equation} 
+
+Modifications to the \citet{richardson1954sedimentation} correlations were done by \citet{syamlal1987generalized} to get a better drag model applicable at high solid fractions and extended to cover particle Re numbers upto 10. To account for non-spherical particles, drag coefficient expression was developed by Haider and Levenspiel~\cite{haider1989drag}, based on the \citet{di1994voidage} equations: 
+
+\begin{align}
+\label{eq:DiFelicea}
+% F_{\mathrm{HL}} (\phi,Re) =\frac{1}{24} C_D Re (1-\phi)^{-\chi }
+F_{\mathrm{HL}} (\phi,Re) & = \left [ (1+A(Re)^B) + \frac{C}{1+\frac{D}{Re}} \right ] (1-\phi)^{-\chi } \text{,} \\ 
+\text{where} &  \nonumber \\
+\chi &= 4.7 - 0.65 \exp({-(1.5-\log_{10}Re)^2/2})\text{,} \nonumber\\ 
+A &= \exp(2.3288-6.4581\alpha + 2.4486\alpha^2) \text{,}  \nonumber\\ 
+B &= 0.0964 + 0.5565\alpha   \text{,}   \nonumber\\
+C &= \exp(4.905 -13.8944\alpha + 18.4222\alpha^2 -10.2599\alpha^3) \text{,}  \nonumber \\
+D &= \exp(1.4681+12.2584\alpha-20.7322\alpha^2 + 15.8855\alpha^3) \text{,}  \nonumber
+\end{align}
+
+$\alpha$ is the particle sphericity which is defined as the ratio of the surface areas between a spherical particle with an equivalent volume and the irregular particle. 
+
+\subsubsection{Algorithm for inter-phase momentum exchange}
+The overall algorithm for fluid-particle interaction used in the open-source DEM-CFD code can be summed up in the following way manner:
+
+\begin{enumerate}
+\item Calculate the inter-phase momentum term from the previous time step velocity fields ($u_{f}^{n-1}$, $P_{f}^{n-1}$).
+\item Substitute the drag terms in the momentum equation and solve iteratively the momentum equation using PISO alogithm described earlier. Update the pressure and velocities field to current time step: ($u_{f}^{n-1}$, $P_{f}^{n-1}$) to ($u_{f}^n$, $P_{f}^n$) 
+\item Calculate the inter-phase momentum term based on ($u_{f}^n$, $P_{f}^n$).
+\item Compute the fluid particle drag on each particle based on ($u_{f}^n$, $P_{f}^n$) and evolve particle position using DEM simulator.
+\item Obtain the voidage ($\epsilon$) and the coarse grained particle velocity fields via averaging from DEM particle positions and velocity. 
+\item Give these field back to the fluid momentum equation as an input for (n+1) time step.
+\end{enumerate}
+
+
+\subsubsection{Numerical methods \label{sec:TMS}}
+DEM-CFD code works on two time scales: (1) inter-particle (2) fluid-particle interaction. Inter-particle contact time for the collisions is estimated from the contact force model employed. For a linear spring dash-pot model, a maximum contact time can be calculated in terms of spring coefficient, effective mass of particles, and the damping coefficient for collision between the particles $m$ and $n$ (equation \ref{eq:Contacttime}). The time step for DEM integration is typically kept fairly low, around 2\% of the contact time. For fluid-particle interaction, the particle relaxation times $\tau_{p}$ is used to quantify the time scales of the interactions. For a stationary particle released in a fluid, relaxation times can be calculated with a constant slip velocity assumption (defined as $u_{ri} = u_{pi}-u_{fi}$) by the equation \ref{eq:relaxationtime}.
+
+ \begin{equation}
+ \label{eq:Contacttime}
+ t_{mn}^{col} = \pi\left ( \frac{k_{mn}}{m_{e}} - \frac{\eta_{mn}^{2}}{4m_{e}}\right )^{-1/2}
+ \end{equation}
+
+ \begin{equation}
+ \label{eq:relaxationtime}
+ \tau_{p} = \frac{U_{e}m_{i}}{\epsilon_{f} f_{di}}
+ \end{equation}
+
+where $\epsilon_{f}$ is the void fraction; $f_{di}$ is the drag force acting on particle; $U_{e}$ is the slip velocity and $m_{i}$ is the mass of the particle $i$. Another important consideration for the fluid time step is the Courant-Friedrichs-Lewy (CFL) conditions based upon the mesh size employed \citep{xiao2011algorithms}. Particle time steps are decided by the minimum of the two time scales, whereas fluid time step is decided by the CFL conditions. Furthermore, turbulent length scales can be important especially in case of high Re number and lean phase cases such as pneumatic conveying \cite{sommerfeld2003analysis}. $\tau_p$ and $t_{mn}^{col}$ governs the fluid and particle time steps. For gas-solid interactions, the particle time steps are 2-3 order of magnitude more than the fluid time steps. 
 
 
 \subsection{Stochastic processes: Scope of improvement}
@@ -337,7 +574,7 @@ As recommended by the iDynomics solver, these processes can be tackled from a mi
 %
 \section{LAMMPS}
 \subsection{Introduction to LAMMPS}
-LAMMPS is a classical molecular dynamics code developed at Sandia labs and primarily built to solve the particle physics including wide range of inter-particle interactions and potentials. The code treats each particle as an individual discrete unit, much similar to the popular IB approach. Sandia Labs distributes LAMMPS under the terms of the GNU Public License (http://lammps.sandia.gov/). The current version of the code is written in C++ with an open architecture and provides an opportunity to couple with other open-source codes. LAMMPS can run efficiently in both serial and parallel versions depending upon the computational facilities available to the users.  The LAMMPS code is designed to modify and extend it with newer capabilities as desired by the user. While only 25 percent of the 140K line code in LAMMPS forms the core of the solver, rest of the code is contributed by a large user database across the globe in order to extend its capabilities. An overview can of current LAMMPS capabilities can be found at \href{http://lammps.sandia.gov/features.html}{LAMMPS-feature}.
+LAMMPS is a classical molecular dynamics code developed at Sandia labs and primarily built to solve the particle physics including wide range of inter-particle interactions and potentials. The code treats each particle as an individual discrete unit, much similar to the popular IB approach. Sandia Labs distributes LAMMPS under the terms of the GNU Public License (http://lammps.sandia.gov/). The current version of the code is written in C++ with an open architecture and provides an opportunity to couple with other open-source codes. LAMMPS can run efficiently in both serial and parallel versions depending upon the computational facilities available to the users.  The LAMMPS code is designed to modify and extend it with newer capabilities as desired by the user. While only 25\% of the 140K line code in LAMMPS forms the core of the solver, rest of the code is contributed by a large user database across the globe in order to extend its capabilities. An overview can of current LAMMPS capabilities can be found at \href{http://lammps.sandia.gov/features.html}{LAMMPS-feature}.
 
 \subsection{LAMMPS working methodology}
 LAMMPS solves the motion of every single particle by simply integrating Newton's equations of motion in response to sum of the forces (short or long range based on their interaction with neighbours). At a particular time instance, motion of each particle is collectively solved when subjected to initial or boundary conditions. In order to maintain computational tractability while calculating the interaction forces, LAMMPS maintains a neighbourhood list for each particle which gets updated every so often. These lists are optimized so that local densities and particle overlaps never becomes non-physical. For parallel simulations, LAMMPS spatially partition the domain into smaller sub-domains assigned to each processors. Interprocessor communications are maintained by storing ghost atom interactions with the sub-domain boundaries. LAMMPS development can be helped by two user manuals: User manual and developer manual. The following links will be helpful for the users to get started on LAMMPS:
@@ -348,7 +585,6 @@ LAMMPS solves the motion of every single particle by simply integrating Newton's
 \item Tutorials: \url{http://lammps.sandia.gov/tutorials.html}
 \item Commands: \url{http://lammps.sandia.gov/doc/Section_commands.html}
 \item Features: \url{http://lammps.sandia.gov/features.html}
-
 \end{enumerate}
 
 %A further overview on LAMMPS can be taken from: $http://lammps.sandia.gov/tutorials/italy14/italy_overview_Mar14.pdf$
@@ -369,22 +605,21 @@ Before compiling LAMMPS, please make sure you are installed with these packages 
 \end{itemize} 
 
 \section{LAMMPS-NCL and getting started}
-
-For the pre-existing LAMMPS commands, features and documentation, please refer to the LAMMPS user manual, listed above. The manual covers extensive instructions on compiling LAMMPS and how to get started. LAMMPS-NCL is compiled the same way as you would compile LAMMPS and there is no change in those instructions. The newer capabilities and commands will be highlighted and emphasized in the next sections and the sample input script.  
+For the pre-existing LAMMPS commands, features and documentation, please refer to the LAMMPS user manual, listed above. The manual covers extensive instructions on compiling LAMMPS and how to get started.LAMMPS-NCL is compiled the same way as you would compile LAMMPS and there is no change in those instructions. The newer capabilities and commands will be highlighted and emphasized in the next sections and the sample input script. 
 
 
 \subsection{Downloading LAMMPS-NCL}
-In general, different versions of LAMMPS can be downloaded from the \href{http://lammps.sandia.gov/download.html}{download section} of the LAMMPS website. For the present study, LAMMPS version Feb 2014 was developed and enhanced with biological IB model capabilities. It is advised to use the version developed at NCL. It can be downloaded using following set of instructions from the NUFEB Github repository.
-
+In general, different versions of LAMMPS can be downloaded from the \href{http://lammps.sandia.gov/download.html}{download section} of the LAMMPS website. For the present study, LAMMPS version Feb 2014 was developed and enhanced with biological IB model capabilities. It is advised to use the version developed at NCL. It can be downloaded using following set of instructions from the \href{https://github.com/darrenjw/nufeb/tree/master/code/lammps1Feb2014}{NUFEB Github repository}.
+ 
 
 \subsection{LAMMPS extension}
 In the present study, capabilities of LAMMPS have been extended to include cell level biological processes such as cell growth, division, maintenance, death etc. These extended capabilities involve addition of newer particles at each time-steps e.g. during a cell division: a single parent cell divide into two daughter cells. A summary of list of newer capabilities added to the LAMMPS and its implementation is presented here:
 
 
 \subsection{Atom type}
-Classical LAMMPS provide different atom types that could be used by user. These are specified in the input script by the command: \href{http://lammps.sandia.gov/doc/atom_style.html}{$atom-style$}. \href{http://lammps.sandia.gov/doc/atom_style.html}{$atom-style$} command must be used before a simulation is setup via a \href{http://lammps.sandia.gov/doc/read_data.html}{read-data}, \href{http://lammps.sandia.gov/doc/read_restart.html}{read-restart} or \href{http://lammps.sandia.gov/doc/create_box.html}{create-box} command. A newer $atom-style$ is added (named "bio") to increase the number of attributes such as nutrients available to each microbe type. The new $atom-style$ is inherited from already existing $atom-style$ sphere. Though LAMMPS provides another route for adding newer attributes through \href{http://lammps.sandia.gov/doc/fix_property_atom.html}{fix property/atom}. However, since the newer attributes would be used to couple with the fluid solver, they should be more tightly linked to the atom style. 
+Classical LAMMPS provide different atom types that could be used by user. These are specified in the input script by the command: \href{http://lammps.sandia.gov/doc/atom_style.html}{atom$_{style}$}. \href{http://lammps.sandia.gov/doc/atom_style.html}{$atom-style$} command must be used before a simulation is setup via a \href{http://lammps.sandia.gov/doc/read_data.html}{read-data}, \href{http://lammps.sandia.gov/doc/read_restart.html}{read-restart} or \href{http://lammps.sandia.gov/doc/create_box.html}{create-box} command. A newer atom$_{style}$ is added (named "bio") to increase the number of attributes such as nutrients available to each microbe type. The new atom$_{style}$ is inherited from already existing $atom-style$ sphere. Though LAMMPS provides another route for adding newer attributes through \href{http://lammps.sandia.gov/doc/fix_property_atom.html}{fix property/atom}. However, since the newer attributes would be used to couple with the fluid solver, they should be more tightly linked to the atom style. 
 
-The new atom type "Bio" have following attributes in conjunction to the sphere type: ID, type, radius, outerradius, mass, outermass,x,y,z, $S_s$, $O_2$, $NO_3$, $NO_2$, $NH_4$. As a general rules following types are assigned to the functional groups. 
+The new atom type "Bio" have following attributes in conjunction to the sphere type: ID, type, radius, outer-radius, mass, outer-mass,x,y,z, S$_s$, O$_2$, N$O_3$, N$O_2$, N$H_4$. As a general rules following types are assigned to the functional groups. 
 
 \begin{itemize}
 \item 1-HET 
@@ -505,11 +740,45 @@ The command line follows the template: "fix fix-ID group epsextract freq EPSrati
 \item Seed: Seed for the orientation and introduce the randomness, very large integer values. Same seed will result in the same orientation for every simulation run.
 \end{itemize}
 
-\section{How to run a case}
-Describe GUI.
+
+\section{Shoving algorithms}
+Implementation of IB submodels often result in overlaps between the microbes. Resolution of these overlaps is necessary because of 2 reasons 1) Physical sub-models dealing with particle level physics are often based on the soft particle dynamics with minimum overlaps. 2) In natural conditions existing in microbial colonies, microbes would not overlap with each other. Previously shoving algorithms have been proposed in literature, iDynomics employ a relaxation algorithm that determines the steady-state microbial locations with the minimal number of overlaps. Pair-wise overlap is resolved by moving each agent by half the overlap distance. This approach can be computationally expensive and might require several iterations to resolve the overlaps. Present solver attempts to solve physics at the particle level, which require forces to be calculated based on instantaneous particle overlaps. Force equation is solved on each particle and assembly is evolved using Newton's laws of motion. LAMMPS solves the force equations and method as earlier discussed is called Discrete Element Method (DEM). The method works with soft particle force models (system modelled as particles linked with spring-dashpot system) where particles are allowed small overlaps (typically less than 1\% of their sizes). A pair-wise repulsive force is exerted on the particles as a function of the overlap and the relative velocities, resolving particle collisions. This dynamics can be controlled by using smaller particle time-steps if un-physically high overlaps are seen in the system. Introduction of IB sub-models can result is increasingly high particle overlaps, hence needing an algorithm to resolve the high overlaps without giving system un-physically high forces and velocities. 
+
+\begin{enumerate}
+\item Microbial growth: Microbes are represented as spherical masses with finite diameter and volume. As the microbial mass is added, volume and diameter of the particle increases. Overlap between the particles is calculated as the difference between the sum of radii and distance between their centres. Since the radii are increasing, an extra compensation has to be made to the particle centre coordinates in order to avoid high overlaps. Particle growth rate is usually much smaller than the collision times, hence overlaps due to particle growth models are expected to resolve by themselves. 
+
+\item Microbial division: As the mother cells divides into 2 cells, orientation and the placement of these daughter cells can result into sudden and large overlaps. This might result in bad dynamics in the system. One of the ways is to check for the overlaps before inserting the cell into the position. However, re-building neighbour lists before inserting each particle can be computationally very expensive. 
+
+\item EPS extraction: Similar to problem with the microbial division, placing extracted EPS particle at an appropriate location or resolving resulting large overlaps can be problematic. 
+\end{enumerate} 
+
+Apart from reducing timesteps, LAMMPS provides several options to resolve these overlaps. Any of these commands or LAMMPS functionality can be used. At present, test runs are being conducted to check the parameters and the optimization of the run time. These LAMMPS options are listed here: 
+
+\begin{itemize}
+\item Add a viscous damping force to atoms in the group that is proportional to the velocity of the atom. The added force can be thought of as a frictional interaction with implicit solvent, i.e. the no-slip Stokes drag on a spherical particle. This can be useful for draining the kinetic energy from the system in a controlled fashion. If used without additional thermostatting (to add kinetic energy to the system), it has the effect of slowly (or rapidly) freezing the system; hence it can also be used as a simple energy minimization technique. The damping force F is given by F = - gamma * velocity. The larger the coefficient, the faster the kinetic energy is reduced. A full description can be found \href{http://lammps.sandia.gov/doc/fix_viscous.html}{here}.
+
+\item Perform  a constant NVE updates of position and velocity for atoms in the group each timestep. A limit is imposed on the maximum distance an atom can move per timestep. Normally large overlaps would generate huge forces which would blow atoms out of the simulation box, causing LAMMPS to stop with an error. This can be done by using limited time integrator, full description can be found \href{http://lammps.sandia.gov/doc/fix_nve_limit.html}{here}.
+
+\item Using a pair-wise repulsive forces that would not blow up if particle overlaps. Description and implementation can be found \href{http://lammps.sandia.gov/doc/pair_soft.html}{here}.
+
+\item Energy minimization: Perform an energy minimization of the system, by iteratively adjusting atom coordinates. Iterations are terminated when one of the stopping criteria is satisfied. At that point the configuration will hopefully be in local potential energy minimum. More precisely, the configuration should approximate a critical point for the objective function, which may or may not be a local minimum. This method allows to adjust the particle coordinates to minimize the energy, instead of completely resolving the overlaps as is the case with iDynomics. Description and implementation can be found \href{http://lammps.sandia.gov/doc/minimize.html}{here}.
+\end{itemize} 
+
+\section{Graphical User interface (GUI)}
+Graphical user interface can be used to run the test case in place of the LAMMPS input script. However, it is strongly recommended to go through LAMMPS tutorials and user manuals before using the GUI. GUI summarizes the user input commands that are mostly required by the user. Some of the LAMMPS commands which are essential to run every case are not a part of GUI. GUI generates a LAMMPS input script based on user set options and this script can be check by the user and run accordingly. GUI source code (written using wxwidgets) and compilation instructions can be found at \href{https://github.com/darrenjw/nufeb/tree/master/code/gui}{Git-hub repository}. A snapshot of the GUI is shown in the figure \ref{fig:GUI}. 
+
+\begin{figure}[H]
+\begin{center}
+  \includegraphics[width=0.9\columnwidth]{Figs/GUI.pdf}
+\caption{Graphical User Interface (GUI) for NUFEB model}
+\label{fig:GUI}       % Give a unique label
+\end{center}
+\end{figure}
 
 
-%\section{References}
+\section{Visualization and post-processing}
+LAMMPS can output snapshot file which gives information on the particle ids, positions, diameter etc at each timestep frequency as required by the user. Visualization tools often used in conjunction with LAMMPS are can be found \href{ http://lammps.sandia.gov/viz.html}{here}. POVray is more preferred visualization tool by the NUFEB project, the tool and compilation instructions can be found \href{http://www.povray.org/}{here}. Post processing tools to convert the LAMMPS format to POVray format can be found in the pizza python toolkits found \href{http://pizza.sandia.gov/}{here}. Scripts for post-processing of the LAMMPS data are under preparation. 
+
 
 \label{References}
 %\setlength{\bibsep}{3.0pt}
