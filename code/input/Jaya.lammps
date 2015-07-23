@@ -2,7 +2,7 @@
 
 atom_style	bio
 atom_modify	map array sort 10000 1e-5
-boundary	pp pp pp
+boundary	ff ff ff
 newton		off
 #processors  2 1 1
 
@@ -22,16 +22,20 @@ neighbor	1.0e-5 bin
 neigh_modify	delay 0
 
 #pair_style  none
-#pair_style  gran/hooke/history 200000000 NULL 15000000 NULL 0.5 1
-#pair_coeff  * *
+pair_style  gran/hooke/history 200000000 NULL 50 NULL 0.0 1
+pair_coeff  * *
 timestep	1
 
 velocity    all set 0.0 0.0 0.0 units box
 
-fix		1 all nve/sphere  
+fix		1 all nve/limit 1e-13  
 #fix		2 all gravity 9.8 vector 0 -1 0 # spherical 90.0 -180.0    
 #fix     3 all fdrag
 
+
+fix xw all wall/gran 200000.0 NULL 50.0 NULL 0.5 0 xplane  0.0 0.0001 
+fix yw all wall/gran 200000.0 NULL 50.0 NULL 0.5 0 xplane  0.0 0.0001 
+fix zw all wall/gran 200000.0 NULL 50.0 NULL 0.5 0 xplane  0.0 0.0001 
 
 #Defining affinity variables: list from Jaya 
 variable KsHET equal 0.01
@@ -70,17 +74,17 @@ variable factor equal 2.0
 
 #variable rate1 equal 0.001
 fix g1 all nugrowth 1 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bEPS v_YEPS v_YHET v_EPSdens
-fix dt1 HET death 1 v_bHET v_factor 1952467
+#fix dt1 HET death 1 v_bHET v_factor 1952467
 #fix dt2 AOB death 1 v_bAOB v_factor 1234312
 #fix dt3 NOB death 1 v_bNOB v_factor 1325352
-fix d1 all divide 1 v_EPSdens 2.0 1242242
-fix e1 HET eps_extract 1 v_EPSratio v_EPSdens 1242242
+fix d1 all divide 1 v_EPSdens 1.0 1242242
+#fix e1 HET eps_extract 1 v_EPSratio v_EPSdens 1242242
 
 
-dump		id1 HET custom 2000 HET.bubblemd radius outerradius
+#dump		id1 HET custom 2000 HET.bubblemd radius outerradius
 #dump		id2 HET custom 172800 HETdeath.bubblemd type radius outerradius mass outermass
 #dump		id2 EPS custom 1000 snapshot2.bubblemd id type diameter mass x y z vx vy vz
-dump		id all custom 2000 snapshot.bubblemd id type radius vx vy vz x y z outerradius outermass
+dump		id all custom 2000 snapshot.bubblemd id type diameter x y z 
 
 
 #dump d0 all image 100 dump.*.jpg type type
@@ -90,7 +94,7 @@ thermo_style    custom step atoms ke vol
 
 #thermo_style  granular # not work. syntax change?
 #thermo_style  one   # granular does not work
-thermo		1
+thermo		1000
 thermo_modify	lost error
 #restart		1000000  restart.*.bubblemd
 
