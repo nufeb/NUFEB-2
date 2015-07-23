@@ -72,13 +72,30 @@ FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
   random = new RanPark(lmp,seed);  
 
   find_maxid();
+
+  if (domain->triclinic == 0) {
+  	xlo = domain->boxlo[0];
+  	xhi = domain->boxhi[0];
+  	ylo = domain->boxlo[1];
+  	yhi = domain->boxhi[1];
+  	zlo = domain->boxlo[2];
+  	zhi = domain->boxhi[2];
+  }
+  else {
+  	xlo = domain->boxlo_bound[0];
+  	xhi = domain->boxhi_bound[0];
+  	ylo = domain->boxlo_bound[1];
+  	yhi = domain->boxhi_bound[1];
+  	zlo = domain->boxlo_bound[2];
+  	zhi = domain->boxhi_bound[2];
+  }
    
 
   // All gather arrays: fix pour
-  MPI_Comm_rank(world,&me);
-  MPI_Comm_size(world,&nprocs);
-  recvcounts = new int[nprocs];
-  displs = new int[nprocs];
+  // MPI_Comm_rank(world,&me);
+  // MPI_Comm_size(world,&nprocs);
+  // recvcounts = new int[nprocs];
+  // displs = new int[nprocs];
 
   // Set up renieghbouring here: required for re building the neighbour list: fix pour/ deposit
  
@@ -210,8 +227,8 @@ FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 FixDivide::~FixDivide()
 {
   delete random;
-  delete [] recvcounts;
-  delete [] displs;
+  // delete [] recvcounts;
+  // delete [] displs;
   delete [] var;
 
   // for (int m = 0; m < nadapt; m++) {
@@ -361,15 +378,23 @@ void FixDivide::pre_exchange()
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
-  int i, j;
-  int nfix = modify->nfix;
-  Fix **fix = modify->fix;
+  int i;
+  // int nfix = modify->nfix;
+  // Fix **fix = modify->fix;
 
 
   double averageMass;// = getAverageMass();
-  int nnew = countNewAtoms(averageMass);
+  // int nnew = countNewAtoms(averageMass);
 
-  find_maxid();
+
+  double *sublo,*subhi;
+  if (domain->triclinic == 0) {
+    sublo = domain->sublo;
+    subhi = domain->subhi;
+  } else {
+    sublo = domain->sublo_lamda;
+    subhi = domain->subhi_lamda;
+  }
 
 
 
@@ -377,48 +402,48 @@ void FixDivide::pre_exchange()
   // ncount = # of my atoms that overlap the insertion region
   // nprevious = total of ncount across all procs
 
-  int ncount = atom->nlocal;
+  // int ncount = atom->nlocal;
 
-  int nprevious;
-  MPI_Allreduce(&ncount,&nprevious,1,MPI_INT,MPI_SUM,world);
+  // int nprevious;
+  // MPI_Allreduce(&ncount,&nprevious,1,MPI_INT,MPI_SUM,world);
 
   // xmine is for my atoms
   // xnear is for atoms from all procs + atoms to be inserted
 
-  double **xmine,**xnear;
-  memory->create(xmine,ncount,4,"fix_divide:xmine");
-  memory->create(xnear,nprevious+nnew,4,"fix_divide:xnear");
-  int nnear = nprevious;
+  // double **xmine,**xnear;
+  // memory->create(xmine,ncount,4,"fix_divide:xmine");
+  // memory->create(xnear,nprevious+nnew,4,"fix_divide:xnear");
+  // int nnear = nprevious;
 
   // setup for allgatherv
 
-  int n = 4*ncount;
-  MPI_Allgather(&n,1,MPI_INT,recvcounts,1,MPI_INT,world);
+  // int n = 4*ncount;
+  // MPI_Allgather(&n,1,MPI_INT,recvcounts,1,MPI_INT,world);
 
-  displs[0] = 0;
-  for (int iproc = 1; iproc < nprocs; iproc++)
-    displs[iproc] = displs[iproc-1] + recvcounts[iproc-1];
+  // displs[0] = 0;
+  // for (int iproc = 1; iproc < nprocs; iproc++)
+  //   displs[iproc] = displs[iproc-1] + recvcounts[iproc-1];
 
   // load up xmine array
 
-  double **x = atom->x;
+  // double **x = atom->x;
 
-  ncount = 0;
-  for (i = 0; i < atom->nlocal; i++)
-  {
-    xmine[ncount][0] = x[i][0];
-    xmine[ncount][1] = x[i][1];
-    xmine[ncount][2] = x[i][2];
-    xmine[ncount][3] = radius[i];
-    ncount++;
-  }
+  // ncount = 0;
+  // for (i = 0; i < atom->nlocal; i++)
+  // {
+  //   xmine[ncount][0] = x[i][0];
+  //   xmine[ncount][1] = x[i][1];
+  //   xmine[ncount][2] = x[i][2];
+  //   xmine[ncount][3] = radius[i];
+  //   ncount++;
+  // }
 
   // perform allgatherv to acquire list of nearby particles on all procs
 
-  double *ptr = NULL;
-  if (ncount) ptr = xmine[0];
-  MPI_Allgatherv(ptr,4*ncount,MPI_DOUBLE,
-                 xnear[0],recvcounts,displs,MPI_DOUBLE,world);
+  // double *ptr = NULL;
+  // if (ncount) ptr = xmine[0];
+  // MPI_Allgatherv(ptr,4*ncount,MPI_DOUBLE,
+  //                xnear[0],recvcounts,displs,MPI_DOUBLE,world);
 
 
 
@@ -433,8 +458,10 @@ void FixDivide::pre_exchange()
   int divided = 0;
 
 
-  for (i = 0; i < nlocal; i++) {
-    if (mask[i] & groupbit) {
+  for (i = 0; i < nall; i++) {
+    if ((mask[i] & groupbit) && atom->x[i][0] >= sublo[0] && atom->x[i][0] < subhi[0] &&
+          atom->x[i][1] >= sublo[1] && atom->x[i][1] < subhi[1] &&
+          atom->x[i][2] >= sublo[2] && atom->x[i][2] < subhi[2]) {
       density = rmass[i] / (4.0*MY_PI/3.0 *
                       radius[i]*radius[i]*radius[i]);
       if (mask[i] == 1 || mask[i] == 2 || mask[i] == 3) {
@@ -447,6 +474,8 @@ void FixDivide::pre_exchange()
         averageMass = 1.1e-16;
       }
       if (rmass[i] >= growthFactor*averageMass) {
+      	double newX, newY, newZ;
+
         double splitF = 0.4 + (random->uniform()*0.2);
         double parentMass = rmass[i] * splitF;
         double childMass = rmass[i] - parentMass;
@@ -501,23 +530,67 @@ void FixDivide::pre_exchange()
         atom->f[i][2] = parentfz;
         radius[i] = pow(((6*rmass[i])/(density*MY_PI)),(1.0/3.0))*0.5;
         outerRadius[i] = pow((3.0/(4.0*MY_PI))*((rmass[i]/density)+(parentOuterMass/EPSdens)),(1.0/3.0));
-        atom->x[i][0] = oldX + radius[i]*cos(thetaD)*sin(phiD);
-        atom->x[i][1] = oldY + radius[i]*sin(thetaD)*sin(phiD);
-        atom->x[i][2] = oldZ + radius[i]*cos(phiD);
+        newX = oldX + outerRadius[i]*cos(thetaD)*sin(phiD);
+        newY = oldY + outerRadius[i]*sin(thetaD)*sin(phiD);
+        newZ = oldZ + outerRadius[i]*cos(phiD);
+        if (newX - outerRadius[i] < xlo) {
+        	newX = xlo + outerRadius[i];
+        }
+        else if (newX + outerRadius[i] > xhi) {
+        	newX = xhi - outerRadius[i];
+        }
+        if (newY - outerRadius[i] < ylo) {
+        	newY = ylo + outerRadius[i];
+        }
+        else if (newY + outerRadius[i] > yhi) {
+        	newY = yhi - outerRadius[i];
+        }
+        if (newZ - outerRadius[i] < zlo) {
+        	newZ = zlo + outerRadius[i];
+        }
+        else if (newZ + outerRadius[i] > zhi) {
+        	newZ = zhi - outerRadius[i];
+        }
+        atom->x[i][0] = newX;
+        atom->x[i][1] = newY;
+        atom->x[i][2] = newZ;
      //   fprintf(stdout, "Diameter of atom: %f\n", radius[i]*2);
 
         // fprintf(stdout, "Moved and resized parent\n");
 
         //create child
         double childRadius = pow(((6*childMass)/(density*MY_PI)),(1.0/3.0))*0.5;
+        double childOuterRadius = pow((3.0/(4.0*MY_PI))*((childMass/density)+(childOuterMass/EPSdens)),(1.0/3.0));
         double* coord = new double[3];
-        coord[0] = oldX - childRadius*cos(thetaD)*sin(phiD);
-        coord[1] = oldY - childRadius*sin(thetaD)*sin(phiD);
-        coord[2] = oldZ - childRadius*cos(phiD);
+        newX = oldX - childOuterRadius*cos(thetaD)*sin(phiD);
+        newY = oldY - childOuterRadius*sin(thetaD)*sin(phiD);
+        newZ = oldZ - childOuterRadius*cos(phiD);
+        if (newX - childOuterRadius < xlo) {
+        	newX = xlo + childOuterRadius;
+        }
+        else if (newX + childOuterRadius > xhi) {
+        	newX = xhi - childOuterRadius;
+        }
+        if (newY - childOuterRadius < ylo) {
+        	newY = ylo + childOuterRadius;
+        }
+        else if (newY + childOuterRadius > yhi) {
+        	newY = yhi - childOuterRadius;
+        }
+        if (newZ - childOuterRadius < zlo) {
+        	newZ = zlo + childOuterRadius;
+        }
+        else if (newZ + childOuterRadius > zhi) {
+        	newZ = zhi - childOuterRadius;
+        }
+        coord[0] = newX;
+        coord[1] = newY;
+        coord[2] = newZ;
+        find_maxid();
         atom->avec->create_atom(mask[i],coord);
         // fprintf(stdout, "Created atom\n");
         int n = atom->nlocal - 1;
-        atom->tag[n] = n+1;
+        atom->tag[n] = maxtag_all+1;
         atom->type[n] = atom->type[i];
         atom->mask[n] = mask[i];
         atom->image[n] = atom->image[i];
@@ -544,7 +617,7 @@ void FixDivide::pre_exchange()
         atom->torque[n][1] = atom->torque[i][1];
         atom->torque[n][2] = atom->torque[i][2];
         radius[n] = childRadius;
-        outerRadius[n] = pow((3.0/(4.0*MY_PI))*((rmass[n]/density)+(childOuterMass/EPSdens)),(1.0/3.0));
+        outerRadius[n] = childOuterRadius;
 
         // for (j = 0; j < nfix; j++)
         //   if (fix[j]->create_attribute) fix[j]->set_arrays(n);
@@ -630,23 +703,23 @@ void FixDivide::pre_exchange()
 //   return averageMass;
 // }
 
-int FixDivide::countNewAtoms(double averageMass)
-{
-  int *mask = atom->mask;
-  int nall = atom->nlocal + atom->nghost;
-  double *rmass = atom->rmass;
-  int i;
-  int counter = 0;
+// int FixDivide::countNewAtoms(double averageMass)
+// {
+//   int *mask = atom->mask;
+//   int nall = atom->nlocal + atom->nghost;
+//   double *rmass = atom->rmass;
+//   int i;
+//   int counter = 0;
 
-  for (i = 0; i < nall; i++) {
-    if (mask[i] & groupbit) {
-      if (rmass[i] >= growthFactor*averageMass && rmass[i] >= 1e-10) {
-        counter++;
-      }
-    }
-  }
-  return counter;
-}
+//   for (i = 0; i < nall; i++) {
+//     if (mask[i] & groupbit) {
+//       if (rmass[i] >= growthFactor*averageMass && rmass[i] >= 1e-10) {
+//         counter++;
+//       }
+//     }
+//   }
+//   return counter;
+// }
 
 /* ---------------------------------------------------------------------- */
 
@@ -681,61 +754,61 @@ void FixDivide::find_maxid()
 }
 
 
-int FixDivide::overlap(int i)
-{
-  double delta;
-  delta = atom->radius[i] + radius_max;
-  double *boxlo = domain->boxlo;
-  double *boxhi = domain->boxhi;
-  double *prd = domain->prd;
-  int *periodicity = domain->periodicity;
+// int FixDivide::overlap(int i)
+// {
+//   double delta;
+//   delta = atom->radius[i] + radius_max;
+//   double *boxlo = domain->boxlo;
+//   double *boxhi = domain->boxhi;
+//   double *prd = domain->prd;
+//   int *periodicity = domain->periodicity;
 
-  double *x = atom->x[i];
+//   double *x = atom->x[i];
 
-  if (domain->dimension == 3) {
-    if (region_style == 1) {
-      if (outside(0,x[0],xlo-delta,xhi+delta)) return 0;
-      if (outside(1,x[1],ylo-delta,yhi+delta)) return 0;
-      if (outside(2,x[2],lo_current-delta,hi_current+delta)) return 0;
-    } else {
-      double delx = x[0] - xc;
-      double dely = x[1] - yc;
-      double delz = 0.0;
-      domain->minimum_image(delx,dely,delz);
-      double rsq = delx*delx + dely*dely;
-      double r = rc + delta;
-      if (rsq > r*r) return 0;
-      if (outside(2,x[2],lo_current-delta,hi_current+delta)) return 0;
-    }
-  } else {
-    if (outside(0,x[0],xlo-delta,xhi+delta)) return 0;
-    if (outside(1,x[1],lo_current-delta,hi_current+delta)) return 0;
-  }
+//   if (domain->dimension == 3) {
+//     if (region_style == 1) {
+//       if (outside(0,x[0],xlo-delta,xhi+delta)) return 0;
+//       if (outside(1,x[1],ylo-delta,yhi+delta)) return 0;
+//       if (outside(2,x[2],lo_current-delta,hi_current+delta)) return 0;
+//     } else {
+//       double delx = x[0] - xc;
+//       double dely = x[1] - yc;
+//       double delz = 0.0;
+//       domain->minimum_image(delx,dely,delz);
+//       double rsq = delx*delx + dely*dely;
+//       double r = rc + delta;
+//       if (rsq > r*r) return 0;
+//       if (outside(2,x[2],lo_current-delta,hi_current+delta)) return 0;
+//     }
+//   } else {
+//     if (outside(0,x[0],xlo-delta,xhi+delta)) return 0;
+//     if (outside(1,x[1],lo_current-delta,hi_current+delta)) return 0;
+//   }
 
-  return 1;
-}
+//   return 1;
+// }
 
 
-int FixDivide::outside(int dim, double value, double lo, double hi)
-{
-  double boxlo = domain->boxlo[dim];
-  double boxhi = domain->boxhi[dim];
+// int FixDivide::outside(int dim, double value, double lo, double hi)
+// {
+//   double boxlo = domain->boxlo[dim];
+//   double boxhi = domain->boxhi[dim];
 
-  if (domain->periodicity[dim]) {
-    if (lo < boxlo && hi > boxhi) {
-      return 0;
-    } else if (lo < boxlo) {
-      if (value > hi && value < lo + domain->prd[dim]) return 1;
-    } else if (hi > boxhi) {
-      if (value > hi - domain->prd[dim] && value < lo) return 1;
-    } else {
-      if (value < lo || value > hi) return 1;
-    }
-  } 
+//   if (domain->periodicity[dim]) {
+//     if (lo < boxlo && hi > boxhi) {
+//       return 0;
+//     } else if (lo < boxlo) {
+//       if (value > hi && value < lo + domain->prd[dim]) return 1;
+//     } else if (hi > boxhi) {
+//       if (value > hi - domain->prd[dim] && value < lo) return 1;
+//     } else {
+//       if (value < lo || value > hi) return 1;
+//     }
+//   } 
 
-  if (value < lo || value > hi) return 1;
-  return 0;
-}
+//   if (value < lo || value > hi) return 1;
+//   return 0;
+// }
 
 
 
