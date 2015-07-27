@@ -455,7 +455,7 @@ void FixDivide::pre_exchange()
 
 
 
-  int divided = 0;
+  // int divided = 0;
 
 
   for (i = 0; i < nall; i++) {
@@ -627,20 +627,20 @@ void FixDivide::pre_exchange()
        // fprintf(stdout, "Diameter of atom: %f\n", radius[n]*2);
 
         atom->natoms++;
-        divided ++;
+        // divided ++;
       }
     }
   }
   // Could try to be very careful about where new atoms are placed
   // Check fix_pour for examples/help
-  if (divided > 0) {
+  // if (divided > 0) {
     // Maintain list of divided
     // Loop over divided particles
       // Build a neighbor list for new particles
       // Compute displacement vectors and move particles
       // Need a shoving parameter to compute this vector
       // Use equation from (iv) from Jaya's psuedocode
-  }
+  // }
 
   //fprintf(stdout, "Divided: %i\n", divided);
 

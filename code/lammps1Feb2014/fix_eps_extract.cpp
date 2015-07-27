@@ -77,13 +77,30 @@ FixEPSExtract::FixEPSExtract(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg,
   random = new RanPark(lmp,seed);  
 
   find_maxid();
+
+  if (domain->triclinic == 0) {
+    xlo = domain->boxlo[0];
+    xhi = domain->boxhi[0];
+    ylo = domain->boxlo[1];
+    yhi = domain->boxhi[1];
+    zlo = domain->boxlo[2];
+    zhi = domain->boxhi[2];
+  }
+  else {
+    xlo = domain->boxlo_bound[0];
+    xhi = domain->boxhi_bound[0];
+    ylo = domain->boxlo_bound[1];
+    yhi = domain->boxhi_bound[1];
+    zlo = domain->boxlo_bound[2];
+    zhi = domain->boxhi_bound[2];
+  }
    
 
   // All gather arrays: fix pour
-  MPI_Comm_rank(world,&me);
-  MPI_Comm_size(world,&nprocs);
-  recvcounts = new int[nprocs];
-  displs = new int[nprocs];
+  // MPI_Comm_rank(world,&me);
+  // MPI_Comm_size(world,&nprocs);
+  // recvcounts = new int[nprocs];
+  // displs = new int[nprocs];
 
   // Set up renieghbouring here: required for re building the neighbour list: fix pour/ deposit
  
@@ -215,8 +232,8 @@ FixEPSExtract::FixEPSExtract(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg,
 FixEPSExtract::~FixEPSExtract()
 {
   delete random;
-  delete [] recvcounts;
-  delete [] displs;
+  // delete [] recvcounts;
+  // delete [] displs;
   int i;
   for (i = 0; i < 2; i++) {
     delete [] var[i];
@@ -376,13 +393,22 @@ void FixEPSExtract::pre_exchange()
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
-  int i, j;
-  int nfix = modify->nfix;
-  Fix **fix = modify->fix;
+  int i;
+  // int nfix = modify->nfix;
+  // Fix **fix = modify->fix;
 
-  int nnew = countNewAtoms(EPSratio);
+  // int nnew = countNewAtoms(EPSratio);
 
-  find_maxid();
+  // find_maxid();
+
+  double *sublo,*subhi;
+  if (domain->triclinic == 0) {
+    sublo = domain->sublo;
+    subhi = domain->subhi;
+  } else {
+    sublo = domain->sublo_lamda;
+    subhi = domain->subhi_lamda;
+  }
 
 
 
@@ -390,48 +416,48 @@ void FixEPSExtract::pre_exchange()
   // ncount = # of my atoms that overlap the insertion region
   // nprevious = total of ncount across all procs
 
-  int ncount = atom->nlocal;
+  // int ncount = atom->nlocal;
 
-  int nprevious;
-  MPI_Allreduce(&ncount,&nprevious,1,MPI_INT,MPI_SUM,world);
+  // int nprevious;
+  // MPI_Allreduce(&ncount,&nprevious,1,MPI_INT,MPI_SUM,world);
 
-  // xmine is for my atoms
-  // xnear is for atoms from all procs + atoms to be inserted
+  // // xmine is for my atoms
+  // // xnear is for atoms from all procs + atoms to be inserted
 
-  double **xmine,**xnear;
-  memory->create(xmine,ncount,4,"fix_divide:xmine");
-  memory->create(xnear,nprevious+nnew,4,"fix_divide:xnear");
-  int nnear = nprevious;
+  // double **xmine,**xnear;
+  // memory->create(xmine,ncount,4,"fix_divide:xmine");
+  // memory->create(xnear,nprevious+nnew,4,"fix_divide:xnear");
+  // int nnear = nprevious;
 
-  // setup for allgatherv
+  // // setup for allgatherv
 
-  int n = 4*ncount;
-  MPI_Allgather(&n,1,MPI_INT,recvcounts,1,MPI_INT,world);
+  // int n = 4*ncount;
+  // MPI_Allgather(&n,1,MPI_INT,recvcounts,1,MPI_INT,world);
 
-  displs[0] = 0;
-  for (int iproc = 1; iproc < nprocs; iproc++)
-    displs[iproc] = displs[iproc-1] + recvcounts[iproc-1];
+  // displs[0] = 0;
+  // for (int iproc = 1; iproc < nprocs; iproc++)
+  //   displs[iproc] = displs[iproc-1] + recvcounts[iproc-1];
 
-  // load up xmine array
+  // // load up xmine array
 
-  double **x = atom->x;
+  // double **x = atom->x;
 
-  ncount = 0;
-  for (i = 0; i < atom->nlocal; i++)
-  {
-    xmine[ncount][0] = x[i][0];
-    xmine[ncount][1] = x[i][1];
-    xmine[ncount][2] = x[i][2];
-    xmine[ncount][3] = radius[i];
-    ncount++;
-  }
+  // ncount = 0;
+  // for (i = 0; i < atom->nlocal; i++)
+  // {
+  //   xmine[ncount][0] = x[i][0];
+  //   xmine[ncount][1] = x[i][1];
+  //   xmine[ncount][2] = x[i][2];
+  //   xmine[ncount][3] = radius[i];
+  //   ncount++;
+  // }
 
-  // perform allgatherv to acquire list of nearby particles on all procs
+  // // perform allgatherv to acquire list of nearby particles on all procs
 
-  double *ptr = NULL;
-  if (ncount) ptr = xmine[0];
-  MPI_Allgatherv(ptr,4*ncount,MPI_DOUBLE,
-                 xnear[0],recvcounts,displs,MPI_DOUBLE,world);
+  // double *ptr = NULL;
+  // if (ncount) ptr = xmine[0];
+  // MPI_Allgatherv(ptr,4*ncount,MPI_DOUBLE,
+  //                xnear[0],recvcounts,displs,MPI_DOUBLE,world);
 
 
 
@@ -446,7 +472,9 @@ void FixEPSExtract::pre_exchange()
 
 
   for (i = 0; i < nlocal; i++) {
-    if (mask[i] & groupbit) {
+    if ((mask[i] & groupbit) && atom->x[i][0] >= sublo[0] && atom->x[i][0] < subhi[0] &&
+          atom->x[i][1] >= sublo[1] && atom->x[i][1] < subhi[1] &&
+          atom->x[i][2] >= sublo[2] && atom->x[i][2] < subhi[2]) {
       // fprintf(stdout, "outerRadius/radius = %e\n", (outerRadius[i]/radius[i]));
       if ((outerRadius[i]/radius[i]) > EPSratio) {
         outerMass[i] = (4.0*MY_PI/3.0)*((outerRadius[i]*outerRadius[i]*outerRadius[i])-(radius[i]*radius[i]*radius[i]))*EPSdens;
@@ -473,13 +501,35 @@ void FixEPSExtract::pre_exchange()
         //create child
         double childRadius = pow(((6*EPSMass)/(EPSdens*MY_PI)),(1.0/3.0))*0.5;
         double* coord = new double[3];
-        coord[0] = oldX - (childRadius+outerRadius[i])*cos(thetaD)*sin(phiD);
-        coord[1] = oldY - (childRadius+outerRadius[i])*sin(thetaD)*sin(phiD);
-        coord[2] = oldZ - (childRadius+outerRadius[i])*cos(phiD);
+        double newX = oldX - (childRadius+outerRadius[i])*cos(thetaD)*sin(phiD);
+        double newY = oldY - (childRadius+outerRadius[i])*sin(thetaD)*sin(phiD);
+        double newZ = oldZ - (childRadius+outerRadius[i])*cos(phiD);
+        if (newX - childRadius < xlo) {
+          newX = xlo + childRadius;
+        }
+        else if (newX + childRadius > xhi) {
+          newX = xhi - childRadius;
+        }
+        if (newY - childRadius < ylo) {
+          newY = ylo + childRadius;
+        }
+        else if (newY + childRadius > yhi) {
+          newY = yhi - childRadius;
+        }
+        if (newZ - childRadius < zlo) {
+          newZ = zlo + childRadius;
+        }
+        else if (newZ + childRadius > zhi) {
+          newZ = zhi - childRadius;
+        }
+        coord[0] = newX;
+        coord[1] = newY;
+        coord[2] = newZ;
+        find_maxid();
         atom->avec->create_atom(16,coord);
         // fprintf(stdout, "Created atom\n");
         int n = atom->nlocal - 1;
-        atom->tag[n] = n+1;
+        atom->tag[n] = maxtag_all+1;
         atom->type[n] = 4;
         atom->mask[n] = 16;
         atom->v[n][0] = atom->v[i][0];
@@ -577,24 +627,24 @@ void FixEPSExtract::pre_exchange()
 //   return averageMass;
 // }
 
-int FixEPSExtract::countNewAtoms(double EPSratio)
-{
-  int *mask = atom->mask;
-  int nall = atom->nlocal + atom->nghost;
-  double *radius = atom->radius;
-  double *outerRadius = atom->outerRadius;
-  int i;
-  int counter = 0;
+// int FixEPSExtract::countNewAtoms(double EPSratio)
+// {
+//   int *mask = atom->mask;
+//   int nall = atom->nlocal + atom->nghost;
+//   double *radius = atom->radius;
+//   double *outerRadius = atom->outerRadius;
+//   int i;
+//   int counter = 0;
 
-  for (i = 0; i < nall; i++) {
-    if (mask[i] & groupbit) {
-      if ((outerRadius[i]/radius[i]) > EPSratio) {
-        counter++;
-      }
-    }
-  }
-  return counter;
-}
+//   for (i = 0; i < nall; i++) {
+//     if (mask[i] & groupbit) {
+//       if ((outerRadius[i]/radius[i]) > EPSratio) {
+//         counter++;
+//       }
+//     }
+//   }
+//   return counter;
+// }
 
 /* ---------------------------------------------------------------------- */
 
@@ -629,61 +679,61 @@ void FixEPSExtract::find_maxid()
 }
 
 
-int FixEPSExtract::overlap(int i)
-{
-  double delta;
-  delta = atom->radius[i] + radius_max;
-  double *boxlo = domain->boxlo;
-  double *boxhi = domain->boxhi;
-  double *prd = domain->prd;
-  int *periodicity = domain->periodicity;
+// int FixEPSExtract::overlap(int i)
+// {
+//   double delta;
+//   delta = atom->radius[i] + radius_max;
+//   double *boxlo = domain->boxlo;
+//   double *boxhi = domain->boxhi;
+//   double *prd = domain->prd;
+//   int *periodicity = domain->periodicity;
 
-  double *x = atom->x[i];
+//   double *x = atom->x[i];
 
-  if (domain->dimension == 3) {
-    if (region_style == 1) {
-      if (outside(0,x[0],xlo-delta,xhi+delta)) return 0;
-      if (outside(1,x[1],ylo-delta,yhi+delta)) return 0;
-      if (outside(2,x[2],lo_current-delta,hi_current+delta)) return 0;
-    } else {
-      double delx = x[0] - xc;
-      double dely = x[1] - yc;
-      double delz = 0.0;
-      domain->minimum_image(delx,dely,delz);
-      double rsq = delx*delx + dely*dely;
-      double r = rc + delta;
-      if (rsq > r*r) return 0;
-      if (outside(2,x[2],lo_current-delta,hi_current+delta)) return 0;
-    }
-  } else {
-    if (outside(0,x[0],xlo-delta,xhi+delta)) return 0;
-    if (outside(1,x[1],lo_current-delta,hi_current+delta)) return 0;
-  }
+//   if (domain->dimension == 3) {
+//     if (region_style == 1) {
+//       if (outside(0,x[0],xlo-delta,xhi+delta)) return 0;
+//       if (outside(1,x[1],ylo-delta,yhi+delta)) return 0;
+//       if (outside(2,x[2],lo_current-delta,hi_current+delta)) return 0;
+//     } else {
+//       double delx = x[0] - xc;
+//       double dely = x[1] - yc;
+//       double delz = 0.0;
+//       domain->minimum_image(delx,dely,delz);
+//       double rsq = delx*delx + dely*dely;
+//       double r = rc + delta;
+//       if (rsq > r*r) return 0;
+//       if (outside(2,x[2],lo_current-delta,hi_current+delta)) return 0;
+//     }
+//   } else {
+//     if (outside(0,x[0],xlo-delta,xhi+delta)) return 0;
+//     if (outside(1,x[1],lo_current-delta,hi_current+delta)) return 0;
+//   }
 
-  return 1;
-}
+//   return 1;
+// }
 
 
-int FixEPSExtract::outside(int dim, double value, double lo, double hi)
-{
-  double boxlo = domain->boxlo[dim];
-  double boxhi = domain->boxhi[dim];
+// int FixEPSExtract::outside(int dim, double value, double lo, double hi)
+// {
+//   double boxlo = domain->boxlo[dim];
+//   double boxhi = domain->boxhi[dim];
 
-  if (domain->periodicity[dim]) {
-    if (lo < boxlo && hi > boxhi) {
-      return 0;
-    } else if (lo < boxlo) {
-      if (value > hi && value < lo + domain->prd[dim]) return 1;
-    } else if (hi > boxhi) {
-      if (value > hi - domain->prd[dim] && value < lo) return 1;
-    } else {
-      if (value < lo || value > hi) return 1;
-    }
-  } 
+//   if (domain->periodicity[dim]) {
+//     if (lo < boxlo && hi > boxhi) {
+//       return 0;
+//     } else if (lo < boxlo) {
+//       if (value > hi && value < lo + domain->prd[dim]) return 1;
+//     } else if (hi > boxhi) {
+//       if (value > hi - domain->prd[dim] && value < lo) return 1;
+//     } else {
+//       if (value < lo || value > hi) return 1;
+//     }
+//   } 
 
-  if (value < lo || value > hi) return 1;
-  return 0;
-}
+//   if (value < lo || value > hi) return 1;
+//   return 0;
+// }
 
 
 

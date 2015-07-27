@@ -50,19 +50,19 @@ class FixEPSExtract : public Fix {
   int *ivar;
   class RanPark *random;
 
-  int me,nprocs;
-  int *recvcounts,*displs;
-  tagint maxtag_all,maxmol_all;
+  // int me,nprocs;
+  // int *recvcounts,*displs;
+  tagint maxtag_all;
   double xlo,xhi,ylo,yhi,zlo,zhi;
-  double xc,yc,rc;
-  double radius_max;
-  double lo_current,hi_current;
-  int region_style;
+  // double xc,yc,rc;
+  // double radius_max;
+  // double lo_current,hi_current;
+  // int region_style;
   void find_maxid();
-  int overlap(int);
-  int outside(int, double, double, double);
+  // int overlap(int);
+  // int outside(int, double, double, double);
   // double getAverageMass();
-  int countNewAtoms(double averageMass);
+  // int countNewAtoms(double averageMass);
 
 };
 
