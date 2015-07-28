@@ -39,6 +39,12 @@ fix xw all wall/gran 200 NULL 50.0 NULL 0.5 0 xplane  0.0 0.00004
 fix yw all wall/gran 200 NULL 50.0 NULL 0.5 0 yplane  0.0 0.00004 
 fix zw all wall/gran 200 NULL 50.0 NULL 0.5 0 zplane  0.0 0.00004 
 
+variable kanc equal 50
+
+fix xwa all walladh v_kanc xplane  0.0 0.00004 
+fix ywa all walladh v_kanc yplane  0.0 0.00004 
+fix zwa all walladh v_kanc zplane  0.0 0.00004 
+
 #Defining affinity variables: list from Jaya 
 variable KsHET equal 0.01
 variable Ko2HET equal 0.81
