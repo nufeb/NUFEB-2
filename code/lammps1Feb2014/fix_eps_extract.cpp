@@ -44,6 +44,7 @@ using namespace FixConst;
 using namespace MathConst;
 
 #define EPSILON 0.001
+#define DELTA 1.005
 
 // enum{PAIR,KSPACE,ATOM};
 // enum{DIAMETER,CHARGE};
@@ -501,9 +502,9 @@ void FixEPSExtract::pre_exchange()
         //create child
         double childRadius = pow(((6*EPSMass)/(EPSdens*MY_PI)),(1.0/3.0))*0.5;
         double* coord = new double[3];
-        double newX = oldX - (childRadius+outerRadius[i])*cos(thetaD)*sin(phiD);
-        double newY = oldY - (childRadius+outerRadius[i])*sin(thetaD)*sin(phiD);
-        double newZ = oldZ - (childRadius+outerRadius[i])*cos(phiD);
+        double newX = oldX - ((childRadius+outerRadius[i])*cos(thetaD)*sin(phiD)*DELTA);
+        double newY = oldY - ((childRadius+outerRadius[i])*sin(thetaD)*sin(phiD)*DELTA);
+        double newZ = oldZ - ((childRadius+outerRadius[i])*cos(phiD)*DELTA);
         if (newX - childRadius < xlo) {
           newX = xlo + childRadius;
         }

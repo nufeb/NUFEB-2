@@ -44,6 +44,7 @@ using namespace FixConst;
 using namespace MathConst;
 
 #define EPSILON 0.001
+#define DELTA 1.005
 
 // enum{PAIR,KSPACE,ATOM};
 // enum{DIAMETER,CHARGE};
@@ -530,9 +531,9 @@ void FixDivide::pre_exchange()
         atom->f[i][2] = parentfz;
         radius[i] = pow(((6*rmass[i])/(density*MY_PI)),(1.0/3.0))*0.5;
         outerRadius[i] = pow((3.0/(4.0*MY_PI))*((rmass[i]/density)+(parentOuterMass/EPSdens)),(1.0/3.0));
-        newX = oldX + outerRadius[i]*cos(thetaD)*sin(phiD);
-        newY = oldY + outerRadius[i]*sin(thetaD)*sin(phiD);
-        newZ = oldZ + outerRadius[i]*cos(phiD);
+        newX = oldX + (outerRadius[i]*cos(thetaD)*sin(phiD)*DELTA);
+        newY = oldY + (outerRadius[i]*sin(thetaD)*sin(phiD)*DELTA);
+        newZ = oldZ + (outerRadius[i]*cos(phiD)*DELTA);
         if (newX - outerRadius[i] < xlo) {
         	newX = xlo + outerRadius[i];
         }
@@ -562,9 +563,9 @@ void FixDivide::pre_exchange()
         double childRadius = pow(((6*childMass)/(density*MY_PI)),(1.0/3.0))*0.5;
         double childOuterRadius = pow((3.0/(4.0*MY_PI))*((childMass/density)+(childOuterMass/EPSdens)),(1.0/3.0));
         double* coord = new double[3];
-        newX = oldX - childOuterRadius*cos(thetaD)*sin(phiD);
-        newY = oldY - childOuterRadius*sin(thetaD)*sin(phiD);
-        newZ = oldZ - childOuterRadius*cos(phiD);
+        newX = oldX - (childOuterRadius*cos(thetaD)*sin(phiD)*DELTA);
+        newY = oldY - (childOuterRadius*sin(thetaD)*sin(phiD)*DELTA);
+        newZ = oldZ - (childOuterRadius*cos(phiD)*DELTA);
         if (newX - childOuterRadius < xlo) {
         	newX = xlo + childOuterRadius;
         }
