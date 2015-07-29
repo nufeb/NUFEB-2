@@ -261,22 +261,23 @@ void FixWallAhd::init()
 
 void FixWallAhd::post_force(int vflag)
 {
-  double vwall[3],dx,dy,dz,del1,del2,delxy,delr,rsq;
+  double kanc = input->variable->compute_equal(ivar);
+  double dx,dy,dz,del1,del2,delxy,delr,rsq;
 
   // set position of wall to initial settings and velocity to 0.0
   // if wiggle or shear, set wall position and velocity accordingly
 
   double wlo = lo;
   double whi = hi;
-  vwall[0] = vwall[1] = vwall[2] = 0.0;
-  if (wiggle) {
-    double arg = omega * (update->ntimestep - time_origin) * dt;
-    if (wallstyle == axis) {
-      wlo = lo + amplitude - amplitude*cos(arg);
-      whi = hi + amplitude - amplitude*cos(arg);
-    }
-    vwall[axis] = amplitude*omega*sin(arg);
-  } else if (wshear) vwall[axis] = vshear;
+  // vwall[0] = vwall[1] = vwall[2] = 0.0;
+  // if (wiggle) {
+  //   double arg = omega * (update->ntimestep - time_origin) * dt;
+  //   if (wallstyle == axis) {
+  //     wlo = lo + amplitude - amplitude*cos(arg);
+  //     whi = hi + amplitude - amplitude*cos(arg);
+  //   }
+  //   vwall[axis] = amplitude*omega*sin(arg);
+  // } else if (wshear) vwall[axis] = vshear;
 
   // loop over all my atoms
   // rsq = distance from wall
@@ -289,20 +290,33 @@ void FixWallAhd::post_force(int vflag)
   // set shear if pair potential stores history
 
   double **x = atom->x;
-  double **v = atom->v;
+  // double **v = atom->v;
   double **f = atom->f;
-  double **omega = atom->omega;
-  double **torque = atom->torque;
-  double *radius = atom->radius;
+  // double **omega = atom->omega;
+  // double **torque = atom->torque;
+  double *outerRadius = atom->outerRadius;
   double *rmass = atom->rmass;
+  double *outerMass = atom->outerMass;
+  int *type = atom->type;
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
+  double epsMass;
+  double delta;
+  double r, rinv, ccel, ccelx, ccely, ccelz;
+  
 
-  shearupdate = 1;
-  if (update->setupflag) shearupdate = 0;
+  // shearupdate = 1;
+  // if (update->setupflag) shearupdate = 0;
 
   for (int i = 0; i < nlocal; i++) {
-    if (mask[i] & groupbit) {
+    if (type[i] == 4) {
+      epsMass = rmass[i];
+    }
+    else {
+      epsMass = outerMass[i];
+    }
+    if ((mask[i] & groupbit) && epsMass > 0) {
+      // fprintf(stdout, "Got Here: 1\n");
 
       dx = dy = dz = 0.0;
 
@@ -324,27 +338,47 @@ void FixWallAhd::post_force(int vflag)
       } else if (wallstyle == ZCYLINDER) {
         delxy = sqrt(x[i][0]*x[i][0] + x[i][1]*x[i][1]);
         delr = cylradius - delxy;
-        if (delr > radius[i]) dz = cylradius;
+        if (delr > outerRadius[i]) dz = cylradius;
         else {
           dx = -delr/delxy * x[i][0];
           dy = -delr/delxy * x[i][1];
-          if (wshear && axis != 2) {
-            vwall[0] = vshear * x[i][1]/delxy;
-            vwall[1] = -vshear * x[i][0]/delxy;
-            vwall[2] = 0.0;
-          }
+          // if (wshear && axis != 2) {
+          //   vwall[0] = vshear * x[i][1]/delxy;
+          //   vwall[1] = -vshear * x[i][0]/delxy;
+          //   vwall[2] = 0.0;
+          // }
         }
       }
+      // fprintf(stdout, "Got Here: 2\n");
 
       rsq = dx*dx + dy*dy + dz*dz;
 
-      if (rsq > radius[i]*radius[i]) {
-        if (pairstyle != HOOKE) {
-          shear[i][0] = 0.0;
-          shear[i][1] = 0.0;
-          shear[i][2] = 0.0;
-        }
+      // fprintf(stdout, "Got Here: 3\n");
+
+      // fprintf(stdout, "rsq:%e <= outerRadius[i]*outerRadius[i]:%e\n", rsq, outerRadius[i]*outerRadius[i]);
+
+      if (rsq <= outerRadius[i]*outerRadius[i]) {
+        // fprintf(stdout, "Got Here: 4\n");
+        r = sqrt(rsq);
+        rinv = 1.0/r;
+        delta = r-outerRadius[i];
+        ccel=delta*kanc*epsMass;
+        ccelx = dx*ccel*rinv ;
+        ccely = dy*ccel*rinv ;
+        ccelz = dz*ccel*rinv ;
+        f[i][0] += ccelx;
+        f[i][1] += ccely;
+        f[i][2] += ccelz;
+        // fprintf(stdout, "Got Here: 5\n");
       }
+
+      // if (rsq > radius[i]*radius[i]) {
+      //   if (pairstyle != HOOKE) {
+      //     shear[i][0] = 0.0;
+      //     shear[i][1] = 0.0;
+      //     shear[i][2] = 0.0;
+      //   }
+      // }
       // else {
       //   if (pairstyle == HOOKE)
       //     hooke(rsq,dx,dy,dz,vwall,v[i],f[i],omega[i],torque[i],
