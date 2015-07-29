@@ -1,7 +1,7 @@
 # NUFEB simulation
 
 atom_style	bio
-atom_modify	map array sort 10000 5e-7
+atom_modify	map array sort 10000 2e-7
 boundary	ff ff ff
 newton		off
 #processors  2 1 1
@@ -19,7 +19,7 @@ group EPS type 4
 group inert type 5
 
 
-neighbor	5.0e-7 bin
+neighbor	2.0e-7 bin
 neigh_modify	delay 0
 
 #pair_style  none
@@ -29,8 +29,8 @@ timestep	1
 
 velocity    all set 0.0 0.0 0.0 units box
 
-fix		1 all nve/limit 1e-10
-fix		1a EPS nve/limit 1e-10 
+fix		1 all nve/limit 1e-9
+fix		1a EPS nve/limit 1e-11 
 
 fix		2 all gravity 1.47 vector 0 0 -1 # spherical 90.0 -180.0    
 fix		2a EPS gravity 1.47 vector 0 0 -1 # spherical 90.0 -180.0    
