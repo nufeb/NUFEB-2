@@ -10,11 +10,11 @@ fid=fopen('import.pov','w');
 fprintf(fid,'// Right-handed coordinate system in which the z-axis points upwards\n');
 fprintf(fid,'camera {\n');
 
-fprintf(fid,['location <2.0e-2,-20.0e-2,0.5e-2>\n']);
+fprintf(fid,['location <2.0e-2,2.0e-2,30e-2>\n']);
 fprintf(fid,'sky y\n');
 fprintf(fid,'right -0.24*x*image_width/image_height\n');
 fprintf(fid,'up 0.24*y\n');
-fprintf(fid,'look_at <2.0e-2,2.0e-2,0.5e-2 >\n');
+fprintf(fid,'look_at <2.0e-2,2.0e-2,0.0>\n');
 fprintf(fid,'}\n');
 fprintf(fid,'// White background\n');
 fprintf(fid,'background{rgb 1}\n');
