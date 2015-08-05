@@ -30,8 +30,11 @@ class AtomVecBio : public AtomVecSphere {
   ~AtomVecBio() {}
   void init();
   void grow(int);
+  void create_atom(int itype, double *coord);
   void data_atom(double *, imageint, char **);
   void copy(int, int, int);
+  void grow_reset();
+  bigint memory_usage();
 
  private:
   double *sub, *o2, *nh4, *no2, *no3;

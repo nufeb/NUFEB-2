@@ -29,13 +29,21 @@
 using namespace LAMMPS_NS;
 using namespace MathConst;
 
-#define DELTA 10000
+#define DELTA 500000
 
 /* ---------------------------------------------------------------------- */
 
 AtomVecBio::AtomVecBio(LAMMPS *lmp) : AtomVecSphere(lmp)
 {
   size_data_atom = 13;
+  atom->sub = NULL;
+  atom->o2 = NULL;
+  atom->no2 = NULL;
+  atom->no3 = NULL;
+  atom->nh4 = NULL;
+  atom->outerMass = NULL;
+  atom->outerRadius = NULL;
+  atom->virtualMass = NULL;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -65,12 +73,28 @@ void AtomVecBio::grow(int n)
   AtomVecSphere::grow(n);
   sub = memory->grow(atom->sub,nmax,"atom:sub");
   o2 = memory->grow(atom->o2,nmax,"atom:o2");
-  nh4 = memory->grow(atom->nh4,nmax,"atom:nh4");
   no2 = memory->grow(atom->no2,nmax,"atom:no2");
   no3 = memory->grow(atom->no3,nmax,"atom:no3");
-  outerRadius = memory->grow(atom->outerRadius,nmax,"atom:outerRadius");
+  nh4 = memory->grow(atom->nh4,nmax,"atom:nh4");
   outerMass = memory->grow(atom->outerMass,nmax,"atom:outerMass");
+  outerRadius = memory->grow(atom->outerRadius,nmax,"atom:outerRadius");
 }
+
+void AtomVecBio::create_atom(int itype, double *coord)
+{
+  int nlocal = atom->nlocal;
+  AtomVecSphere::create_atom(itype, coord);
+
+  sub[nlocal] = 0.0;
+  o2[nlocal] = 0.0;
+  nh4[nlocal] = 0.0;
+  no2[nlocal] = 0.0;
+  no3[nlocal] = 0.0;
+
+  outerRadius[nlocal] = 0.5;
+  outerMass[nlocal] = 0.0;
+}
+
 
 void AtomVecBio::data_atom(double *coord, imageint imagetmp, char **values)
 {
@@ -95,6 +119,18 @@ void AtomVecBio::data_atom(double *coord, imageint imagetmp, char **values)
   //outerMass[nlocal] = (4.0*MY_PI/3.0)*((outerRadius[nlocal]*outerRadius[nlocal]*outerRadius[nlocal])-(radius[nlocal]*radius[nlocal]*radius[nlocal]))*30;
 }
 
+void AtomVecBio::grow_reset()
+{
+  AtomVecSphere::grow_reset();
+  sub = atom->sub;
+  o2 = atom->o2;
+  nh4 = atom->nh4;
+  no2 = atom->no2;
+  no3 = atom->no3;
+  outerMass = atom->outerMass;
+  outerRadius = atom->outerRadius;
+}
+
 void AtomVecBio::copy(int i, int j, int delflag)
 {
   sub[j] = sub[i];
@@ -107,4 +143,19 @@ void AtomVecBio::copy(int i, int j, int delflag)
 
   AtomVecSphere::copy(i, j, delflag);
 
+}
+
+bigint AtomVecBio::memory_usage()
+{
+  bigint bytes = AtomVecSphere::memory_usage();
+
+  if (atom->memcheck("sub")) bytes += memory->usage(sub,nmax);
+  if (atom->memcheck("o2")) bytes += memory->usage(o2,nmax);
+  if (atom->memcheck("nh4")) bytes += memory->usage(nh4,nmax);
+  if (atom->memcheck("no2")) bytes += memory->usage(no2,nmax);
+  if (atom->memcheck("no3")) bytes += memory->usage(no3,nmax);
+  if (atom->memcheck("outerMass")) bytes += memory->usage(outerMass,nmax);
+  if (atom->memcheck("outerRadius")) bytes += memory->usage(outerRadius,nmax);
+
+  return bytes;
 }
