@@ -1,4 +1,5 @@
 # 1 "options"
+# 1 "<built-in>"
 # 1 "<command-line>"
 
 
@@ -49,13 +50,18 @@
 
 
 
+
+
+
+
+
 # 4 "<command-line>" 2
 # 1 "options"
-LAMMPS_DIR = /home/prashant/Newcode/lammps-1Feb14/src/
+LAMMPS_DIR = /home/ncm82/repositories/nufeb/code/lammps1Feb2014/
 //LAMMPS_DIR =/l/sunrui/GIT/solvers/demfoam/lammps-1Feb14/src
 
 
-EXE_INC = -I$(PWD)/include -I$(LAMMPS_DIR)/ -I$(LAMMPS_DIR)/GRANULAR -I/usr/include/openmpi/ -I/usr/lib/openmpi/lib/ -I$(LAMMPS_DIR)/Obj_shanghailinux -I$(FOAM_SRC)/lagrangian/basic/lnInclude -I$(FOAM_SRC)/meshTools/lnInclude -I$(LIB_SRC)/cfdTools/incompressible -I$(LIB_SRC)/cfdTools/general/lnInclude -I$(LIB_SRC)/finiteVolume/lnInclude -I$(LIB_SRC)/triSurface/lnInclude -IchPressureGrad/lnInclude -IdragModels/lnInclude -IpolyDragModels/lnInclude
+EXE_INC = -I$(PWD)/include -I$(LAMMPS_DIR)/ -I$(LAMMPS_DIR)/GRANULAR -I/usr/include/openmpi-x86_64/ -I/usr/lib64/openmpi/lib/ -I$(LAMMPS_DIR)/Obj_shanghailinux -I$(FOAM_SRC)/lagrangian/basic/lnInclude -I$(FOAM_SRC)/meshTools/lnInclude -I$(LIB_SRC)/cfdTools/incompressible -I$(LIB_SRC)/cfdTools/general/lnInclude -I$(LIB_SRC)/finiteVolume/lnInclude -I$(LIB_SRC)/triSurface/lnInclude -IchPressureGrad/lnInclude -IdragModels/lnInclude -IpolyDragModels/lnInclude
 # 21 "options"
 
-EXE_LIBS = -L$(FOAM_USER_LIBBIN) -L$(LAMMPS_DIR) -L$(LAMMPS_DIR)/STUBS -lLagrangianInterfacialModels -lfiniteVolume -lmeshTools -llagrangian -L/usr/lib/openmpi/lib/ -lmpi -lmpi_cxx -llammps_shanghailinux -ltriSurface -lchPressureGrad-DEM -lstdc++
+EXE_LIBS = -L$(FOAM_USER_LIBBIN) -L$(LAMMPS_DIR) -L$(LAMMPS_DIR)/STUBS -lLagrangianInterfacialModels -lfiniteVolume -lmeshTools -llagrangian -L/usr/lib64/openmpi/lib/ -lmpi -lmpi_cxx -llammps_shanghailinux -ltriSurface -lchPressureGrad-DEM -lstdc++

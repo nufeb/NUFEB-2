@@ -48,8 +48,8 @@ for (int corr = 0; corr < nCorr; corr++)
     #else
     phib =
         (fvc::interpolate(Ub) & mesh.Sf())
-    //  + fvc::ddtPhiCorr(rUbA, Ub, phib)
-      + rUbAf*fvc::ddtCorr(Ub, phib)
+      + fvc::ddtPhiCorr(rUbA, Ub, phib)
+    //  + rUbAf*fvc::ddtCorr(Ub, phib)
       + phiDragb;
     #endif
 

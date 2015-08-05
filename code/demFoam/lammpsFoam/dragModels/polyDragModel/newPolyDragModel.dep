@@ -47,6 +47,8 @@ polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/OSs
 polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/errorManip.H
 polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/className.H
 polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/debug.H
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/debugName.H
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/simpleRegIOobject.H
 polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/runTimeSelectionTables.H
 polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/autoPtr.H
 polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/autoPtrI.H
@@ -67,6 +69,9 @@ polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/Lis
 polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/List.C
 polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/FixedList.H
 polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/Hash.H
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/wordRe.H
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OSspecific/POSIX/lnInclude/regExp.H
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/wordReI.H
 polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/StaticAssert.H
 polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/FixedListI.H
 polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/SLList.H
@@ -159,6 +164,9 @@ polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/com
 polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/gatherScatterList.C
 polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/exchange.C
 polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/PstreamCombineReduceOps.H
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/vector2D.H
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/Vector2D.H
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/Vector2DI.H
 polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/FieldReuseFunctions.H
 polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/FieldFunctionsM.C
 polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/dimensionedScalar.H
@@ -166,6 +174,23 @@ polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/dim
 polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/dimensionSet.H
 polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/dimensionedScalarFwd.H
 polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/dimensionSets.H
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/scalarMatrices.H
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/RectangularMatrix.H
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/Matrix.H
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/MatrixI.H
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/Matrix.C
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/MatrixIO.C
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/RectangularMatrixI.H
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/SquareMatrix.H
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/SquareMatrixI.H
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/SymmetricSquareMatrix.H
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/SymmetricSquareMatrixI.H
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/SymmetricSquareMatrix.C
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/DiagonalMatrix.H
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/DiagonalMatrix.C
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/scalarMatricesTemplates.C
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/ListOps.H
+polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/ListOpsTemplates.C
 polyDragModel/newPolyDragModel.dep: $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/dimensionedType.C
 $(OBJECTS_DIR)/newPolyDragModel.o: $(EXE_DEP)
 $(OBJECTS_DIR)/newPolyDragModel.o:

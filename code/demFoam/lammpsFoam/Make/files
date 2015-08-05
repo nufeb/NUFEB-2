@@ -4,4 +4,4 @@ softParticleIO.C
 softParticleCloud.C
 enhancedCloud.C
 
-EXE = $(FOAM_USER_APPBIN)/lammpsFoam
+EXE = $(FOAM_USER_APPBIN)/lammpsFoamNUFEB
