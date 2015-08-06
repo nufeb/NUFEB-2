@@ -125,7 +125,6 @@ void softParticleCloud::initLammps()
     vArray_ = new double [3*nGlobal_];
     dArray_ = new double [nGlobal_];
     fArray_ = new double [3*nGlobal_];
-
     rhoArray_ = new double [nGlobal_];
     tagArray_ = new int [nGlobal_];
     lmpCpuIdArray_ = new int [nGlobal_];
@@ -713,6 +712,95 @@ void  softParticleCloud::lammpsEvolveForward
     // Start getting information from LAMMPS
     // Harvest the number of particles in each lmp cpu
     int lmpNLocal = lammps_get_local_n(lmp_);
+
+    // Check if LAMMPS has more particles than OpenFOAM.
+    // If so, get new particle data from LAMMPS and create
+    // particles in OpenFOAM.
+    if (lmpNLocal > size()) {
+        xArray_ = new double [3*lmpNLocal];
+        vArray_ = new double [3*lmpNLocal];
+        dArray_ = new double [lmpNLocal];
+        rhoArray_ = new double [lmpNLocal];
+        tagArray_ = new int [lmpNLocal];
+        lmpCpuIdArray_ = new int [lmpNLocal];
+        typeArray_ = new int [lmpNLocal];
+
+        // xArray_ etc. are local to Lammps processor
+        lammps_get_initial_info
+        (
+            lmp_,
+            xArray_,
+            vArray_,
+            dArray_,
+            rhoArray_,
+            tagArray_,
+            lmpCpuIdArray_,
+            typeArray_
+        );
+        int oldSize = size();
+        int offset;
+        for (int i = oldSize; i < lmpNLocal; i++)
+        {
+            offset = 3*i;
+            vector pos = mesh_.C()[0];
+            label cellI = 0;
+
+            vector velo = vector
+            (
+                vArray_[offset + 0],
+                vArray_[offset + 1],
+                vArray_[offset + 2]
+            );
+
+            scalar ds = scalar(dArray_[i]);
+            scalar rhos = scalar(rhoArray_[i]);
+            label tags = int(tagArray_[i]);
+            label lmpCpuIds = int(lmpCpuIdArray_[i]);
+            label types = int(typeArray_[i]);
+
+            // create a new softParticle when it is in the current processor
+            // but the computer is running much slower than before.
+            softParticle* ptr =
+                new softParticle
+                (
+                    pMesh(),
+                    pos,
+                    cellI,
+                    ds,
+                    velo,
+                    rhos,
+                    tags,
+                    lmpCpuIds,
+                    types
+                );
+
+            addParticle(ptr);
+        }
+
+        label i = 0;
+        for
+        (
+            softParticleCloud::iterator pIter = begin();
+            pIter != end();
+            ++pIter, ++i
+        )
+        {
+            offset = 3*i;
+
+            vector pos = vector
+            (
+                xArray_[offset + 0],
+                xArray_[offset + 1],
+                xArray_[offset + 2]
+            );
+
+            softParticle& p = pIter();
+
+            // Update position:
+            p.positionOld() = p.position();
+            p.moveU() = (pos - p.position())/mesh_.time().deltaTValue();
+        }
+    }
 
     // Harvest more infomation from each lmp cpu
     double* fromLmpXArrayLocal = new double [3*lmpNLocal];
