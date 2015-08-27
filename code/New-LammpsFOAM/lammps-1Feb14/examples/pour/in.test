@@ -1,0 +1,34 @@
+# 2D particle pipe simulation
+
+atom_style	sphere
+boundary	p p fm
+newton		off
+
+communicate single vel yes
+region		reg block -0.15 0.15 -0.15 0.15 -1 0.5 units box
+create_box	1 reg
+
+neighbor	0.0001 bin
+neigh_modify	delay 0
+
+# pair_style  none
+pair_style  gran/hooke/history 800.0 NULL 59 NULL 0.1 0
+pair_coeff  * *
+
+timestep	1e-5
+
+fix		1 all nve/sphere  
+fix		2 all gravity 1 vector 0 0 -1
+
+# region  inlet block -0.15 0.15 -0.15 0.15 0.4 0.5 units box
+# fix     3 all pour 1000 1 25 region inlet vol 0.1 50 diam range 0.0049 0.0051
+region  inlet block -0.15 0.15 -0.15 0.15 0.499 0.5 units box
+fix     ins all pour 5000 1 300719 region inlet vol 0.15 10000 diam range 0.005 0.005
+
+dump    id all custom 1000 snapshot.bubblemd id type diameter mass x y z vx vy vz
+
+thermo_style  one   # granular does not work
+thermo		1000
+thermo_modify	lost error
+
+run 20000
