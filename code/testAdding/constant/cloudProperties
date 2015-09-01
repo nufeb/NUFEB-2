@@ -1,0 +1,67 @@
+/*---------------------------------------------------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  1.0                                   |
+|   \\  /    A nd           | Web:      http://www.openfoam.org               |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+FoamFile
+{
+    version         2.0;
+    format          ascii;
+
+    root            "";
+    case            "";
+    instance        "";
+    local           "";
+
+    class           dictionary;
+    object          sprayProperties;
+}
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+interpolationSchemes
+{
+    U               cellPointFace;
+}
+
+g 		    (0 -9.81 0);
+
+dragModel   SyamlalOBrien;
+subCycles	1;
+diffusionSteps 3;
+// diffusionSteps 0;
+diffusionBandWidth 0.005;
+maxPossibleAlpha 0.8;
+
+particleDrag            1;
+particlePressureGrad    1;
+particleAddedMass       0;
+lubricationForce        0;
+particleLift            0;
+particleHistoryForce    0;
+inletForce              (0 1 0);
+
+UfSmooth    0;
+UpSmooth    1;
+dragSmooth  1;
+alphaSmooth 1;
+
+smoothDirection (4.0 0 0 0 4.0 0 0 0 4.0);
+
+addParticle 0; // no/box/cylinder
+deleteParticle 0;
+deleteBeforeAdd 0;
+
+//addParticleBox (0.0 4e-5 0.0 4e-5 0.0 4e-5 0 0 0); // x1x2y1y2z1z2;
+//addParticleTimeStep 10;
+//addParticleInfo (5e-7 2500 1); //diameter/rho/type
+//randomPerturb 0;
+
+//deleteParticleBox (-1 1 -0.4 0.5 -1 1 0 0 0); // x1x2y1y2z1z2;
+
+//inletBox (-1 1 -0.45 -0.5 -1 1 0 0 0); // x1x2y1y2z1z2;
+
+// ************************************************************************* //
