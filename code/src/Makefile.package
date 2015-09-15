@@ -1,0 +1,10 @@
+# Settings for libraries used by specific LAMMPS packages
+# this file is auto-edited when those packages are included/excluded
+
+PKG_INC =   -I../../lib/atc -I../../src 
+PKG_PATH =  -L../../lib/atc 
+PKG_LIB =   -latc 
+
+PKG_SYSINC =  $(user-atc_SYSINC) 
+PKG_SYSLIB =  $(user-atc_SYSLIB) 
+PKG_SYSPATH = $(user-atc_SYSPATH) 
