@@ -40,24 +40,24 @@ using namespace MathConst;
 
 FixDiffNuGrowth::FixDiffNuGrowth(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
-  if (narg != 23) error->all(FLERR,"Illegal fix growth command");
+  if (narg < 28) error->all(FLERR,"Illegal fix growth command");
 
   nevery = force->inumeric(FLERR,arg[3]);
   if (nevery < 0) error->all(FLERR,"Illegal fix growth command");
 
-  var = new char*[16];
-  ivar = new int[16];
+  var = new char*[21];
+  ivar = new int[21];
 
   int i;
-  for (i = 0; i < 16; i++) {
+  for (i = 0; i < 21; i++) {
     int n = strlen(&arg[4+i][2]) + 1;
     var[i] = new char[n];
     strcpy(var[i],&arg[4+i][2]);
   }
 
-  nx = atoi(arg[20]);
-  ny = atoi(arg[21]);
-  nz = atoi(arg[22]);
+  nx = atoi(arg[25]);
+  ny = atoi(arg[26]);
+  nz = atoi(arg[27]);
 
   if (domain->triclinic == 0) {
     xlo = domain->boxlo[0];
@@ -76,6 +76,39 @@ FixDiffNuGrowth::FixDiffNuGrowth(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, n
     zhi = domain->boxhi_bound[2];
   }
 
+  xloBound = false;
+  xhiBound = false;
+  yloBound = false;
+  yhiBound = false;
+  zloBound = false;
+  zhiBound = false;
+
+  if (narg > 28) {
+  	for (i = 29; i < narg; i++) {
+  		if (strcmp(arg[i],"xlo") == 0) {
+  			xloBound = true;
+  		}
+  		else if (strcmp(arg[i],"xhi") == 0) {
+  			xhiBound = true;
+  		}
+  		else if (strcmp(arg[i],"ylo") == 0) {
+  			yloBound = true;
+  		}
+  		else if (strcmp(arg[i],"yhi") == 0) {
+  			yhiBound = true;
+  		}
+  		else if (strcmp(arg[i],"zlo") == 0) {
+  			zloBound = true;
+  		}
+  		else if (strcmp(arg[i],"zhi") == 0) {
+  			zhiBound = true;
+  		}
+  		else {
+  			error->all(FLERR,"Boundary must be xlo, xhi, ylo, yhi, zlo, or zhi.");
+  		}
+  	}
+  }
+
 }
 
 /* ---------------------------------------------------------------------- */
@@ -83,7 +116,7 @@ FixDiffNuGrowth::FixDiffNuGrowth(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, n
 FixDiffNuGrowth::~FixDiffNuGrowth()
 {
   int i;
-  for (i = 0; i < 16; i++) {
+  for (i = 0; i < 21; i++) {
     delete [] var[i];
   }
   delete [] var;
@@ -112,7 +145,7 @@ void FixDiffNuGrowth::init()
     error->all(FLERR,"Fix growth requires atom attribute diameter");
 
   int n;
-  for (n = 0; n < 16; n++) {
+  for (n = 0; n < 21; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
       error->all(FLERR,"Variable name for fix nugrowth does not exist");
@@ -127,6 +160,12 @@ void FixDiffNuGrowth::init()
   zCell = new double[numCells];
   cellVol = new double[numCells];
   boundary = new bool[numCells];
+  subCell = new double[numCells];
+  o2Cell = new double[numCells];
+  nh4Cell = new double[numCells];
+  no2Cell = new double[numCells];
+  no3Cell = new double[numCells];
+
 
   xstep = (xhi - xlo) / nx;
   ystep = (yhi - ylo) / ny;
@@ -141,13 +180,24 @@ void FixDiffNuGrowth::init()
         yCell[cell] = j;
         zCell[cell] = k;
         cellVol[cell] = xstep * ystep * zstep;
-        if (i == xlo + (xstep/2) || i == xhi - (xstep/2) ||
-        	j == ylo + (ystep/2) || j == yhi - (ystep/2) ||
-        	k == zlo + (zstep/2) || k == zhi - (zstep/2)) {
+        boundary[cell] = false;
+        if (i == xlo + (xstep/2) && xloBound) {
         	boundary[cell] = true;
         }
-        else {
-        	boundary[cell] = false;
+        if (i == xhi - (xstep/2) && xhiBound) {
+        	boundary[cell] = true;
+        }
+        if (j == ylo + (ystep/2) && yloBound) {
+        	boundary[cell] = true;
+        }
+        if (j == yhi - (ystep/2) && yhiBound) {
+        	boundary[cell] = true;
+        }
+        if (k == zlo + (zstep/2) && zloBound) {
+        	boundary[cell] = true;
+        }
+        if (k == zhi - (zstep/2) && zhiBound) {
+        	boundary[cell] = true;
         }
         cell++;
       }
@@ -190,6 +240,11 @@ void FixDiffNuGrowth::change_dia()
   double YEPS = input->variable->compute_equal(ivar[13]);
   double YHET = input->variable->compute_equal(ivar[14]);
   double EPSdens = input->variable->compute_equal(ivar[15]);
+  double Do2 = input->variable->compute_equal(ivar[16]);
+  double Dnh4 = input->variable->compute_equal(ivar[17]);
+  double Dno2 = input->variable->compute_equal(ivar[18]);
+  double Dno3 = input->variable->compute_equal(ivar[19]);
+  double Ds = input->variable->compute_equal(ivar[20]);
 
   double density;
 
@@ -213,6 +268,27 @@ void FixDiffNuGrowth::change_dia()
   double cAOB[numCells];
   double cNOB[numCells];
   double cEPS[numCells];
+
+  double R1[numCells];
+  double R2[numCells];
+  double R3[numCells];
+  double R4[numCells];
+  double R5[numCells];
+  double R6[numCells];
+  double R7[numCells];
+  double R8[numCells];
+  double R9[numCells];
+  double Ro2[numCells];
+  double Rnh4[numCells];
+  double Rno2[numCells];
+  double Rno3[numCells];
+  double Rs[numCells];
+
+  // Figure out which cell each particle is in
+
+  for (i = 0; i < numCells; i ++) {
+  	// Calculate R's at the cell level using the nutrients
+  }
 
   for (i = 0; i < nall; i++) {
     if (mask[i] & groupbit) {
@@ -258,8 +334,6 @@ void FixDiffNuGrowth::change_dia()
       // double R7 = bAOB;
       // double R8 = bNOB;
       double R9 = bEPS;
-
-      double Rs =;
 
       double value = update->dt * (gHET*(R1+R4+R5) + gAOB*R2 + gNOB*R3 - gEPS*R9);
 

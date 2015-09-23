@@ -44,6 +44,7 @@ class FixDiffNuGrowth : public Fix {
   int numCells;
   int nx, ny, nz;
   double xlo,xhi,ylo,yhi,zlo,zhi;
+  bool xloBound, xhiBound, yloBound, yhiBound, zloBound, zhiBound;
   double xstep, ystep, zstep;
   void change_dia();
 };
