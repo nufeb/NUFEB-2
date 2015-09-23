@@ -1,0 +1,14 @@
+This LAMMPS simulation made specific use of work described in the
+following references.  See http://lammps.sandia.gov/cite.html
+for details.
+
+fix srd command:
+
+@Article{Petersen10,
+ author = {M. K. Petersen, J. B. Lechman, S. J. Plimpton, G. S. Grest, P. J. in 't Veld, P. R. Schunk},
+ title =   {Mesoscale Hydrodynamics via Stochastic Rotation Dynamics: Comparison with Lennard-Jones Fluid}, journal = {J.~Chem.~Phys.},
+ year =    2010,
+ volume =  132,
+ pages =   {174106}
+}
+
