@@ -10,7 +10,7 @@ while feof(dump) == 0
         case 'ITEM: TIMESTEP'
             timestep(i) = str2num(fgetl(dump));
         case 'ITEM: NUMBER OF ATOMS'
-            Natoms(i) = str2num(fgetl(dump))
+            Natoms(i) = str2num(fgetl(dump));
         case 'ITEM: BOX BOUNDS pp pp pp'
             x_bound(i,:) = str2num(fgetl(dump));
             y_bound(i,:) = str2num(fgetl(dump));
@@ -71,7 +71,7 @@ fprintf(fid,['sphere{<' num2str(X(l)) ',' num2str(Y(l)) ',' num2str(Z(l)) '>,' n
     end
     fclose(fid);
     j=i+1000000;   
-POV_RAY=PvrSide(image);
+POV_RAY=PvrSide(image)
 
 generate=['povray +H1000 +W1000 +FJ Display=-D +O0_images/image' num2str(j) '.jpg import.pov'];
 system(generate);
