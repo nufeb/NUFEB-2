@@ -393,11 +393,14 @@ void FixDiffNuGrowth::change_dia()
     Rno2[i] = ((1/YAOB)*R2[i]*xAOB[i])-((1/YNOB)*R3[i]*xNOB[i])-(((1-YHET-YEPS)/(1.17*YHET))*R5[i]*xHET[i]);
     Rno3[i] = ((1/YNOB)*R3[i]*xNOB[i])-(((1-YHET-YEPS)/(2.86*YHET))*R4[i]*xHET[i]);
 
-    // subCell[i] = subCell[i] - (Rs[i] * update->ntimestep);
-    // o2Cell[i] = o2Cell[i] - (Ro2[i] * update->ntimestep);
-    // no2Cell[i] = no2Cell[i] - (Rno2[i] * update->ntimestep);
-    // no3Cell[i] = no3Cell[i] - (Rno3[i] * update->ntimestep);
-    // nh4Cell[i] = nh4Cell[i] - (Rnh4[i] * update->ntimestep);
+    subCell[i] = subCell[i] - (Rs[i] * update->ntimestep);
+    o2Cell[i] = o2Cell[i] - (Ro2[i] * update->ntimestep);
+    no2Cell[i] = no2Cell[i] - (Rno2[i] * update->ntimestep);
+    no3Cell[i] = no3Cell[i] - (Rno3[i] * update->ntimestep);
+    nh4Cell[i] = nh4Cell[i] - (Rnh4[i] * update->ntimestep);
+
+    // Ghost cell values never change if neu
+    // Otherwise, if dirch, ghost cells change, but not over time
 
 
 
