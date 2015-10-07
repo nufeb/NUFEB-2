@@ -40,24 +40,24 @@ using namespace MathConst;
 
 FixDiffNuGrowth::FixDiffNuGrowth(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
-  if (narg < 28) error->all(FLERR,"Illegal fix growth command");
+  if (narg != 48) error->all(FLERR,"Not enough arguments in fix diff growth command");
 
   nevery = force->inumeric(FLERR,arg[3]);
   if (nevery < 0) error->all(FLERR,"Illegal fix growth command");
 
-  var = new char*[21];
-  ivar = new int[21];
+  var = new char*[33];
+  ivar = new int[33];
 
   int i;
-  for (i = 0; i < 21; i++) {
+  for (i = 0; i < 33; i++) {
     int n = strlen(&arg[4+i][2]) + 1;
     var[i] = new char[n];
     strcpy(var[i],&arg[4+i][2]);
   }
 
-  nx = atoi(arg[25]);
-  ny = atoi(arg[26]);
-  nz = atoi(arg[27]);
+  nx = atoi(arg[37]);
+  ny = atoi(arg[38]);
+  nz = atoi(arg[39]);
 
   if (domain->triclinic == 0) {
     xlo = domain->boxlo[0];
@@ -76,39 +76,63 @@ FixDiffNuGrowth::FixDiffNuGrowth(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, n
     zhi = domain->boxhi_bound[2];
   }
 
-  xloBound = false;
-  xhiBound = false;
-  yloBound = false;
-  yhiBound = false;
-  zloBound = false;
-  zhiBound = false;
+  xloDirch = false;
+  xhiDirch = false;
+  yloDirch = false;
+  yhiDirch = false;
+  zloDirch = false;
+  zhiDirch = false;
 
-  if (narg > 28) {
-  	for (i = 29; i < narg; i++) {
+  if (strcmp(arg[40],"dirch") == 0) {
+  	i = 41;
+  	while (strcmp(arg[i],"neu") != 0) {
   		if (strcmp(arg[i],"xlo") == 0) {
-  			xloBound = true;
+  			xloDirch = true;
   		}
   		else if (strcmp(arg[i],"xhi") == 0) {
-  			xhiBound = true;
+  			xhiDirch = true;
   		}
   		else if (strcmp(arg[i],"ylo") == 0) {
-  			yloBound = true;
+  			yloDirch = true;
   		}
   		else if (strcmp(arg[i],"yhi") == 0) {
-  			yhiBound = true;
+  			yhiDirch = true;
   		}
   		else if (strcmp(arg[i],"zlo") == 0) {
-  			zloBound = true;
+  			zloDirch = true;
   		}
   		else if (strcmp(arg[i],"zhi") == 0) {
-  			zhiBound = true;
+  			zhiDirch = true;
   		}
-  		else {
-  			error->all(FLERR,"Boundary must be xlo, xhi, ylo, yhi, zlo, or zhi.");
+  		i++;
+  	}
+  }
+  else if (strcmp(arg[40],"neu") == 0) {
+  	i = 41;
+  	while (strcmp(arg[i],"dirch") != 0) {
+  		i++;
+  	}
+  	for (;i < narg; i++) {
+  		if (strcmp(arg[i],"xlo") == 0) {
+  			xloDirch = true;
+  		}
+  		else if (strcmp(arg[i],"xhi") == 0) {
+  			xhiDirch = true;
+  		}
+  		else if (strcmp(arg[i],"ylo") == 0) {
+  			yloDirch = true;
+  		}
+  		else if (strcmp(arg[i],"yhi") == 0) {
+  			yhiDirch = true;
+  		}
+  		else if (strcmp(arg[i],"zlo") == 0) {
+  			zloDirch = true;
+  		}
+  		else if (strcmp(arg[i],"zhi") == 0) {
+  			zhiDirch = true;
   		}
   	}
   }
-
 }
 
 /* ---------------------------------------------------------------------- */
@@ -116,7 +140,7 @@ FixDiffNuGrowth::FixDiffNuGrowth(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, n
 FixDiffNuGrowth::~FixDiffNuGrowth()
 {
   int i;
-  for (i = 0; i < 21; i++) {
+  for (i = 0; i < 33; i++) {
     delete [] var[i];
   }
   delete [] var;
@@ -125,7 +149,12 @@ FixDiffNuGrowth::~FixDiffNuGrowth()
   delete [] yCell;
   delete [] zCell;
   delete [] cellVol;
-  delete [] boundary;
+  delete [] ghost;
+  delete [] subCell;
+  delete [] o2Cell;
+  delete [] nh4Cell;
+  delete [] no2Cell;
+  delete [] no3Cell;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -145,7 +174,7 @@ void FixDiffNuGrowth::init()
     error->all(FLERR,"Fix growth requires atom attribute diameter");
 
   int n;
-  for (n = 0; n < 21; n++) {
+  for (n = 0; n < 33; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
       error->all(FLERR,"Variable name for fix nugrowth does not exist");
@@ -153,13 +182,19 @@ void FixDiffNuGrowth::init()
       error->all(FLERR,"Variable for fix nugrowth is invalid style");
   }
 
-  numCells = nx*ny*nz;
+  double sub = input->variable->compute_equal(ivar[28]);
+  double o2 = input->variable->compute_equal(ivar[29]);
+  double no2 = input->variable->compute_equal(ivar[30]);
+  double no3 = input->variable->compute_equal(ivar[31]);
+  double nh4 = input->variable->compute_equal(ivar[32]);
+
+  numCells = (nx+2)*(ny+2)*(nz+2);
 
   xCell = new double[numCells];
   yCell = new double[numCells];
   zCell = new double[numCells];
   cellVol = new double[numCells];
-  boundary = new bool[numCells];
+  ghost = new bool[numCells];
   subCell = new double[numCells];
   o2Cell = new double[numCells];
   nh4Cell = new double[numCells];
@@ -173,31 +208,36 @@ void FixDiffNuGrowth::init()
 
   double i, j, k;
   int cell = 0;
-  for (i = xlo + (xstep/2); i < xhi; i += xstep) {
-    for (j = ylo + (ystep/2); j < yhi; j += ystep) {
-      for (k = zlo + (zstep/2); k < zhi; k += zstep) {
+  for (i = xlo - (xstep/2); i < xhi + xstep; i += xstep) {
+    for (j = ylo - (ystep/2); j < yhi + ystep; j += ystep) {
+      for (k = zlo - (zstep/2); k < zhi + zstep; k += zstep) {
         xCell[cell] = i;
         yCell[cell] = j;
         zCell[cell] = k;
+        subCell[cell] = sub;
+        o2Cell[cell] = o2;
+        no2Cell[cell] = no2;
+        no3Cell[cell] = no3;
+        nh4Cell[cell] = nh4;
         cellVol[cell] = xstep * ystep * zstep;
-        boundary[cell] = false;
-        if (i == xlo + (xstep/2) && xloBound) {
-        	boundary[cell] = true;
+        ghost[cell] = false;
+        if (i == xlo - (xstep/2)) {
+        	ghost[cell] = true;
         }
-        if (i == xhi - (xstep/2) && xhiBound) {
-        	boundary[cell] = true;
+        if (i == xhi + (xstep/2)) {
+        	ghost[cell] = true;
         }
-        if (j == ylo + (ystep/2) && yloBound) {
-        	boundary[cell] = true;
+        if (j == ylo - (ystep/2)) {
+        	ghost[cell] = true;
         }
-        if (j == yhi - (ystep/2) && yhiBound) {
-        	boundary[cell] = true;
+        if (j == yhi + (ystep/2)) {
+        	ghost[cell] = true;
         }
-        if (k == zlo + (zstep/2) && zloBound) {
-        	boundary[cell] = true;
+        if (k == zlo - (zstep/2)) {
+        	ghost[cell] = true;
         }
-        if (k == zhi - (zstep/2) && zhiBound) {
-        	boundary[cell] = true;
+        if (k == zhi + (zstep/2)) {
+        	ghost[cell] = true;
         }
         cell++;
       }
@@ -233,18 +273,22 @@ void FixDiffNuGrowth::change_dia()
   double MumAOB = input->variable->compute_equal(ivar[9]);
   double MumNOB = input->variable->compute_equal(ivar[10]);
   double etaHET = input->variable->compute_equal(ivar[11]);
-  // double bHET = input->variable->compute_equal(ivar[12]);
-  // double bAOB = input->variable->compute_equal(ivar[13]);
-  // double bNOB = input->variable->compute_equal(ivar[14]);
-  double bEPS = input->variable->compute_equal(ivar[12]);
-  double YEPS = input->variable->compute_equal(ivar[13]);
-  double YHET = input->variable->compute_equal(ivar[14]);
-  double EPSdens = input->variable->compute_equal(ivar[15]);
-  double Do2 = input->variable->compute_equal(ivar[16]);
-  double Dnh4 = input->variable->compute_equal(ivar[17]);
-  double Dno2 = input->variable->compute_equal(ivar[18]);
-  double Dno3 = input->variable->compute_equal(ivar[19]);
-  double Ds = input->variable->compute_equal(ivar[20]);
+  double bHET = input->variable->compute_equal(ivar[12]); // R6
+  double bAOB = input->variable->compute_equal(ivar[13]); // R7
+  double bNOB = input->variable->compute_equal(ivar[14]); // R8
+  double bEPS = input->variable->compute_equal(ivar[15]); // R9
+  double YHET = input->variable->compute_equal(ivar[16]);
+  double YAOB = input->variable->compute_equal(ivar[17]);
+  double YNOB = input->variable->compute_equal(ivar[18]);
+  double YEPS = input->variable->compute_equal(ivar[19]);
+  double Y1 = input->variable->compute_equal(ivar[20]);
+  double EPSdens = input->variable->compute_equal(ivar[21]);
+  double Do2 = input->variable->compute_equal(ivar[22]);
+  double Dnh4 = input->variable->compute_equal(ivar[23]);
+  double Dno2 = input->variable->compute_equal(ivar[24]);
+  double Dno3 = input->variable->compute_equal(ivar[25]);
+  double Ds = input->variable->compute_equal(ivar[26]);
+  double diffT = input->variable->compute_equal(ivar[27]);
 
   double density;
 
@@ -264,32 +308,33 @@ void FixDiffNuGrowth::change_dia()
   int i;
 
   int cellIn[nall];
-  double cHET[numCells];
-  double cAOB[numCells];
-  double cNOB[numCells];
-  double cEPS[numCells];
+  double xHET[numCells];
+  double xAOB[numCells];
+  double xNOB[numCells];
+  double xEPS[numCells];
+  double xTot[numCells];
 
   double R1[numCells];
   double R2[numCells];
   double R3[numCells];
   double R4[numCells];
   double R5[numCells];
-  double R6[numCells];
-  double R7[numCells];
-  double R8[numCells];
-  double R9[numCells];
+  // double R6[numCells] = bHET;
+  // double R7[numCells] = bAOB;
+  // double R8[numCells] = bNOB;
+  // double R9[numCells] = bEPS;
+  double Rs[numCells];
   double Ro2[numCells];
   double Rnh4[numCells];
   double Rno2[numCells];
   double Rno3[numCells];
-  double Rs[numCells];
+  double cellDo2[numCells];
+  double cellDnh4[numCells];
+  double cellDno2[numCells];
+  double cellDno3[numCells];
+  double cellDs[numCells];
 
   // Figure out which cell each particle is in
-
-  for (i = 0; i < numCells; i ++) {
-  	// Calculate R's at the cell level using the nutrients
-  }
-
   for (i = 0; i < nall; i++) {
     if (mask[i] & groupbit) {
       double gHET = 0;
@@ -317,25 +362,94 @@ void FixDiffNuGrowth::change_dia()
             (yCell[j] + ystep/2) >= atom->x[i][1] &&
             (zCell[j] - zstep/2) <= atom->x[i][2] &&
             (zCell[j] + zstep/2) >= atom->x[i][2]) {
-        	cellIn[i] = j;
-        	cHET[j] += (gHET * rmass[i])/cellVol[j];
-        	cAOB[j] += (gAOB * rmass[i])/cellVol[j];
-        	cNOB[j] += (gNOB * rmass[i])/cellVol[j];
-        	cEPS[j] += (gEPS * rmass[i])/cellVol[j];
+          cellIn[i] = j;
+          xHET[j] += (gHET * rmass[i])/cellVol[j];
+          xAOB[j] += (gAOB * rmass[i])/cellVol[j];
+          xNOB[j] += (gNOB * rmass[i])/cellVol[j];
+          xEPS[j] += (gEPS * rmass[i])/cellVol[j];
+          xTot[j] += rmass[i]/cellVol[j];
         }
       }
+    }
+  }
 
-      double R1 = MumHET*(sub[i]/(KsHET+sub[i]))*(o2[i]/(Ko2HET+o2[i]));
-      double R2 = MumAOB*(nh4[i]/(Knh4AOB+nh4[i]))*(o2[i]/(Ko2AOB+o2[i]));
-      double R3 = MumNOB*(no2[i]/(Kno2NOB+no2[i]))*(o2[i]/(Ko2NOB+o2[i]));
-      double R4 = etaHET*MumHET*(sub[i]/(KsHET+sub[i]))*(no3[i]/(Kno3HET+no3[i]))*(Ko2HET/(Ko2HET+o2[i]));
-      double R5 = etaHET*MumHET*(sub[i]/(KsHET+sub[i]))*(no2[i]/(Kno2HET+no2[i]))*(Ko2HET/(Ko2HET+o2[i]));
+  for (i = 0; i < numCells; i ++) {
+    double diffusionFunction = 1 - ((0.43 * pow(xTot[i], 0.92))/(11.19+0.27*pow(xTot[i], 0.99)));
+
+    cellDo2[i] = diffusionFunction * Do2; 
+    cellDnh4[i] = diffusionFunction * Dnh4; 
+    cellDno2[i] = diffusionFunction * Dno2; 
+    cellDno3[i] = diffusionFunction * Dno3; 
+    cellDs[i] = diffusionFunction * Ds; 
+  	
+    R1[i] = MumHET*(subCell[i]/(KsHET+subCell[i]))*(o2Cell[i]/(Ko2HET+o2Cell[i]));
+    R2[i] = MumAOB*(nh4Cell[i]/(Knh4AOB+nh4Cell[i]))*(o2Cell[i]/(Ko2AOB+o2Cell[i]));
+    R3[i] = MumNOB*(no2Cell[i]/(Kno2NOB+no2Cell[i]))*(o2Cell[i]/(Ko2NOB+o2Cell[i]));
+    R4[i] = etaHET*MumHET*(subCell[i]/(KsHET+subCell[i]))*(no3Cell[i]/(Kno3HET+no3Cell[i]))*(Ko2HET/(Ko2HET+o2Cell[i]));
+    R5[i] = etaHET*MumHET*(subCell[i]/(KsHET+subCell[i]))*(no2Cell[i]/(Kno2HET+no2Cell[i]))*(Ko2HET/(Ko2HET+o2Cell[i]));
+    Rs[i] = ((-1/YHET)*((R1[i]+R4[i]+R5[i])*xHET[i]))+((1-Y1)*(bHET*xHET[i]+bAOB*xAOB[i]+bNOB*xNOB[i]))+(bEPS*xEPS[i]);
+    Ro2[i] = (((1-YHET-YEPS)/YHET)*R1[i]*xHET[i])-(((3.42-YAOB)/YAOB)*R2[i]*xAOB[i])-(((1.15-YNOB)/YNOB)*R3[i]*xNOB[i]);
+    Rnh4[i] = -(1/YAOB)*R2[i]*xAOB[i];
+    Rno2[i] = ((1/YAOB)*R2[i]*xAOB[i])-((1/YNOB)*R3[i]*xNOB[i])-(((1-YHET-YEPS)/(1.17*YHET))*R5[i]*xHET[i]);
+    Rno3[i] = ((1/YNOB)*R3[i]*xNOB[i])-(((1-YHET-YEPS)/(2.86*YHET))*R4[i]*xHET[i]);
+
+    // subCell[i] = subCell[i] - (Rs[i] * update->ntimestep);
+    // o2Cell[i] = o2Cell[i] - (Ro2[i] * update->ntimestep);
+    // no2Cell[i] = no2Cell[i] - (Rno2[i] * update->ntimestep);
+    // no3Cell[i] = no3Cell[i] - (Rno3[i] * update->ntimestep);
+    // nh4Cell[i] = nh4Cell[i] - (Rnh4[i] * update->ntimestep);
+
+
+
+  }
+
+  for (i = 0; i < nall; i++) {
+    if (mask[i] & groupbit) {
+      double gHET = 0;
+      double gAOB = 0;
+      double gNOB = 0;
+      double gEPS = 0;
+      if (type[i] == 1) {
+        gHET = 1;
+      }
+      if (type[i] == 2) {
+        gAOB = 1;
+      }
+      if (type[i] == 3) {
+        gNOB = 1;
+      }
+      if (type[i] == 4) {
+        gEPS = 1;
+      }
+
+      // int j;
+      // for (j = 0; j < numCells; j ++) {
+      //   if ((xCell[j] - xstep/2) <= atom->x[i][0] &&
+      //       (xCell[j] + xstep/2) >= atom->x[i][0] &&
+      //       (yCell[j] - ystep/2) <= atom->x[i][1] &&
+      //       (yCell[j] + ystep/2) >= atom->x[i][1] &&
+      //       (zCell[j] - zstep/2) <= atom->x[i][2] &&
+      //       (zCell[j] + zstep/2) >= atom->x[i][2]) {
+      //   	cellIn[i] = j;
+      //   	xHET[j] += (gHET * rmass[i])/cellVol[j];
+      //   	xAOB[j] += (gAOB * rmass[i])/cellVol[j];
+      //   	xNOB[j] += (gNOB * rmass[i])/cellVol[j];
+      //   	xEPS[j] += (gEPS * rmass[i])/cellVol[j];
+      //    xTot[j] += rmass[i]/cellVol[j];
+      //   }
+      // }
+
+      // double R1 = MumHET*(sub[i]/(KsHET+sub[i]))*(o2[i]/(Ko2HET+o2[i]));
+      // double R2 = MumAOB*(nh4[i]/(Knh4AOB+nh4[i]))*(o2[i]/(Ko2AOB+o2[i]));
+      // double R3 = MumNOB*(no2[i]/(Kno2NOB+no2[i]))*(o2[i]/(Ko2NOB+o2[i]));
+      // double R4 = etaHET*MumHET*(sub[i]/(KsHET+sub[i]))*(no3[i]/(Kno3HET+no3[i]))*(Ko2HET/(Ko2HET+o2[i]));
+      // double R5 = etaHET*MumHET*(sub[i]/(KsHET+sub[i]))*(no2[i]/(Kno2HET+no2[i]))*(Ko2HET/(Ko2HET+o2[i]));
       // double R6 = bHET;
       // double R7 = bAOB;
       // double R8 = bNOB;
-      double R9 = bEPS;
+      // double R9 = bEPS;
 
-      double value = update->dt * (gHET*(R1+R4+R5) + gAOB*R2 + gNOB*R3 - gEPS*R9);
+      double value = update->dt * (gHET*(R1[cellIn[i]]+R4[cellIn[i]]+R5[cellIn[i]]) + gAOB*R2[cellIn[i]] + gNOB*R3[cellIn[i]] - gEPS*bEPS);
 
       density = rmass[i] / (4.0*MY_PI/3.0 *
                       radius[i]*radius[i]*radius[i]);
@@ -349,7 +463,7 @@ void FixDiffNuGrowth::change_dia()
       // fprintf(stdout, "ID: %i Type: %i Outer Mass: %e\n", atom->tag[i], atom->type[i], outerMass[i]);
       
 
-      double value2 = update->dt * (YEPS/YHET)*(R1+R4+R5);
+      double value2 = update->dt * (YEPS/YHET)*(R1[cellIn[i]]+R4[cellIn[i]]+R5[cellIn[i]]);
       outerMass[i] = (((4.0*MY_PI/3.0)*((outerRadius[i]*outerRadius[i]*outerRadius[i])-(radius[i]*radius[i]*radius[i])))*EPSdens)+(value2*nevery*rmass[i]);
 
       outerRadius[i] = pow((3.0/(4.0*MY_PI))*((rmass[i]/density)+(outerMass[i]/EPSdens)),(1.0/3.0));
