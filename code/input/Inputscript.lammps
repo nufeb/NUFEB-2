@@ -30,21 +30,21 @@ timestep	1
 
 velocity    all set 0.0 0.0 0.0 units box
 
-fix		1 all nve/limit 1e-9
+#fix		1 all nve/limit 1e-9
 
-fix		2 all gravity 1.47 vector 0 0 -1 # spherical 90.0 -180.0 
+#fix		2 all gravity 1.47 vector 0 0 -1 # spherical 90.0 -180.0 
 #fix     3 all fdrag
 
 
-fix xw all wall/gran 200 NULL 50.0 NULL 1.5 0 xplane  0.00001  0.00003
-fix yw all wall/gran 200 NULL 50.0 NULL 1.5 0 yplane  0.00001  0.00003 
-fix zw all wall/gran 200 NULL 50.0 NULL 1.5 0 zplane  0.00000  0.00004 
+#fix xw all wall/gran 200 NULL 50.0 NULL 1.5 0 xplane  0.00001  0.00003
+#fix yw all wall/gran 200 NULL 50.0 NULL 1.5 0 yplane  0.00001  0.00003 
+#fix zw all wall/gran 200 NULL 50.0 NULL 1.5 0 zplane  0.00000  0.00004 
 
 variable kanc equal 50
 
-fix xwa all walladh v_kanc xplane  0.00001  0.00003 
-fix ywa all walladh v_kanc yplane  0.00001  0.00003 
-fix zwa all walladh v_kanc zplane  0.00000  0.00004
+#fix xwa all walladh v_kanc xplane  0.00001  0.00003 
+#fix ywa all walladh v_kanc yplane  0.00001  0.00003 
+#fix zwa all walladh v_kanc zplane  0.00000  0.00004
 
 
 #Defining affinity variables: list from Jaya 
@@ -68,38 +68,59 @@ variable etaHET equal 0.6
 
 #Defining decay rates variables: list from Jaya 
 variable bHET equal 0.00000462962
-#variable bHET equal 0.00462962
 variable bAOB equal 0.00000127314
-#variable bAOB equal 0.00127314
 variable bNOB equal 0.00000127314
-#variable bNOB equal 0.00127314
 variable bEPS equal 0.00000196759
 
-variable YEPS equal 0.18
 variable YHET equal 0.61
+variable YAOB equal 0.33
+variable YNOB equal 0.083
+variable YEPS equal 0.18
+variable Y1 equal 0.4
 variable EPSdens equal 30
 variable EPSratio equal 1.25
+
+variable Do2 equal 2.0e-9
+variable Dnh4 equal 1.4e-9
+variable Dno2 equal 1.2e-9
+variable Dno3 equal 1.2e-9
+variable Ds equal 0.4e-9
+
+variable diffT equal 1e-1
+
+variable sub equal 8.0e-2
+variable o2 equal 10.0e-3
+variable no2 equal 9.0e-2
+variable no3 equal 8.0e-3
+variable nh4 equal 1e-5 
+
+
+#variable sub equal 8.0e-2
+#variable o2 equal 5.0e-3
+#variable no2 equal 1.0e-3
+#variable no3 equal 1.0e-3
+#variable nh4 equal 0.04 
 
 variable factor equal 1.5
 
 variable ke equal 5e+10
 
 #variable rate1 equal 0.001
-fix g1 all nugrowth 1 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bEPS v_YEPS v_YHET v_EPSdens
-fix dt1 HET death 1 v_bHET v_factor 1952467
-fix dt2 AOB death 1 v_bAOB v_factor 1234312
-fix dt3 NOB death 1 v_bNOB v_factor 1325352
-fix d1 HET divide 1000 v_EPSdens 2.0 1242242
-fix d2 AOB divide 1000 v_EPSdens 2.0 1242242
-fix d3 NOB divide 1000 v_EPSdens 2.0 1242242
-fix e1 HET eps_extract 1000 v_EPSratio v_EPSdens 1242242
-fix j1 all epsadh 1 v_ke
+fix g1 all diffnugrowth 1 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bHET v_bAOB v_bNOB v_bEPS v_YHET v_YAOB v_YNOB v_YEPS v_Y1 v_EPSdens v_Do2 v_Dnh4 v_Dno2 v_Dno3 v_Ds v_diffT v_sub v_o2 v_no2 v_no3 v_nh4 10 10 10 dirch neu xlo xhi ylo yhi zlo zhi
+#fix dt1 HET death 1 v_bHET v_factor 1952467
+#fix dt2 AOB death 1 v_bAOB v_factor 1234312
+#fix dt3 NOB death 1 v_bNOB v_factor 1325352
+#fix d1 HET divide 1000 v_EPSdens 2.0 1242242
+#fix d2 AOB divide 1000 v_EPSdens 2.0 1242242
+#fix d3 NOB divide 1000 v_EPSdens 2.0 1242242
+#fix e1 HET eps_extract 1000 v_EPSratio v_EPSdens 1242242
+#fix j1 all epsadh 1 v_ke
 
 
 #dump		id1 HET custom 2000 HET.bubblemd radius outerradius
-#dump		id2 all custom 1000 EPS.bubblemd id type radius outerradius mass outermass
+dump		id2 all custom 1 snapshot.bubblemd id type radius outerradius mass outermass sub
 #dump		id2 EPS custom 1000 snapshot2.bubblemd id type diameter mass x y z vx vy vz
-dump		id all custom 2000 snapshot.bubblemd id type diameter x y z vx vy vz fx fy fz
+#dump		id all custom 1 snapshot.bubblemd id type diameter x y z vx vy vz fx fy fz
 
 
 #dump d0 all image 100 dump.*.jpg type type
@@ -109,8 +130,8 @@ thermo_style    custom step atoms ke vol
 
 #thermo_style  granular # not work. syntax change?
 #thermo_style  one   # granular does not work
-thermo		1000
+thermo		1
 thermo_modify	lost ignore
 #restart		1000000  restart.*.bubblemd
 
-run 252800
+run 1
