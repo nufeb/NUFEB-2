@@ -86,7 +86,7 @@ variable Dno2 equal 1.2e-9
 variable Dno3 equal 1.2e-9
 variable Ds equal 0.4e-9
 
-variable diffT equal 1e-1
+variable diffT equal 1e-4
 
 variable sub equal 8.0e-2
 variable o2 equal 10.0e-3
@@ -134,4 +134,4 @@ thermo		1
 thermo_modify	lost ignore
 #restart		1000000  restart.*.bubblemd
 
-run 1
+run 2
