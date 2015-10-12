@@ -314,11 +314,18 @@ void FixDiffNuGrowth::change_dia()
   int i;
 
   int cellIn[nall];
-  double xHET[numCells] = {0.0};
-  double xAOB[numCells] = {0.0};
-  double xNOB[numCells] = {0.0} ;
-  double xEPS[numCells] = {0.0};
-  double xTot[numCells] = {0.0};
+  double xHET[numCells];
+  double xAOB[numCells];
+  double xNOB[numCells];
+  double xEPS[numCells];
+  double xTot[numCells];
+  for (int cell = 0; cell < numCells; cell++) {
+  	xHET[cell] = 0.0;
+  	xAOB[cell] = 0.0;
+  	xNOB[cell] = 0.0;
+  	xEPS[cell] = 0.0;
+  	xTot[cell] = 0.0;
+  }
 
   double R1[numCells];
   double R2[numCells];
