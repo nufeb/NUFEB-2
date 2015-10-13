@@ -222,22 +222,8 @@ void FixDiffNuGrowth::init()
         nh4Cell[cell] = nh4;
         cellVol[cell] = xstep * ystep * zstep;
         ghost[cell] = false;
-        if (i == xlo - (xstep/2)) {
-        	ghost[cell] = true;
-        }
-        if (i == xhi + (xstep/2)) {
-        	ghost[cell] = true;
-        }
-        if (j == ylo - (ystep/2)) {
-        	ghost[cell] = true;
-        }
-        if (j == yhi + (ystep/2)) {
-        	ghost[cell] = true;
-        }
-        if (k == zlo - (zstep/2)) {
-        	ghost[cell] = true;
-        }
-        if (k == zhi + (zstep/2)) {
+        if (i < xlo || i > xhi || j < ylo ||
+        	j > yhi || k < zlo || k > zhi) {
         	ghost[cell] = true;
         }
         cell++;
@@ -416,14 +402,19 @@ void FixDiffNuGrowth::change_dia()
   double prevno2Sum;
   double prevno3Sum;
   double prevnh4Sum;
+  prevsubSum = 0.0;
+  prevo2Sum = 0.0;
+  prevno2Sum = 0.0;
+  prevno3Sum = 0.0;
+  prevnh4Sum = 0.0;
 
   bool convergence = false;
 
   int iteration = 0;
 
-  double tol = 1e-9; // Tolerance for convergence criteria for nutrient balance equation
+  double tol = 1e-3; // Tolerance for convergence criteria for nutrient balance equation
 
-  double dtRatio = 0.1; // Ratio of physical time step divided by time step of diffusion
+  double dtRatio = 0.01; // Ratio of physical time step divided by time step of diffusion
 
   // Outermost while loop for the convergence criterion 
 
@@ -437,6 +428,7 @@ void FixDiffNuGrowth::change_dia()
   	no2Sum = 0.0;
   	no3Sum = 0.0;
   	nh4Sum = 0.0;
+
 
 
   	for (int cell = 0; cell < numCells; cell++) {
@@ -499,22 +491,22 @@ void FixDiffNuGrowth::change_dia()
 
 
 
-    	subCell[cell] -= Rs[cell] * update->ntimestep;
-    	o2Cell[cell] -= Ro2[cell] * update->ntimestep;
-    	no2Cell[cell] -= Rno2[cell] * update->ntimestep;
-    	no3Cell[cell] -= Rno3[cell] * update->ntimestep;
-    	nh4Cell[cell] -= Rnh4[cell] * update->ntimestep;
+    	subCell[cell] -= Rs[cell] * update->dt;
+    	o2Cell[cell] -= Ro2[cell] * update->dt;
+    	no2Cell[cell] -= Rno2[cell] * update->dt;
+    	no3Cell[cell] -= Rno3[cell] * update->dt;
+    	nh4Cell[cell] -= Rnh4[cell] * update->dt;
 
       	// if (nh4Cell[cell] != nh4Cell[cell]) {
        //  	fprintf(stdout, "nh4Cell[%i]: %e\n", cell, nh4Cell[cell]);
       	// }
 
-      	fprintf(stdout, "Rno3[%i] %f\n", cell, Rno3[cell]);
+      	//fprintf(stdout, "Rno3[%i] %f\n", cell, Rno3[cell]);
 
-    	// computeFlux(cellDs, subCell, subVal, Rs[cell], diffT, cell);
-    	// computeFlux(cellDo2, o2Cell, o2Val, Ro2[cell], diffT, cell);
-    	// computeFlux(cellDnh4, nh4Cell, nh4Val, Rnh4[cell], diffT, cell);
-    	// computeFlux(cellDno2, no2Cell, no2Val, Rno2[cell], diffT, cell);
+    	computeFlux(cellDs, subCell, subVal, Rs[cell], diffT, cell);
+    	computeFlux(cellDo2, o2Cell, o2Val, Ro2[cell], diffT, cell);
+    	computeFlux(cellDnh4, nh4Cell, nh4Val, Rnh4[cell], diffT, cell);
+    	computeFlux(cellDno2, no2Cell, no2Val, Rno2[cell], diffT, cell);
     	computeFlux(cellDno3, no3Cell, no3Val, Rno3[cell], diffT, cell);
 
       	if (!ghost[cell]) {
@@ -531,14 +523,54 @@ void FixDiffNuGrowth::change_dia()
 
   	}
 
-  	if ((abs((subSum - prevsubSum)) < tol &&
-  		abs((o2Sum - prevo2Sum)) < tol &&
-  		abs((no2Sum - prevno2Sum)) < tol &&
-  		abs((no3Sum - prevno3Sum)) < tol &&
-  		abs((nh4Sum - prevnh4Sum)) < tol)) {// ||
-  		//(iteration*diffT)/update->ntimestep > dtRatio) {
-      fprintf(stdout, "subSum: %f\n", subSum);
-      fprintf(stdout, "prevsubSum: %f\n", prevsubSum);
+  	// fprintf(stdout, "subSum: %f\n", subSum);
+  	// fprintf(stdout, "prevsubSum: %f\n", prevsubSum);
+  	// fprintf(stdout, "subSum - prevsubSum: %f\n", subSum - prevsubSum);
+  	// fprintf(stdout, "abs(subSum - prevsubSum): %f\n", abs(subSum - prevsubSum));
+  	// fprintf(stdout, "abs((o2Sum - prevo2Sum)): %f\n", abs((o2Sum - prevo2Sum)));
+  	// fprintf(stdout, "abs((no2Sum - prevno2Sum)): %f\n", abs((no2Sum - prevno2Sum)));
+  	// fprintf(stdout, "abs((no3Sum - prevno3Sum)): %f\n", abs((no3Sum - prevno3Sum)));
+  	// fprintf(stdout, "abs((nh4Sum - prevnh4Sum)): %f\n", abs((nh4Sum - prevnh4Sum)));
+  	// fprintf(stdout, "(iteration*diffT)/update->dt: %f\n", (iteration*diffT)/update->dt);
+  	// fprintf(stdout, "tol: %e\n", tol);
+  	// fprintf(stdout, "dtRatio: %f\n", dtRatio);
+  	// fprintf(stdout, "abs(subSum - prevsubSum) < tol: %i\n", abs(subSum - prevsubSum) < tol);
+
+  	double abssubDiff = subSum - prevsubSum;
+  	double abso2Diff = o2Sum - prevo2Sum;
+  	double absno2Diff = no2Sum - prevno2Sum;
+  	double absno3Diff = no3Sum - prevno3Sum;
+  	double absnh4Diff = nh4Sum - prevnh4Sum;
+
+  	if(abssubDiff < 0) {
+  		abssubDiff = -abssubDiff;
+  	}
+  	if(abso2Diff < 0) {
+  		abso2Diff = -abso2Diff;
+  	}
+  	if(absno2Diff < 0) {
+  		absno2Diff = -absno2Diff;
+  	}
+  	if(absno3Diff < 0) {
+  		absno3Diff = -absno3Diff;
+  	}
+  	if(absnh4Diff < 0) {
+  		absnh4Diff = -absnh4Diff;
+  	}
+
+  	// fprintf(stdout, "subSum - prevsubSum: %e\n", subSum - prevsubSum);
+  	// fprintf(stdout, "abs(subSum - prevsubSum): %e\n", abs(subSum - prevsubSum));
+  	// fprintf(stdout, "abssubDiff/tol: %f\n", abssubDiff/tol);
+  	// fprintf(stdout, "tol: %f\n", tol);
+  	// fprintf(stdout, "abssubDiff < tol: %i\n", abssubDiff < tol);
+  	
+
+  	if ((abssubDiff < tol &&
+  		abso2Diff < tol &&
+  		absno2Diff < tol &&
+  		absno3Diff < tol &&
+  		absnh4Diff < tol) ||
+  		(iteration*diffT)/update->dt > dtRatio) {
   		convergence = true;
   	}
   	else {
@@ -551,7 +583,7 @@ void FixDiffNuGrowth::change_dia()
 
   }
 
-  fprintf(stdout, "Number of iterations for substrate nutrient mass balance:  %i\n", iteration);
+  // fprintf(stdout, "Number of iterations for substrate nutrient mass balance:  %i\n", iteration);
 
   for (i = 0; i < nall; i++) {
     if (mask[i] & groupbit) {
@@ -648,6 +680,7 @@ void FixDiffNuGrowth::computeFlux(double *cellDNu, double *nuCell, double nuVal,
     int backwardCell = cell - 1; // z direction
     int forwardCell = cell + 1; // z direction
 
+
     // fprintf(stdout, "nuVal: %f\n", nuVal);
     // fprintf(stdout, "rateNu: %f\n", rateNu);
     // fprintf(stdout, "diffT: %f\n", diffT);
@@ -671,8 +704,11 @@ void FixDiffNuGrowth::computeFlux(double *cellDNu, double *nuCell, double nuVal,
     // assign values to the ghost-cells according to the boundary conditions. 
     // If ghostcells are Neu then take the values equal from the adjacent cells.
     // if ghostcells are dirich then take the values equal to negative of the adjacent cells.  
+    //fprintf(stdout, "Num Cells: %i\n", numCells);
     if (ghost[cell]) {
-    	if (zCell[cell] == zlo - (zstep/2)) {
+    	// fprintf(stdout, "Ghost Cell: %i\n", cell);
+    	if (zCell[cell] < zlo && !ghost[forwardCell]) {
+    		// fprintf(stdout, "Forward Cell: %i\n", forwardCell);
     		if (zloDirch) {
     			nuCell[cell] = 2*nuVal - nuCell[forwardCell]; // if you want zero nutrient at the boundary, remove "2*nuVal"
     		}
@@ -680,7 +716,8 @@ void FixDiffNuGrowth::computeFlux(double *cellDNu, double *nuCell, double nuVal,
     			nuCell[cell] = nuCell[forwardCell];
     		}
     	}
-    	else if (zCell[cell] == zhi + (zstep/2)) {
+    	else if (zCell[cell] > zhi && !ghost[backwardCell]) {
+    		// fprintf(stdout, "Backward Cell: %i\n", backwardCell);
     		if (zhiDirch) {
     			nuCell[cell] = 2*nuVal - nuCell[backwardCell]; // if you want zero nutrient at the boundary, remove "2*nuVal"
     		}
@@ -688,7 +725,8 @@ void FixDiffNuGrowth::computeFlux(double *cellDNu, double *nuCell, double nuVal,
     			nuCell[cell] = nuCell[backwardCell];
     		}
     	}
-    	else if (yCell[cell] == ylo - (ystep/2)) {
+    	else if (yCell[cell] < ylo && !ghost[upCell]) {
+    		// fprintf(stdout, "Up Cell: %i\n", upCell);
     		if (yloDirch) {
     			nuCell[cell] = 2*nuVal - nuCell[upCell]; // if you want zero nutrient at the boundary, remove "2*nuVal"
     		}
@@ -696,7 +734,8 @@ void FixDiffNuGrowth::computeFlux(double *cellDNu, double *nuCell, double nuVal,
     			nuCell[cell] = nuCell[upCell];
     		}
     	}
-    	else if (yCell[cell] == yhi + (ystep/2)) {
+    	else if (yCell[cell] > yhi && !ghost[downCell]) {
+    		// fprintf(stdout, "Down Cell: %i\n", downCell);
     		if (yhiDirch) {
     			nuCell[cell] = 2*nuVal - nuCell[downCell]; // if you want zero nutrient at the boundary, remove "2*nuVal"
     		}
@@ -704,7 +743,8 @@ void FixDiffNuGrowth::computeFlux(double *cellDNu, double *nuCell, double nuVal,
     			nuCell[cell] = nuCell[downCell];
     		}
     	}
-    	else if (xCell[cell] == xlo - (xstep/2)) {
+    	else if (xCell[cell] < xlo && !ghost[rightCell]) {
+    		// fprintf(stdout, "Right Cell: %i\n", rightCell);
     		if (xloDirch) {
     			nuCell[cell] = 2*nuVal - nuCell[rightCell]; // if you want zero nutrient at the boundary, remove "2*nuVal"
     		}
@@ -712,13 +752,64 @@ void FixDiffNuGrowth::computeFlux(double *cellDNu, double *nuCell, double nuVal,
     			nuCell[cell] = nuCell[rightCell];
     		}
     	}
-    	else if (xCell[cell] == xhi + (xstep/2)) {
+    	else if (xCell[cell] > xhi && !ghost[leftCell]) {
+    		// fprintf(stdout, "Left Cell: %i\n", leftCell);
     		if (xhiDirch) {
     			nuCell[cell] = 2*nuVal - nuCell[leftCell]; // if you want zero nutrient at the boundary, remove "2*nuVal"
     		}
     		else {
     			nuCell[cell] = nuCell[leftCell];
     		}
+    	}
+    	else {
+    		if (zCell[cell] < zlo) {
+    			if (zloDirch) {
+    				nuCell[cell] = 2*nuVal - nuCell[forwardCell]; // if you want zero nutrient at the boundary, remove "2*nuVal"
+    			}
+	    		else {
+	    			nuCell[cell] = nuCell[forwardCell];
+	    		}
+	    	}
+	    	else if (zCell[cell] > zhi) {
+	    		if (zhiDirch) {
+	    			nuCell[cell] = 2*nuVal - nuCell[backwardCell]; // if you want zero nutrient at the boundary, remove "2*nuVal"
+	    		}
+	    		else {
+	    			nuCell[cell] = nuCell[backwardCell];
+	    		}
+	    	}
+	    	else if (yCell[cell] < ylo) {
+	    		if (yloDirch) {
+	    			nuCell[cell] = 2*nuVal - nuCell[upCell]; // if you want zero nutrient at the boundary, remove "2*nuVal"
+	    		}
+	    		else {
+	    			nuCell[cell] = nuCell[upCell];
+	    		}
+	    	}
+	    	else if (yCell[cell] > yhi) {
+	    		if (yhiDirch) {
+	    			nuCell[cell] = 2*nuVal - nuCell[downCell]; // if you want zero nutrient at the boundary, remove "2*nuVal"
+	    		}
+	    		else {
+	    			nuCell[cell] = nuCell[downCell];
+	    		}
+	    	}
+	    	else if (xCell[cell] < xlo) {
+	    		if (xloDirch) {
+	    			nuCell[cell] = 2*nuVal - nuCell[rightCell]; // if you want zero nutrient at the boundary, remove "2*nuVal"
+	    		}
+	    		else {
+	    			nuCell[cell] = nuCell[rightCell];
+	    		}
+	    	}
+	    	else if (xCell[cell] > xhi) {
+	    		if (xhiDirch) {
+	    			nuCell[cell] = 2*nuVal - nuCell[leftCell]; // if you want zero nutrient at the boundary, remove "2*nuVal"
+	    		}
+	    		else {
+	    			nuCell[cell] = nuCell[leftCell];
+	    		}
+	    	}
     	}
     }
     else {
