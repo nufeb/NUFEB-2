@@ -414,7 +414,7 @@ void FixDiffNuGrowth::change_dia()
 
   double tol = 1e-3; // Tolerance for convergence criteria for nutrient balance equation
 
-  double dtRatio = 0.01; // Ratio of physical time step divided by time step of diffusion
+  double dtRatio = 0.002; // Ratio of physical time step divided by time step of diffusion
 
   // Outermost while loop for the convergence criterion 
 
