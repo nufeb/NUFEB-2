@@ -1,1 +1,1 @@
-/home/ncm82/repositories/nufeb/code/New-LammpsFOAM/interfaceToLammps/pair_lubricate_poly.cpp
+../../New-LammpsFOAM/interfaceToLammps/pair_lubricate_poly.cpp

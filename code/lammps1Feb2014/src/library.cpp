@@ -1,1 +1,1 @@
-/home/ncm82/repositories/nufeb/code/New-LammpsFOAM/interfaceToLammps/library.cpp
+../../New-LammpsFOAM/interfaceToLammps/library.cpp

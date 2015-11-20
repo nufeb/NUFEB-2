@@ -13,7 +13,7 @@
 #include "fix_death.h"
 #include "fix_deform.h"
 #include "fix_deposit.h"
-#include "fix_diffnu.h"
+#include "fix_diffnugrowth.h"
 #include "fix_divide.h"
 #include "fix_dt_reset.h"
 #include "fix_efield.h"
