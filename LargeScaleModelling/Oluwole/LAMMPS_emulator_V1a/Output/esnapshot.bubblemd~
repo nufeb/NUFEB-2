@@ -1,0 +1,16 @@
+ITEM: TIMESTEP
+0
+ITEM: NUMBER OF ATOMS
+5
+ITEM: BOX BOUNDS ff ff ff
+0 8e-05
+0 8e-05
+0 8e-05
+type diameter mass x y z MR.HET MR.AOB MR.NOB MR.EPS
+Floc 
+
+ITEM: ATOMS id type diameter mass x y z sub no2 no3 o2 nh4 
+1 1 1.0839e-06 1.00013e-16 4e-05 3.5e-05 8.6e-07 0.08 0.008 1e-05 0.01 0.09 
+
+
+

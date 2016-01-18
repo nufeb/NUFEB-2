@@ -1,0 +1,68 @@
+#R CMD SHLIB CovFuns.c
+##########################preparation
+#library(DiceKriging)
+load("myresult")
+mod=list()
+for(i in 1:5){
+model=myresult[[i]][[4]]
+beta=model@trend.coef
+#form=model@trend.formula[2]
+X <- model@X
+y <- model@y
+#T <- model@T
+z <- model@z
+M <- model@M
+n <- model@n
+p <- model@p 
+mc <- model@covariance
+#sd2 <- model@covariance@sd2
+#nuget <- model@covariance@nugget
+dat=list(beta,X,y,T,z,M,n,p,mc)
+mod[[i]]=dat
+}
+dirname=getwd()
+save(mod,file=paste(dirname,"mod",sep="/"))
+#save(beta,form,X,y,z,M,n,p,mc,file=paste(dirname,"mod",sep="/"))
+#####################
+source("access/CovM1M2",echo=TRUE)
+load("access/modd")
+source("input.R",echo=TRUE)
+newdata=DM_new
+
+####
+aux <- covMatrix(mc, X=model@X, noise.var=model@noise.var)
+C <- aux[[1]]
+T <- chol(C)
+F.newdata <- model.matrix(form, data = data.frame(newdata))
+y.predict.linear <- F.newdata%*%beta
+c.newdata <- covMat1Mat2(mc, X1 =as.matrix(X), X2 =as.matrix(newdata),nugget.flag = mc@nugget.flag)
+Tinv.c.newdata <- backsolve(t(T), c.newdata, upper.tri=FALSE)
+y.predict.c <- t(Tinv.c.newdata)%*%z
+y.predict <- as.numeric(y.predict.linear + y.predict.c)
+################Standard error of predictions
+total.sd2 <- object@covariance@sd2
+total.sd2 <- total.sd2 + object@covariance@nugget
+s2.predict.1 <- apply(Tinv.c.newdata, 2,crossprod)#compute c(x)'*C^(-1)*c(x)for x = newdata
+#if (type == "SK") {
+#s2.predict <- pmax(total.sd2 - s2.predict.1, 0)
+#s2.predict <- as.numeric(s2.predict)
+#q95 <- qnorm(0.975)
+#}
+#else if (type == "UK") {
+T.M <- chol(t(M)%*%M)   # equivalently : qrR <- qr.R(qr(M))
+s2.predict.mat <- backsolve(t(T.M), t(F.newdata - t(Tinv.c.newdata)%*%M) , upper.tri = FALSE)
+s2.predict.2 <- apply(s2.predict.mat, 2, crossprod)
+s2.predict <- pmax(total.sd2 - s2.predict.1 + s2.predict.2, 0)
+s2.predict <- as.numeric(s2.predict)
+#if (bias.correct) s2.predict <- s2.predict * object@n/(object@n - object@p)
+q95 <- qt(0.975,n-p)
+#}
+lower95 <- y.predict - q95*sqrt(s2.predict)
+upper95 <- y.predict + q95*sqrt(s2.predict)
+varr=cbind(lower95,upper95)
+sd <- sqrt(s2.predict)
+output=list()
+output[[1]]=y.predict;output[[2]]=sd;output[[3]]=varr
+########################################################END
+
+
