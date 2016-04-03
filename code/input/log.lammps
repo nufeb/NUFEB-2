@@ -1,20 +1,19 @@
 LAMMPS (1 Feb 2014)
 # NUFEB simulation
 
-atom_style	sphere
-
 atom_style	bio
-atom_modify	map array sort 1 1e-5
-boundary	pp pp pp
+atom_modify	map array sort 10000 5e-7
+boundary	ff ff ff
 newton		off
 #processors  2 1 1
 
 communicate single vel yes
-read_data 	IC5nut.in
-  orthogonal box = (0 0 0) to (0.0001 0.0001 0.0001)
+read_data 	flat_surface.in
+  orthogonal box = (1e-05 1e-05 0) to (3e-05 3e-05 4e-05)
   1 by 1 by 1 MPI processor grid
   reading atoms ...
   5 atoms
+#read_data 	IC5nut.in
 #read_data 	IC4mmcohe.in
 
 
@@ -32,19 +31,30 @@ group inert type 5
 
 
 
-neighbor	1.0e-5 bin
+neighbor	5.0e-7 bin
 neigh_modify	delay 0
 
-# pair_style  none
-#pair_style  gran/hooke/history 200000000 NULL 15000000 NULL 0.5 1
-#pair_coeff  * *
-timestep	10
+pair_style  gran/hooke/history 200 NULL 50 NULL 0.0 1
+pair_coeff  * *
+timestep	1
 
 velocity    all set 0.0 0.0 0.0 units box
 
-fix		1 all nve/sphere
-#fix		2 all gravity 9.8 vector 0 -1 0 # spherical 90.0 -180.0
+#fix		1 all nve/limit 1e-9
+
+#fix		2 all gravity 1.47 vector 0 0 -1 # spherical 90.0 -180.0
 #fix     3 all fdrag
+
+
+#fix xw all wall/gran 200 NULL 50.0 NULL 1.5 0 xplane  0.00001  0.00003
+#fix yw all wall/gran 200 NULL 50.0 NULL 1.5 0 yplane  0.00001  0.00003
+#fix zw all wall/gran 200 NULL 50.0 NULL 1.5 0 zplane  0.00000  0.00004
+
+variable kanc equal 50
+
+#fix xwa all walladh v_kanc xplane  0.00001  0.00003
+#fix ywa all walladh v_kanc yplane  0.00001  0.00003
+#fix zwa all walladh v_kanc zplane  0.00000  0.00004
 
 
 #Defining affinity variables: list from Jaya
@@ -67,26 +77,69 @@ variable MumNOB equal 0.00003472222
 variable etaHET equal 0.6
 
 #Defining decay rates variables: list from Jaya
-#variable bHET equal 0.00000462962
-variable bHET equal 0.00462962
-#variable bAOB equal 0.00000127314
-variable bAOB equal 0.00127314
-#variable bNOB equal 0.00000127314
-variable bNOB equal 0.00127314
+variable bHET equal 0.00000462962
+variable bAOB equal 0.00000127314
+variable bNOB equal 0.00000127314
 variable bEPS equal 0.00000196759
 
-variable factor equal 2.0
+variable YHET equal 0.61
+variable YAOB equal 0.33
+variable YNOB equal 0.083
+variable YEPS equal 0.18
+variable Y1 equal 0.4
+variable EPSdens equal 30
+variable EPSratio equal 1.25
+
+variable Do2 equal 2.0e-9
+variable Dnh4 equal 1.4e-9
+variable Dno2 equal 1.2e-9
+variable Dno3 equal 1.2e-9
+variable Ds equal 0.4e-9
+
+variable diffT equal 1e-4
+
+variable sub equal 1
+variable o2 equal 10.0e-3
+variable no2 equal 9.0e-2
+variable no3 equal 8.0e-3
+variable nh4 equal 1e-5
+
+variable BCsub equal 0
+variable BCo2 equal 0
+variable BCno2 equal 0
+variable BCno3 equal 0
+variable BCnh4 equal 0
+
+#variable sub equal 8.0e-2
+#variable o2 equal 5.0e-3
+#variable no2 equal 1.0e-3
+#variable no3 equal 1.0e-3
+#variable nh4 equal 0.04
+
+variable factor equal 1.5
+
+variable ke equal 5e+10
 
 #variable rate1 equal 0.001
-fix g1 all nugrowth 1 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bEPS
-fix dt1 HET death 1 v_bHET v_factor 1952467
-fix dt2 AOB death 1 v_bAOB v_factor 1234312
-fix dt3 NOB death 1 v_bNOB v_factor 1325352
-fix d1 all divide 1 1.5 1952
+#fix g1 all diffnugrowth 1 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bHET v_bAOB v_bNOB v_bEPS v_YHET v_YAOB v_YNOB v_YEPS v_Y1 v_EPSdens v_Do2 v_Dnh4 v_Dno2 v_Dno3 v_Ds v_diffT v_sub v_o2 v_no2 v_no3 v_nh4 10 10 10 dirch neu xlo xhi ylo yhi zlo zhi
 
 
-dump		id all custom 100000 snapshot2.bubblemd id type diameter mass x y z vx vy vz
-#dump		id all custom 1000000 snapshot.bubblemd id type diameter x y z vx vy vz
+fix g1 all diffnugrowth 1 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bHET v_bAOB v_bNOB v_bEPS v_YHET v_YAOB v_YNOB v_YEPS v_Y1 v_EPSdens v_Do2 v_Dnh4 v_Dno2 v_Dno3 v_Ds v_diffT v_sub v_o2 v_no2 v_no3 v_nh4 3 3 3 dirich v_BCsub v_BCo2 v_BCno2 v_BCno3 v_BCnh4
+
+#fix dt1 HET death 1 v_bHET v_factor 1952467
+#fix dt2 AOB death 1 v_bAOB v_factor 1234312
+#fix dt3 NOB death 1 v_bNOB v_factor 1325352
+#fix d1 HET divide 1000 v_EPSdens 2.0 1242242
+#fix d2 AOB divide 1000 v_EPSdens 2.0 1242242
+#fix d3 NOB divide 1000 v_EPSdens 2.0 1242242
+#fix e1 HET eps_extract 1000 v_EPSratio v_EPSdens 1242242
+#fix j1 all epsadh 1 v_ke
+
+
+#dump		id1 HET custom 2000 HET.bubblemd radius outerradius
+dump		id2 all custom 1 snapshot.bubblemd id type radius outerradius mass outermass sub
+#dump		id2 EPS custom 1000 snapshot2.bubblemd id type diameter mass x y z vx vy vz
+#dump		id all custom 1 snapshot.bubblemd id type diameter x y z vx vy vz fx fy fz
 
 
 #dump d0 all image 100 dump.*.jpg type type
@@ -96,409 +149,50 @@ thermo_style    custom step atoms ke vol
 
 #thermo_style  granular # not work. syntax change?
 #thermo_style  one   # granular does not work
-thermo		1000
+thermo		1
 thermo_modify	lost ignore
 #restart		1000000  restart.*.bubblemd
 
-run 10000000
-Memory usage per processor = 102.141 Mbytes
+run 20
+Memory usage per processor = 144.199 Mbytes
 Step Atoms KinEng Volume 
-       0        5            0        1e-12 
-    1000        6            0        1e-12 
-    2000        7            0        1e-12 
-    3000        7            0        1e-12 
-    4000        8            0        1e-12 
-    5000        8            0        1e-12 
-    6000        9            0        1e-12 
-    7000       11            0        1e-12 
-    8000       13            0        1e-12 
-    9000       13            0        1e-12 
-   10000       14            0        1e-12 
-   11000       15            0        1e-12 
-   12000       17            0        1e-12 
-   13000       19            0        1e-12 
-   14000       23            0        1e-12 
-   15000       23            0        1e-12 
-   16000       26            0        1e-12 
-   17000       26            0        1e-12 
-   18000       27            0        1e-12 
-   19000       29            0        1e-12 
-   20000       31            0        1e-12 
-   21000       33            0        1e-12 
-   22000       33            0        1e-12 
-   23000       35            0        1e-12 
-   24000       36            0        1e-12 
-   25000       37            0        1e-12 
-   26000       39            0        1e-12 
-   27000       43            0        1e-12 
-   28000       46            0        1e-12 
-   29000       47            0        1e-12 
-   30000       48            0        1e-12 
-   31000       48            0        1e-12 
-   32000       48            0        1e-12 
-   33000       49            0        1e-12 
-   34000       50            0        1e-12 
-   35000       51            0        1e-12 
-   36000       54            0        1e-12 
-   37000       54            0        1e-12 
-   38000       56            0        1e-12 
-   39000       57            0        1e-12 
-   40000       58            0        1e-12 
-   41000       60            0        1e-12 
-   42000       62            0        1e-12 
-   43000       63            0        1e-12 
-   44000       64            0        1e-12 
-   45000       66            0        1e-12 
-   46000       68            0        1e-12 
-   47000       68            0        1e-12 
-   48000       68            0        1e-12 
-   49000       70            0        1e-12 
-   50000       70            0        1e-12 
-   51000       73            0        1e-12 
-   52000       75            0        1e-12 
-   53000       75            0        1e-12 
-   54000       76            0        1e-12 
-   55000       78            0        1e-12 
-   56000       78            0        1e-12 
-   57000       78            0        1e-12 
-   58000       79            0        1e-12 
-   59000       80            0        1e-12 
-   60000       82            0        1e-12 
-   61000       84            0        1e-12 
-   62000       86            0        1e-12 
-   63000       88            0        1e-12 
-   64000       88            0        1e-12 
-   65000       90            0        1e-12 
-   66000       91            0        1e-12 
-   67000       92            0        1e-12 
-   68000       92            0        1e-12 
-   69000       92            0        1e-12 
-   70000       92            0        1e-12 
-   71000       92            0        1e-12 
-   72000       92            0        1e-12 
-   73000       94            0        1e-12 
-   74000       96            0        1e-12 
-   75000       96            0        1e-12 
-   76000       96            0        1e-12 
-   77000       98            0        1e-12 
-   78000      102            0        1e-12 
-   79000      102            0        1e-12 
-   80000      103            0        1e-12 
-   81000      104            0        1e-12 
-   82000      106            0        1e-12 
-   83000      107            0        1e-12 
-   84000      107            0        1e-12 
-   85000      107            0        1e-12 
-   86000      108            0        1e-12 
-   87000      108            0        1e-12 
-   88000      109            0        1e-12 
-   89000      110            0        1e-12 
-   90000      110            0        1e-12 
-   91000      110            0        1e-12 
-   92000      110            0        1e-12 
-   93000      111            0        1e-12 
-   94000      113            0        1e-12 
-   95000      114            0        1e-12 
-   96000      115            0        1e-12 
-   97000      116            0        1e-12 
-   98000      117            0        1e-12 
-   99000      118            0        1e-12 
-  100000      120            0        1e-12 
-  101000      120            0        1e-12 
-  102000      121            0        1e-12 
-  103000      122            0        1e-12 
-  104000      122            0        1e-12 
-  105000      122            0        1e-12 
-  106000      122            0        1e-12 
-  107000      122            0        1e-12 
-  108000      122            0        1e-12 
-  109000      123            0        1e-12 
-  110000      125            0        1e-12 
-  111000      126            0        1e-12 
-  112000      129            0        1e-12 
-  113000      130            0        1e-12 
-  114000      132            0        1e-12 
-  115000      132            0        1e-12 
-  116000      132            0        1e-12 
-  117000      132            0        1e-12 
-  118000      132            0        1e-12 
-  119000      133            0        1e-12 
-  120000      135            0        1e-12 
-  121000      135            0        1e-12 
-  122000      135            0        1e-12 
-  123000      135            0        1e-12 
-  124000      136            0        1e-12 
-  125000      137            0        1e-12 
-  126000      137            0        1e-12 
-  127000      138            0        1e-12 
-  128000      138            0        1e-12 
-  129000      139            0        1e-12 
-  130000      139            0        1e-12 
-  131000      139            0        1e-12 
-  132000      141            0        1e-12 
-  133000      142            0        1e-12 
-  134000      143            0        1e-12 
-  135000      143            0        1e-12 
-  136000      143            0        1e-12 
-  137000      144            0        1e-12 
-  138000      144            0        1e-12 
-  139000      144            0        1e-12 
-  140000      145            0        1e-12 
-  141000      145            0        1e-12 
-  142000      147            0        1e-12 
-  143000      149            0        1e-12 
-  144000      150            0        1e-12 
-  145000      150            0        1e-12 
-  146000      150            0        1e-12 
-  147000      150            0        1e-12 
-  148000      151            0        1e-12 
-  149000      151            0        1e-12 
-  150000      152            0        1e-12 
-  151000      152            0        1e-12 
-  152000      152            0        1e-12 
-  153000      154            0        1e-12 
-  154000      155            0        1e-12 
-  155000      156            0        1e-12 
-  156000      156            0        1e-12 
-  157000      157            0        1e-12 
-  158000      157            0        1e-12 
-  159000      157            0        1e-12 
-  160000      159            0        1e-12 
-  161000      160            0        1e-12 
-  162000      160            0        1e-12 
-  163000      160            0        1e-12 
-  164000      161            0        1e-12 
-  165000      161            0        1e-12 
-  166000      163            0        1e-12 
-  167000      165            0        1e-12 
-  168000      165            0        1e-12 
-  169000      167            0        1e-12 
-  170000      167            0        1e-12 
-  171000      168            0        1e-12 
-  172000      168            0        1e-12 
-  173000      170            0        1e-12 
-  174000      170            0        1e-12 
-  175000      170            0        1e-12 
-  176000      170            0        1e-12 
-  177000      171            0        1e-12 
-  178000      173            0        1e-12 
-  179000      174            0        1e-12 
-  180000      174            0        1e-12 
-  181000      175            0        1e-12 
-  182000      177            0        1e-12 
-  183000      178            0        1e-12 
-  184000      182            0        1e-12 
-  185000      182            0        1e-12 
-  186000      182            0        1e-12 
-  187000      185            0        1e-12 
-  188000      186            0        1e-12 
-  189000      187            0        1e-12 
-  190000      187            0        1e-12 
-  191000      188            0        1e-12 
-  192000      188            0        1e-12 
-  193000      188            0        1e-12 
-  194000      189            0        1e-12 
-  195000      189            0        1e-12 
-  196000      192            0        1e-12 
-  197000      192            0        1e-12 
-  198000      192            0        1e-12 
-  199000      193            0        1e-12 
-  200000      193            0        1e-12 
-  201000      193            0        1e-12 
-  202000      193            0        1e-12 
-  203000      194            0        1e-12 
-  204000      194            0        1e-12 
-  205000      194            0        1e-12 
-  206000      195            0        1e-12 
-  207000      199            0        1e-12 
-  208000      199            0        1e-12 
-  209000      199            0        1e-12 
-  210000      199            0        1e-12 
-  211000      199            0        1e-12 
-  212000      199            0        1e-12 
-  213000      200            0        1e-12 
-  214000      201            0        1e-12 
-  215000      204            0        1e-12 
-  216000      206            0        1e-12 
-  217000      206            0        1e-12 
-  218000      207            0        1e-12 
-  219000      208            0        1e-12 
-  220000      210            0        1e-12 
-  221000      210            0        1e-12 
-  222000      210            0        1e-12 
-  223000      211            0        1e-12 
-  224000      211            0        1e-12 
-  225000      212            0        1e-12 
-  226000      214            0        1e-12 
-  227000      215            0        1e-12 
-  228000      215            0        1e-12 
-  229000      215            0        1e-12 
-  230000      215            0        1e-12 
-  231000      215            0        1e-12 
-  232000      215            0        1e-12 
-  233000      218            0        1e-12 
-  234000      218            0        1e-12 
-  235000      218            0        1e-12 
-  236000      218            0        1e-12 
-  237000      218            0        1e-12 
-  238000      219            0        1e-12 
-  239000      219            0        1e-12 
-  240000      219            0        1e-12 
-  241000      221            0        1e-12 
-  242000      221            0        1e-12 
-  243000      222            0        1e-12 
-  244000      223            0        1e-12 
-  245000      224            0        1e-12 
-  246000      224            0        1e-12 
-  247000      224            0        1e-12 
-  248000      224            0        1e-12 
-  249000      224            0        1e-12 
-  250000      225            0        1e-12 
-  251000      226            0        1e-12 
-  252000      226            0        1e-12 
-  253000      226            0        1e-12 
-  254000      227            0        1e-12 
-  255000      227            0        1e-12 
-  256000      228            0        1e-12 
-  257000      228            0        1e-12 
-  258000      229            0        1e-12 
-  259000      229            0        1e-12 
-  260000      230            0        1e-12 
-  261000      230            0        1e-12 
-  262000      230            0        1e-12 
-  263000      230            0        1e-12 
-  264000      231            0        1e-12 
-  265000      234            0        1e-12 
-  266000      234            0        1e-12 
-  267000      234            0        1e-12 
-  268000      234            0        1e-12 
-  269000      234            0        1e-12 
-  270000      235            0        1e-12 
-  271000      235            0        1e-12 
-  272000      235            0        1e-12 
-  273000      236            0        1e-12 
-  274000      240            0        1e-12 
-  275000      242            0        1e-12 
-  276000      242            0        1e-12 
-  277000      242            0        1e-12 
-  278000      242            0        1e-12 
-  279000      243            0        1e-12 
-  280000      245            0        1e-12 
-  281000      245            0        1e-12 
-  282000      246            0        1e-12 
-  283000      246            0        1e-12 
-  284000      246            0        1e-12 
-  285000      246            0        1e-12 
-  286000      247            0        1e-12 
-  287000      247            0        1e-12 
-  288000      248            0        1e-12 
-  289000      249            0        1e-12 
-  290000      249            0        1e-12 
-  291000      250            0        1e-12 
-  292000      251            0        1e-12 
-  293000      251            0        1e-12 
-  294000      252            0        1e-12 
-  295000      252            0        1e-12 
-  296000      252            0        1e-12 
-  297000      253            0        1e-12 
-  298000      253            0        1e-12 
-  299000      253            0        1e-12 
-  300000      253            0        1e-12 
-  301000      253            0        1e-12 
-  302000      253            0        1e-12 
-  303000      253            0        1e-12 
-  304000      253            0        1e-12 
-  305000      253            0        1e-12 
-  306000      253            0        1e-12 
-  307000      253            0        1e-12 
-  308000      254            0        1e-12 
-  309000      255            0        1e-12 
-  310000      256            0        1e-12 
-  311000      257            0        1e-12 
-  312000      257            0        1e-12 
-  313000      257            0        1e-12 
-  314000      257            0        1e-12 
-  315000      257            0        1e-12 
-  316000      258            0        1e-12 
-  317000      258            0        1e-12 
-  318000      258            0        1e-12 
-  319000      258            0        1e-12 
-  320000      259            0        1e-12 
-  321000      259            0        1e-12 
-  322000      259            0        1e-12 
-  323000      259            0        1e-12 
-  324000      259            0        1e-12 
-  325000      259            0        1e-12 
-  326000      261            0        1e-12 
-  327000      261            0        1e-12 
-  328000      261            0        1e-12 
-  329000      263            0        1e-12 
-  330000      265            0        1e-12 
-  331000      265            0        1e-12 
-  332000      265            0        1e-12 
-  333000      265            0        1e-12 
-  334000      265            0        1e-12 
-  335000      265            0        1e-12 
-  336000      265            0        1e-12 
-  337000      265            0        1e-12 
-  338000      266            0        1e-12 
-  339000      267            0        1e-12 
-  340000      268            0        1e-12 
-  341000      268            0        1e-12 
-  342000      268            0        1e-12 
-  343000      269            0        1e-12 
-  344000      269            0        1e-12 
-  345000      269            0        1e-12 
-  346000      269            0        1e-12 
-  347000      269            0        1e-12 
-  348000      269            0        1e-12 
-  349000      269            0        1e-12 
-  350000      270            0        1e-12 
-  351000      270            0        1e-12 
-  352000      272            0        1e-12 
-  353000      272            0        1e-12 
-  354000      272            0        1e-12 
-  355000      272            0        1e-12 
-  356000      273            0        1e-12 
-  357000      273            0        1e-12 
-  358000      273            0        1e-12 
-  359000      274            0        1e-12 
-  360000      276            0        1e-12 
-  361000      276            0        1e-12 
-  362000      276            0        1e-12 
-  363000      276            0        1e-12 
-  364000      276            0        1e-12 
-  365000      278            0        1e-12 
-  366000      279            0        1e-12 
-  367000      279            0        1e-12 
-  368000      279            0        1e-12 
-  369000      279            0        1e-12 
-  370000      279            0        1e-12 
-  371000      281            0        1e-12 
-  372000      281            0        1e-12 
-  373000      281            0        1e-12 
-  374000      281            0        1e-12 
-  375000      281            0        1e-12 
-  376000      281            0        1e-12 
-  377000      281            0        1e-12 
-  378000      281            0        1e-12 
-  379000      281            0        1e-12 
-  380000      281            0        1e-12 
-  381000      282            0        1e-12 
-  382000      284            0        1e-12 
-  383000      284            0        1e-12 
-  384000      284            0        1e-12 
-  385000      285            0        1e-12 
-  386000      286            0        1e-12 
-  387000      288            0        1e-12 
-  388000      288            0        1e-12 
-  389000      288            0        1e-12 
-  390000      289            0        1e-12 
-  391000      291            0        1e-12 
-  392000      292            0        1e-12 
-  393000      293            0        1e-12 
-  394000      293            0        1e-12 
-  395000      293            0        1e-12 
-  396000      295            0        1e-12 
-  397000      295            0        1e-12 
-  398000      295            0        1e-12 
+       0        5            0      1.6e-14 
+       1        5            0      1.6e-14 
+       2        5            0      1.6e-14 
+       3        5            0      1.6e-14 
+       4        5            0      1.6e-14 
+       5        5            0      1.6e-14 
+       6        5            0      1.6e-14 
+       7        5            0      1.6e-14 
+       8        5            0      1.6e-14 
+       9        5            0      1.6e-14 
+      10        5            0      1.6e-14 
+      11        5            0      1.6e-14 
+      12        5            0      1.6e-14 
+      13        5            0      1.6e-14 
+      14        5            0      1.6e-14 
+      15        5            0      1.6e-14 
+      16        5            0      1.6e-14 
+      17        5            0      1.6e-14 
+      18        5            0      1.6e-14 
+      19        5            0      1.6e-14 
+      20        5            0      1.6e-14 
+Loop time of 0.0159361 on 1 procs for 20 steps with 5 atoms
+
+Pair  time (%) = 1.00136e-05 (0.0628357)
+Neigh time (%) = 0 (0)
+Comm  time (%) = 1.90735e-06 (0.0119687)
+Outpt time (%) = 0.00102186 (6.41223)
+Other time (%) = 0.0149024 (93.513)
+
+Nlocal:    5 ave 5 max 5 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 0
+Ave neighs/atom = 0
+Neighbor list builds = 0
+Dangerous builds = 0
