@@ -139,7 +139,6 @@ void FixDeath::death()
     if (mask[i] & groupbit) {
       virtualMass += (decay * rmass[i]);
     }
-
   }
 
   // fprintf(stdout, "Virtual Mass: %e\n", virtualMass);

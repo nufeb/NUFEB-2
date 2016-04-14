@@ -102,12 +102,13 @@ dump		id all custom 2000 snapshot.bubblemd id type diameter x y z vx vy vz fx fy
 #dump d0 all image 100 dump.*.jpg type type
 #dump m0 all movie 1000 movie.mpg type type size 640 480
 
-thermo_style    custom step atoms ke vol
-
+#thermo_style    custom step atoms ke vol
+thermo_style    custom step atoms mhet 
 #thermo_style  granular # not work. syntax change?
 #thermo_style  one   # granular does not work
 thermo		1000
 thermo_modify	lost ignore
 #restart		1000000  restart.*.bubblemd
 
-run 272800
+run 100000
+

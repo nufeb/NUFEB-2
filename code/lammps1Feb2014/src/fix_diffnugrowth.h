@@ -49,6 +49,8 @@ class FixDiffNuGrowth : public Fix {
   double dStep; // Diffusion Time Step
   int numCells;
   int nx, ny, nz;
+  double initsub, inito2, initnh4, initno2, initno3;
+  double subBC, o2BC, no2BC, no3BC, nh4BC;
   double xlo,xhi,ylo,yhi,zlo,zhi;
   bool xloDirch, xhiDirch, yloDirch, yhiDirch, zloDirch, zhiDirch;
   double xstep, ystep, zstep;
