@@ -37,6 +37,9 @@ class FixNuGrowth : public Fix {
   char **var;
   int *ivar;
   void change_dia();
+  double compute_totalmass(int type);
+  int compute_totaln(int type);
+  FILE* pFile[3];
 };
 
 }

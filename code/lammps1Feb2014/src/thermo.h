@@ -185,6 +185,24 @@ class Thermo : protected Pointers {
   void compute_cellalpha();
   void compute_cellbeta();
   void compute_cellgamma();
+
+  void compute_nhet();
+  void compute_naob();
+  void compute_nnob();
+  void compute_neps();
+  void compute_ninert();
+
+  void compute_mhet();
+  void compute_maob();
+  void compute_mnob();
+  void compute_meps();
+  void compute_minert();
+
+  void compute_amhet();
+  void compute_amaob();
+  void compute_amnob();
+  void compute_ameps();
+  void compute_aminert();
 };
 
 }

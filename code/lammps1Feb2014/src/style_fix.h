@@ -1,6 +1,5 @@
 #include "fix_adapt.h"
 #include "fix_addforce.h"
-#include "fix_atc.h"
 #include "fix_ave_atom.h"
 #include "fix_ave_correlate.h"
 #include "fix_aveforce.h"
