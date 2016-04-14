@@ -329,9 +329,8 @@ void FixDiffNuGrowth::change_dia()
         gEPS = 1;
       }
 
-      int j;
-      bool b = false;
-      for (j = 0; j < numCells; j ++) {
+      bool allocate = false;
+      for (int j = 0; j < numCells; j ++) {
         if ((xCell[j] - xstep/2) <= atom->x[i][0] &&
             (xCell[j] + xstep/2) >= atom->x[i][0] &&
             (yCell[j] - ystep/2) <= atom->x[i][1] &&
@@ -345,15 +344,11 @@ void FixDiffNuGrowth::change_dia()
           xNOB[j] += (gNOB *rmass[i])/cellVol[j];
           xEPS[j] += (gEPS * rmass[i])/cellVol[j];
           xTot[j] += rmass[i]/cellVol[j];
-          b = true;
+          allocate = true;
           break;
         }
       }
-
-      if(!b){
-    	  fprintf(stdout, "error non-grid allocated, time = %i\n", update->ntimestep);
-    	  return;
-      }
+      if(!allocate) error->all(FLERR,"Fail to allocate grid.");
     }
   }
 
