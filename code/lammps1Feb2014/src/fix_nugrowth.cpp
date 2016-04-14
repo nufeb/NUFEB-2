@@ -2,12 +2,10 @@
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
    http://lammps.sandia.gov, Sandia National Laboratories
    Steve Plimpton, sjplimp@sandia.gov
-
    Copyright (2003) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
    certain rights in this software.  This software is distributed under
    the GNU General Public License.
-
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
@@ -53,6 +51,10 @@ FixNuGrowth::FixNuGrowth(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg
     var[i] = new char[n];
     strcpy(var[i],&arg[4+i][2]);
   }
+
+//  pFile[0] = fopen ("Mass HET 60", "w");
+//  pFile[1] = fopen ("Mass AOB 60", "w");
+//  pFile[2] = fopen ("Mass NOB 60", "w");
 }
 
 /* ---------------------------------------------------------------------- */
@@ -103,6 +105,9 @@ void FixNuGrowth::pre_force(int vflag)
 }
 
 /* ---------------------------------------------------------------------- */
+unsigned int int_to_int(unsigned int k) {
+    return (k == 0 || k == 1 ? k : ((k % 2) + 10 * int_to_int(k / 2)));
+}
 
 void FixNuGrowth::change_dia()
 {
@@ -144,9 +149,19 @@ void FixNuGrowth::change_dia()
   int *type = atom->type;
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
-  int i;
 
+  double R1 = 0.0;
+  double R2 = 0.0;
+  double R3 = 0.0;
+  double R4 = 0.0;
+  double R5 = 0.0;
+
+  int i;
   for (i = 0; i < nall; i++) {
+//	  fprintf(stdout, "groubit =%i\n",groupbit);
+//	  fprintf(stdout, "mask =%i\n",int_to_int(mask[i]));
+//	  fprintf(stdout, "type =%i\n",type[i]);
+
     if (mask[i] & groupbit) {
       double gHET = 0;
       double gAOB = 0;
@@ -165,11 +180,11 @@ void FixNuGrowth::change_dia()
         gEPS = 1;
       }
 
-      double R1 = MumHET*(sub[i]/(KsHET+sub[i]))*(o2[i]/(Ko2HET+o2[i]));
-      double R2 = MumAOB*(nh4[i]/(Knh4AOB+nh4[i]))*(o2[i]/(Ko2AOB+o2[i]));
-      double R3 = MumNOB*(no2[i]/(Kno2NOB+no2[i]))*(o2[i]/(Ko2NOB+o2[i]));
-      double R4 = etaHET*MumHET*(sub[i]/(KsHET+sub[i]))*(no3[i]/(Kno3HET+no3[i]))*(Ko2HET/(Ko2HET+o2[i]));
-      double R5 = etaHET*MumHET*(sub[i]/(KsHET+sub[i]))*(no2[i]/(Kno2HET+no2[i]))*(Ko2HET/(Ko2HET+o2[i]));
+      R1 = MumHET*(sub[i]/(KsHET+sub[i]))*(o2[i]/(Ko2HET+o2[i]));
+      R2 = MumAOB*(nh4[i]/(Knh4AOB+nh4[i]))*(o2[i]/(Ko2AOB+o2[i]));
+      R3 = MumNOB*(no2[i]/(Kno2NOB+no2[i]))*(o2[i]/(Ko2NOB+o2[i]));
+      R4 = etaHET*MumHET*(sub[i]/(KsHET+sub[i]))*(no3[i]/(Kno3HET+no3[i]))*(Ko2HET/(Ko2HET+o2[i]));
+      R5 = etaHET*MumHET*(sub[i]/(KsHET+sub[i]))*(no2[i]/(Kno2HET+no2[i]))*(Ko2HET/(Ko2HET+o2[i]));
       // double R6 = bHET;
       // double R7 = bAOB;
       // double R8 = bNOB;
@@ -184,7 +199,6 @@ void FixNuGrowth::change_dia()
       if (rmass[i] <= 0) {
         rmass[i] = oldMass;
       }
-
       // fprintf(stdout, "Radius: %e Outer Radius: %e\n", radius[i], outerRadius[i]);
       // fprintf(stdout, "ID: %i Type: %i Outer Mass: %e\n", atom->tag[i], atom->type[i], outerMass[i]);
       
@@ -196,8 +210,56 @@ void FixNuGrowth::change_dia()
 
       radius[i] = pow(((6*rmass[i])/(density*MY_PI)),(1.0/3.0))*0.5;
     }
-
   }
+//
+//  //output analytical total mass value
+//  if(update->ntimestep%10 == 0){
+//		double amhet = 1.0e-16*exp((R1+R4+R5)*update->ntimestep*60);
+//		double amaob = 1.0e-16*exp((R2)*update->ntimestep*60);
+//		double amnob = 1.0e-16*exp((R3)*update->ntimestep*60);
+//
+//		double mhet = compute_totalmass(1);
+//	    double maob = compute_totalmass(2);
+//	    double mnob = compute_totalmass(3);
+//
+//		int nhet = compute_totaln(1);
+//		int naob = compute_totaln(2);
+//		int nnob = compute_totaln(3);
+//		fprintf(pFile[0], "%i\t %e\t %e\t %i\n",update->ntimestep, mhet, amhet, nhet);
+//		fprintf(pFile[1], "%i\t %e\t %e\t %i\n",update->ntimestep, maob, amaob, naob);
+//		fprintf(pFile[2], "%i\t %e\t %e\t %i\n",update->ntimestep, mnob, amnob, nnob);
+//  }
 
   modify->addstep_compute(update->ntimestep + nevery);
+}
+
+
+double FixNuGrowth::compute_totalmass(int type){
+  int nlocal = atom->nlocal;
+  int nall = nlocal + atom->nghost;
+  double tmass = 0;
+
+  int i;
+  for (i = 0; i < nall; i++) {
+	if (atom->type[i] == type) {
+		tmass += atom->rmass[i];
+	}
+  }
+  //fprintf(stdout, "%e\n",tmass);
+  return tmass;
+}
+
+int FixNuGrowth::compute_totaln(int type){
+  int nlocal = atom->nlocal;
+  int nall = nlocal + atom->nghost;
+  int tnum = 0;
+
+  int i;
+  for (i = 0; i < nall; i++) {
+	if (atom->type[i] == type) {
+		tnum ++;
+	}
+  }
+  //fprintf(stdout, "%e\n",tmass);
+  return tnum;
 }

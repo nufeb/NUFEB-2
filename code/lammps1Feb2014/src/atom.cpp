@@ -1367,7 +1367,6 @@ void Atom::add_molecule_atom(Molecule *onemol, int iatom,
   else if (rmass_flag) 
     rmass[ilocal] = 4.0*MY_PI/3.0 *
       radius[ilocal]*radius[ilocal]*radius[ilocal];
-
   if (molecular != 1) return;
 
   // add bond topology info
