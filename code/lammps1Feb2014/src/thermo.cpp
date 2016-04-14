@@ -55,6 +55,8 @@ using namespace MathConst;
 // pxx, pyy, pzz, pxy, pxz, pyz
 // fmax, fnorm
 // cella, cellb, cellc, cellalpha, cellbeta, cellgamma
+// nhet, naob, nnob, neps
+// mhet, maob, mnob, meps
 
 // customize a new thermo style by adding a DEFINE to this list
 // also insure allocation of line string is correct in constructor
@@ -881,7 +883,7 @@ void Thermo::parse_fields(char *str)
 
       } else if (word[0] == 'v') {
         n = input->variable->find(id);
-        if (n < 0) 
+        if (n < 0)
           error->all(FLERR,"Could not find thermo custom variable name");
         if (input->variable->equalstyle(n) == 0)
           error->all(FLERR,
@@ -895,8 +897,28 @@ void Thermo::parse_fields(char *str)
 
       delete [] id;
 
-    } else error->all(FLERR,"Invalid keyword in thermo_style custom command");
-
+    } else if(strcmp(word,"nhet") == 0){
+        addfield("nHET",&Thermo::compute_nhet,FLOAT);
+    } else if(strcmp(word,"naob") == 0){
+        addfield("nAOB",&Thermo::compute_naob,FLOAT);
+    } else if(strcmp(word,"nnob") == 0){
+        addfield("nNOB",&Thermo::compute_nnob,FLOAT);
+    } else if(strcmp(word,"neps") == 0){
+        addfield("nEPS",&Thermo::compute_neps,FLOAT);
+    } else if(strcmp(word,"ninert") == 0){
+    	addfield("nInert",&Thermo::compute_ninert,FLOAT);
+    } else if(strcmp(word,"mhet") == 0){
+        addfield("mHET",&Thermo::compute_mhet,FLOAT);
+    } else if(strcmp(word,"maob") == 0){
+        addfield("mAOB",&Thermo::compute_maob,FLOAT);
+    } else if(strcmp(word,"mnob") == 0){
+        addfield("mNOB",&Thermo::compute_mnob,FLOAT);
+    } else if(strcmp(word,"meps") == 0){
+        addfield("mEPS",&Thermo::compute_meps,FLOAT);
+    } else if(strcmp(word,"minert") == 0){
+    	addfield("mInert",&Thermo::compute_minert,FLOAT);
+    }
+    else error->all(FLERR,"Invalid keyword in thermo_style custom command");
     word = strtok(NULL," \0");
   }
 }
@@ -1530,7 +1552,7 @@ void Thermo::compute_spcpu()
 void Thermo::compute_cpuremain()
 {
   if (firststep == 0) dvalue = 0.0;
-  else dvalue = timer->elapsed(TIME_LOOP) * 
+  else dvalue = timer->elapsed(TIME_LOOP) *
          (update->laststep - update->ntimestep) /
          (update->ntimestep - update->firststep);
 }
@@ -2008,4 +2030,175 @@ void Thermo::compute_cellgamma()
     double cosgamma = h[5]/sqrt(h[1]*h[1]+h[5]*h[5]);
     dvalue = acos(cosgamma)*180.0/MY_PI;
   }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void Thermo::compute_nhet()
+{
+  int nlocal = atom->nlocal;
+  int nall = nlocal + atom->nghost;
+  dvalue = 0;
+
+  int i;
+  for (i = 0; i < nall; i++) {
+    if (atom->type[i] == 1) {
+    	dvalue ++;
+    }
+	// fprintf(stdout, "type = %i\t radius = %e\n",atom->type[i], atom->radius[i]);
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void Thermo::compute_naob()
+{
+  int nlocal = atom->nlocal;
+  int nall = nlocal + atom->nghost;
+  dvalue = 0;
+
+  int i;
+  for (i = 0; i < nall; i++) {
+	if (atom->type[i] == 2) {
+		dvalue ++;
+	}
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void Thermo::compute_nnob()
+{
+  int nlocal = atom->nlocal;
+  int nall = nlocal + atom->nghost;
+  dvalue = 0;
+
+  int i;
+  for (i = 0; i < nall; i++) {
+	if (atom->type[i] == 3) {
+		dvalue ++;
+	}
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void Thermo::compute_neps()
+{
+  int nlocal = atom->nlocal;
+  int nall = nlocal + atom->nghost;
+  dvalue = 0;
+
+  int i;
+  for (i = 0; i < nall; i++) {
+	if (atom->type[i] == 4) {
+		dvalue ++;
+	}
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void Thermo::compute_ninert()
+{
+  int nlocal = atom->nlocal;
+  int nall = nlocal + atom->nghost;
+  dvalue = 0;
+
+  int i;
+  for (i = 0; i < nall; i++) {
+	if (atom->type[i] == 5) {
+		dvalue ++;
+	}
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void Thermo::compute_mhet()
+{
+  int nlocal = atom->nlocal;
+  double mlocal = 0;
+
+  int i;
+  for (i = 0; i < nlocal; i++) {
+	if (atom->type[i] == 1) {
+		mlocal += atom->rmass[i];
+	}
+  }
+  double mtotal;
+  MPI_Allreduce(&mlocal,&mtotal,1,MPI_DOUBLE,MPI_SUM,world);
+  dvalue = mtotal;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void Thermo::compute_maob()
+{
+  int nlocal = atom->nlocal;
+  double mlocal = 0;
+
+  int i;
+  for (i = 0; i < nlocal; i++) {
+	if (atom->type[i] == 2) {
+		mlocal += atom->rmass[i];
+	}
+  }
+  double mtotal;
+  MPI_Allreduce(&mlocal,&mtotal,1,MPI_DOUBLE,MPI_SUM,world);
+  dvalue = mtotal;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void Thermo::compute_mnob()
+{
+  int nlocal = atom->nlocal;
+  double mlocal = 0;
+
+  int i;
+  for (i = 0; i < nlocal; i++) {
+	if (atom->type[i] == 3) {
+		mlocal += atom->rmass[i];
+	}
+  }
+  double mtotal;
+  MPI_Allreduce(&mlocal,&mtotal,1,MPI_DOUBLE,MPI_SUM,world);
+  dvalue = mtotal;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void Thermo::compute_meps()
+{
+  int nlocal = atom->nlocal;
+  double mlocal = 0;
+
+  int i;
+  for (i = 0; i < nlocal; i++) {
+	if (atom->type[i] == 4) {
+		dvalue += atom->rmass[i];
+	}
+  }
+  double mtotal;
+  MPI_Allreduce(&mlocal,&mtotal,1,MPI_DOUBLE,MPI_SUM,world);
+  dvalue = mtotal;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void Thermo::compute_minert()
+{
+  int nlocal = atom->nlocal;
+  double mlocal = 0;
+
+  int i;
+  for (i = 0; i < nlocal; i++) {
+	if (atom->type[i] == 5) {
+		dvalue += atom->rmass[i];
+	}
+  }
+  double mtotal;
+  MPI_Allreduce(&mlocal,&mtotal,1,MPI_DOUBLE,MPI_SUM,world);
+  dvalue = mtotal;
 }
