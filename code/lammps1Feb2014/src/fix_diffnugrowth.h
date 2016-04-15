@@ -36,6 +36,7 @@ class FixDiffNuGrowth : public Fix {
 
   char **var;
   int *ivar;
+  int diffevery;
   double *xCell;
   double *yCell;
   double *zCell;
@@ -56,6 +57,7 @@ class FixDiffNuGrowth : public Fix {
   double xstep, ystep, zstep;
   void change_dia();
   void computeFlux(double *, double *, double, double, double, int);
+  void outputConc(int);
 };
 
 }

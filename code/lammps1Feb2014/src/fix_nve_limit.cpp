@@ -111,17 +111,21 @@ void FixNVELimit::initial_integrate(int vflag)
           v[i][1] *= scale;
           v[i][2] *= scale;
         }
-//        if(update->ntimestep == 10002){
-//
-//      	  fprintf(stdout, "time = %i\n", update->ntimestep);
+/*        if(update->ntimestep == 11000){
+
+      	  fprintf(stdout, "time = %i\n", update->ntimestep);
 //      	  fprintf(stdout, "nve total = %i, cell=%i, x=%e, y=%e, z=%e,r = %e, m = %e\n",
 //      			  nlocal,i,x[i][0],  x[i][1], x[i][2], atom->radius[i], atom->rmass[i]);
-//        }
-//        if(update->ntimestep == 10003){
-//      	  fprintf(stdout, "time = %i\n", update->ntimestep);
+      	 fprintf(stdout, "nve total = %i, cell=%i, type=%i, m = %e\n",
+      			 nlocal,i,atom->type[i], atom->rmass[i]);
+        }
+        if(update->ntimestep == 11001){
+      	  fprintf(stdout, "time = %i\n", update->ntimestep);
 //      	  fprintf(stdout, "nve total = %i, cell=%i, x=%e, y=%e, z=%e,r = %e, m = %e, mass?=%f\n",
 //      			  nlocal,i, x[i][0],  x[i][1], x[i][2], atom->radius[i], atom->rmass[i], rmass);
-//        }
+       	 fprintf(stdout, "nve total = %i, cell=%i, type=%i, m = %e\n",
+       			 nlocal,i,atom->type[i], atom->rmass[i]);
+        }*/
         x[i][0] += dtv * v[i][0];
         x[i][1] += dtv * v[i][1];
         x[i][2] += dtv * v[i][2];

@@ -162,18 +162,16 @@ void FixDivide::pre_exchange()
   }
 
   for (i = 0; i < nall; i++) {
+    if (atom->type[i] == 1 || atom->type[i] == 2 || atom->type[i] == 3) {
+      averageMass = 1e-16;
+    } else continue;
+
     if ((mask[i] & groupbit) &&
     	  atom->x[i][0] >= sublo[0] && atom->x[i][0] < subhi[0] &&
           atom->x[i][1] >= sublo[1] && atom->x[i][1] < subhi[1] &&
           atom->x[i][2] >= sublo[2] && atom->x[i][2] < subhi[2]) {
       density = rmass[i] / (4.0*MY_PI/3.0 *
                       radius[i]*radius[i]*radius[i]);
-      if (atom->type[i] == 1 || atom->type[i] == 2 || atom->type[i] == 3) {
-        averageMass = 1e-16;
-      }
-      else {
-    	  continue;
-      }
 //      if (atom->type[i] == 4) {
 //        averageMass = 2.6e-17;
 //      }
