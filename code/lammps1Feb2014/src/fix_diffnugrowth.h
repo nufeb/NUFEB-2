@@ -56,7 +56,7 @@ class FixDiffNuGrowth : public Fix {
   bool xloDirch, xhiDirch, yloDirch, yhiDirch, zloDirch, zhiDirch;
   double xstep, ystep, zstep;
   void change_dia();
-  void computeFlux(double *, double *, double, double, double, int);
+  void computeFlux(double *, double *, double *, double, double, double, int);
   void outputConc(int);
 };
 

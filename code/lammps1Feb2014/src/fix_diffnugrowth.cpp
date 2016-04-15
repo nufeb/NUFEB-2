@@ -449,23 +449,17 @@ void FixDiffNuGrowth::change_dia()
 	//    	no3Cell[cell] += Rno3[cell] * update->dt;
 	//    	nh4Cell[cell] += Rnh4[cell] * update->dt;
 
-				computeFlux(cellDs, subTmp, subBC, Rs[cell], diffT, cell);
-				computeFlux(cellDo2, o2Tmp, o2BC, Ro2[cell], diffT, cell);
-				computeFlux(cellDnh4, nh4Tmp, nh4BC, Rnh4[cell], diffT, cell);
-				computeFlux(cellDno2, no2Tmp, no2BC, Rno2[cell], diffT, cell);
-				computeFlux(cellDno3, no3Tmp, no3BC, Rno3[cell], diffT, cell);
+				computeFlux(cellDs, subCell, subTmp, subBC, Rs[cell], diffT, cell);
+				computeFlux(cellDo2, o2Cell, o2Tmp, o2BC, Ro2[cell], diffT, cell);
+				computeFlux(cellDnh4, nh4Cell, nh4Tmp, nh4BC, Rnh4[cell], diffT, cell);
+				computeFlux(cellDno2, no2Cell, no2Tmp, no2BC, Rno2[cell], diffT, cell);
+				computeFlux(cellDno3, no3Cell,no3Tmp, no3BC, Rno3[cell], diffT, cell);
 
 				// add all the subcell values and calculate the difference from previous iteration
 				// End of the convergence loop.
 			}
 
 			for (int cell = 0; cell < numCells; cell++) {
-				subCell[cell] = subTmp[cell];
-				o2Cell[cell] = o2Tmp[cell];
-				no2Cell[cell] = no2Tmp[cell];
-				no3Cell[cell] = no3Tmp[cell];
-				nh4Cell[cell] = nh4Tmp[cell];
-
 				if (!ghost[cell]) {
 					subSum += subCell[cell];
 					o2Sum += o2Cell[cell];
@@ -585,7 +579,7 @@ void FixDiffNuGrowth::outputConc(int every){
   }
 }
 
-void FixDiffNuGrowth::computeFlux(double *cellDNu, double *nuCell, double nuBC, double rateNu, double diffT, int cell) {
+void FixDiffNuGrowth::computeFlux(double *cellDNu, double *nuCell, double *nuTmp, double nuBC, double rateNu, double diffT, int cell) {
 	int leftCell = cell - (nz+2)*(ny+2); // x direction
 	int rightCell = cell + (nz+2)*(ny+2); // x direction
 	int downCell = cell - (nz+2); // y direction
@@ -600,52 +594,52 @@ void FixDiffNuGrowth::computeFlux(double *cellDNu, double *nuCell, double nuBC, 
 		// fprintf(stdout, "Ghost Cell: %i\n", cell);
 		if (zCell[cell] < zlo && !ghost[forwardCell]) {
 			if (zloDirch) {
-				nuCell[cell] = 2*nuBC - nuCell[forwardCell];
+				nuTmp[cell] = 2*nuBC - nuTmp[forwardCell];
 			}
 		}
 		else if (zCell[cell] > zhi && !ghost[backwardCell]) {
 			if (zhiDirch) {
-				nuCell[cell] = 2*nuBC - nuCell[backwardCell];
+				nuTmp[cell] = 2*nuBC - nuTmp[backwardCell];
 			}
 		}
 		else if (yCell[cell] < ylo && !ghost[upCell]) {
 			if (yloDirch) {
-				nuCell[cell] = 2*nuBC - nuCell[upCell];
+				nuTmp[cell] = 2*nuBC - nuTmp[upCell];
 			}
 		}
 		else if (yCell[cell] > yhi && !ghost[downCell]) {
 			if (yhiDirch) {
-				nuCell[cell] = 2*nuBC - nuCell[downCell];
+				nuTmp[cell] = 2*nuBC - nuTmp[downCell];
 			}
 		}
 		else if (xCell[cell] < xlo && !ghost[rightCell]) {
 			if (xloDirch) {
-				nuCell[cell] = 2*nuBC - nuCell[rightCell];
+				nuTmp[cell] = 2*nuBC - nuTmp[rightCell];
 			}
 		}
 		else if (xCell[cell] > xhi && !ghost[leftCell]) {
 			if (xhiDirch) {
-				nuCell[cell] = 2*nuBC - nuCell[leftCell];
+				nuTmp[cell] = 2*nuBC - nuTmp[leftCell];
 			}
 		}
 	}
 	else {
 		double dRight = (cellDNu[cell] + cellDNu[rightCell]) / 2;
-		double jRight = dRight*(nuCell[rightCell] - nuCell[cell])/xstep;
+		double jRight = dRight*(nuTmp[rightCell] - nuTmp[cell])/xstep;
 		double dLeft = (cellDNu[cell] + cellDNu[leftCell]) / 2;
-		double jLeft = dLeft*(nuCell[cell] - nuCell[leftCell])/xstep;
+		double jLeft = dLeft*(nuTmp[cell] - nuTmp[leftCell])/xstep;
 		double jX = (jRight - jLeft)/xstep;
 
 		double dUp = (cellDNu[cell] + cellDNu[upCell]) / 2;
-		double jUp = dUp*(nuCell[upCell] - nuCell[cell])/ystep;
+		double jUp = dUp*(nuTmp[upCell] - nuTmp[cell])/ystep;
 		double dDown = (cellDNu[cell] + cellDNu[downCell]) / 2;
-		double jDown = dDown*(nuCell[cell] - nuCell[downCell])/ystep;
+		double jDown = dDown*(nuTmp[cell] - nuTmp[downCell])/ystep;
 		double jY = (jUp - jDown)/ystep;
 
 		double dForward = (cellDNu[cell] + cellDNu[forwardCell]) / 2;
-		double jForward = dForward*(nuCell[forwardCell] - nuCell[cell])/zstep;
+		double jForward = dForward*(nuTmp[forwardCell] - nuTmp[cell])/zstep;
 		double dBackward = (cellDNu[cell] + cellDNu[backwardCell]) / 2;
-		double jBackward = dBackward*(nuCell[cell] - nuCell[backwardCell])/zstep;
+		double jBackward = dBackward*(nuTmp[cell] - nuTmp[backwardCell])/zstep;
 		double jZ = (jForward - jBackward)/zstep;
 
 		// Adding fluxes in all the directions and the uptake rate (RHS side of the equation)
