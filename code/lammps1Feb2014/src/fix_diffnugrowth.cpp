@@ -2,12 +2,10 @@
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
    http://lammps.sandia.gov, Sandia National Laboratories
    Steve Plimpton, sjplimp@sandia.gov
-
    Copyright (2003) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
    certain rights in this software.  This software is distributed under
    the GNU General Public License.
-
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
@@ -59,21 +57,18 @@ FixDiffNuGrowth::FixDiffNuGrowth(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, n
     strcpy(var[i],&arg[5+i][2]);
   }
 
-  if(strcmp(arg[41], "dirich") == 0){
+  if(strcmp(arg[41], "dirich") == 0 || strcmp(arg[41], "mixed") == 0){
 	  for(int i = 33; i < 38; i++){
 		   int n = strlen(&arg[9+i][2]) + 1;
 		   var[i] = new char[n];
 		   strcpy(var[i],&arg[9+i][2]);
 	  }
-	  xloDirch = true;
-	  xhiDirch = true;
-	  yloDirch = true;
-	  yhiDirch = true;
-	  zloDirch = true;
-	  zhiDirch = true;
-  }else{
-	  error->all(FLERR,"BC non-implementation");
   }
+
+  if(strcmp(arg[41], "dirich") == 0) bflag = 1;
+  else if(strcmp(arg[41], "neu") == 0) bflag = 2;
+  else if(strcmp(arg[41], "mixed") == 0) bflag = 3;
+  else error->all(FLERR,"Illegal boundary condition command");
 
   nx = atoi(arg[38]);
   ny = atoi(arg[39]);
@@ -136,7 +131,11 @@ void FixDiffNuGrowth::init()
     error->all(FLERR,"Fix growth requires atom attribute diameter");
 
   int n;
-  for (n = 0; n < 38; n++) {
+  int m;
+  if(bflag == 1 || bflag == 3) m = 38;
+  else if (bflag == 2) m = 33;
+
+  for (n = 0; n < m; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
       error->all(FLERR,"Variable name for fix nugrowth does not exist");
@@ -152,12 +151,13 @@ void FixDiffNuGrowth::init()
   initnh4 = input->variable->compute_equal(ivar[32]);
 
   //initial concentrations of boundary
-  subBC = input->variable->compute_equal(ivar[33]);
-  o2BC = input->variable->compute_equal(ivar[34]);
-  no2BC = input->variable->compute_equal(ivar[35]);
-  no3BC = input->variable->compute_equal(ivar[36]);
-  nh4BC = input->variable->compute_equal(ivar[37]);
-
+  if(bflag == 1 || bflag == 3){
+		subBC = input->variable->compute_equal(ivar[33]);
+		o2BC = input->variable->compute_equal(ivar[34]);
+		no2BC = input->variable->compute_equal(ivar[35]);
+		no3BC = input->variable->compute_equal(ivar[36]);
+		nh4BC = input->variable->compute_equal(ivar[37]);
+	}
   //total numbers of cells (ghost + non-ghost)
   numCells = (nx+2)*(ny+2)*(nz+2);
 
@@ -191,11 +191,13 @@ void FixDiffNuGrowth::init()
         if (i < xlo || i > xhi || j < ylo ||
         	j > yhi || k < zlo || k > zhi) {
         		ghost[cell] = true;
-            subCell[cell] = subBC;
-            o2Cell[cell] = o2BC;
-            no2Cell[cell] = no2BC;
-            no3Cell[cell] = no3BC;
-            nh4Cell[cell] = nh4BC;
+        		if(bflag == 1){
+							subCell[cell] = subBC;
+							o2Cell[cell] = o2BC;
+							no2Cell[cell] = no2BC;
+							no3Cell[cell] = no3BC;
+							nh4Cell[cell] = nh4BC;
+        		}
         }else{
             subCell[cell] = initsub;
             o2Cell[cell] = inito2;
@@ -376,66 +378,45 @@ void FixDiffNuGrowth::change_dia()
     }
   }
 
-  if(!(update->ntimestep % diffevery)){
+  if(!(update->ntimestep % diffevery)) {
 
-		double subSum;
-		double o2Sum;
-		double no2Sum;
-		double no3Sum;
-		double nh4Sum;
+  	double* subPrev  = new double[numCells];
+  	double* o2Prev  = new double[numCells];
+  	double* no2Prev  = new double[numCells];
+  	double* no3Prev  = new double[numCells];
+  	double* nh4Prev  = new double[numCells];
 
-		double prevsubSum;
-		double prevo2Sum;
-		double prevno2Sum;
-		double prevno3Sum;
-		double prevnh4Sum;
-
-		double subTmp[numCells];
-		double o2Tmp[numCells];
-		double no2Tmp[numCells];
-		double no3Tmp[numCells];
-		double nh4Tmp[numCells];
-
-		prevsubSum = 0.0;
-		prevo2Sum = 0.0;
-		prevno2Sum = 0.0;
-		prevno3Sum = 0.0;
-		prevnh4Sum = 0.0;
+		bool subConvergence = false;
+		bool o2Convergence = false;
+		bool no2Convergence = false;
+		bool no3Convergence = false;
+		bool nh4Convergence = false;
 
 		bool convergence = false;
 
 		int iteration = 0;
 
-		double tol = 1e-3; // Tolerance for convergence criteria for nutrient balance equation
-
-		double dtRatio = 0.002; // Ratio of physical time step divided by time step of diffusion
+		double tol = 1e-4; // Tolerance for convergence criteria for nutrient balance equation
 
 		// Outermost while loop for the convergence criterion
 		while (!convergence) {
 
 			iteration ++;
 
-			subSum = 0.0;
-			o2Sum = 0.0;
-			no2Sum = 0.0;
-			no3Sum = 0.0;
-			nh4Sum = 0.0;
-
 			for (int cell = 0; cell < numCells; cell++) {
-				subTmp[cell] = subCell[cell];
-				o2Tmp[cell] = o2Cell[cell];
-				no2Tmp[cell] = no2Cell[cell];
-				no3Tmp[cell] = no3Cell[cell];
-				nh4Tmp[cell] = nh4Cell[cell];
+				subPrev[cell] = subCell[cell];
+				o2Prev[cell] = o2Cell[cell];
+				nh4Prev[cell] = nh4Cell[cell];
+				no2Prev[cell] = no2Cell[cell];
+				no3Prev[cell] = no3Cell[cell];
 			}
 
 			for (int cell = 0; cell < numCells; cell++) {
-
-				R1[cell] = MumHET*(subTmp[cell]/(KsHET+subTmp[cell]))*(o2Tmp[cell]/(Ko2HET+o2Tmp[cell]));
-				R2[cell] = MumAOB*(nh4Tmp[cell]/(Knh4AOB+nh4Tmp[cell]))*(o2Tmp[cell]/(Ko2AOB+o2Tmp[cell]));
-				R3[cell] = MumNOB*(no2Tmp[cell]/(Kno2NOB+no2Tmp[cell]))*(o2Tmp[cell]/(Ko2NOB+o2Tmp[cell]));
-				R4[cell] = etaHET*MumHET*(subTmp[cell]/(KsHET+subTmp[cell]))*(no3Tmp[cell]/(Kno3HET+no3Tmp[cell]))*(Ko2HET/(Ko2HET+o2Tmp[cell]));
-				R5[cell] = etaHET*MumHET*(subTmp[cell]/(KsHET+subTmp[cell]))*(no2Tmp[cell]/(Kno2HET+no2Tmp[cell]))*(Ko2HET/(Ko2HET+o2Tmp[cell]));
+				R1[cell] = MumHET*(subPrev[cell]/(KsHET+subPrev[cell]))*(o2Prev[cell]/(Ko2HET+o2Prev[cell]));
+				R2[cell] = MumAOB*(nh4Prev[cell]/(Knh4AOB+nh4Prev[cell]))*(o2Prev[cell]/(Ko2AOB+o2Prev[cell]));
+				R3[cell] = MumNOB*(no2Prev[cell]/(Kno2NOB+no2Prev[cell]))*(o2Prev[cell]/(Ko2NOB+o2Prev[cell]));
+				R4[cell] = etaHET*MumHET*(subPrev[cell]/(KsHET+subPrev[cell]))*(no3Prev[cell]/(Kno3HET+no3Prev[cell]))*(Ko2HET/(Ko2HET+o2Prev[cell]));
+				R5[cell] = etaHET*MumHET*(subPrev[cell]/(KsHET+subPrev[cell]))*(no2Prev[cell]/(Kno2HET+no2Prev[cell]))*(Ko2HET/(Ko2HET+o2Prev[cell]));
 
 				Rs[cell] = ((-1/YHET) * ( (R1[cell]+R4[cell]+R5[cell]) * xHET[cell] ) ) + ( (1-Y1) * ( bHET*xHET[cell]+bAOB*xAOB[cell]+bNOB*xNOB[cell] ) ) + ( bEPS*xEPS[cell] );
 				Ro2[cell] = (-((1-YHET-YEPS)/YHET)*R1[cell]*xHET[cell])-(((3.42-YAOB)/YAOB)*R2[cell]*xAOB[cell])-(((1.15-YNOB)/YNOB)*R3[cell]*xNOB[cell]);
@@ -443,70 +424,37 @@ void FixDiffNuGrowth::change_dia()
 				Rno2[cell] = ((1/YAOB)*R2[cell]*xAOB[cell])-((1/YNOB)*R3[cell]*xNOB[cell])-(((1-YHET-YEPS)/(1.17*YHET))*R5[cell]*xHET[cell]);
 				Rno3[cell] = ((1/YNOB)*R3[cell]*xNOB[cell])-(((1-YHET-YEPS)/(2.86*YHET))*R4[cell]*xHET[cell]);
 
-	//    	subCell[cell] += Rs[cell] * update->dt;
+	 //   	subPrev[cell] += Rs[cell] * update->dt;
 	//    	o2Cell[cell] += Ro2[cell] * update->dt;
 	//    	no2Cell[cell] += Rno2[cell] * update->dt;
 	//    	no3Cell[cell] += Rno3[cell] * update->dt;
 	//    	nh4Cell[cell] += Rnh4[cell] * update->dt;
 
-				computeFlux(cellDs, subCell, subTmp, subBC, Rs[cell], diffT, cell);
-				computeFlux(cellDo2, o2Cell, o2Tmp, o2BC, Ro2[cell], diffT, cell);
-				computeFlux(cellDnh4, nh4Cell, nh4Tmp, nh4BC, Rnh4[cell], diffT, cell);
-				computeFlux(cellDno2, no2Cell, no2Tmp, no2BC, Rno2[cell], diffT, cell);
-				computeFlux(cellDno3, no3Cell,no3Tmp, no3BC, Rno3[cell], diffT, cell);
+	    	if(!subConvergence) computeFlux(cellDs, subCell, subPrev, subBC, Rs[cell], diffT, cell);
+				if(!o2Convergence) computeFlux(cellDo2, o2Cell, o2Prev, o2BC, Ro2[cell], diffT, cell);
+				if(!nh4Convergence) computeFlux(cellDnh4, nh4Cell, nh4Prev, nh4BC, Rnh4[cell], diffT, cell);
+				if(!no2Convergence) computeFlux(cellDno2, no2Cell, no2Prev, no2BC, Rno2[cell], diffT, cell);
+				if(!no3Convergence) computeFlux(cellDno3, no3Cell, no3Prev, no3BC, Rno3[cell], diffT, cell);
 
-				// add all the subcell values and calculate the difference from previous iteration
-				// End of the convergence loop.
 			}
 
-			for (int cell = 0; cell < numCells; cell++) {
-				if (!ghost[cell]) {
-					subSum += subCell[cell];
-					o2Sum += o2Cell[cell];
-					no2Sum += no2Cell[cell];
-					no3Sum += no3Cell[cell];
-					nh4Sum += nh4Cell[cell];
-				}
-			}
+			if(isConvergence(subCell, subPrev, subBC, tol)) subConvergence = true;
+			if(isConvergence(o2Cell, o2Prev, o2BC, tol)) o2Convergence = true;
+			if(isConvergence(nh4Cell, nh4Prev, nh4BC, tol)) nh4Convergence = true;
+			if(isConvergence(no2Cell, no2Prev, no2BC, tol)) no2Convergence = true;
+			if(isConvergence(no3Cell, no3Prev, no3BC, tol)) no3Convergence = true;
 
-			double abssubDiff = subSum - prevsubSum;
-			double abso2Diff = o2Sum - prevo2Sum;
-			double absno2Diff = no2Sum - prevno2Sum;
-			double absno3Diff = no3Sum - prevno3Sum;
-			double absnh4Diff = nh4Sum - prevnh4Sum;
-
-			if(abssubDiff < 0) {
-				abssubDiff = -abssubDiff;
-			}
-			if(abso2Diff < 0) {
-				abso2Diff = -abso2Diff;
-			}
-			if(absno2Diff < 0) {
-				absno2Diff = -absno2Diff;
-			}
-			if(absno3Diff < 0) {
-				absno3Diff = -absno3Diff;
-			}
-			if(absnh4Diff < 0) {
-				absnh4Diff = -absnh4Diff;
-			}
-
-			if ((abssubDiff < tol &&
-				abso2Diff < tol &&
-				absno2Diff < tol &&
-				absno3Diff < tol &&
-				absnh4Diff < tol) ||
-				(iteration*diffT)/update->dt > dtRatio) {
+			if(subConvergence && o2Convergence && nh4Convergence && no2Convergence && no3Convergence) {
 				convergence = true;
 			}
-			else {
-				prevsubSum = subSum;
-				prevo2Sum = o2Sum;
-				prevno2Sum = no2Sum;
-				prevno3Sum = no3Sum;
-				prevnh4Sum = nh4Sum;
-			}
 		}
+	  //fprintf(stdout, "Number of iterations for substrate nutrient mass balance:  %i\n", iteration);
+
+	  delete [] subPrev;
+	  delete [] o2Prev;
+	  delete [] nh4Prev;
+	  delete [] no2Prev;
+	  delete [] no3Prev;
   }
   // fprintf(stdout, "Number of iterations for substrate nutrient mass balance:  %i\n", iteration);
   for (i = 0; i < nall; i++) {
@@ -579,7 +527,27 @@ void FixDiffNuGrowth::outputConc(int every){
   }
 }
 
-void FixDiffNuGrowth::computeFlux(double *cellDNu, double *nuCell, double *nuTmp, double nuBC, double rateNu, double diffT, int cell) {
+bool FixDiffNuGrowth::isConvergence(double *nuCell, double *prevNuCell, double nuBC, double tol) {
+	for(int cell = 0; cell < numCells; cell++){
+		if(!ghost[cell]){
+
+			double rate = nuCell[cell]/nuBC;
+			double prevRate = prevNuCell[cell]/nuBC;
+//			double a =rate - prevRate;
+//			if(a != 0)
+//				fprintf(stdout, "abs rate = %e\n", a);
+			if(fabs(rate - prevRate) >= tol) return false;
+		}
+	}
+	return true;
+}
+
+void FixDiffNuGrowth::computeFlux(double *cellDNu, double *nuCell, double *nuPrev, double nuBC, double rateNu, double diffT, int cell) {
+ // fprintf(stdout, "nuCell= %f, nuPrev = %f, rateNu = %f\n", nuCell[cell], nuPrev[cell], rateNu);
+	//for nx = ny = nz = 1 grids
+	//2  11  20 			5  14  23				8  17  26
+	//1  10  19       4  13  22       7  16  25
+	//0  9   18       3  12  21       6  15  24
 	int leftCell = cell - (nz+2)*(ny+2); // x direction
 	int rightCell = cell + (nz+2)*(ny+2); // x direction
 	int downCell = cell - (nz+2); // y direction
@@ -590,64 +558,89 @@ void FixDiffNuGrowth::computeFlux(double *cellDNu, double *nuCell, double *nuTmp
 	// assign values to the ghost-cells according to the boundary conditions.
 	// If ghostcells are Neu then take the values equal from the adjacent cells.
 	// if ghostcells are dirich then take the values equal to negative of the adjacent cells.
+	// if ghostcells are mixed then zlo ghost cells are nuemann, zhi ghost cells are dirichlet, other four surfaces are periodic BC.
 	if (ghost[cell]) {
 		// fprintf(stdout, "Ghost Cell: %i\n", cell);
 		if (zCell[cell] < zlo && !ghost[forwardCell]) {
-			if (zloDirch) {
-				nuTmp[cell] = 2*nuBC - nuTmp[forwardCell];
+			if (bflag == 1) {
+				nuCell[cell] = 2*nuBC - nuPrev[forwardCell];
+			} else if(bflag == 2 || bflag == 3) {
+				nuCell[cell] = nuPrev[forwardCell];
 			}
 		}
 		else if (zCell[cell] > zhi && !ghost[backwardCell]) {
-			if (zhiDirch) {
-				nuTmp[cell] = 2*nuBC - nuTmp[backwardCell];
+			if (bflag == 1 || bflag == 3) {
+				nuCell[cell] = 2*nuBC - nuPrev[backwardCell];
+			} else if (bflag == 2) {
+				nuCell[cell] = nuPrev[backwardCell];
 			}
 		}
 		else if (yCell[cell] < ylo && !ghost[upCell]) {
-			if (yloDirch) {
-				nuTmp[cell] = 2*nuBC - nuTmp[upCell];
+			if (bflag == 1) {
+				nuCell[cell] = 2*nuBC - nuPrev[upCell];
+			} else if (bflag == 2) {
+				nuCell[cell] = nuPrev[upCell];
+			} else if (bflag == 3) {
+				int yhiCell = cell + (nz+2)*ny;
+				nuCell[cell] = nuPrev[yhiCell];
 			}
 		}
 		else if (yCell[cell] > yhi && !ghost[downCell]) {
-			if (yhiDirch) {
-				nuTmp[cell] = 2*nuBC - nuTmp[downCell];
+			if (bflag == 1) {
+				nuCell[cell] = 2*nuBC - nuPrev[downCell];
+			} else if (bflag == 2) {
+				nuCell[cell] = nuPrev[downCell];
+			} else if (bflag == 3) {
+				int yloCell = cell - (nz+2)*ny;
+				nuCell[cell] = nuPrev[yloCell];
 			}
 		}
 		else if (xCell[cell] < xlo && !ghost[rightCell]) {
-			if (xloDirch) {
-				nuTmp[cell] = 2*nuBC - nuTmp[rightCell];
+			if (bflag == 1) {
+				nuCell[cell] = 2*nuBC - nuPrev[rightCell];
+			} else if (bflag == 2) {
+				nuCell[cell] = nuPrev[rightCell];
+			} else if (bflag == 3) {
+				int xhiCell = cell + (ny+2)*(nz+2)*nx;
+				nuCell[cell] = nuPrev[xhiCell];
 			}
 		}
 		else if (xCell[cell] > xhi && !ghost[leftCell]) {
-			if (xhiDirch) {
-				nuTmp[cell] = 2*nuBC - nuTmp[leftCell];
+			if (bflag == 1) {
+				nuCell[cell] = 2*nuBC - nuPrev[leftCell];
+			} else if (bflag == 2) {
+				nuCell[cell] = nuPrev[leftCell];
+			} else if (bflag == 3) {
+				int xloCell = cell - (ny+2)*(nz+2)*nx;
+				nuCell[cell] = nuPrev[xloCell];
 			}
 		}
 	}
 	else {
 		double dRight = (cellDNu[cell] + cellDNu[rightCell]) / 2;
-		double jRight = dRight*(nuTmp[rightCell] - nuTmp[cell])/xstep;
+		double jRight = dRight*(nuPrev[rightCell] - nuPrev[cell])/xstep;
 		double dLeft = (cellDNu[cell] + cellDNu[leftCell]) / 2;
-		double jLeft = dLeft*(nuTmp[cell] - nuTmp[leftCell])/xstep;
+		double jLeft = dLeft*(nuPrev[cell] - nuPrev[leftCell])/xstep;
 		double jX = (jRight - jLeft)/xstep;
 
 		double dUp = (cellDNu[cell] + cellDNu[upCell]) / 2;
-		double jUp = dUp*(nuTmp[upCell] - nuTmp[cell])/ystep;
+		double jUp = dUp*(nuPrev[upCell] - nuPrev[cell])/ystep;
 		double dDown = (cellDNu[cell] + cellDNu[downCell]) / 2;
-		double jDown = dDown*(nuTmp[cell] - nuTmp[downCell])/ystep;
+		double jDown = dDown*(nuPrev[cell] - nuPrev[downCell])/ystep;
 		double jY = (jUp - jDown)/ystep;
 
 		double dForward = (cellDNu[cell] + cellDNu[forwardCell]) / 2;
-		double jForward = dForward*(nuTmp[forwardCell] - nuTmp[cell])/zstep;
+		double jForward = dForward*(nuPrev[forwardCell] - nuPrev[cell])/zstep;
 		double dBackward = (cellDNu[cell] + cellDNu[backwardCell]) / 2;
-		double jBackward = dBackward*(nuTmp[cell] - nuTmp[backwardCell])/zstep;
+		double jBackward = dBackward*(nuPrev[cell] - nuPrev[backwardCell])/zstep;
 		double jZ = (jForward - jBackward)/zstep;
 
 		// Adding fluxes in all the directions and the uptake rate (RHS side of the equation)
 		double Ratesub = jX + jY + jZ + rateNu;
-
 		//Updating the value: Ratesub*diffT + nuCell[cell](previous)
 		nuCell[cell] += Ratesub*diffT;
-
+//		if(cell == 171)
+//			fprintf(stdout, "sub = %f, pre = %f, Ratesub = %f\n", nuCell[171], nuPrev[171], Ratesub);
 		if(nuCell[cell] < 0.0){
 			nuCell[cell] = 0.0;
 		}

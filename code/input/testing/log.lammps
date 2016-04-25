@@ -120,7 +120,7 @@ variable factor equal 1.5
 variable ke equal 5e+10
 
 #variable rate1 equal 0.001
-fix g1 all diffnugrowth 1 1000 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bHET v_bAOB v_bNOB v_bEPS v_YHET v_YAOB v_YNOB v_YEPS v_Y1 v_EPSdens v_Do2 v_Dnh4 v_Dno2 v_Dno3 v_Ds v_diffT v_sub v_o2 v_no2 v_no3 v_nh4 5 5 5 dirich v_BCsub v_BCo2 v_BCno2 v_BCno3 v_BCnh4
+fix g1 all diffnugrowth 1 1000 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bHET v_bAOB v_bNOB v_bEPS v_YHET v_YAOB v_YNOB v_YEPS v_Y1 v_EPSdens v_Do2 v_Dnh4 v_Dno2 v_Dno3 v_Ds v_diffT v_sub v_o2 v_no2 v_no3 v_nh4 10 10 10 dirich v_BCsub v_BCo2 v_BCno2 v_BCno3 v_BCnh4
 
 fix dt1 HET death 1 v_bHET v_factor 1952467
 fix dt2 AOB death 1 v_bAOB v_factor 1234312
@@ -140,110 +140,5 @@ dump		id all custom 2000 snapshot.bubblemd id type diameter x y z vx vy vz fx fy
 #dump d0 all image 100 dump.*.jpg type type
 #dump m0 all movie 1000 movie.mpg type type size 640 480
 
-#thermo_style    custom step atoms ke vol
-thermo_style    custom step atoms nhet naob nnob neps ninert
-#thermo_style  granular # not work. syntax change?
-#thermo_style  one   # granular does not work
-thermo		1000
-
-thermo_modify	lost ignore
-#restart	1000000  restart.*.bubblemd
-
-run  4000000
-Memory usage per processor = 197.605 Mbytes
-Step Atoms nHET nAOB nNOB nEPS nInert 
-       0        5            1            1            1            1            1 
-    1000        6            1            1            1            2            1 
-    2000        6            1            1            1            2            1 
-    3000        6            1            1            1            2            1 
-    4000        6            1            1            1            2            1 
-    5000        6            1            1            1            2            1 
-    6000        6            1            1            1            2            1 
-    7000        7            1            2            1            2            1 
-    8000        7            1            2            1            2            1 
-    9000        7            1            2            1            2            1 
-   10000        7            1            2            1            2            1 
-   11000        7            1            2            1            2            1 
-   12000        8            1            2            1            3            1 
-   13000        8            1            2            1            3            1 
-   14000        8            1            2            1            3            1 
-   15000        8            1            2            1            3            1 
-   16000        8            1            2            1            3            1 
-   17000        8            1            2            1            3            1 
-   18000        8            1            2            1            3            1 
-   19000        8            1            2            1            3            1 
-   20000        9            2            2            1            3            1 
-   21000        9            2            2            1            3            1 
-   22000        9            2            2            1            3            1 
-   23000        9            2            2            1            3            1 
-   24000        9            2            2            1            3            1 
-   25000        9            2            2            1            3            1 
-   26000       10            2            3            1            3            1 
-   27000       10            2            3            1            3            1 
-   28000       10            2            3            1            3            1 
-   29000       10            2            3            1            3            1 
-   30000       12            2            3            1            5            1 
-   31000       13            2            4            1            5            1 
-   32000       14            2            4            2            5            1 
-   33000       14            2            4            2            5            1 
-   34000       14            2            4            2            5            1 
-   35000       14            2            4            2            5            1 
-   36000       14            2            4            2            5            1 
-   37000       14            2            4            2            5            1 
-   38000       15            3            4            2            5            1 
-   39000       16            4            4            2            5            1 
-   40000       16            4            4            2            5            1 
-   41000       16            4            4            2            5            1 
-   42000       16            4            4            2            5            1 
-   43000       17            4            5            2            5            1 
-   44000       17            4            5            2            5            1 
-   45000       17            4            5            2            5            1 
-   46000       21            4            5            2            9            1 
-   47000       21            4            5            2            9            1 
-   48000       21            4            5            2            9            1 
-   49000       22            4            6            2            9            1 
-   50000       22            4            6            2            9            1 
-   51000       24            4            7            3            9            1 
-   52000       24            4            7            3            9            1 
-   53000       26            6            7            3            9            1 
-   54000       26            6            7            3            9            1 
-   55000       26            6            7            3            9            1 
-   56000       27            6            8            3            9            1 
-   57000       27            6            8            3            9            1 
-   58000       27            6            8            3            9            1 
-   59000       27            6            8            3            9            1 
-   60000       29            7            9            3            9            1 
-   61000       29            7            9            3            9            1 
-   62000       32            7            9            3           12            1 
-   63000       33            8            9            3           12            1 
-   64000       34            8            9            4           12            1 
-   65000       35            8           10            4           12            1 
-   66000       39            8           10            4           16            1 
-   67000       39            8           10            4           16            1 
-   68000       40            9           10            4           16            1 
-   69000       41            8           11            4           16            2 
-   70000       42            8           12            4           16            2 
-   71000       43            9           12            4           16            2 
-   72000       44            9           13            4           16            2 
-   73000       45           10           13            4           16            2 
-   74000       46           10           13            5           16            2 
-   75000       47           11           13            5           16            2 
-   76000       49           11           15            5           16            2 
-   77000       50           11           15            6           16            2 
-   78000       50           11           15            6           16            2 
-   79000       54           12           15            6           19            2 
-   80000       54           12           15            6           19            2 
-   81000       56           12           17            6           19            2 
-   82000       59           12           18            6           21            2 
-   83000       61           13           19            6           21            2 
-   84000       63           13           19            6           23            2 
-   85000       68           15           20            6           25            2 
-   86000       74           16           20            6           30            2 
-   87000       75           16           21            6           30            2 
-   88000       77           17           21            7           30            2 
-   89000       79           18           21            8           30            2 
-   90000       81           18           22            8           30            3 
-   91000       81           18           22            8           30            3 
-   92000       81           18           22            8           30            3 
-   93000       85           19           25            8           30            3 
-   94000       87     
+thermo_style    custom step atoms nhet mhet
+#thermo_style    custom step atoms nhet naob nnob nep
