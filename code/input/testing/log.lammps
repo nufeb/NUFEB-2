@@ -9,7 +9,7 @@ newton		off
 
 #radius x y z outerradius sub o2 nh4 no2 no3
 communicate single vel yes
-read_data 	/home/bowen/Workspace/nufeb/code/input/testing/flat_surface.in
+read_data 	flat_surface_central.in
   orthogonal box = (1e-05 1e-05 0) to (3e-05 3e-05 4e-05)
   1 by 1 by 1 MPI processor grid
   reading atoms ...
@@ -105,14 +105,14 @@ variable diffT equal 1e-4
 variable sub equal  8.00e-02
 variable o2 equal 10.00e-03
 variable no2 equal 8.000e-03
-variable no3 equal 1.0000e-05
+variable no3 equal 8.0000e-03
 variable nh4 equal 9.00e-02
 
 #Defining inlet concentrations for boundary conditions
 variable BCsub equal 8.00e-02
 variable BCo2 equal 10.00e-03
 variable BCno2 equal 8.000e-03
-variable BCno3 equal 1.0000e-05
+variable BCno3 equal 8.0000e-03
 variable BCnh4 equal 9.00e-02
 
 variable factor equal 1.5
@@ -141,4 +141,5 @@ dump		id all custom 2000 snapshot.bubblemd id type diameter x y z vx vy vz fx fy
 #dump m0 all movie 1000 movie.mpg type type size 640 480
 
 thermo_style    custom step atoms nhet mhet
-#thermo_style    custom step atoms nhet naob nnob nep
+#thermo_style    custom step atoms nhet naob nnob neps ninert
+#thermo_style  granular # not 

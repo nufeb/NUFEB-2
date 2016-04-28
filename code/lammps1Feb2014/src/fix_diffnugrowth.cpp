@@ -42,6 +42,7 @@ using namespace MathConst;
 
 FixDiffNuGrowth::FixDiffNuGrowth(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
+	fprintf(stdout, "num=%i/n", narg);
   if (narg != 47) error->all(FLERR,"Not enough arguments in fix diff growth command");
 
   nevery = force->inumeric(FLERR,arg[3]);
@@ -57,13 +58,12 @@ FixDiffNuGrowth::FixDiffNuGrowth(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, n
     strcpy(var[i],&arg[5+i][2]);
   }
 
-  if(strcmp(arg[41], "dirich") == 0 || strcmp(arg[41], "mixed") == 0){
-	  for(int i = 33; i < 38; i++){
-		   int n = strlen(&arg[9+i][2]) + 1;
-		   var[i] = new char[n];
-		   strcpy(var[i],&arg[9+i][2]);
-	  }
-  }
+  //BC concentration
+	for(int i = 33; i < 38; i++){
+		 int n = strlen(&arg[9+i][2]) + 1;
+		 var[i] = new char[n];
+		 strcpy(var[i],&arg[9+i][2]);
+	}
 
   if(strcmp(arg[41], "dirich") == 0) bflag = 1;
   else if(strcmp(arg[41], "neu") == 0) bflag = 2;
@@ -130,12 +130,7 @@ void FixDiffNuGrowth::init()
   if (!atom->radius_flag)
     error->all(FLERR,"Fix growth requires atom attribute diameter");
 
-  int n;
-  int m;
-  if(bflag == 1 || bflag == 3) m = 38;
-  else if (bflag == 2) m = 33;
-
-  for (n = 0; n < m; n++) {
+  for (int n = 0; n < 38; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
       error->all(FLERR,"Variable name for fix nugrowth does not exist");
@@ -151,13 +146,12 @@ void FixDiffNuGrowth::init()
   initnh4 = input->variable->compute_equal(ivar[32]);
 
   //initial concentrations of boundary
-  if(bflag == 1 || bflag == 3){
-		subBC = input->variable->compute_equal(ivar[33]);
-		o2BC = input->variable->compute_equal(ivar[34]);
-		no2BC = input->variable->compute_equal(ivar[35]);
-		no3BC = input->variable->compute_equal(ivar[36]);
-		nh4BC = input->variable->compute_equal(ivar[37]);
-	}
+	subBC = input->variable->compute_equal(ivar[33]);
+	o2BC = input->variable->compute_equal(ivar[34]);
+	no2BC = input->variable->compute_equal(ivar[35]);
+	no3BC = input->variable->compute_equal(ivar[36]);
+	nh4BC = input->variable->compute_equal(ivar[37]);
+
   //total numbers of cells (ghost + non-ghost)
   numCells = (nx+2)*(ny+2)*(nz+2);
 
@@ -191,13 +185,12 @@ void FixDiffNuGrowth::init()
         if (i < xlo || i > xhi || j < ylo ||
         	j > yhi || k < zlo || k > zhi) {
         		ghost[cell] = true;
-        		if(bflag == 1){
-							subCell[cell] = subBC;
-							o2Cell[cell] = o2BC;
-							no2Cell[cell] = no2BC;
-							no3Cell[cell] = no3BC;
-							nh4Cell[cell] = nh4BC;
-        		}
+
+						subCell[cell] = subBC;
+						o2Cell[cell] = o2BC;
+						no2Cell[cell] = no2BC;
+						no3Cell[cell] = no3BC;
+						nh4Cell[cell] = nh4BC;
         }else{
             subCell[cell] = initsub;
             o2Cell[cell] = inito2;
@@ -350,9 +343,6 @@ void FixDiffNuGrowth::change_dia()
     }
   }
 
-  //output concentration values
-  outputConc(100000);
-
   //initialize values
   for (int cell = 0; cell < numCells; cell++) {
     R1[cell] = MumHET*(subCell[cell]/(KsHET+subCell[cell]))*(o2Cell[cell]/(Ko2HET+o2Cell[cell]));
@@ -396,7 +386,7 @@ void FixDiffNuGrowth::change_dia()
 
 		int iteration = 0;
 
-		double tol = 1e-4; // Tolerance for convergence criteria for nutrient balance equation
+		double tol = 1e-5; // Tolerance for convergence criteria for nutrient balance equation
 
 		// Outermost while loop for the convergence criterion
 		while (!convergence) {
@@ -424,18 +414,17 @@ void FixDiffNuGrowth::change_dia()
 				Rno2[cell] = ((1/YAOB)*R2[cell]*xAOB[cell])-((1/YNOB)*R3[cell]*xNOB[cell])-(((1-YHET-YEPS)/(1.17*YHET))*R5[cell]*xHET[cell]);
 				Rno3[cell] = ((1/YNOB)*R3[cell]*xNOB[cell])-(((1-YHET-YEPS)/(2.86*YHET))*R4[cell]*xHET[cell]);
 
-	 //   	subPrev[cell] += Rs[cell] * update->dt;
-	//    	o2Cell[cell] += Ro2[cell] * update->dt;
-	//    	no2Cell[cell] += Rno2[cell] * update->dt;
-	//    	no3Cell[cell] += Rno3[cell] * update->dt;
-	//    	nh4Cell[cell] += Rnh4[cell] * update->dt;
+//	    	subPrev[cell] += Rs[cell] * update->dt;
+//	    	o2Cell[cell] += Ro2[cell] * update->dt;
+//	    	no2Cell[cell] += Rno2[cell] * update->dt;
+//	    	no3Cell[cell] += Rno3[cell] * update->dt;
+//	    	nh4Cell[cell] += Rnh4[cell] * update->dt;
 
 	    	if(!subConvergence) computeFlux(cellDs, subCell, subPrev, subBC, Rs[cell], diffT, cell);
 				if(!o2Convergence) computeFlux(cellDo2, o2Cell, o2Prev, o2BC, Ro2[cell], diffT, cell);
 				if(!nh4Convergence) computeFlux(cellDnh4, nh4Cell, nh4Prev, nh4BC, Rnh4[cell], diffT, cell);
 				if(!no2Convergence) computeFlux(cellDno2, no2Cell, no2Prev, no2BC, Rno2[cell], diffT, cell);
 				if(!no3Convergence) computeFlux(cellDno3, no3Cell, no3Prev, no3BC, Rno3[cell], diffT, cell);
-
 			}
 
 			if(isConvergence(subCell, subPrev, subBC, tol)) subConvergence = true;
@@ -444,11 +433,11 @@ void FixDiffNuGrowth::change_dia()
 			if(isConvergence(no2Cell, no2Prev, no2BC, tol)) no2Convergence = true;
 			if(isConvergence(no3Cell, no3Prev, no3BC, tol)) no3Convergence = true;
 
-			if(subConvergence && o2Convergence && nh4Convergence && no2Convergence && no3Convergence) {
+			if((subConvergence && o2Convergence && nh4Convergence && no2Convergence && no3Convergence) || (iteration == 2000)) {
 				convergence = true;
 			}
 		}
-	  //fprintf(stdout, "Number of iterations for substrate nutrient mass balance:  %i\n", iteration);
+	 fprintf(stdout, "Number of iterations for substrate nutrient mass balance:  %i\n", iteration);
 
 	  delete [] subPrev;
 	  delete [] o2Prev;
@@ -456,7 +445,7 @@ void FixDiffNuGrowth::change_dia()
 	  delete [] no2Prev;
 	  delete [] no3Prev;
   }
-  // fprintf(stdout, "Number of iterations for substrate nutrient mass balance:  %i\n", iteration);
+
   for (i = 0; i < nall; i++) {
     if (mask[i] & groupbit) {
       double gHET = 0;
@@ -506,22 +495,65 @@ void FixDiffNuGrowth::change_dia()
       }
     }
   }
+  //output concentration values
+//  int n = 50000;
+//  outputConc(n, 1);
+//  outputConc(n, 2);
+//  outputConc(n, 3);
+//  outputConc(n, 4);
+//  outputConc(n, 5);
+
   modify->addstep_compute(update->ntimestep + nevery);
 }
 
-void FixDiffNuGrowth::outputConc(int every){
-  if(update->ntimestep%every == 0){
+void FixDiffNuGrowth::outputConc(int every, int n){
+  if(!(update->ntimestep%every)){
 	  FILE* pFile;
 	  std::string str;
+	  std::string name;
 	  std::ostringstream stm;
-	  stm << update->ntimestep ;
-	  str = "CONCENTRATION.csv." + stm.str();
+	  stm << update->ntimestep;
+	  switch(n) {
+	  case 1 :
+	  	name = "sub";
+	  	break;
+	  case 2 :
+	  	name = "o2";
+	  	break;
+	  case 3 :
+	  	name = "no3";
+	  	break;
+	  case 4 :
+	  	name = "nh4";
+	  	break;
+	  case 5 :
+	  	name = "no2";
+	  	break;
+	  }
+	  str = "CONCENTRATION.csv." + name + " " + stm.str();
 	  pFile = fopen (str.c_str(), "w");
 
 	  fprintf(pFile, ",x,y,z,scalar,1,1,1,0.5\n");
 	  for(int i = 0; i < numCells; i++){
 		  if(!ghost[i]){
-			 fprintf(pFile, ",\t%f,\t%f,\t%f,\t%f\n", xCell[i], yCell[i], zCell[i], o2Cell[i]);
+
+			  switch(n) {
+			  case 1 :
+			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], subCell[i]);
+			  	break;
+			  case 2 :
+			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], o2Cell[i]);
+			  	break;
+			  case 3 :
+			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], no3Cell[i]);
+			  	break;
+			  case 4 :
+			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], nh4Cell[i]);
+			  	break;
+			  case 5 :
+			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], no2Cell[i]);
+			  	break;
+			  }
 		  }
 	  }
   }
@@ -533,9 +565,26 @@ bool FixDiffNuGrowth::isConvergence(double *nuCell, double *prevNuCell, double n
 
 			double rate = nuCell[cell]/nuBC;
 			double prevRate = prevNuCell[cell]/nuBC;
-//			double a =rate - prevRate;
-//			if(a != 0)
-//				fprintf(stdout, "abs rate = %e\n", a);
+			double a =rate - prevRate;
+//			if(fabs(a) != 0){
+//				if(nuBC == subBC){
+//					fprintf(stdout, "sub\n");
+//				}
+//				if(nuBC == o2BC){
+//					fprintf(stdout, "o2\n");
+//				}
+//				if(nuBC == no2BC){
+//					fprintf(stdout, "no2\n");
+//				}
+//				if(nuBC == no3BC){
+//					fprintf(stdout, "no3\n");
+//				}
+//				if(nuBC == nh4BC){
+//					fprintf(stdout, "nh4\n");
+//				}
+//				fprintf(stdout, "time = %i, cell = %i, pre = %e, nu = %e, abs = %e\n",update->ntimestep, cell, prevNuCell[cell], nuCell[cell], fabs(a));
+//
+//			}
 			if(fabs(rate - prevRate) >= tol) return false;
 		}
 	}
