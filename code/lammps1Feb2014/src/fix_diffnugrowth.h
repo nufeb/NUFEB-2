@@ -57,7 +57,7 @@ class FixDiffNuGrowth : public Fix {
   double xstep, ystep, zstep;
   void change_dia();
   void computeFlux(double *, double *, double *, double, double, double, int);
-  void outputConc(int);
+  void outputConc(int, int);
   bool isConvergence(double *, double *, double, double);
 };
 
