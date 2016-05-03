@@ -223,8 +223,8 @@ void FixDivide::pre_exchange()
         //double separation = radius[i] * 0.005;
 
         //Update parent
-        rmass[i] = parentMass;
-        outerMass[i] = parentOuterMass;
+        atom->rmass[i] = parentMass;
+        atom->outerMass[i] = parentOuterMass;
         atom->sub[i] = parentSub;
         atom->o2[i] = parentO2;
         atom->nh4[i] = parentNH4;
@@ -233,8 +233,8 @@ void FixDivide::pre_exchange()
         atom->f[i][0] = parentfx;
         atom->f[i][1] = parentfy;
         atom->f[i][2] = parentfz;
-        radius[i] = pow(((6*rmass[i])/(density*MY_PI)),(1.0/3.0))*0.5;
-        outerRadius[i] = pow((3.0/(4.0*MY_PI))*((rmass[i]/density)+(parentOuterMass/EPSdens)),(1.0/3.0));
+        atom->radius[i] = pow(((6*rmass[i])/(density*MY_PI)),(1.0/3.0))*0.5;
+        atom->outerRadius[i] = pow((3.0/(4.0*MY_PI))*((rmass[i]/density)+(parentOuterMass/EPSdens)),(1.0/3.0));
         newX = oldX + (outerRadius[i]*cos(thetaD)*sin(phiD)*DELTA);
         newY = oldY + (outerRadius[i]*sin(thetaD)*sin(phiD)*DELTA);
         newZ = oldZ + (outerRadius[i]*cos(phiD)*DELTA);
@@ -292,11 +292,10 @@ void FixDivide::pre_exchange()
         coord[1] = newY;
         coord[2] = newZ;
         find_maxid();
-        atom->avec->create_atom(mask[i],coord);
+        atom->avec->create_atom(atom->type[i],coord);
         // fprintf(stdout, "Created atom\n");
         int n = atom->nlocal - 1;
         atom->tag[n] = maxtag_all+1;
-        atom->type[n] = atom->type[i];
         atom->mask[n] = mask[i];
         atom->image[n] = atom->image[i];
         atom->v[n][0] = atom->v[i][0];
@@ -308,8 +307,8 @@ void FixDivide::pre_exchange()
         atom->omega[n][0] = atom->omega[i][0];
         atom->omega[n][1] = atom->omega[i][1];
         atom->omega[n][2] = atom->omega[i][2];
-        rmass[n] = childMass;
-        outerMass[n] = childOuterMass;
+        atom->rmass[n] = childMass;
+        atom->outerMass[n] = childOuterMass;
         atom->sub[n] = childSub;
         atom->o2[n] = childO2;
         atom->nh4[n] = childNH4;
@@ -321,8 +320,8 @@ void FixDivide::pre_exchange()
         atom->torque[n][0] = atom->torque[i][0];
         atom->torque[n][1] = atom->torque[i][1];
         atom->torque[n][2] = atom->torque[i][2];
-        radius[n] = childRadius;
-        outerRadius[n] = childOuterRadius;
+        atom->radius[n] = childRadius;
+        atom->outerRadius[n] = childOuterRadius;
 
         atom->natoms++;
         // divided ++;

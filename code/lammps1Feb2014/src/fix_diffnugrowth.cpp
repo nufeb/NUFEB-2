@@ -414,11 +414,11 @@ void FixDiffNuGrowth::change_dia()
 				Rno2[cell] = ((1/YAOB)*R2[cell]*xAOB[cell])-((1/YNOB)*R3[cell]*xNOB[cell])-(((1-YHET-YEPS)/(1.17*YHET))*R5[cell]*xHET[cell]);
 				Rno3[cell] = ((1/YNOB)*R3[cell]*xNOB[cell])-(((1-YHET-YEPS)/(2.86*YHET))*R4[cell]*xHET[cell]);
 
-//	    	subPrev[cell] += Rs[cell] * update->dt;
-//	    	o2Cell[cell] += Ro2[cell] * update->dt;
-//	    	no2Cell[cell] += Rno2[cell] * update->dt;
-//	    	no3Cell[cell] += Rno3[cell] * update->dt;
-//	    	nh4Cell[cell] += Rnh4[cell] * update->dt;
+	    	subPrev[cell] += Rs[cell] * update->dt;
+	    	o2Cell[cell] += Ro2[cell] * update->dt;
+	    	no2Cell[cell] += Rno2[cell] * update->dt;
+	    	no3Cell[cell] += Rno3[cell] * update->dt;
+	    	nh4Cell[cell] += Rnh4[cell] * update->dt;
 
 	    	if(!subConvergence) computeFlux(cellDs, subCell, subPrev, subBC, Rs[cell], diffT, cell);
 				if(!o2Convergence) computeFlux(cellDo2, o2Cell, o2Prev, o2BC, Ro2[cell], diffT, cell);
@@ -503,6 +503,19 @@ void FixDiffNuGrowth::change_dia()
 //  outputConc(n, 4);
 //  outputConc(n, 5);
 
+//  //grid test
+//  if(!(update->ntimestep%1000)){
+//  for(int i = 0; i < numCells; i++){
+//  	if(xCell[i] > xlo && xCell[i] < xhi )
+//			if((i+1)%7 != 0)
+//				fprintf(stdout, "%i: %e\t", i, nh4Cell[i]);
+//			else
+//				fprintf(stdout, "%i: %e\t\n", i, nh4Cell[i]);
+//  }
+//  fprintf(stdout, "\n");
+//  }
+
+
   modify->addstep_compute(update->ntimestep + nevery);
 }
 
@@ -565,26 +578,7 @@ bool FixDiffNuGrowth::isConvergence(double *nuCell, double *prevNuCell, double n
 
 			double rate = nuCell[cell]/nuBC;
 			double prevRate = prevNuCell[cell]/nuBC;
-			double a =rate - prevRate;
-//			if(fabs(a) != 0){
-//				if(nuBC == subBC){
-//					fprintf(stdout, "sub\n");
-//				}
-//				if(nuBC == o2BC){
-//					fprintf(stdout, "o2\n");
-//				}
-//				if(nuBC == no2BC){
-//					fprintf(stdout, "no2\n");
-//				}
-//				if(nuBC == no3BC){
-//					fprintf(stdout, "no3\n");
-//				}
-//				if(nuBC == nh4BC){
-//					fprintf(stdout, "nh4\n");
-//				}
-//				fprintf(stdout, "time = %i, cell = %i, pre = %e, nu = %e, abs = %e\n",update->ntimestep, cell, prevNuCell[cell], nuCell[cell], fabs(a));
-//
-//			}
+
 			if(fabs(rate - prevRate) >= tol) return false;
 		}
 	}
