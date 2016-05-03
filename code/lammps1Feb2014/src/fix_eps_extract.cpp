@@ -192,24 +192,24 @@ void FixEPSExtract::pre_exchange()
     subhi = domain->subhi_lamda;
   }
 
-  for (i = 0; i < nlocal; i++) {
+  for (i = 0; i < nall; i++) {
     if ((mask[i] & groupbit) && atom->x[i][0] >= sublo[0] && atom->x[i][0] < subhi[0] &&
           atom->x[i][1] >= sublo[1] && atom->x[i][1] < subhi[1] &&
           atom->x[i][2] >= sublo[2] && atom->x[i][2] < subhi[2]) {
       // fprintf(stdout, "outerRadius/radius = %e\n", (outerRadius[i]/radius[i]));
       if ((outerRadius[i]/radius[i]) > EPSratio) {
-        outerMass[i] = (4.0*MY_PI/3.0)*((outerRadius[i]*outerRadius[i]*outerRadius[i])-(radius[i]*radius[i]*radius[i]))*EPSdens;
+      	atom->outerMass[i] = (4.0*MY_PI/3.0)*((outerRadius[i]*outerRadius[i]*outerRadius[i])-(radius[i]*radius[i]*radius[i]))*EPSdens;
 
         double splitF = 0.4 + (random->uniform()*0.2);
 
         double newOuterMass = outerMass[i] * splitF;
         double EPSMass = outerMass[i] - newOuterMass;
 
-        outerMass[i] = newOuterMass;
+        atom->outerMass[i] = newOuterMass;
 
         double density = rmass[i] / (4.0*MY_PI/3.0 *
                       radius[i]*radius[i]*radius[i]);
-        outerRadius[i] = pow((3.0/(4.0*MY_PI))*((rmass[i]/density)+(outerMass[i]/EPSdens)),(1.0/3.0));
+        atom->outerRadius[i] = pow((3.0/(4.0*MY_PI))*((rmass[i]/density)+(outerMass[i]/EPSdens)),(1.0/3.0));
 
         double thetaD = random->uniform() * 2*MY_PI;
         double phiD = random->uniform() * (MY_PI);
@@ -217,7 +217,6 @@ void FixEPSExtract::pre_exchange()
         double oldX = atom->x[i][0];
         double oldY = atom->x[i][1];
         double oldZ = atom->x[i][2];
-
 
         //create child
         double childRadius = pow(((6*EPSMass)/(EPSdens*MY_PI)),(1.0/3.0))*0.5;
@@ -247,11 +246,10 @@ void FixEPSExtract::pre_exchange()
         coord[1] = newY;
         coord[2] = newZ;
         find_maxid();
-        atom->avec->create_atom(16,coord);
+        atom->avec->create_atom(4,coord);
         // fprintf(stdout, "Created atom\n");
         int n = atom->nlocal - 1;
         atom->tag[n] = maxtag_all+1;
-        atom->type[n] = 4;
         atom->mask[n] = 17;
         atom->v[n][0] = atom->v[i][0];
         atom->v[n][1] = atom->v[i][1];
@@ -262,8 +260,8 @@ void FixEPSExtract::pre_exchange()
         atom->omega[n][0] = atom->omega[i][0];
         atom->omega[n][1] = atom->omega[i][1];
         atom->omega[n][2] = atom->omega[i][2];
-        rmass[n] = EPSMass;
-        outerMass[n] = 0;
+        atom->rmass[n] = EPSMass;
+        atom->outerMass[n] = 0;
         atom->sub[n] = 0;
         atom->o2[n] = 0;
         atom->nh4[n] = 0;
@@ -272,8 +270,8 @@ void FixEPSExtract::pre_exchange()
         atom->torque[n][0] = atom->torque[i][0];
         atom->torque[n][1] = atom->torque[i][1];
         atom->torque[n][2] = atom->torque[i][2];
-        radius[n] = childRadius;
-        outerRadius[n] = childRadius;
+        atom->radius[n] = childRadius;
+        atom->outerRadius[n] = childRadius;
 
         atom->natoms++;
       }
