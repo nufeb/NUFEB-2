@@ -138,16 +138,9 @@ void FixDivide::pre_exchange()
 
   double EPSdens = input->variable->compute_equal(ivar);
   double density;
-  double *radius = atom->radius;
-  double *rmass = atom->rmass;
-  double *outerRadius = atom->outerRadius;
-  double *outerMass = atom->outerMass;
-  int *mask = atom->mask;
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
   int i;
-  // int nfix = modify->nfix;
-  // Fix **fix = modify->fix;
 
   double averageMass;// = getAverageMass();
   // int nnew = countNewAtoms(averageMass);
@@ -166,28 +159,22 @@ void FixDivide::pre_exchange()
       averageMass = 1e-16;
     } else continue;
 
-    if ((mask[i] & groupbit) &&
+    if ((atom->mask[i] & groupbit) &&
     	  atom->x[i][0] >= sublo[0] && atom->x[i][0] < subhi[0] &&
           atom->x[i][1] >= sublo[1] && atom->x[i][1] < subhi[1] &&
           atom->x[i][2] >= sublo[2] && atom->x[i][2] < subhi[2]) {
-      density = rmass[i] / (4.0*MY_PI/3.0 *
-                      radius[i]*radius[i]*radius[i]);
-//      if (atom->type[i] == 4) {
-//        averageMass = 2.6e-17;
-//      }
-//      if (atom->type[i] == 5) {
-//        averageMass = 1.1e-16;
-//      }
+      density = atom->rmass[i] / (4.0*MY_PI/3.0 *
+      					atom->radius[i]*atom->radius[i]*atom->radius[i]);
 
-      if (rmass[i] >= growthFactor*averageMass) {
+      if (atom->rmass[i] >= growthFactor * averageMass) {
       	double newX, newY, newZ;
 
         double splitF = 0.4 + (random->uniform()*0.2);
-        double parentMass = rmass[i] * splitF;
-        double childMass = rmass[i] - parentMass;
+        double parentMass = atom->rmass[i] * splitF;
+        double childMass = atom->rmass[i] - parentMass;
 
-        double parentOuterMass = outerMass[i] * splitF;
-        double childOuterMass = outerMass[i] - parentOuterMass;
+        double parentOuterMass = atom->outerMass[i] * splitF;
+        double childOuterMass = atom->outerMass[i] - parentOuterMass;
 
         double parentSub = atom->sub[i];
         double childSub =  atom->sub[i];
@@ -233,28 +220,28 @@ void FixDivide::pre_exchange()
         atom->f[i][0] = parentfx;
         atom->f[i][1] = parentfy;
         atom->f[i][2] = parentfz;
-        atom->radius[i] = pow(((6*rmass[i])/(density*MY_PI)),(1.0/3.0))*0.5;
-        atom->outerRadius[i] = pow((3.0/(4.0*MY_PI))*((rmass[i]/density)+(parentOuterMass/EPSdens)),(1.0/3.0));
-        newX = oldX + (outerRadius[i]*cos(thetaD)*sin(phiD)*DELTA);
-        newY = oldY + (outerRadius[i]*sin(thetaD)*sin(phiD)*DELTA);
-        newZ = oldZ + (outerRadius[i]*cos(phiD)*DELTA);
-        if (newX - outerRadius[i] < xlo) {
-        	newX = xlo + outerRadius[i];
+        atom->radius[i] = pow(((6*atom->rmass[i])/(density*MY_PI)),(1.0/3.0))*0.5;
+        atom->outerRadius[i] = pow((3.0/(4.0*MY_PI))*((atom->rmass[i]/density)+(parentOuterMass/EPSdens)),(1.0/3.0));
+        newX = oldX + (atom->outerRadius[i]*cos(thetaD)*sin(phiD)*DELTA);
+        newY = oldY + (atom->outerRadius[i]*sin(thetaD)*sin(phiD)*DELTA);
+        newZ = oldZ + (atom->outerRadius[i]*cos(phiD)*DELTA);
+        if (newX - atom->outerRadius[i] < xlo) {
+        	newX = xlo + atom->outerRadius[i];
         }
-        else if (newX + outerRadius[i] > xhi) {
-        	newX = xhi - outerRadius[i];
+        else if (newX + atom->outerRadius[i] > xhi) {
+        	newX = xhi - atom->outerRadius[i];
         }
-        if (newY - outerRadius[i] < ylo) {
-        	newY = ylo + outerRadius[i];
+        if (newY - atom->outerRadius[i] < ylo) {
+        	newY = ylo + atom->outerRadius[i];
         }
-        else if (newY + outerRadius[i] > yhi) {
-        	newY = yhi - outerRadius[i];
+        else if (newY + atom->outerRadius[i] > yhi) {
+        	newY = yhi - atom->outerRadius[i];
         }
-        if (newZ - outerRadius[i] < zlo) {
-        	newZ = zlo + outerRadius[i];
+        if (newZ - atom->outerRadius[i] < zlo) {
+        	newZ = zlo + atom->outerRadius[i];
         }
-        else if (newZ + outerRadius[i] > zhi) {
-        	newZ = zhi - outerRadius[i];
+        else if (newZ + atom->outerRadius[i] > zhi) {
+        	newZ = zhi - atom->outerRadius[i];
         }
         atom->x[i][0] = newX;
         atom->x[i][1] = newY;
@@ -296,7 +283,7 @@ void FixDivide::pre_exchange()
         // fprintf(stdout, "Created atom\n");
         int n = atom->nlocal - 1;
         atom->tag[n] = maxtag_all+1;
-        atom->mask[n] = mask[i];
+        atom->mask[n] = atom->mask[i];
         atom->image[n] = atom->image[i];
         atom->v[n][0] = atom->v[i][0];
         atom->v[n][1] = atom->v[i][1];
