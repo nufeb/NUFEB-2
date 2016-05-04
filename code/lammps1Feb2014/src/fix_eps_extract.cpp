@@ -168,20 +168,9 @@ void FixEPSExtract::pre_exchange()
   double EPSratio = input->variable->compute_equal(ivar[0]);
   double EPSdens = input->variable->compute_equal(ivar[1]);
 
-  double *radius = atom->radius;
-  double *rmass = atom->rmass;
-  double *outerRadius = atom->outerRadius;
-  double *outerMass = atom->outerMass;
-  int *mask = atom->mask;
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
   int i;
-  // int nfix = modify->nfix;
-  // Fix **fix = modify->fix;
-
-  // int nnew = countNewAtoms(EPSratio);
-
-  // find_maxid();
 
   double *sublo,*subhi;
   if (domain->triclinic == 0) {
@@ -193,23 +182,25 @@ void FixEPSExtract::pre_exchange()
   }
 
   for (i = 0; i < nall; i++) {
-    if ((mask[i] & groupbit) && atom->x[i][0] >= sublo[0] && atom->x[i][0] < subhi[0] &&
+    if ((atom->mask[i] & groupbit) && atom->x[i][0] >= sublo[0] && atom->x[i][0] < subhi[0] &&
           atom->x[i][1] >= sublo[1] && atom->x[i][1] < subhi[1] &&
           atom->x[i][2] >= sublo[2] && atom->x[i][2] < subhi[2]) {
       // fprintf(stdout, "outerRadius/radius = %e\n", (outerRadius[i]/radius[i]));
-      if ((outerRadius[i]/radius[i]) > EPSratio) {
-      	atom->outerMass[i] = (4.0*MY_PI/3.0)*((outerRadius[i]*outerRadius[i]*outerRadius[i])-(radius[i]*radius[i]*radius[i]))*EPSdens;
+      if ((atom->outerRadius[i]/atom->radius[i]) > EPSratio) {
+      	atom->outerMass[i] = (4.0*MY_PI/3.0)*((atom->outerRadius[i] *
+      												atom->outerRadius[i]*atom->outerRadius[i])-
+      											 (atom->radius[i]*atom->radius[i]*atom->radius[i]))*EPSdens;
 
         double splitF = 0.4 + (random->uniform()*0.2);
 
-        double newOuterMass = outerMass[i] * splitF;
-        double EPSMass = outerMass[i] - newOuterMass;
+        double newOuterMass = atom->outerMass[i] * splitF;
+        double EPSMass = atom->outerMass[i] - newOuterMass;
 
         atom->outerMass[i] = newOuterMass;
 
-        double density = rmass[i] / (4.0*MY_PI/3.0 *
-                      radius[i]*radius[i]*radius[i]);
-        atom->outerRadius[i] = pow((3.0/(4.0*MY_PI))*((rmass[i]/density)+(outerMass[i]/EPSdens)),(1.0/3.0));
+        double density = atom->rmass[i] / (4.0*MY_PI/3.0 *
+        								 atom->radius[i]*atom->radius[i]*atom->radius[i]);
+        atom->outerRadius[i] = pow((3.0/(4.0*MY_PI))*((atom->rmass[i]/density)+(atom->outerMass[i]/EPSdens)),(1.0/3.0));
 
         double thetaD = random->uniform() * 2*MY_PI;
         double phiD = random->uniform() * (MY_PI);
@@ -221,9 +212,9 @@ void FixEPSExtract::pre_exchange()
         //create child
         double childRadius = pow(((6*EPSMass)/(EPSdens*MY_PI)),(1.0/3.0))*0.5;
         double* coord = new double[3];
-        double newX = oldX - ((childRadius+outerRadius[i])*cos(thetaD)*sin(phiD)*DELTA);
-        double newY = oldY - ((childRadius+outerRadius[i])*sin(thetaD)*sin(phiD)*DELTA);
-        double newZ = oldZ - ((childRadius+outerRadius[i])*cos(phiD)*DELTA);
+        double newX = oldX - ((childRadius+atom->outerRadius[i])*cos(thetaD)*sin(phiD)*DELTA);
+        double newY = oldY - ((childRadius+atom->outerRadius[i])*sin(thetaD)*sin(phiD)*DELTA);
+        double newZ = oldZ - ((childRadius+atom->outerRadius[i])*cos(phiD)*DELTA);
         if (newX - childRadius < xlo) {
           newX = xlo + childRadius;
         }
