@@ -285,28 +285,35 @@ void FixDivide::pre_exchange()
         atom->tag[n] = maxtag_all+1;
         atom->mask[n] = atom->mask[i];
         atom->image[n] = atom->image[i];
+
         atom->v[n][0] = atom->v[i][0];
         atom->v[n][1] = atom->v[i][1];
         atom->v[n][2] = atom->v[i][2];
         atom->f[n][0] = atom->f[i][0];
         atom->f[n][1] = atom->f[i][1];
         atom->f[n][2] = atom->f[i][2];
+
         atom->omega[n][0] = atom->omega[i][0];
         atom->omega[n][1] = atom->omega[i][1];
         atom->omega[n][2] = atom->omega[i][2];
+
         atom->rmass[n] = childMass;
         atom->outerMass[n] = childOuterMass;
+
         atom->sub[n] = childSub;
         atom->o2[n] = childO2;
         atom->nh4[n] = childNH4;
         atom->no2[n] = childNO2;
         atom->no3[n] = childNO3;
+
         atom->f[n][0] = childfx;
         atom->f[n][1] = childfy;
         atom->f[n][2] = childfz;
+
         atom->torque[n][0] = atom->torque[i][0];
         atom->torque[n][1] = atom->torque[i][1];
         atom->torque[n][2] = atom->torque[i][2];
+
         atom->radius[n] = childRadius;
         atom->outerRadius[n] = childOuterRadius;
 

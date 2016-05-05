@@ -59,6 +59,7 @@ class FixDiffNuGrowth : public Fix {
   void computeFlux(double *, double *, double *, double, double, double, int);
   void outputConc(int, int);
   bool isConvergence(double *, double *, double, double);
+  int isOverlapping();
 };
 
 }

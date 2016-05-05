@@ -42,7 +42,6 @@ using namespace MathConst;
 
 FixDiffNuGrowth::FixDiffNuGrowth(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
-	fprintf(stdout, "num=%i/n", narg);
   if (narg != 47) error->all(FLERR,"Not enough arguments in fix diff growth command");
 
   nevery = force->inumeric(FLERR,arg[3]);
@@ -217,7 +216,6 @@ void FixDiffNuGrowth::pre_force(int vflag)
 
 void FixDiffNuGrowth::change_dia()
 {
-
   modify->clearstep_compute();
 
   double KsHET = input->variable->compute_equal(ivar[0]);
@@ -414,11 +412,11 @@ void FixDiffNuGrowth::change_dia()
 				Rno2[cell] = ((1/YAOB)*R2[cell]*xAOB[cell])-((1/YNOB)*R3[cell]*xNOB[cell])-(((1-YHET-YEPS)/(1.17*YHET))*R5[cell]*xHET[cell]);
 				Rno3[cell] = ((1/YNOB)*R3[cell]*xNOB[cell])-(((1-YHET-YEPS)/(2.86*YHET))*R4[cell]*xHET[cell]);
 
-	    	subPrev[cell] += Rs[cell] * update->dt;
-	    	o2Cell[cell] += Ro2[cell] * update->dt;
-	    	no2Cell[cell] += Rno2[cell] * update->dt;
-	    	no3Cell[cell] += Rno3[cell] * update->dt;
-	    	nh4Cell[cell] += Rnh4[cell] * update->dt;
+//	    	subPrev[cell] += Rs[cell] * update->dt;
+//	    	o2Cell[cell] += Ro2[cell] * update->dt;
+//	    	no2Cell[cell] += Rno2[cell] * update->dt;
+//	    	no3Cell[cell] += Rno3[cell] * update->dt;
+//	    	nh4Cell[cell] += Rnh4[cell] * update->dt;
 
 	    	if(!subConvergence) computeFlux(cellDs, subCell, subPrev, subBC, Rs[cell], diffT, cell);
 				if(!o2Convergence) computeFlux(cellDo2, o2Cell, o2Prev, o2BC, Ro2[cell], diffT, cell);
@@ -437,7 +435,15 @@ void FixDiffNuGrowth::change_dia()
 				convergence = true;
 			}
 		}
-	 fprintf(stdout, "Number of iterations for substrate nutrient mass balance:  %i\n", iteration);
+
+		//testing begin
+		fprintf(stdout, "Number of iterations for substrate nutrient mass balance:  %i\n", iteration);
+
+//	 	int m = isOverlapping();
+//	  if(m!=0){
+//	  	fprintf(stdout, "number of overlapped particle pairs:  %i\n", m);
+//	  }
+	  //testing end
 
 	  delete [] subPrev;
 	  delete [] o2Prev;
@@ -445,6 +451,8 @@ void FixDiffNuGrowth::change_dia()
 	  delete [] no2Prev;
 	  delete [] no3Prev;
   }
+
+//  outputConc(10000,1);
 
   for (i = 0; i < nall; i++) {
     if (mask[i] & groupbit) {
@@ -495,81 +503,8 @@ void FixDiffNuGrowth::change_dia()
       }
     }
   }
-  //output concentration values
-//  int n = 50000;
-//  outputConc(n, 1);
-//  outputConc(n, 2);
-//  outputConc(n, 3);
-//  outputConc(n, 4);
-//  outputConc(n, 5);
-
-//  //grid test
-//  if(!(update->ntimestep%1000)){
-//  for(int i = 0; i < numCells; i++){
-//  	if(xCell[i] > xlo && xCell[i] < xhi )
-//			if((i+1)%7 != 0)
-//				fprintf(stdout, "%i: %e\t", i, nh4Cell[i]);
-//			else
-//				fprintf(stdout, "%i: %e\t\n", i, nh4Cell[i]);
-//  }
-//  fprintf(stdout, "\n");
-//  }
-
 
   modify->addstep_compute(update->ntimestep + nevery);
-}
-
-void FixDiffNuGrowth::outputConc(int every, int n){
-  if(!(update->ntimestep%every)){
-	  FILE* pFile;
-	  std::string str;
-	  std::string name;
-	  std::ostringstream stm;
-	  stm << update->ntimestep;
-	  switch(n) {
-	  case 1 :
-	  	name = "sub";
-	  	break;
-	  case 2 :
-	  	name = "o2";
-	  	break;
-	  case 3 :
-	  	name = "no3";
-	  	break;
-	  case 4 :
-	  	name = "nh4";
-	  	break;
-	  case 5 :
-	  	name = "no2";
-	  	break;
-	  }
-	  str = "CONCENTRATION.csv." + name + " " + stm.str();
-	  pFile = fopen (str.c_str(), "w");
-
-	  fprintf(pFile, ",x,y,z,scalar,1,1,1,0.5\n");
-	  for(int i = 0; i < numCells; i++){
-		  if(!ghost[i]){
-
-			  switch(n) {
-			  case 1 :
-			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], subCell[i]);
-			  	break;
-			  case 2 :
-			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], o2Cell[i]);
-			  	break;
-			  case 3 :
-			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], no3Cell[i]);
-			  	break;
-			  case 4 :
-			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], nh4Cell[i]);
-			  	break;
-			  case 5 :
-			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], no2Cell[i]);
-			  	break;
-			  }
-		  }
-	  }
-  }
 }
 
 bool FixDiffNuGrowth::isConvergence(double *nuCell, double *prevNuCell, double nuBC, double tol) {
@@ -688,4 +623,77 @@ void FixDiffNuGrowth::computeFlux(double *cellDNu, double *nuCell, double *nuPre
 			nuCell[cell] = 0.0;
 		}
 	}
+}
+
+
+void FixDiffNuGrowth::outputConc(int every, int n){
+  if(!(update->ntimestep%every)){
+	  FILE* pFile;
+	  std::string str;
+	  std::string name;
+	  std::ostringstream stm;
+	  stm << update->ntimestep;
+	  switch(n) {
+	  case 1 :
+	  	name = "sub";
+	  	break;
+	  case 2 :
+	  	name = "o2";
+	  	break;
+	  case 3 :
+	  	name = "no3";
+	  	break;
+	  case 4 :
+	  	name = "nh4";
+	  	break;
+	  case 5 :
+	  	name = "no2";
+	  	break;
+	  }
+	  str = "CONCENTRATION.csv." + name + " " + stm.str();
+	  pFile = fopen (str.c_str(), "w");
+
+	  fprintf(pFile, ",x,y,z,scalar,1,1,1,0.5\n");
+	  for(int i = 0; i < numCells; i++){
+		  if(!ghost[i]){
+
+			  switch(n) {
+			  case 1 :
+			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], subCell[i]);
+			  	break;
+			  case 2 :
+			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], o2Cell[i]);
+			  	break;
+			  case 3 :
+			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], no3Cell[i]);
+			  	break;
+			  case 4 :
+			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], nh4Cell[i]);
+			  	break;
+			  case 5 :
+			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], no2Cell[i]);
+			  	break;
+			  }
+		  }
+	  }
+  }
+}
+
+int FixDiffNuGrowth::isOverlapping(){
+	int n = 0;
+
+	for(int i = 0; i < atom->nlocal; i++){
+		for(int j = 0; i < atom->nlocal; i++){
+			if(i != j){
+				double xd = atom->x[i][0] - atom->x[j][0];
+				double yd = atom->x[i][1] - atom->x[j][1];
+				double zd = atom->x[i][2] - atom->x[j][2];
+
+				if ((xd*xd + yd*yd + zd*zd) < ((atom->radius[i] + atom->radius[j]) * (atom->radius[i] + atom->radius[j]))){
+						n++;
+				}
+			}
+		}
+	}
+	return n;
 }
