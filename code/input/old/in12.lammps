@@ -1,0 +1,57 @@
+
+atom_style	sphere
+atom_modify map array sort 10 1e-5
+boundary	pp pp pp
+newton		off
+#comm_modify     vel yes
+communicate     single vel yes
+
+units si
+
+read_data 	IC350_2.in
+#read_data 	IC350.in
+
+neighbor       2e-5 bin
+neigh_modify   delay 0
+
+
+group ch1 type 1
+#group ch2 type 2
+#group ch3 type 3
+#group ch4 type 4
+
+pair_style      gran/hooke/history 2000.0 NULL 50.0 NULL 0.5 0
+pair_coeff	* *
+
+fix		garv all gravity 0.01 spherical 0.0 -180.0
+
+region		slab block 0.0 0.001 0.0 0.001 0.0 0.001 
+fix		ins all pour 10 1 300719 vol 0.13 50 region slab
+
+
+#variable rate1 equal 1e-5
+#variable rate2 equal 2e-5
+#variable rate3 equal 0.5e-5
+#variable rate4 equal 0.7e-5
+
+#variable rate2 equal -1e-5
+
+#fix new1 ch1 diaadapt 1 v_rate1 0.8 19985583
+#fix new2 ch2 diaadapt 1 v_rate2 1.1 1934283
+#fix new3 ch3 diaadapt 1 v_rate3 1.3 4324583
+#fix new1 ch4 diaadapt 1 v_rate4 0.8 657545583
+
+#velocity all create 1e-20 49234343 rot yes dist gaussian
+
+timestep	1e-5
+fix		1 all nve/sphere  
+dump		id all custom 1 snapshot2.bubblemd id type diameter x y z vx vy vz
+#dump d0 all image 5000 dump.*.png type type
+
+#thermo_style  one  
+thermo_style    custom step atoms ke vol
+ 
+thermo		1
+thermo_modify	lost error
+
+run 50000

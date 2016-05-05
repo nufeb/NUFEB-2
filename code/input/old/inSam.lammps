@@ -1,0 +1,112 @@
+
+atom_style	sphere
+atom_modify map array sort 1000 1e-4
+boundary	pp pp pp
+newton		off
+#comm_modify     vel yes
+#communicate     single vel yes
+read_data 	IC350.in
+
+
+# Species description 1: HET 2: AOB 3: NOB 4: EPS 5: Inert
+group ch1 type 1
+group ch2 type 2
+group ch3 type 3
+group ch4 type 4
+#group ch5 type 5
+
+
+#Defining substrate variables: list from Jaya 
+variable Ss equal 0.04
+variable So2 equal 0.005
+variable Sno2 equal 0.001 
+variable Sno3 equal 0.001
+variable Snh4 equal 0.04
+
+
+
+#Defining affinity variables: list from Jaya 
+variable KsHET equal 0.01
+variable Ko2HET equal 0.81
+variable Kno2HET equal 0.0003
+variable Kno3HET equal 0.0003
+
+variable Knh4AOB equal 0.001
+variable Ko2AOB equal 0.0005
+
+variable Kno2NOB equal 0.0013
+variable Ko2NOB equal 0.00068
+
+
+#Defining maximum growth variables: list from Jaya 
+variable MumHET equal 0.00006944444
+variable MumAOB equal 0.00003472222
+variable MumNOB equal 0.00003472222
+variable etaHET equal 0.6
+
+#Defining decay rates variables: list from Jaya 
+variable bHET equal 0.00000462962
+variable bAOB equal 0.00000127314
+variable bNOB equal 0.00000127314
+variable bEPS equal 0.00000196759
+
+variable R1 equal ${MumHET}*${Ss}*${So2}/((${Ss}+${KsHET})*(${So2}+${Ko2HET}))
+#print  ${R1}
+
+variable R2 equal ${MumAOB}*${Snh4}*${So2}/((${Snh4}+${Knh4AOB})*(${So2}+${Ko2AOB}))
+#print  ${R2}
+
+variable R3 equal ${MumNOB}*${Sno2}*${So2}/((${Sno2}+${Kno2NOB})*(${So2}+${Ko2NOB}))
+#print  ${R3}
+
+variable R4 equal ${etaHET}*${MumHET}*${Ss}*${Sno3}*${Ko2HET}/((${Ss}+${KsHET})*(${Sno3}+${Kno3HET})*(${So2}+${Ko2HET}))
+#print  ${R4}
+
+variable R5 equal ${etaHET}*${MumHET}*${Ss}*${Sno2}*${Ko2HET}/((${Ss}+${KsHET})*(${Sno2}+${Kno2HET})*(${So2}+${Ko2HET}))
+#print  ${R5}
+
+variable R6 equal -${bHET}
+#print  ${R6}
+
+variable R7 equal -${bAOB}
+#print  ${R7}
+
+variable R8 equal -${bNOB}
+#print  ${R8}
+
+variable R9 equal -${bEPS}
+#print  ${R9}
+
+variable rate1 equal (${R1}+${R4}+${R5})*(1e-3)
+print  "Rate HET ${rate1}"
+
+variable rate2 equal ${R2}*(1e-3)
+print  "Rate AOB ${rate2}"
+
+variable rate3 equal ${R3}*(1e-3)
+print  "Rate NOB ${rate3}"
+
+variable rate4 equal ${R9}*(1e-3)
+print  "RATE EPS DECAY ${rate4}"
+
+
+#variable rate5 equal 0.4e-15
+
+fix new1 ch1 diaadapt 1 v_rate1 2.0
+fix new2 ch2 diaadapt 1 v_rate2 2.0
+fix new3 ch3 diaadapt 1 v_rate3 2.0
+fix new4 ch4 diaadapt 1 v_rate4 2.0
+#fix new5 ch5 diaadapt 1 v_rate5 2.0
+
+#velocity all create 1e-20 49234343 rot yes dist gaussian
+
+timestep	1e-3
+fix		1 all nve/sphere  
+dump		id all custom 500000 snapshot2.bubblemd id type diameter x y z vx vy vz
+#dump d0 all image 5000 dump.*.png type type
+
+thermo_style  one   
+thermo		500000
+thermo_modify	lost error
+
+run 5000000

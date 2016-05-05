@@ -1,0 +1,59 @@
+# Pour granular particles into chute container, then induce flow
+
+atom_style	sphere
+boundary	ff ff pp
+newton		off
+communicate	single vel yes
+
+region		reg block  0 10 0 10 0 10 units box
+create_box	1 reg
+
+neighbor	0.2 bin
+neigh_modify	delay 0
+
+# IMPORTANT NOTE: these values of stiffness (2000) and timestep (0.001)
+# are used in this example file to produce a quick simulation and movie.
+# More appropriate values for realistic simulations would be
+# k = 2.0e5 and dt = 0.0001, as in bench/in.chute.
+
+pair_style      gran/hooke/history 2000.0 NULL 50.0 NULL 0.0 0
+pair_coeff	* *
+
+timestep	0.005
+
+fix		1 all nve/sphere
+fix		2 all gravity 1.0 spherical 0.0 -180.0
+#fix		zlower all wall/gran 2000.0 NULL 50.0 NULL 0.5 0 &
+#		zplane 0.0 10.0 
+fix		xlower all wall/gran 2000.0 NULL 50.0 NULL 0.5 0 &
+		xplane 0.0 10.0 
+fix		ylower all wall/gran 2000.0 NULL 50.0 NULL 0.5 0 &
+		yplane 0.0 10.0 
+
+
+region		slab block 0.0 10.0 0.0 10.0 0.0 10.0 units box
+#fix		ins all pour 50000 1 300723219 vol 0.5 50 region slab
+fix             ins all pour 350 1 300719 vol 0.1 50 region slab diam 0.5 1 
+
+
+compute		1 all erotate/sphere
+thermo_style	custom step atoms ke c_1 vol
+thermo		1000
+thermo_modify	lost ignore norm no
+compute_modify	thermo_temp dynamic yes
+
+dump           id all custom 1000 nufeb.bubblemd id type diameter mass x y z
+
+
+
+#dump		id all atom 1000 dump.pour
+
+#dump		1 all image 1000 image.*.jpg type type &
+#		axes yes 0.8 0.02 view 80 -30
+#dump_modify	1 pad 5
+
+run		25000
+
+unfix		ins
+#fix		2 all gravity 1.0 chute 26.0
+#run		25000
