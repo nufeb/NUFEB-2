@@ -242,22 +242,26 @@ void FixEPSExtract::pre_exchange()
         int n = atom->nlocal - 1;
         atom->tag[n] = maxtag_all+1;
         atom->mask[n] = 17;
+
         atom->v[n][0] = atom->v[i][0];
         atom->v[n][1] = atom->v[i][1];
         atom->v[n][2] = atom->v[i][2];
         atom->f[n][0] = atom->f[i][0];
         atom->f[n][1] = atom->f[i][1];
         atom->f[n][2] = atom->f[i][2];
+
         atom->omega[n][0] = atom->omega[i][0];
         atom->omega[n][1] = atom->omega[i][1];
         atom->omega[n][2] = atom->omega[i][2];
         atom->rmass[n] = EPSMass;
         atom->outerMass[n] = 0;
+
         atom->sub[n] = 0;
         atom->o2[n] = 0;
         atom->nh4[n] = 0;
         atom->no2[n] = 0;
         atom->no3[n] = 0;
+
         atom->torque[n][0] = atom->torque[i][0];
         atom->torque[n][1] = atom->torque[i][1];
         atom->torque[n][2] = atom->torque[i][2];
