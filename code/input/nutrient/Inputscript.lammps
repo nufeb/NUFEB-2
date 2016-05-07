@@ -19,8 +19,8 @@ group EPS type 4
 group inert type 5
 
 
-neighbor	5.0e-7 bin
-neigh_modify	delay 0 one 5000
+neighbor	5.0e-6 bin
+neigh_modify	delay 0 one 500
 
 #pair_style  none
 pair_style  gran/hooke/history 200 NULL 50 NULL 0.0 1
@@ -29,7 +29,7 @@ timestep	10
 
 #velocity    all set 0.0 0.0 0.0 units box
 
-fix		1 all nve/limit 1e-11
+fix		1 all nve/limit 1e-10
 
 #fix		2 all gravity 1.47 vector 0 0 -1 # spherical 90.0 -180.0 
 fix     3 all fdrag

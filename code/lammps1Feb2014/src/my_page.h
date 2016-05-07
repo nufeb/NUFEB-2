@@ -164,7 +164,8 @@ class MyPage {
   // error if N > maxchunk
 
   void vgot(int n) {
-    if (n > maxchunk) errorflag = 1;
+    if (n > maxchunk)
+    	errorflag = 1;
     ndatum += n;
     nchunk++;
     index += n;

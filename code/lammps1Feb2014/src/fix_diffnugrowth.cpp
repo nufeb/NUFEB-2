@@ -436,14 +436,15 @@ void FixDiffNuGrowth::change_dia()
 			}
 		}
 
+		isOverlapping();
 		//testing begin
-		fprintf(stdout, "Number of iterations for substrate nutrient mass balance:  %i\n", iteration);
-
+//		fprintf(stdout, "Number of iterations for substrate nutrient mass balance:  %i\n", iteration);
+//
 //	 	int m = isOverlapping();
 //	  if(m!=0){
 //	  	fprintf(stdout, "number of overlapped particle pairs:  %i\n", m);
 //	  }
-	  //testing end
+	 // testing end
 
 	  delete [] subPrev;
 	  delete [] o2Prev;
@@ -680,20 +681,26 @@ void FixDiffNuGrowth::outputConc(int every, int n){
 }
 
 int FixDiffNuGrowth::isOverlapping(){
-	int n = 0;
 
 	for(int i = 0; i < atom->nlocal; i++){
-		for(int j = 0; i < atom->nlocal; i++){
+		int n = 0;
+		for(int j = 0; j < atom->nlocal; j++){
 			if(i != j){
 				double xd = atom->x[i][0] - atom->x[j][0];
 				double yd = atom->x[i][1] - atom->x[j][1];
 				double zd = atom->x[i][2] - atom->x[j][2];
 
-				if ((xd*xd + yd*yd + zd*zd) < ((atom->radius[i] + atom->radius[j]) * (atom->radius[i] + atom->radius[j]))){
+				double rsq = (xd*xd + yd*yd + zd*zd);
+				double cut = (atom->radius[i] + atom->radius[j] + 5.0e-7) * (atom->radius[i] + atom->radius[j]+ 5.0e-7);
+
+				if (rsq <= cut){
 						n++;
 				}
 			}
 		}
+		if(n > 1000){
+			fprintf(stdout, "i=%i, overlap= %i\n", i, n);
+		}
 	}
-	return n;
+	return 0;
 }

@@ -314,6 +314,7 @@ void Neighbor::granular_bin_no_newton(NeighList *list)
     dpage_shear->reset();
   }
 
+  int test = 0;
   for (i = 0; i < nlocal; i++) {
     n = 0;
     neighptr = ipage->vget();
@@ -345,7 +346,6 @@ void Neighbor::granular_bin_no_newton(NeighList *list)
         rsq = delx*delx + dely*dely + delz*delz;
         radsum = radi + radius[j];
         cutsq = (radsum+skin) * (radsum+skin);
-
         if (rsq <= cutsq) {
           neighptr[n] = j;
 
@@ -390,8 +390,12 @@ void Neighbor::granular_bin_no_newton(NeighList *list)
       ipage_touch->vgot(n);
       dpage_shear->vgot(nn);
     }
+		if(n > test){
+			test = n;
+		}
   }
 
+	fprintf(stdout, "Largest neighbour number: %i \n", test);
   list->inum = inum;
 }
 
