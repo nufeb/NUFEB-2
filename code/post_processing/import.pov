@@ -1,6 +1,6 @@
 // Right-handed coordinate system in which the z-axis points upwards
 camera {
-location <2.0e-2,-20.0e-2,2e-2>
+location <2.0e-2,-1.0,2e-2>
 sky y
 right -0.24*x*image_width/image_height
 up 0.24*y

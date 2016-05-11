@@ -136,6 +136,8 @@ void FixDivide::pre_exchange()
 {
   if (next_reneighbor != update->ntimestep) return;
 
+	//fprintf(stdout, "before divide ,overlap pair= %i\n", overlap());
+
   double EPSdens = input->variable->compute_equal(ivar);
   double density;
   int nlocal = atom->nlocal;
@@ -322,13 +324,14 @@ void FixDivide::pre_exchange()
       }
     }
   }
-
+	//fprintf(stdout, "after divide ,overlap pair= %i\n", overlap());
     if (atom->map_style) {
       atom->nghost = 0;
       atom->map_init();
       atom->map_set();
     }
   next_reneighbor += nevery;
+
 }
 
 
@@ -349,7 +352,48 @@ void FixDivide::find_maxid()
 }
 
 
+int FixDivide::overlap()
+{
 
+	int n = 0;
+	int** ptr = new int*[atom->nlocal];
+	for(int m =0; m < atom->nlocal; m++)
+	{
+		ptr[m] = new int[atom->nlocal];
+	}
+
+	for(int i = 0; i < atom->nlocal; i++){
+		for(int j = 0; j < atom->nlocal; j++){
+			ptr[i][j] = 0;
+		}
+	}
+
+	for(int i = 0; i < atom->nlocal; i++){
+		for(int j = 0; j < atom->nlocal; j++){
+			if(i != j){
+				double xd = atom->x[i][0] - atom->x[j][0];
+				double yd = atom->x[i][1] - atom->x[j][1];
+				double zd = atom->x[i][2] - atom->x[j][2];
+
+				double rsq = (xd*xd + yd*yd + zd*zd);
+				double cut = (atom->radius[i] + atom->radius[j] + 5.0e-7) * (atom->radius[i] + atom->radius[j]+ 5.0e-7);
+
+				if (rsq <= cut && ptr[i][j] == 0 && ptr[j][i] == 0) {
+					n++;
+					ptr[i][j] = 1;
+					ptr[j][i] = 1;
+
+					//fprintf(stdout, "overlap! i=%i ,j= %i, rsq=%e, cut=%e, bool = %i\n", i, j, rsq, cut, ptr[j][i]);
+				}
+			}
+		}
+	}
+	for (int i = 0; i < atom->nlocal; i++) {
+	  delete[] ptr[i];
+	}
+	delete[] ptr;
+	return n;
+}
 
 
 

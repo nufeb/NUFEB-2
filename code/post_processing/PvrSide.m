@@ -10,7 +10,7 @@ fid=fopen('import.pov','w');
 fprintf(fid,'// Right-handed coordinate system in which the z-axis points upwards\n');
 fprintf(fid,'camera {\n');
 
-fprintf(fid,['location <2.0e-2,-20.0e-2,2e-2>\n']);
+fprintf(fid,['location <2.0e-2,-1.0,2e-2>\n']);
 fprintf(fid,'sky y\n');
 fprintf(fid,'right -0.24*x*image_width/image_height\n');
 fprintf(fid,'up 0.24*y\n');

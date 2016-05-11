@@ -59,6 +59,7 @@ class FixDivide : public Fix {
   // double lo_current,hi_current;
   // int region_style;
   void find_maxid();
+  int overlap();
   // int overlap(int);
   // int outside(int, double, double, double);
   // double getAverageMass();
