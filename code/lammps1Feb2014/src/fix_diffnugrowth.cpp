@@ -298,6 +298,7 @@ void FixDiffNuGrowth::change_dia()
   double cellDno3[numCells];
   double cellDs[numCells];
 
+  int grid = 0;
   // Figure out which cell each particle is in
   for (i = 0; i < nall; i++) {
     if (mask[i] & groupbit) {
@@ -307,6 +308,7 @@ void FixDiffNuGrowth::change_dia()
       double gEPS = 0;
       if (type[i] == 1) {
         gHET = 1;
+       // fprintf(stdout, "mass = %e\n", atom->rmass[i]);
       }
       if (type[i] == 2) {
         gAOB = 1;
@@ -334,10 +336,15 @@ void FixDiffNuGrowth::change_dia()
           xEPS[j] += (gEPS * rmass[i])/cellVol[j];
           xTot[j] += rmass[i]/cellVol[j];
           allocate = true;
+//          if(type[i] == 1){
+//          	grid = j;
+//          }
+         // fprintf(stdout, "cell=%i, x=%e, y=%e, z=%e, type=%i\n",j, xCell[j], yCell[j], zCell[j], type[i]);
           break;
         }
       }
-      if(!allocate) error->all(FLERR,"Fail to allocate grid.");
+      if(!allocate)
+      	error->all(FLERR,"Fail to allocate grid.");
     }
   }
 
@@ -358,15 +365,26 @@ void FixDiffNuGrowth::change_dia()
 
 			double diffusionFunction = 1 - ((0.43 * pow(xTot[cell], 0.92))/(11.19+0.27*pow(xTot[cell], 0.99)));
 
-			cellDo2[cell] = diffusionFunction * Do2;
-			cellDnh4[cell] = diffusionFunction * Dnh4;
-			cellDno2[cell] = diffusionFunction * Dno2;
-			cellDno3[cell] = diffusionFunction * Dno3;
-			cellDs[cell] = diffusionFunction * Ds;
+			cellDo2[cell] = 1 * Do2;
+			cellDnh4[cell] = 1 * Dnh4;
+			cellDno2[cell] = 1 * Dno2;
+			cellDno3[cell] = 1 * Dno3;
+			cellDs[cell] = 1 * Ds;
     }
   }
-
+//	for (int cell = 0; cell < numCells; cell++) {
+//		if(cell == 793){
+//		//	fprintf(stdout, "outside sub=%.15e, o2=%.15e \n", subCell[cell], o2Cell[cell]);
+//		}
+//	}
   if(!(update->ntimestep % diffevery)) {
+
+  	if(!(update->ntimestep % 1000))
+  	for (int cell = 0; cell < numCells; cell++) {
+			if(cell == 25326){
+				fprintf(stdout, "sub=%.15e, o2=%.15e \n", subCell[cell], o2Cell[cell]);
+			}
+  	}
 
   	double* subPrev  = new double[numCells];
   	double* o2Prev  = new double[numCells];
@@ -384,11 +402,13 @@ void FixDiffNuGrowth::change_dia()
 
 		int iteration = 0;
 
-		double tol = 1e-5; // Tolerance for convergence criteria for nutrient balance equation
+
+		double tol = 1e-6; // Tolerance for convergence criteria for nutrient balance equation
 
 		// Outermost while loop for the convergence criterion
 		while (!convergence) {
-
+			test = 0;
+			testCell = 0;
 			iteration ++;
 
 			for (int cell = 0; cell < numCells; cell++) {
@@ -399,46 +419,77 @@ void FixDiffNuGrowth::change_dia()
 				no3Prev[cell] = no3Cell[cell];
 			}
 
+			//fprintf(stdout, "iteration = %i\n", iteration);
+
 			for (int cell = 0; cell < numCells; cell++) {
 				R1[cell] = MumHET*(subPrev[cell]/(KsHET+subPrev[cell]))*(o2Prev[cell]/(Ko2HET+o2Prev[cell]));
 				R2[cell] = MumAOB*(nh4Prev[cell]/(Knh4AOB+nh4Prev[cell]))*(o2Prev[cell]/(Ko2AOB+o2Prev[cell]));
 				R3[cell] = MumNOB*(no2Prev[cell]/(Kno2NOB+no2Prev[cell]))*(o2Prev[cell]/(Ko2NOB+o2Prev[cell]));
 				R4[cell] = etaHET*MumHET*(subPrev[cell]/(KsHET+subPrev[cell]))*(no3Prev[cell]/(Kno3HET+no3Prev[cell]))*(Ko2HET/(Ko2HET+o2Prev[cell]));
 				R5[cell] = etaHET*MumHET*(subPrev[cell]/(KsHET+subPrev[cell]))*(no2Prev[cell]/(Kno2HET+no2Prev[cell]))*(Ko2HET/(Ko2HET+o2Prev[cell]));
-
+				//fprintf(stdout, "cell = %i\n", cell);
+	//			if(cell == 793 ){
+		//		fprintf(stdout, "subPre=%e, o2Pre=%e, no2Pre=%e, no3Pre=%e, nh4Pre=%e\n", subPrev[cell], o2Prev[cell], no2Prev[cell], no3Prev[cell], nh4Prev[cell]);
+//				if(R1[cell]!=7.527853e-07){
+//					fprintf(stdout, "R1=%e, R2=%e, R3=%e, R4=%e, R5=%e\n", R1[cell], R2[cell], R3[cell], R4[cell], R5[cell]);
+//				}
+			//	}
 				Rs[cell] = ((-1/YHET) * ( (R1[cell]+R4[cell]+R5[cell]) * xHET[cell] ) ) + ( (1-Y1) * ( bHET*xHET[cell]+bAOB*xAOB[cell]+bNOB*xNOB[cell] ) ) + ( bEPS*xEPS[cell] );
 				Ro2[cell] = (-((1-YHET-YEPS)/YHET)*R1[cell]*xHET[cell])-(((3.42-YAOB)/YAOB)*R2[cell]*xAOB[cell])-(((1.15-YNOB)/YNOB)*R3[cell]*xNOB[cell]);
 				Rnh4[cell] = -(1/YAOB)*R2[cell]*xAOB[cell];
 				Rno2[cell] = ((1/YAOB)*R2[cell]*xAOB[cell])-((1/YNOB)*R3[cell]*xNOB[cell])-(((1-YHET-YEPS)/(1.17*YHET))*R5[cell]*xHET[cell]);
 				Rno3[cell] = ((1/YNOB)*R3[cell]*xNOB[cell])-(((1-YHET-YEPS)/(2.86*YHET))*R4[cell]*xHET[cell]);
-
-//	    	subPrev[cell] += Rs[cell] * update->dt;
+//				if(cell == 793){
+//				fprintf(stdout, "Rs=%e, Ro2=%e, Rnh4=%e, Rno2=%e, Rno3=%e\n", Rs[cell], Ro2[cell], Rnh4[cell], Rno2[cell], Rno3[cell]);
+//				}
+//	    	subCell[cell] += Rs[cell] * update->dt;
 //	    	o2Cell[cell] += Ro2[cell] * update->dt;
 //	    	no2Cell[cell] += Rno2[cell] * update->dt;
 //	    	no3Cell[cell] += Rno3[cell] * update->dt;
 //	    	nh4Cell[cell] += Rnh4[cell] * update->dt;
+//	    			if(no2Cell[cell] < 0.0 ){
+//	    				fprintf(stdout, "i am zero!!cell=%i\n",cell);
+//	    			}
+
+				//fprintf(stdout, "sub=%e, o2=%e, no2=%e, no3=%e, nh4=%e\n", subCell[cell], o2Cell[cell], no2Cell[cell], no3Cell[cell], nh4Cell[cell]);
 
 	    	if(!subConvergence) computeFlux(cellDs, subCell, subPrev, subBC, Rs[cell], diffT, cell);
-				if(!o2Convergence) computeFlux(cellDo2, o2Cell, o2Prev, o2BC, Ro2[cell], diffT, cell);
-				if(!nh4Convergence) computeFlux(cellDnh4, nh4Cell, nh4Prev, nh4BC, Rnh4[cell], diffT, cell);
-				if(!no2Convergence) computeFlux(cellDno2, no2Cell, no2Prev, no2BC, Rno2[cell], diffT, cell);
-				if(!no3Convergence) computeFlux(cellDno3, no3Cell, no3Prev, no3BC, Rno3[cell], diffT, cell);
-			}
+		//		if(!o2Convergence) computeFlux(cellDo2, o2Cell, o2Prev, o2BC, Ro2[cell], diffT, cell);
+//				if(!nh4Convergence) computeFlux(cellDnh4, nh4Cell, nh4Prev, nh4BC, Rnh4[cell], diffT, cell);
+//				if(!no2Convergence) computeFlux(cellDno2, no2Cell, no2Prev, no2BC, Rno2[cell], diffT, cell);
+//				if(!no3Convergence) computeFlux(cellDno3, no3Cell, no3Prev, no3BC, Rno3[cell], diffT, cell);
 
-			if(isConvergence(subCell, subPrev, subBC, tol)) subConvergence = true;
-			if(isConvergence(o2Cell, o2Prev, o2BC, tol)) o2Convergence = true;
-			if(isConvergence(nh4Cell, nh4Prev, nh4BC, tol)) nh4Convergence = true;
-			if(isConvergence(no2Cell, no2Prev, no2BC, tol)) no2Convergence = true;
-			if(isConvergence(no3Cell, no3Prev, no3BC, tol)) no3Convergence = true;
+				//fprintf(stdout, "subAft=%e, o2Aft=%e, no2Aft=%e, no3Aft=%e, nh4Aft=%e\n", subCell[cell], o2Cell[cell], no2Cell[cell], no3Cell[cell], nh4Cell[cell]);
+				}
 
-			if((subConvergence && o2Convergence && nh4Convergence && no2Convergence && no3Convergence) || (iteration == 2000)) {
+			//fprintf(stdout, "subloop=%e, o2loop=%e, no2loop=%e, no3loop=%e, nh4loop=%e\n", subCell[4115], o2Cell[4115], no2Cell[4115], no3Cell[4115], nh4Cell[4115]);
+
+			if(isConvergence(subCell, subPrev, subBC, tol))subConvergence = true;
+			//if(isConvergence(o2Cell, o2Prev, o2BC, tol))o2Convergence = true;
+//			if(isConvergence(nh4Cell, nh4Prev, nh4BC, tol)) nh4Convergence = true;
+//			if(isConvergence(no2Cell, no2Prev, no2BC, tol)) no2Convergence = true;
+//			if(isConvergence(no3Cell, no3Prev, no3BC, tol)) no3Convergence = true;
+
+		//	printf("cell=%i, x=%e, y=%e, z=%e, maximal = %e \n", testCell, xCell[testCell],yCell[testCell],zCell[testCell], test);
+
+
+//			if((subConvergence && o2Convergence && nh4Convergence && no2Convergence && no3Convergence)) {
+//				convergence = true;
+//			}
+
+			if((subConvergence)) {
 				convergence = true;
 			}
 		}
-
-		isOverlapping();
+//  	for (int cell = 0; cell < numCells; cell++) {
+//			if(cell == 793){
+//				fprintf(stdout, "after sub=%.15e, o2=%.15e \n", subCell[cell], o2Cell[cell]);
+//			}
+//  	}
+//		isOverlapping();
 		//testing begin
-//		fprintf(stdout, "Number of iterations for substrate nutrient mass balance:  %i\n", iteration);
+  	if(!(update->ntimestep % 1000))
+		fprintf(stdout, "Number of iterations:  %i\n", iteration);
 //
 //	 	int m = isOverlapping();
 //	  if(m!=0){
@@ -451,9 +502,18 @@ void FixDiffNuGrowth::change_dia()
 	  delete [] nh4Prev;
 	  delete [] no2Prev;
 	  delete [] no3Prev;
+		//printf("minimal = %.20f \n", o2Cell[testCell]);
   }
 
-//  outputConc(10000,1);
+  //outputConc(1,1);
+ // outputConc(10000,2);
+
+//  for(int cell; cell < numCells; cell++){
+//		double a = subCell[cell] - 0.00008;
+//		if(a != 0){
+//			printf("cell = %i, sub = %e \n", cell, a);
+//		}
+//  }
 
   for (i = 0; i < nall; i++) {
     if (mask[i] & groupbit) {
@@ -464,6 +524,7 @@ void FixDiffNuGrowth::change_dia()
 
       if (type[i] == 1) {
         gHET = 1;
+        //printf("cell=%i, radius=%e\n",i, atom->radius[i]);
       }
       if (type[i] == 2) {
         gAOB = 1;
@@ -482,15 +543,18 @@ void FixDiffNuGrowth::change_dia()
       no3[i] = no3Cell[cellIn[i]];
 
       double value = update->dt * (gHET*(R1[cellIn[i]]+R4[cellIn[i]]+R5[cellIn[i]]) + gAOB*R2[cellIn[i]] + gNOB*R3[cellIn[i]] - gEPS*bEPS);
+
       density = rmass[i] / (4.0*MY_PI/3.0 *
                       radius[i]*radius[i]*radius[i]);
       double oldMass = rmass[i];
       rmass[i] = rmass[i]*(1 + (value*nevery));
-      if (rmass[i] <= 0) {
+      //if set critical minimal value to 0, may get double out of range error.
+      if (rmass[i] <= 1e-20) {
         rmass[i] = oldMass;
       }
       
       double value2 = update->dt * (YEPS/YHET)*(R1[cellIn[i]]+R4[cellIn[i]]+R5[cellIn[i]]);
+      double oldRadius = radius[i];
       if (type[i] == 1) {
         outerMass[i] = (((4.0*MY_PI/3.0)*((outerRadius[i]*outerRadius[i]*outerRadius[i])-(radius[i]*radius[i]*radius[i])))*EPSdens)+(value2*nevery*rmass[i]);
 
@@ -504,7 +568,6 @@ void FixDiffNuGrowth::change_dia()
       }
     }
   }
-
   modify->addstep_compute(update->ntimestep + nevery);
 }
 
@@ -515,7 +578,17 @@ bool FixDiffNuGrowth::isConvergence(double *nuCell, double *prevNuCell, double n
 			double rate = nuCell[cell]/nuBC;
 			double prevRate = prevNuCell[cell]/nuBC;
 
-			if(fabs(rate - prevRate) >= tol) return false;
+//			if(cell == 4415)
+//			printf("4415, nu = %e, pre=%e \n", nuCell[4115], prevNuCell[4115]);
+
+			if(fabs(rate - prevRate) >= tol){
+//				if(fabs(rate - prevRate) < test){
+//					test = fabs(rate - prevRate);
+//					testCell = cell;
+//				}
+//				printf("Not Conv = %i, nu = %e, pre=%e \n", cell, nuCell[cell], prevNuCell[cell]);
+				return false;
+			}
 		}
 	}
 	return true;
@@ -617,12 +690,20 @@ void FixDiffNuGrowth::computeFlux(double *cellDNu, double *nuCell, double *nuPre
 		// Adding fluxes in all the directions and the uptake rate (RHS side of the equation)
 		double Ratesub = jX + jY + jZ + rateNu;
 		//Updating the value: Ratesub*diffT + nuCell[cell](previous)
+		//fprintf(stdout, "cell = %i, nurtient=%e\n", cell, Ratesub);
 		nuCell[cell] += Ratesub*diffT;
-//		if(cell == 171)
-//			fprintf(stdout, "sub = %f, pre = %f, Ratesub = %f\n", nuCell[171], nuPrev[171], Ratesub);
+
+//		if(cell == 793){
+//		fprintf(stdout, "cell = %i, jx=%e, jy=%e, jz=%e, rateNu=%e\n", cell, jX, jY, jZ, rateNu);
+//		}
+
 		if(nuCell[cell] < 0.0){
+		//	fprintf(stdout, "i am zero!!cell=%i\n",cell);
 			nuCell[cell] = 0.0;
 		}
+//
+//		if(update->ntimestep == 200)
+//			fprintf(stdout, "nuCell = %e\n",no3Cell[cell]);
 	}
 }
 
@@ -660,10 +741,10 @@ void FixDiffNuGrowth::outputConc(int every, int n){
 
 			  switch(n) {
 			  case 1 :
-			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], subCell[i]);
+			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%.10f\n",i, xCell[i], yCell[i], zCell[i], subCell[i]);
 			  	break;
 			  case 2 :
-			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], o2Cell[i]);
+			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%.20f\n",i, xCell[i], yCell[i], zCell[i], o2Cell[i]);
 			  	break;
 			  case 3 :
 			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], no3Cell[i]);
@@ -680,12 +761,15 @@ void FixDiffNuGrowth::outputConc(int every, int n){
   }
 }
 
-int FixDiffNuGrowth::isOverlapping(){
+int FixDiffNuGrowth::overlap()
+{
+
+	int n = 0;
+	bool* ptr = new bool[atom->nlocal];
 
 	for(int i = 0; i < atom->nlocal; i++){
-		int n = 0;
 		for(int j = 0; j < atom->nlocal; j++){
-			if(i != j){
+			if(i != j && ptr[j] == false && ptr[i] == false){
 				double xd = atom->x[i][0] - atom->x[j][0];
 				double yd = atom->x[i][1] - atom->x[j][1];
 				double zd = atom->x[i][2] - atom->x[j][2];
@@ -693,14 +777,15 @@ int FixDiffNuGrowth::isOverlapping(){
 				double rsq = (xd*xd + yd*yd + zd*zd);
 				double cut = (atom->radius[i] + atom->radius[j] + 5.0e-7) * (atom->radius[i] + atom->radius[j]+ 5.0e-7);
 
-				if (rsq <= cut){
-						n++;
+				if (rsq <= cut) {
+					n++;
+					ptr[j] = true;
+					//fprintf(stdout, "i=%i ,j= %i, rsq=%e, cut=%e\n", i, j, rsq, cut);
 				}
 			}
 		}
-		if(n > 1000){
-			fprintf(stdout, "i=%i, overlap= %i\n", i, n);
-		}
 	}
-	return 0;
+
+	delete[] ptr;
+	return n;
 }
