@@ -378,13 +378,13 @@ void FixDiffNuGrowth::change_dia()
 //		}
 //	}
   if(!(update->ntimestep % diffevery)) {
-
-  	if(!(update->ntimestep % 1000))
-  	for (int cell = 0; cell < numCells; cell++) {
-			if(cell == 25326){
-				fprintf(stdout, "sub=%.15e, o2=%.15e \n", subCell[cell], o2Cell[cell]);
-			}
-  	}
+//
+//  	if(!(update->ntimestep % 1000))
+//  	for (int cell = 0; cell < numCells; cell++) {
+//			if(cell == 25326){
+//				fprintf(stdout, "sub=%.15e, o2=%.15e \n", subCell[cell], o2Cell[cell]);
+//			}
+//  	}
 
   	double* subPrev  = new double[numCells];
   	double* o2Prev  = new double[numCells];
@@ -454,10 +454,10 @@ void FixDiffNuGrowth::change_dia()
 				//fprintf(stdout, "sub=%e, o2=%e, no2=%e, no3=%e, nh4=%e\n", subCell[cell], o2Cell[cell], no2Cell[cell], no3Cell[cell], nh4Cell[cell]);
 
 	    	if(!subConvergence) computeFlux(cellDs, subCell, subPrev, subBC, Rs[cell], diffT, cell);
-		//		if(!o2Convergence) computeFlux(cellDo2, o2Cell, o2Prev, o2BC, Ro2[cell], diffT, cell);
-//				if(!nh4Convergence) computeFlux(cellDnh4, nh4Cell, nh4Prev, nh4BC, Rnh4[cell], diffT, cell);
-//				if(!no2Convergence) computeFlux(cellDno2, no2Cell, no2Prev, no2BC, Rno2[cell], diffT, cell);
-//				if(!no3Convergence) computeFlux(cellDno3, no3Cell, no3Prev, no3BC, Rno3[cell], diffT, cell);
+				if(!o2Convergence) computeFlux(cellDo2, o2Cell, o2Prev, o2BC, Ro2[cell], diffT, cell);
+				if(!nh4Convergence) computeFlux(cellDnh4, nh4Cell, nh4Prev, nh4BC, Rnh4[cell], diffT, cell);
+				if(!no2Convergence) computeFlux(cellDno2, no2Cell, no2Prev, no2BC, Rno2[cell], diffT, cell);
+				if(!no3Convergence) computeFlux(cellDno3, no3Cell, no3Prev, no3BC, Rno3[cell], diffT, cell);
 
 				//fprintf(stdout, "subAft=%e, o2Aft=%e, no2Aft=%e, no3Aft=%e, nh4Aft=%e\n", subCell[cell], o2Cell[cell], no2Cell[cell], no3Cell[cell], nh4Cell[cell]);
 				}
@@ -465,21 +465,21 @@ void FixDiffNuGrowth::change_dia()
 			//fprintf(stdout, "subloop=%e, o2loop=%e, no2loop=%e, no3loop=%e, nh4loop=%e\n", subCell[4115], o2Cell[4115], no2Cell[4115], no3Cell[4115], nh4Cell[4115]);
 
 			if(isConvergence(subCell, subPrev, subBC, tol))subConvergence = true;
-			//if(isConvergence(o2Cell, o2Prev, o2BC, tol))o2Convergence = true;
-//			if(isConvergence(nh4Cell, nh4Prev, nh4BC, tol)) nh4Convergence = true;
-//			if(isConvergence(no2Cell, no2Prev, no2BC, tol)) no2Convergence = true;
-//			if(isConvergence(no3Cell, no3Prev, no3BC, tol)) no3Convergence = true;
+			if(isConvergence(o2Cell, o2Prev, o2BC, tol))o2Convergence = true;
+			if(isConvergence(nh4Cell, nh4Prev, nh4BC, tol)) nh4Convergence = true;
+			if(isConvergence(no2Cell, no2Prev, no2BC, tol)) no2Convergence = true;
+			if(isConvergence(no3Cell, no3Prev, no3BC, tol)) no3Convergence = true;
 
 		//	printf("cell=%i, x=%e, y=%e, z=%e, maximal = %e \n", testCell, xCell[testCell],yCell[testCell],zCell[testCell], test);
 
 
-//			if((subConvergence && o2Convergence && nh4Convergence && no2Convergence && no3Convergence)) {
-//				convergence = true;
-//			}
-
-			if((subConvergence)) {
+			if((subConvergence && o2Convergence && nh4Convergence && no2Convergence && no3Convergence)) {
 				convergence = true;
 			}
+
+//			if((subConvergence)) {
+//				convergence = true;
+//			}
 		}
 //  	for (int cell = 0; cell < numCells; cell++) {
 //			if(cell == 793){
@@ -506,7 +506,7 @@ void FixDiffNuGrowth::change_dia()
   }
 
   //outputConc(1,1);
- // outputConc(10000,2);
+//  outputConc(15000,1);
 
 //  for(int cell; cell < numCells; cell++){
 //		double a = subCell[cell] - 0.00008;
@@ -697,9 +697,9 @@ void FixDiffNuGrowth::computeFlux(double *cellDNu, double *nuCell, double *nuPre
 //		fprintf(stdout, "cell = %i, jx=%e, jy=%e, jz=%e, rateNu=%e\n", cell, jX, jY, jZ, rateNu);
 //		}
 
-		if(nuCell[cell] < 0.0){
+		if(nuCell[cell] <= 1e-20){
 		//	fprintf(stdout, "i am zero!!cell=%i\n",cell);
-			nuCell[cell] = 0.0;
+			nuCell[cell] = 1e-20;
 		}
 //
 //		if(update->ntimestep == 200)
