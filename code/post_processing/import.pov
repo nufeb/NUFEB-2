@@ -1,10 +1,10 @@
 // Right-handed coordinate system in which the z-axis points upwards
 camera {
-location <2.0e-2,-1.0,2e-2>
+location <5.0e-2, 60e-2, 5.0e-2>
 sky y
-right -0.24*x*image_width/image_height
+right 0.24*x*image_width/image_height
 up 0.24*y
-look_at <2.0e-2,2.0e-2,2e-2 >
+look_at <5.0e-2, 0.0, 5.0e-2>
 }
 // White background
 background{rgb 1}
