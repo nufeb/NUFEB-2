@@ -47,7 +47,7 @@ class FixDiffNuGrowth : public Fix {
   double *nh4Cell;
   double *no2Cell;
   double *no3Cell;
-  double dStep; // Diffusion Time Step
+
   int numCells;
   int nx, ny, nz;
   double initsub, inito2, initnh4, initno2, initno3;
@@ -59,7 +59,7 @@ class FixDiffNuGrowth : public Fix {
 	int testCell;
   void change_dia();
   void computeFlux(double *, double *, double *, double, double, double, int);
-  void outputConc(int, int);
+  void outputData(int, int);
   bool isConvergence(double *, double *, double, double);
   int overlap();
 };

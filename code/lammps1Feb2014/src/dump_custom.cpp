@@ -28,6 +28,7 @@
 #include "fix.h"
 #include "memory.h"
 #include "error.h"
+#include "fix_diffnugrowth.h"
 
 using namespace LAMMPS_NS;
 

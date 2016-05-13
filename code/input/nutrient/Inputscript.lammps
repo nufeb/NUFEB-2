@@ -130,7 +130,6 @@ fix e1 HET eps_extract 200 v_EPSratio v_EPSdens 1242242
 #dump		id2 EPS custom 1000 snapshot2.bubblemd id type diameter mass x y z vx vy vz
 dump		id all custom 500 snapshot.bubblemd id type diameter x y z vx vy vz fx fy fz
 
-
 #dump d0 all image 100 dump.*.jpg type type
 #dump m0 all movie 1000 movie.mpg type type size 640 480
 
@@ -143,6 +142,6 @@ thermo		500
 thermo_modify	lost ignore
 #restart	1000000  restart.*.bubblemd
 
-run  86000
+run  1
 	
 
