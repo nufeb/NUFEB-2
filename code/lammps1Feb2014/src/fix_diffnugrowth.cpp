@@ -42,11 +42,12 @@ using namespace MathConst;
 
 FixDiffNuGrowth::FixDiffNuGrowth(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
-  if (narg != 47) error->all(FLERR,"Not enough arguments in fix diff growth command");
+  if (narg != 48) error->all(FLERR,"Not enough arguments in fix diff growth command");
 
   nevery = force->inumeric(FLERR,arg[3]);
   diffevery = force->inumeric(FLERR,arg[4]);
-  if (nevery < 0 || diffevery < 0) error->all(FLERR,"Illegal fix growth command");
+  outputevery = force->inumeric(FLERR,arg[47]);
+  if (nevery < 0 || diffevery < 0 || outputevery < 0) error->all(FLERR,"Illegal fix growth command");
 
   var = new char*[38];
   ivar = new int[38];
@@ -201,6 +202,16 @@ void FixDiffNuGrowth::init()
       }
     }
   }
+
+  //create folders for concentration data
+  int status1, status2;
+
+  status1 = system("rm -rf sub o2 no2 no3 nh4");
+	status2 = system("mkdir sub o2 no2 no3 nh4");
+
+	if(status1 < 0 || status2 < 0){
+		 error->all(FLERR,"Fail to create concentration output dir");
+	}
 }
 
 /* ---------------------------------------------------------------------- */
@@ -433,11 +444,8 @@ void FixDiffNuGrowth::change_dia()
 				convergence = true;
 			}
 		}
-		//output concentration
-  	if(!(update->ntimestep % 500)){
-  		fprintf(stdout, "Number of iterations:  %i\n", iteration);
-  	  outputData(500,1);
-  	}
+
+		fprintf(stdout, "Number of iterations:  %i\n", iteration);
 
 	  delete [] subPrev;
 	  delete [] o2Prev;
@@ -498,6 +506,15 @@ void FixDiffNuGrowth::change_dia()
       }
     }
   }
+
+	//output concentration
+	if(!(update->ntimestep % outputevery)){
+	  outputData(outputevery,1);
+	  outputData(outputevery,2);
+	  outputData(outputevery,3);
+	  outputData(outputevery,4);
+	  outputData(outputevery,5);
+	}
 
   modify->addstep_compute(update->ntimestep + nevery);
 
@@ -649,27 +666,27 @@ void FixDiffNuGrowth::outputData(int every, int n){
   if(!(update->ntimestep%every)){
 	  FILE* pFile;
 	  std::string str;
-	  std::string name;
 	  std::ostringstream stm;
 	  stm << update->ntimestep;
+
 	  switch(n) {
 	  case 1 :
-	  	name = "sub";
+	  	str = "./sub/sub.csv."+ stm.str();
 	  	break;
 	  case 2 :
-	  	name = "o2";
+	  	str = "./o2/o2.csv."+ stm.str();
 	  	break;
 	  case 3 :
-	  	name = "no3";
+	  	str = "./no2/no2.csv."+ stm.str();
 	  	break;
 	  case 4 :
-	  	name = "nh4";
+	  	str = "./no3/no3.csv."+ stm.str();
 	  	break;
 	  case 5 :
-	  	name = "no2";
+	  	str = "./nh4/nh4.csv."+ stm.str();
 	  	break;
 	  }
-	  str = "CONCENTRATION.csv." + name + stm.str();
+
 	  pFile = fopen (str.c_str(), "w");
 
 	  fprintf(pFile, ",x,y,z,scalar,1,1,1,0.5\n");
@@ -678,19 +695,19 @@ void FixDiffNuGrowth::outputData(int every, int n){
 
 			  switch(n) {
 			  case 1 :
-			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%.10f\n",i, xCell[i], yCell[i], zCell[i], subCell[i]);
+			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], subCell[i]);
 			  	break;
 			  case 2 :
-			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%.20f\n",i, xCell[i], yCell[i], zCell[i], o2Cell[i]);
+			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], o2Cell[i]);
 			  	break;
 			  case 3 :
-			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], no3Cell[i]);
+			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], no2Cell[i]);
 			  	break;
 			  case 4 :
-			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], nh4Cell[i]);
+			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], no3Cell[i]);
 			  	break;
 			  case 5 :
-			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], no2Cell[i]);
+			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], nh4Cell[i]);
 			  	break;
 			  }
 		  }
