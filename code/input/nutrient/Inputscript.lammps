@@ -113,7 +113,7 @@ variable factor equal 1.5
 variable ke equal 5e+10
 
 #variable rate1 equal 0.001
-fix g1 all diffnugrowth 1 200 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bHET v_bAOB v_bNOB v_bEPS v_YHET v_YAOB v_YNOB v_YEPS v_Y1 v_EPSdens v_Do2 v_Dnh4 v_Dno2 v_Dno3 v_Ds v_diffT v_sub v_o2 v_no2 v_no3 v_nh4 1 1 1 mixed v_BCsub v_BCo2 v_BCno2 v_BCno3 v_BCnh4 1000
+fix g1 all diffnugrowth 1 200 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bHET v_bAOB v_bNOB v_bEPS v_YHET v_YAOB v_YNOB v_YEPS v_Y1 v_EPSdens v_Do2 v_Dnh4 v_Dno2 v_Dno3 v_Ds v_diffT v_sub v_o2 v_no2 v_no3 v_nh4 1 1 1 mixed v_BCsub v_BCo2 v_BCno2 v_BCno3 v_BCnh4 500
 
 fix dt1 HET death 1 v_bHET v_factor 1952467
 fix dt2 AOB death 1 v_bAOB v_factor 1234312
@@ -142,6 +142,6 @@ thermo		500
 thermo_modify	lost ignore
 #restart	1000000  restart.*.bubblemd
 
-run  1000000
+run  86000
 	
 
