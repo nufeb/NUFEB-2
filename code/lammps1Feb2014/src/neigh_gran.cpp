@@ -314,8 +314,6 @@ void Neighbor::granular_bin_no_newton(NeighList *list)
     dpage_shear->reset();
   }
 
-  int test = 0;
-  int test2 = 0;
   for (i = 0; i < nlocal; i++) {
     n = 0;
     neighptr = ipage->vget();
@@ -391,13 +389,8 @@ void Neighbor::granular_bin_no_newton(NeighList *list)
       ipage_touch->vgot(n);
       dpage_shear->vgot(nn);
     }
-//		if(n > test){
-//			test = n;
-//			test2 = i;
-//		}
   }
 
-//	fprintf(stdout, "Largest neighbour number: %i, atom = %i \n", test, test2);
   list->inum = inum;
 }
 
