@@ -142,6 +142,6 @@ thermo		500
 thermo_modify	lost ignore
 #restart	1000000  restart.*.bubblemd
 
-run  10000
+run  1000000
 	
 
