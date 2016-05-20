@@ -1,3 +1,4 @@
+LAMMPS (1 Feb 2014)
 # NUFEB simulation
 
 atom_style	bio
@@ -9,12 +10,21 @@ newton		off
 #radius x y z outerradius sub o2 nh4 no2 no3
 communicate single vel yes
 read_data 	flat_surface_bottom_large.in
+  orthogonal box = (0 0 0) to (0.0001 0.0001 0.0001)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+  5 atoms
 
 group HET type 1
+1 atoms in group HET
 group AOB type 2
-group NOB type 3 
+1 atoms in group AOB
+group NOB type 3
+1 atoms in group NOB
 group EPS type 4
+1 atoms in group EPS
 group inert type 5
+1 atoms in group inert
 
 
 neighbor	5.0e-7 bin
@@ -30,9 +40,9 @@ timestep	10
 
 fix 1 all nve/limit 1e-8
 #fix j1 all epsadh 1 v_ke
-#fix 10 all viscous 0.1 
+#fix 10 all viscous 0.1
 
-#fix		2 all gravity 1.47 vector 0 0 -1 # spherical 90.0 -180.0 
+#fix		2 all gravity 1.47 vector 0 0 -1 # spherical 90.0 -180.0
 fix     3 all fdrag
 
 
@@ -47,7 +57,7 @@ fix ywa all walladh v_kanc yplane  0.000000e-04 1.000000e-04
 fix zwa all walladh v_kanc zplane  0.000000e-04 1.000000e-04
 
 
-#Defining affinity variables: list from Jaya 
+#Defining affinity variables: list from Jaya
 variable KsHET equal 0.01
 variable Ko2HET equal 0.81
 variable Kno2HET equal 0.0003
@@ -59,14 +69,14 @@ variable Ko2AOB equal 0.0005
 variable Kno2NOB equal 0.0013
 variable Ko2NOB equal 0.00068
 
-#Defining maximum growth variables: list from Jaya 
+#Defining maximum growth variables: list from Jaya
 variable MumHET equal 0.00006944444
 variable MumAOB equal 0.00003472222
 variable MumNOB equal 0.00003472222
 variable etaHET equal 0.6
 
 
-#Defining decay rates variables: list from Jaya 
+#Defining decay rates variables: list from Jaya
 variable bHET equal 0.00000462962
 variable bAOB equal 0.00000127314
 variable bNOB equal 0.00000127314
@@ -97,14 +107,14 @@ variable diffT equal 1e-4
 variable sub equal  8.00e-02
 variable o2 equal 10.00e-03
 variable no2 equal 8.000e-03
-variable no3 equal 8.0000e-03 
+variable no3 equal 8.0000e-03
 variable nh4 equal 9.00e-02
 
 #Defining inlet concentrations for boundary conditions
-variable BCsub equal 8.00e-02 
+variable BCsub equal 8.00e-02
 variable BCo2 equal 10.00e-03
 variable BCno2 equal 8.000e-03
-variable BCno3 equal 8.0000e-03 
+variable BCno3 equal 8.0000e-03
 variable BCnh4 equal 9.00e-02
 
 variable factor equal 1.5
@@ -141,5 +151,47 @@ thermo_modify	lost ignore
 #restart	1000000  restart.*.bubblemd
 
 run  10000
-	
+Memory usage per processor = 202.03 Mbytes
+Step Atoms nHET nAOB nNOB nEPS nInert 
+       0        5            1            1            1            1            1 
+     500        6            1            1            1            2            1 
+    1000        8            1            2            1            3            1 
+    1500        9            2            2            1            3            1 
+    2000       11            2            2            1            5            1 
+    2500       15            4            2            1            7            1 
+    3000       20            6            3            1            9            1 
+    3500       28            8            4            2           13            1 
+    4000       35           10            4            2           18            1 
+    4500       52           17            5            2           27            1 
+    5000       69           23            6            2           37            1 
+    5500       98           35            7            3           52            1 
+    6000      132           45            8            3           75            1 
+    6500      188           72           10            4          101            1 
+    7000      263           92           12            4          154            1 
+    7500      383          147           14            5          216            1 
+    8000      503          182           14            5          300            2 
+    8500      763          292           20            7          442            2 
+    9000     1012          374           21            8          606            3 
+    9500     1528          589           26            8          901            4 
+   10000     2032          778           29            9         1210            6 
+Loop time of 1.70991 on 1 procs for 10000 steps with 2032 atoms
+
+Pair  time (%) = 0.0381978 (2.23391)
+Neigh time (%) = 0.474655 (27.7591)
+Comm  time (%) = 0.129005 (7.54458)
+Outpt time (%) = 0.0245008 (1.43288)
+Other time (%) = 1.04355 (61.0296)
+
+Nlocal:    2032 ave 2032 max 2032 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    533 ave 533 max 533 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 533
+Ave neighs/atom = 0.262303
+Neighbor list builds = 400
+Dangerous builds = 0
+
 
