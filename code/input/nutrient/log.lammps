@@ -123,14 +123,14 @@ variable ke equal 5e+10
 #variable rate1 equal 0.001
 fix g1 all diffnugrowth 1 200 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bHET v_bAOB v_bNOB v_bEPS v_YHET v_YAOB v_YNOB v_YEPS v_Y1 v_EPSdens v_Do2 v_Dnh4 v_Dno2 v_Dno3 v_Ds v_diffT v_sub v_o2 v_no2 v_no3 v_nh4 1 1 1 mixed v_BCsub v_BCo2 v_BCno2 v_BCno3 v_BCnh4 10000
 
-fix dt1 HET death 1 v_bHET v_factor 1952467
-fix dt2 AOB death 1 v_bAOB v_factor 1234312
-fix dt3 NOB death 10 v_bNOB v_factor 1325352
+#fix dt1 HET death 1 v_bHET v_factor 1952467
+#fix dt2 AOB death 1 v_bAOB v_factor 1234312
+#fix dt3 NOB death 10 v_bNOB v_factor 1325352
 
-fix d1 all divide 200 v_EPSdens 2.0 1242242
+#fix d1 all divide 200 v_EPSdens 2.0 1242242
 
 fix e1 HET eps_extract 200 v_EPSratio v_EPSdens 1242242
-fix j1 all epsadh 1 v_ke 2
+#fix j1 all epsadh 1 v_ke 2
 
 
 #dump		id1 HET custom 2000 HET.bubblemd radius outerradius
@@ -142,4 +142,38 @@ dump		id all custom 500 snapshot.bubblemd id type diameter x y z vx vy vz fx fy 
 #dump m0 all movie 1000 movie.mpg type type size 640 480
 
 #thermo_style    custom step atoms nhet mhet
-thermo_style    custom step atoms nhet naob nnob n
+thermo_style    custom step atoms nhet naob nnob neps ninert
+#thermo_style  granular # not work. syntax change?
+#thermo_style  one   # granular does not work
+thermo		500
+
+thermo_modify	lost ignore
+#restart	1000000  restart.*.bubblemd
+
+run  1000
+Memory usage per processor = 202.03 Mbytes
+Step Atoms nHET nAOB nNOB nEPS nInert 
+       0        5            1            1            1            1            1 
+     500        6            1            1            1            2            1 
+    1000        7            1            1            1            3            1 
+Loop time of 2.97194 on 1 procs for 1000 steps with 7 atoms
+
+Pair  time (%) = 0.021956 (0.738775)
+Neigh time (%) = 1.1025 (37.0969)
+Comm  time (%) = 0.00627923 (0.211284)
+Outpt time (%) = 0.59134 (19.8974)
+Other time (%) = 1.24987 (42.0556)
+
+Nlocal:    7 ave 7 max 7 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    9 ave 9 max 9 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 9
+Ave neighs/atom = 1.28571
+Neighbor list builds = 12
+Dangerous builds = 0
+
+
