@@ -31,34 +31,20 @@ class FixEPSAdh : public Fix {
   int setmask();
   void init();
   void init_list(int, class NeighList *);
-  // void setup();
-  // void min_setup();
   virtual void post_force(int);
-  // virtual void post_force_respa(int, int, int);
-  // virtual void min_post_force(int);
-
-  // void extract_cohe(int *, double *, double *, double *, double *);
 
   double smax; //maximum seperatioin for force cutoff
-   // void compute_local();
 
  private:
   char *var;
   int ivar;
-  // double ah; //Hammaker constant
-  // double lam; // London retardation wavelength
-  // double smin; //minimum separation
-  // int opt; //option for cohesive force model
-  // int nlevels_respa;
   int nmax, nvalues;
-   int npairs;
+  int npairs;
   bigint laststep;
   bigint laststep_local;
+  int flag;
 
   class NeighList *list;
-  // int count_pairs(int flag);  // Count number of cohesive interactions for a particle 
-  // void reallocate(int n);
-  // void calc_pairs();
 };
 
 }

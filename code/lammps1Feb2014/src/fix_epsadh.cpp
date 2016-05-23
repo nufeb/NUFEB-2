@@ -40,10 +40,11 @@ using namespace FixConst;
 FixEPSAdh::FixEPSAdh(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
-  if (narg != 5) error->all(FLERR,"Illegal fix eps adhesion command");
+  if (narg != 6) error->all(FLERR,"Illegal fix eps adhesion command");
 
   nevery = force->inumeric(FLERR,arg[3]);
-  if (nevery < 0) error->all(FLERR,"Illegal fix eps adhesion command: calling steps should be positive integer");
+  flag = force->inumeric(FLERR, arg[5]);
+  if (nevery < 0 || (flag != 1 && flag != 2)) error->all(FLERR,"Illegal fix eps adhesion command: calling steps should be positive integer");
 
   int n = strlen(&arg[4][2]) + 1;
   var = new char[n];
@@ -149,25 +150,36 @@ void FixEPSAdh::post_force(int vflag)
       radsum = outerRadi + outerRadj;
       massSum = epsMassi + epsMassj;
 
-	  if (rsq < 4 * radsum*radsum) {
-	    r = sqrt(rsq);
-	    del = r - radsum;
-      rinv = 1/r;
-      ccel = massSum*ke*del;
+      if(flag == 1){
+      	if (rsq < 4 * radsum * radsum) {
+  				r = sqrt(rsq);
+  				del = r - radsum;
+  				rinv = 1/r;
+  				ccel = massSum*ke*del;
+      	}
+      }else if(flag == 2){
+      	if ((rsq < 4 * radsum * ke) && (rsq > radsum)){
+  				r = sqrt(rsq);
+  				del = r - radsum;
+  				rinv = 1/r;
+  				ccel = -massSum*ke*(radsum/r)*(radsum/r);
+      	}
+      }else{
+      	continue;
+      }
 
-	    ccelx = delx*ccel*rinv ;
-	    ccely = dely*ccel*rinv ;
-	    ccelz = delz*ccel*rinv ;
-	    f[i][0] += ccelx;
-	    f[i][1] += ccely;
-	    f[i][2] += ccelz;
+			ccelx = delx*ccel*rinv ;
+			ccely = dely*ccel*rinv ;
+			ccelz = delz*ccel*rinv ;
+			f[i][0] += ccelx;
+			f[i][1] += ccely;
+			f[i][2] += ccelz;
 
-	    if (newton_pair || j < nlocal) {
-	      f[j][0] -= ccelx;
-	      f[j][1] -= ccely;
-	      f[j][2] -= ccelz;
-	   }
+			if (newton_pair || j < nlocal) {
+				f[j][0] -= ccelx;
+				f[j][1] -= ccely;
+				f[j][2] -= ccelz;
+			}
 	  }
-	 }
   }
 }
