@@ -155,7 +155,7 @@ void FixEPSAdh::post_force(int vflag)
   				r = sqrt(rsq);
   				del = r - radsum;
   				rinv = 1/r;
-  				ccel = massSum*ke*del;
+  				ccel = -massSum*ke*del;
       	}
       }else if(flag == 2){
       	if ((rsq < 4 * radsum * ke) && (rsq > radsum)){
