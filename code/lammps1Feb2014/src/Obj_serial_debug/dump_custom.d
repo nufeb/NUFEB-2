@@ -90,4 +90,4 @@ dump_custom.o: ../dump_custom.cpp /usr/include/stdc-predef.h \
  /usr/include/x86_64-linux-gnu/c++/4.8/bits/atomic_word.h \
  /usr/include/c++/4.8/bits/basic_string.tcc ../domain.h ../region.h \
  ../group.h ../input.h ../variable.h ../update.h ../modify.h ../compute.h \
- ../fix.h ../memory.h ../error.h
+ ../fix.h ../memory.h ../error.h ../fix_diffnugrowth.h

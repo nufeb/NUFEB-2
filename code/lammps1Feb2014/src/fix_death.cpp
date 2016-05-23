@@ -91,7 +91,6 @@ void FixDeath::init()
 {
   if (!atom->radius_flag)
     error->all(FLERR,"Fix death requires atom attribute diameter");
-
   int i;
   for (i = 0; i < 2; i++) {
     ivar[i] = input->variable->find(var[i]);
@@ -131,11 +130,10 @@ void FixDeath::death()
   int i;
 
   int typeVal = log2(groupbit);
-
   double virtualMass = atom->virtualMass[typeVal];
 
   for (i = 0; i < nall; i++) {
-    // fprintf(stdout, "Id, Type, Mask: %i, %i, %i\n", i, type[i], mask[i]);
+     //fprintf(stdout, "Id, Type, Mask: %i, %i, %i\n", i, type[i], mask[i]);
     if (mask[i] & groupbit) {
       virtualMass += (decay * rmass[i]);
     }
@@ -157,7 +155,7 @@ void FixDeath::death()
       //fprintf(stdout, "Killed\n");
   		virtualMass -= rmass[kill];
   		type[kill] = 5;
-        mask[kill] = 32;
+      mask[kill] = 33;
   		kill = (random->uniform() * (nall - 1));
   		killed ++;
   	}
@@ -172,7 +170,5 @@ void FixDeath::death()
   //fprintf(stdout, "Killed: %i\n", killed);
 
   atom->virtualMass[typeVal] = virtualMass;
-
-
   modify->addstep_compute(update->ntimestep + nevery);
 }
