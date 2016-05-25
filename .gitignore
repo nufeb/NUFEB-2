@@ -5,6 +5,8 @@
 *.obj
 *.ko
 *.elf
+/nufeb/code/lammps1Feb2014/src/Obj_serial/
+/nufeb/code/lammps1Feb2014/src/Obj_serial_debug/
 
 #inputscript dir
-/home/bowen/Workspace/nufeb/code/input/
+/nufeb/code/input/
