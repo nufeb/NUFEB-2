@@ -65,6 +65,7 @@
 #include "fix_setforce.h"
 #include "fix_shake.h"
 #include "fix_shear_history.h"
+#include "fix_shearing.h"
 #include "fix_spring.h"
 #include "fix_spring_rg.h"
 #include "fix_spring_self.h"

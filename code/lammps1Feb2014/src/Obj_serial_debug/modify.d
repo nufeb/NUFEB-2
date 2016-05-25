@@ -121,9 +121,9 @@ modify.o: ../modify.cpp /usr/include/stdc-predef.h /usr/include/stdio.h \
  ../fix_rigid.h ../fix_rigid_nph.h ../fix_rigid_nh.h ../fix_rigid_npt.h \
  ../fix_rigid_nve.h ../fix_rigid_nvt.h ../fix_rigid_small.h \
  ../fix_setforce.h ../fix_shake.h ../fix_shear_history.h ../my_page.h \
- ../fix_spring.h ../fix_spring_rg.h ../fix_spring_self.h \
- ../fix_store_force.h ../fix_store.h ../fix_store_state.h \
- ../fix_temp_berendsen.h ../fix_temp_rescale.h \
+ ../fix_shearing.h ../fix_spring.h ../fix_spring_rg.h \
+ ../fix_spring_self.h ../fix_store_force.h ../fix_store.h \
+ ../fix_store_state.h ../fix_temp_berendsen.h ../fix_temp_rescale.h \
  ../fix_thermal_conductivity.h ../fix_tmd.h ../fix_ttm.h \
  ../fix_tune_kspace.h ../fix_viscosity.h ../fix_viscous.h \
  ../fix_walladh.h ../fix_wall_colloid.h ../fix_wall.h ../fix_wall_gran.h \

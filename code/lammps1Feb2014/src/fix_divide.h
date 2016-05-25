@@ -30,41 +30,20 @@ class FixDivide : public Fix {
   FixDivide(class LAMMPS *, int, char **);
   ~FixDivide();
   int setmask();
-  // void post_constructor();
   void init();
-  // void setup_pre_force(int);
-  // void pre_force(int);
   void pre_exchange();
-  // void end_of_step();
-  // void post_run();
-  // void setup_pre_force_respa(int,int);
-  // void pre_force_respa(int,int,int);
-  // void set_arrays(int);
 
  private:
 
   double growthFactor;
   int seed;
-  // bool preExchangeCalled;
   char *var;
   int ivar;
   class RanPark *random;
-
-  // int me,nprocs;
-  // int *recvcounts,*displs;
   tagint maxtag_all;
   double xlo,xhi,ylo,yhi,zlo,zhi;
-  // double xc,yc,rc;
-  // double radius_max;
-  // double lo_current,hi_current;
-  // int region_style;
   void find_maxid();
   int overlap();
-  // int overlap(int);
-  // int outside(int, double, double, double);
-  // double getAverageMass();
-  // int countNewAtoms(double averageMass);
-
 };
 
 }
