@@ -43,8 +43,9 @@ FixEPSAdh::FixEPSAdh(LAMMPS *lmp, int narg, char **arg) :
   if (narg != 6) error->all(FLERR,"Illegal fix eps adhesion command");
 
   nevery = force->inumeric(FLERR,arg[3]);
+  if (nevery < 0) error->all(FLERR,"Illegal fix eps adhesion command: calling steps should be positive integer");
   flag = force->inumeric(FLERR, arg[5]);
-  if (nevery < 0 || (flag != 1 && flag != 2)) error->all(FLERR,"Illegal fix eps adhesion command: calling steps should be positive integer");
+  if (flag != 1 && flag != 2) error->all(FLERR,"Illegal fix eps adhesion command: undefined model");
 
   int n = strlen(&arg[4][2]) + 1;
   var = new char[n];
@@ -78,15 +79,13 @@ void FixEPSAdh::init()
 	int irequest = neighbor->request((void *) this);
   neighbor->requests[irequest]->pair = 0;
   neighbor->requests[irequest]->fix = 1;
-
-
 }
 
 /* ---------------------------------------------------------------------- */
 
 void FixEPSAdh::init_list(int id, NeighList *ptr)
 {
-      list = ptr;
+  list = ptr;
 }
 
 

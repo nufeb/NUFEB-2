@@ -39,9 +39,8 @@ timestep	10
 #velocity    all set 0.0 0.0 0.0 units box
 
 fix 1 all nve/limit 1e-8
-#fix 10 all viscous 0.1
 
-fix	 2 all gravity 1.47 vector 0 0 -1 # spherical 90.0 -180.0
+#fix	 2 all gravity 1.47 vector 0 0 -1 # spherical 90.0 -180.0
 fix     3 all fdrag
 
 
@@ -123,14 +122,13 @@ variable ke equal 5e+10
 #variable rate1 equal 0.001
 fix g1 all diffnugrowth 1 200 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bHET v_bAOB v_bNOB v_bEPS v_YHET v_YAOB v_YNOB v_YEPS v_Y1 v_EPSdens v_Do2 v_Dnh4 v_Dno2 v_Dno3 v_Ds v_diffT v_sub v_o2 v_no2 v_no3 v_nh4 1 1 1 mixed v_BCsub v_BCo2 v_BCno2 v_BCno3 v_BCnh4 10000
 
-#fix dt1 HET death 1 v_bHET v_factor 1952467
-#fix dt2 AOB death 1 v_bAOB v_factor 1234312
-#fix dt3 NOB death 10 v_bNOB v_factor 1325352
+fix dt1 HET death 1 v_bHET v_factor 4123
+fix dt2 AOB death 1 v_bAOB v_factor 412321
+fix dt3 NOB death 10 v_bNOB v_factor 41231
 
-#fix d1 all divide 200 v_EPSdens 2.0 1242242
+fix d1 all divide 200 v_EPSdens 2.0 3123
 
-fix e1 HET eps_extract 200 v_EPSratio v_EPSdens 1242242
-#fix j1 all epsadh 1 v_ke 2
+fix e1 HET eps_extract 200 v_EPSratio v_EPSdens 1242242#fix j1 all epsadh 1 v_ke 2
 
 
 #dump		id1 HET custom 2000 HET.bubblemd radius outerradius
@@ -150,30 +148,48 @@ thermo		500
 thermo_modify	lost ignore
 #restart	1000000  restart.*.bubblemd
 
-run  1000
+run  10000
 Memory usage per processor = 202.03 Mbytes
 Step Atoms nHET nAOB nNOB nEPS nInert 
        0        5            1            1            1            1            1 
      500        6            1            1            1            2            1 
-    1000        7            1            1            1            3            1 
-Loop time of 2.97194 on 1 procs for 1000 steps with 7 atoms
+    1000        8            1            2            1            3            1 
+    1500        9            2            2            1            3            1 
+    2000       11            2            2            1            5            1 
+    2500       16            4            3            1            7            1 
+    3000       20            6            3            1            9            1 
+    3500       28            8            4            2           13            1 
+    4000       36           12            4            2           17            1 
+    4500       50           16            5            2           26            1 
+    5000       66           22            6            2           35            1 
+    5500      100           35            8            3           53            1 
+    6000      129           46            8            3           71            1 
+    6500      187           69            9            4          104            1 
+    7000      258           94           12            4          147            1 
+    7500      387          147           14            5          220            1 
+    8000      500          181           15            5          297            2 
+    8500      759          285           19            7          446            2 
+    9000     1006          378           22            7          596            3 
+    9500     1520          583           26            9          897            5 
+   10000     2033          786           30            9         1202            6 
+Loop time of 1.72767 on 1 procs for 10000 steps with 2033 atoms
 
-Pair  time (%) = 0.021956 (0.738775)
-Neigh time (%) = 1.1025 (37.0969)
-Comm  time (%) = 0.00627923 (0.211284)
-Outpt time (%) = 0.59134 (19.8974)
-Other time (%) = 1.24987 (42.0556)
+Pair  time (%) = 0.0375979 (2.17622)
+Neigh time (%) = 0.491522 (28.45)
+Comm  time (%) = 0.118723 (6.87187)
+Outpt time (%) = 0.024853 (1.43853)
+Other time (%) = 1.05497 (61.0634)
 
-Nlocal:    7 ave 7 max 7 min
+Nlocal:    2033 ave 2033 max 2033 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
 Nghost:    0 ave 0 max 0 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
-Neighs:    9 ave 9 max 9 min
+Neighs:    501 ave 501 max 501 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
 
-Total # of neighbors = 9
-Ave neighs/atom = 1.28571
-Neighbor list builds = 12
+Total # of neighbors = 501
+Ave neighs/atom = 0.246434
+Neighbor list builds = 400
 Dangerous builds = 0
 
 

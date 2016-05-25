@@ -45,27 +45,14 @@ class FixEPSExtract : public Fix {
 
   double growthFactor;
   int seed;
-  // bool preExchangeCalled;
   char **var;
   int *ivar;
   class RanPark *random;
-
-  // int me,nprocs;
-  // int *recvcounts,*displs;
   tagint maxtag_all;
   double xlo,xhi,ylo,yhi,zlo,zhi;
-  // double xc,yc,rc;
-  // double radius_max;
-  // double lo_current,hi_current;
-  // int region_style;
   void find_maxid();
-  // int overlap(int);
-  // int outside(int, double, double, double);
-  // double getAverageMass();
-  // int countNewAtoms(double averageMass);
 
 };
-
 }
 
 #endif

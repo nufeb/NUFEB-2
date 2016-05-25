@@ -1,0 +1,10 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+*.ko
+*.elf
+
+#inputscript dir
+/home/bowen/Workspace/nufeb/code/input/

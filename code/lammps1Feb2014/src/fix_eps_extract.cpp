@@ -115,8 +115,6 @@ FixEPSExtract::FixEPSExtract(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg,
 FixEPSExtract::~FixEPSExtract()
 {
   delete random;
-  // delete [] recvcounts;
-  // delete [] displs;
   int i;
   for (i = 0; i < 2; i++) {
     delete [] var[i];
@@ -131,8 +129,6 @@ int FixEPSExtract::setmask()
 {
   int mask = 0;
   mask |= PRE_EXCHANGE;
-  // mask |= PRE_FORCE;
-  // mask |= END_OF_STEP;
   return mask;
 }
 
