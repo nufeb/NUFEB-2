@@ -13,21 +13,21 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(shearing,FixShearing)
+FixStyle(shear,FixShear)
 
 #else
 
-#ifndef LMP_FIX_SHEARING_H
-#define LMP_FIX_SHEARING_H
+#ifndef LMP_FIX_SHEAR_H
+#define LMP_FIX_SHEAR_H
 
 #include "fix.h"
 
 namespace LAMMPS_NS {
 
-class FixShearing : public Fix {
+class FixShear : public Fix {
  public:
-	FixShearing(class LAMMPS *, int, char **);
- ~FixShearing();
+	FixShear(class LAMMPS *, int, char **);
+ ~FixShear();
   int setmask();
   void init();
   virtual void post_force(int);

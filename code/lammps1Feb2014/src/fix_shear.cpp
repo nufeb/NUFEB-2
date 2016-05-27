@@ -13,7 +13,7 @@
 
 #include "string.h"
 #include "stdlib.h"
-#include "fix_shearing.h"
+#include "fix_shear.h"
 #include "atom.h"
 #include "update.h"
 #include "domain.h"
@@ -34,16 +34,16 @@ using namespace MathConst;
 
 /* ---------------------------------------------------------------------- */
 
-FixShearing::FixShearing(LAMMPS *lmp, int narg, char **arg) :
+FixShear::FixShear(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
-  if (narg != 9) error->all(FLERR,"Illegal fix shearing command");
+  if (narg != 9) error->all(FLERR,"Illegal fix shear command");
 
   tmin = force->inumeric(FLERR,arg[7]);
   tmax = force->inumeric(FLERR,arg[8]);
   nevery = force->inumeric(FLERR,arg[3]);
-  if (nevery < 0 || tmin < 0 || tmax < 0) error->all(FLERR,"Illegal fix shearing command: calling steps should be positive integer");
-  if (tmin > tmax) error->all(FLERR, "Illegal fix shearing command: maximal calling step should be greater than minimal calling step");
+  if (nevery < 0 || tmin < 0 || tmax < 0) error->all(FLERR,"Illegal fix shear command: calling steps should be positive integer");
+  if (tmin > tmax) error->all(FLERR, "Illegal fix shear command: maximal calling step should be greater than minimal calling step");
 
   if(strcmp(arg[6], "zx") == 0) dflag = 1;
   else if(strcmp(arg[6], "zy") == 0) dflag = 2;
@@ -59,7 +59,7 @@ FixShearing::FixShearing(LAMMPS *lmp, int narg, char **arg) :
   }
 }
 
-FixShearing::~FixShearing()
+FixShear::~FixShear()
 {
   for (int i = 0; i < 2; i++) {
     delete [] var[i];
@@ -70,7 +70,7 @@ FixShearing::~FixShearing()
 
 /* ---------------------------------------------------------------------- */
 
-int FixShearing::setmask()
+int FixShear::setmask()
 {
   int mask = 0;
   mask |= POST_FORCE;
@@ -79,20 +79,20 @@ int FixShearing::setmask()
 
 /* ---------------------------------------------------------------------- */
 
-void FixShearing::init()
+void FixShear::init()
 {
   for (int i = 0; i < 2; i++) {
     ivar[i] = input->variable->find(var[i]);
     if (ivar[i] < 0)
-      error->all(FLERR,"Variable name for fix shearing does not exist");
+      error->all(FLERR,"Variable name for fix shear does not exist");
     if (!input->variable->equalstyle(ivar[i]))
-      error->all(FLERR,"Variable for fix shearing is invalid style");
+      error->all(FLERR,"Variable for fix shear is invalid style");
   }
 }
 
 /* ---------------------------------------------------------------------- */
 
-void FixShearing::post_force(int vflag)
+void FixShear::post_force(int vflag)
 {
   if (nevery == 0) return;
   if (update->ntimestep % nevery) return;
