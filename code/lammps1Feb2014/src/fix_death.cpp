@@ -11,10 +11,11 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
+#include "fix_death.h"
+
 #include "math.h"
 #include "string.h"
 #include "stdlib.h"
-#include "fix_death.h"
 #include "atom.h"
 #include "update.h"
 #include "group.h"
@@ -30,7 +31,7 @@
 #include "math_const.h"
 #include "memory.h"
 #include "error.h"
-#include "random_park.h"
+#include "atom_vec.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -40,73 +41,37 @@ using namespace MathConst;
 
 FixDeath::FixDeath(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
-  if (narg != 7) error->all(FLERR,"Illegal fix death command");
+  if (narg != 4) error->all(FLERR,"Illegal fix death command");
 
   nevery = force->inumeric(FLERR,arg[3]);
   if (nevery < 0) error->all(FLERR,"Illegal fix death command");
 
-  var = new char*[2];
-  ivar = new int[2];
-
-  int i;
-  for (i = 0; i < 2; i++) {
-    int n = strlen(&arg[4+i][2]) + 1;
-    var[i] = new char[n];
-    strcpy(var[i],&arg[4+i][2]);
-  }
-
-  seed = atoi(arg[6]);
-
-  if (seed <= 0) error->all(FLERR,"Illegal fix death command: seed should be greater than 0");
-
-  // Random number generator, same for all procs
-  random = new RanPark(lmp,seed);
+  force_reneighbor = 1;
+  next_reneighbor = update->ntimestep + 1;
 }
 
 /* ---------------------------------------------------------------------- */
 
-FixDeath::~FixDeath()
-{
-  delete random;
-  int i;
-  for (i = 0; i < 2; i++) {
-    delete [] var[i];
-  }
-  delete [] var;
-  delete [] ivar;
-}
+FixDeath::~FixDeath(){}
 
 /* ---------------------------------------------------------------------- */
 
 int FixDeath::setmask()
 {
   int mask = 0;
-  mask |= POST_FORCE;
+  mask |= PRE_EXCHANGE;
   return mask;
 }
 
 /* ---------------------------------------------------------------------- */
 
-void FixDeath::init()
-{
-  if (!atom->radius_flag)
-    error->all(FLERR,"Fix death requires atom attribute diameter");
-  int i;
-  for (i = 0; i < 2; i++) {
-    ivar[i] = input->variable->find(var[i]);
-    if (ivar[i] < 0)
-      error->all(FLERR,"Variable name for fix death does not exist");
-    if (!input->variable->equalstyle(ivar[i]))
-      error->all(FLERR,"Variable for fix death is invalid style");
-  }
-}
+void FixDeath::init(){}
 
 /* ---------------------------------------------------------------------- */
 
-void FixDeath::post_force(int vflag)
+void FixDeath::pre_exchange()
 {
-  if (nevery == 0) return;
-  if (update->ntimestep % nevery) return;
+  if (next_reneighbor != update->ntimestep) return;
   death();
 }
 
@@ -114,61 +79,40 @@ void FixDeath::post_force(int vflag)
 
 void FixDeath::death()
 {
-
-  modify->clearstep_compute();
-
-  double decay = input->variable->compute_equal(ivar[0]);
-  double factor = input->variable->compute_equal(ivar[1]);
-
-  double averageMass = 1e-16;
-
-  double *rmass = atom->rmass;
+  double criticalDia = 0.8e-6;
+  double criticalMass = 1e-20;
+  double *radius = atom->radius;
   int *type = atom->type;
   int *mask = atom->mask;
+  double *rmass = atom->rmass;
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
   int i;
 
-  int typeVal = log2(groupbit);
-  double virtualMass = atom->virtualMass[typeVal];
+//(rmass[i] < criticalMass)
+  for (i = nall-1; i >= 0; i--) {
+  	//delete atom
+  	if((mask[i] & groupbit) && (rmass[i] < criticalMass)) {
+			atom->avec->copy(nall-1,i,1);
+			atom->nlocal--;
+			atom->natoms--;
+			continue;
+  	}
 
-  for (i = 0; i < nall; i++) {
-     //fprintf(stdout, "Id, Type, Mask: %i, %i, %i\n", i, type[i], mask[i]);
-    if (mask[i] & groupbit) {
-      virtualMass += (decay * rmass[i]);
+    if ((mask[i] & groupbit) &&
+    		(type[i] == 1 || type[i] == 2 || type[i] == 3)) {
+    	if(radius[i] * 2 < criticalDia) {
+    		type[i] = 6;
+    		mask[i] = 65;
+    	}
     }
   }
 
-  // fprintf(stdout, "Virtual Mass: %e\n", virtualMass);
-
-  int kill = (random->uniform() * (nall - 1));
-
-  int killed = 0;
-
-  double VM = virtualMass/averageMass;
-
-  // fprintf(stdout, "Virtual Mass ratio: %f\n", VM);
-
-  while (virtualMass > (factor * averageMass)) {
-    // fprintf(stdout, "Virtual Mass ratio: %f\n", VM);
-  	if (mask[kill] & groupbit) {
-      //fprintf(stdout, "Killed\n");
-  		virtualMass -= rmass[kill];
-  		type[kill] = 5;
-      mask[kill] = 33;
-  		kill = (random->uniform() * (nall - 1));
-  		killed ++;
-  	}
-  	else {
-  		kill++;
-  		if (kill == nall) {
-  			kill = 0;
-  		}
-  	}
+  if (atom->map_style) {
+    atom->nghost = 0;
+    atom->map_init();
+    atom->map_set();
   }
-
-  //fprintf(stdout, "Killed: %i\n", killed);
-
-  atom->virtualMass[typeVal] = virtualMass;
-  modify->addstep_compute(update->ntimestep + nevery);
+ // printf("nlocal=%i, all=%i \n", nlocal, atom->natoms );
+  next_reneighbor += nevery;
 }

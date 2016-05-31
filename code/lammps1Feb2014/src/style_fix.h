@@ -28,6 +28,7 @@
 #include "fix_growth.h"
 #include "fix_heat.h"
 #include "fix_indent.h"
+#include "fix_inert.h"
 #include "fix_langevin.h"
 #include "fix_lineforce.h"
 #include "fix_minimize.h"

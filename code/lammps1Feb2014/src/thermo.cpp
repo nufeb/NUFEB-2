@@ -907,6 +907,8 @@ void Thermo::parse_fields(char *str)
         addfield("nEPS",&Thermo::compute_neps,FLOAT);
     } else if(strcmp(word,"ninert") == 0){
     	addfield("nInert",&Thermo::compute_ninert,FLOAT);
+    } else if(strcmp(word,"ndead") == 0){
+    	addfield("nDead",&Thermo::compute_ndead,FLOAT);
     } else if(strcmp(word,"mhet") == 0){
         addfield("mHET",&Thermo::compute_mhet,FLOAT);
     } else if(strcmp(word,"maob") == 0){
@@ -917,6 +919,8 @@ void Thermo::parse_fields(char *str)
         addfield("mEPS",&Thermo::compute_meps,FLOAT);
     } else if(strcmp(word,"minert") == 0){
     	addfield("mInert",&Thermo::compute_minert,FLOAT);
+    } else if(strcmp(word,"mdead") == 0){
+    	addfield("mDead",&Thermo::compute_mdead,FLOAT);
     }
     else error->all(FLERR,"Invalid keyword in thermo_style custom command");
     word = strtok(NULL," \0");
@@ -2115,6 +2119,22 @@ void Thermo::compute_ninert()
 
 /* ---------------------------------------------------------------------- */
 
+void Thermo::compute_ndead()
+{
+  int nlocal = atom->nlocal;
+  int nall = nlocal + atom->nghost;
+  dvalue = 0;
+
+  int i;
+  for (i = 0; i < nall; i++) {
+	if (atom->type[i] == 6) {
+		dvalue ++;
+	}
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
 void Thermo::compute_mhet()
 {
   int nlocal = atom->nlocal;
@@ -2202,3 +2222,22 @@ void Thermo::compute_minert()
   MPI_Allreduce(&mlocal,&mtotal,1,MPI_DOUBLE,MPI_SUM,world);
   dvalue = mtotal;
 }
+
+/* ---------------------------------------------------------------------- */
+
+void Thermo::compute_mdead()
+{
+  int nlocal = atom->nlocal;
+  double mlocal = 0;
+
+  int i;
+  for (i = 0; i < nlocal; i++) {
+	if (atom->type[i] == 6) {
+		dvalue += atom->rmass[i];
+	}
+  }
+  double mtotal;
+  MPI_Allreduce(&mlocal,&mtotal,1,MPI_DOUBLE,MPI_SUM,world);
+  dvalue = mtotal;
+}
+

@@ -94,7 +94,6 @@ void FixNVELimit::initial_integrate(int vflag)
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
   if (igroup == atom->firstgroup) nlocal = atom->nfirst;
-
   if (rmass) {
     for (int i = 0; i < nlocal; i++) {
       if (mask[i] & groupbit) {
@@ -102,6 +101,8 @@ void FixNVELimit::initial_integrate(int vflag)
         v[i][0] += dtfm * f[i][0];
         v[i][1] += dtfm * f[i][1];
         v[i][2] += dtfm * f[i][2];
+
+        ///printf("nlocal = %i, mass = %.20f, v[i][0] = %.20f \n",i, rmass[i],v[i][0]);
 
         vsq = v[i][0]*v[i][0] + v[i][1]*v[i][1] + v[i][2]*v[i][2];
         if (vsq > vlimitsq) {
@@ -111,21 +112,7 @@ void FixNVELimit::initial_integrate(int vflag)
           v[i][1] *= scale;
           v[i][2] *= scale;
         }
-/*        if(update->ntimestep == 11000){
-
-      	  fprintf(stdout, "time = %i\n", update->ntimestep);
-//      	  fprintf(stdout, "nve total = %i, cell=%i, x=%e, y=%e, z=%e,r = %e, m = %e\n",
-//      			  nlocal,i,x[i][0],  x[i][1], x[i][2], atom->radius[i], atom->rmass[i]);
-      	 fprintf(stdout, "nve total = %i, cell=%i, type=%i, m = %e\n",
-      			 nlocal,i,atom->type[i], atom->rmass[i]);
-        }
-        if(update->ntimestep == 11001){
-      	  fprintf(stdout, "time = %i\n", update->ntimestep);
-//      	  fprintf(stdout, "nve total = %i, cell=%i, x=%e, y=%e, z=%e,r = %e, m = %e, mass?=%f\n",
-//      			  nlocal,i, x[i][0],  x[i][1], x[i][2], atom->radius[i], atom->rmass[i], rmass);
-       	 fprintf(stdout, "nve total = %i, cell=%i, type=%i, m = %e\n",
-       			 nlocal,i,atom->type[i], atom->rmass[i]);
-        }*/
+       // printf("after nlocal = %i, mass = %.20f, v[i][0] = %.20f \n",i, rmass[i],v[i][0]);
         x[i][0] += dtv * v[i][0];
         x[i][1] += dtv * v[i][1];
         x[i][2] += dtv * v[i][2];
@@ -171,6 +158,7 @@ void FixNVELimit::final_integrate()
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
   if (igroup == atom->firstgroup) nlocal = atom->nfirst;
+
 
   if (rmass) {
     for (int i = 0; i < nlocal; i++) {
@@ -221,6 +209,7 @@ void FixNVELimit::initial_integrate_respa(int vflag, int ilevel, int iloop)
 
   if (ilevel == 0) initial_integrate(vflag);
   else final_integrate();
+
 }
 
 /* ---------------------------------------------------------------------- */

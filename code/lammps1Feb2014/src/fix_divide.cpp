@@ -331,7 +331,6 @@ void FixDivide::pre_exchange()
       atom->map_set();
     }
   next_reneighbor += nevery;
-
 }
 
 

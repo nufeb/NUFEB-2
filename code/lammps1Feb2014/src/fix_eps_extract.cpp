@@ -270,11 +270,12 @@ void FixEPSExtract::pre_exchange()
   }
   //fprintf(stdout, "Divided: %i\n", divided);
 
-    if (atom->map_style) {
-      atom->nghost = 0;
-      atom->map_init();
-      atom->map_set();
-    }
+  if (atom->map_style) {
+    atom->nghost = 0;
+    atom->map_init();
+    atom->map_set();
+  }
+
   next_reneighbor += nevery;
 }
 

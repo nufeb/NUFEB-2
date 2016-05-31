@@ -62,8 +62,9 @@ void AtomVecBio::init()
       size_forward = 5;
     }
 
-  virtualMass = memory->grow(atom->virtualMass,4,"atom:virtualMass");
-  for (int i = 0; i < 4; i++) {
+  int ntypes = atom->ntypes;
+  virtualMass = memory->grow(atom->virtualMass,ntypes+1,"atom:virtualMass");
+  for (int i = 0; i < ntypes+1; i++) {
     virtualMass[i] = 0;
   }
 }

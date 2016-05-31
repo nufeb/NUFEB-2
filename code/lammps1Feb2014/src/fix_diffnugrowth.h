@@ -57,9 +57,9 @@ class FixDiffNuGrowth : public Fix {
   int bflag; // 1 = dirichlet, 2 = neumann, 3 = mixed
   double xstep, ystep, zstep;
   void change_dia();
-  void computeFlux(double *, double *, double *, double, double, double, int);
-  void outputData(int, int);
-  bool isConvergence(double *, double *, double, double);
+  void compute_flux(double *, double *, double *, double, double, double, int);
+  void output_data(int, int);
+  bool is_convergence(double *, double *, double, double);
   int overlap();
 };
 
