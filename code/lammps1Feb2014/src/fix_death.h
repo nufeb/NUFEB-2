@@ -26,17 +26,15 @@ namespace LAMMPS_NS {
 
 class FixDeath : public Fix {
  public:
-  FixDeath(class LAMMPS *, int, char **);
+	FixDeath(class LAMMPS *, int, char **);
   ~FixDeath();
   int setmask();
   void init();
-  void post_force(int);
+  void pre_exchange();
 
  private:
-  char **var;
-  int *ivar;
-  int seed;
-  class RanPark *random;
+ // char **var;
+ // int *ivar;
   void death();
 };
 

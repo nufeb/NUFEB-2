@@ -1,0 +1,20 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+*.ko
+*.elf
+code/lammps1Feb2014/src/Obj_serial/
+code/lammps1Feb2014/src/Obj_serial_debug/
+
+#inputscript dir
+code/input/0/
+code/input/constant/
+code/input/coupled_hydrodynamics/
+code/input/nutrient/
+code/input/old/
+code/input/shearing/
+code/input/system/
+
+

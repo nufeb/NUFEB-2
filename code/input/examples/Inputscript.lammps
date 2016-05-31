@@ -70,6 +70,12 @@ variable bAOB equal 0.00000127314
 variable bNOB equal 0.00000127314
 variable bEPS equal 0.00000196759
 
+#Defining death and maintenance variables
+variable bmHET equal 0.000162962
+variable bmAOB equal 0.00000827314
+variable bmNOB equal 0.00000827314
+variable bX equal 0.000196759
+
 #Defining yield coefficient variables
 variable YHET equal 0.61
 variable YAOB equal 0.33
@@ -110,16 +116,22 @@ variable factor equal 1.5
 variable ke equal 5e+10
 
 #variable rate1 equal 0.001
-fix g1 all diffnugrowth 1 200 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bHET v_bAOB v_bNOB v_bEPS v_YHET v_YAOB v_YNOB v_YEPS v_Y1 v_EPSdens v_Do2 v_Dnh4 v_Dno2 v_Dno3 v_Ds v_diffT v_sub v_o2 v_no2 v_no3 v_nh4 35 35 35 mixed v_BCsub v_BCo2 v_BCno2 v_BCno3 v_BCnh4 10000
+fix g1 all diffnugrowth 1 200 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bHET v_bAOB v_bNOB v_bEPS v_bmHET v_bmAOB v_bmNOB b_bX v_YHET v_YAOB v_YNOB v_YEPS v_Y1 v_EPSdens v_Do2 v_Dnh4 v_Dno2 v_Dno3 v_Ds v_diffT v_sub v_o2 v_no2 v_no3 v_nh4 1 1 1 mixed v_BCsub v_BCo2 v_BCno2 v_BCno3 v_BCnh4 10000
 
-fix dt1 HET death 1 v_bHET v_factor 4123
-fix dt2 AOB death 1 v_bAOB v_factor 412321
-fix dt3 NOB death 1 v_bNOB v_factor 41231
+fix dt1 HET inert 1 v_bHET v_factor 4123
+fix dt2 AOB inert 1 v_bAOB v_factor 412321
+fix dt3 NOB inert 1 v_bNOB v_factor 41231
 
 fix d1 all divide 1 v_EPSdens 2.0 3123
 
 fix e1 HET eps_extract 1 v_EPSratio v_EPSdens 1242242
 fix j1 all epsadh 1 v_ke 2
+fix d5 all death 500
+
+variable viscosity equal 0.5
+variable shearRate equal 0.6
+
+#fix s1 all shear 10 v_viscosity v_shearRate zx 0 80000
 
 
 #dump		id1 HET custom 2000 HET.bubblemd radius outerradius
@@ -131,7 +143,7 @@ dump		id all custom 500 snapshot.bubblemd id type diameter x y z vx vy vz fx fy 
 #dump m0 all movie 1000 movie.mpg type type size 640 480
 
 #thermo_style    custom step atoms nhet mhet
-thermo_style    custom step atoms nhet naob nnob neps ninert
+thermo_style    custom step atoms nhet naob nnob neps ninert ndead
 #thermo_style  granular # not work. syntax change?
 #thermo_style  one   # granular does not work
 thermo		500

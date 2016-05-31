@@ -191,12 +191,14 @@ class Thermo : protected Pointers {
   void compute_nnob();
   void compute_neps();
   void compute_ninert();
+  void compute_ndead();
 
   void compute_mhet();
   void compute_maob();
   void compute_mnob();
   void compute_meps();
   void compute_minert();
+  void compute_mdead();
 
   void compute_amhet();
   void compute_amaob();
