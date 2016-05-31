@@ -102,8 +102,6 @@ void FixNVELimit::initial_integrate(int vflag)
         v[i][1] += dtfm * f[i][1];
         v[i][2] += dtfm * f[i][2];
 
-        ///printf("nlocal = %i, mass = %.20f, v[i][0] = %.20f \n",i, rmass[i],v[i][0]);
-
         vsq = v[i][0]*v[i][0] + v[i][1]*v[i][1] + v[i][2]*v[i][2];
         if (vsq > vlimitsq) {
           ncount++;
@@ -112,7 +110,7 @@ void FixNVELimit::initial_integrate(int vflag)
           v[i][1] *= scale;
           v[i][2] *= scale;
         }
-       // printf("after nlocal = %i, mass = %.20f, v[i][0] = %.20f \n",i, rmass[i],v[i][0]);
+
         x[i][0] += dtv * v[i][0];
         x[i][1] += dtv * v[i][1];
         x[i][2] += dtv * v[i][2];
