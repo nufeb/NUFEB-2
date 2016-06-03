@@ -37,22 +37,22 @@ using namespace MathConst;
 FixShear::FixShear(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
-  if (narg != 9) error->all(FLERR,"Illegal fix shear command");
+  if (narg != 10) error->all(FLERR,"Illegal fix shear command");
 
-  tmin = force->inumeric(FLERR,arg[7]);
-  tmax = force->inumeric(FLERR,arg[8]);
+  tmin = force->inumeric(FLERR,arg[8]);
+  tmax = force->inumeric(FLERR,arg[9]);
   nevery = force->inumeric(FLERR,arg[3]);
   if (nevery < 0 || tmin < 0 || tmax < 0) error->all(FLERR,"Illegal fix shear command: calling steps should be positive integer");
   if (tmin > tmax) error->all(FLERR, "Illegal fix shear command: maximal calling step should be greater than minimal calling step");
 
-  if(strcmp(arg[6], "zx") == 0) dflag = 1;
-  else if(strcmp(arg[6], "zy") == 0) dflag = 2;
+  if(strcmp(arg[7], "zx") == 0) dflag = 1;
+  else if(strcmp(arg[7], "zy") == 0) dflag = 2;
   else error->all(FLERR,"Illegal force vector command");
 
-  var = new char*[2];
-  ivar = new int[2];
+  var = new char*[3];
+  ivar = new int[3];
 
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 3; i++) {
     int n = strlen(&arg[4+i][2]) + 1;
     var[i] = new char[n];
     strcpy(var[i],&arg[4+i][2]);
@@ -61,7 +61,7 @@ FixShear::FixShear(LAMMPS *lmp, int narg, char **arg) :
 
 FixShear::~FixShear()
 {
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 3; i++) {
     delete [] var[i];
   }
   delete [] var;
@@ -81,7 +81,7 @@ int FixShear::setmask()
 
 void FixShear::init()
 {
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 3; i++) {
     ivar[i] = input->variable->find(var[i]);
     if (ivar[i] < 0)
       error->all(FLERR,"Variable name for fix shear does not exist");
@@ -104,9 +104,10 @@ void FixShear::post_force(int vflag)
   double *radius = atom->radius;
   double viscosity = input->variable->compute_equal(ivar[0]);
   double shearRate = input->variable->compute_equal(ivar[1]);
+  double height = input->variable->compute_equal(ivar[2]);
 
   //argument test:
-  //printf("nevery=%i, tmin=%i, tmax=%i, viscosity=%f, rate=%f \n", nevery, tmin, tmax, viscosity, shearRate);
+  //printf("nevery=%i, tmin=%i, tmax=%i, viscosity=%f, rate=%f, height = %f\n", nevery, tmin, tmax, viscosity, shearRate, height);
 
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
@@ -114,9 +115,9 @@ void FixShear::post_force(int vflag)
   for (int i = 0; i < nall; i++) {
   	double diameter = 2 * radius[i];
   	if (dflag == 1) {
-  		f[i][0] = MY_3PI * viscosity * diameter * shearRate * x[i][2];
+  		f[i][0] = MY_3PI * viscosity * diameter * shearRate * (x[i][2] - height);
   	} else {
-  		f[i][1] = MY_3PI * viscosity * diameter * shearRate * x[i][2];
+  		f[i][1] = MY_3PI * viscosity * diameter * shearRate * (x[i][2] - height);
   	}
   }
 }

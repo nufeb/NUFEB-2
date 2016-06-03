@@ -25,6 +25,7 @@ FixStyle(epsadh,FixEPSAdh)
 namespace LAMMPS_NS {
 
 class FixEPSAdh : public Fix {
+
  public:
   FixEPSAdh(class LAMMPS *, int, char **);
  ~FixEPSAdh();

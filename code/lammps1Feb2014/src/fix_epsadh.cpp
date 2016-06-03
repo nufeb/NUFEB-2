@@ -24,6 +24,7 @@
 #include "neighbor.h"
 #include "neigh_list.h"
 #include "neigh_request.h"
+#include "pair.h"
 #include "mpi.h"
 #include "comm.h"
 #include "memory.h"
@@ -91,12 +92,13 @@ void FixEPSAdh::init_list(int id, NeighList *ptr)
 
 void FixEPSAdh::post_force(int vflag)
 {
+
   double ke = input->variable->compute_equal(ivar);
   int i,ii=0,j=0,jj=0,*numneigh,inum,**firstneigh;
   int jnum;
   double xtmp,ytmp,ztmp,delx,dely,delz;
   double outerRadi,outerRadj,radsum,rsq,r, rinv;
-  double ccel,ccelx,ccely,ccelz;
+  double ccel,ccelx ,ccely,ccelz;
   int *jlist,*ilist;
   double del;
   double **f = atom->f;
@@ -123,6 +125,7 @@ void FixEPSAdh::post_force(int vflag)
 	  xtmp = x[i][0];
 	  ytmp = x[i][1];
 	  ztmp = x[i][2];
+
 	  outerRadi = outerRadius[i];
 	  jlist = firstneigh[i];
 	  jnum = numneigh[i];
@@ -139,6 +142,7 @@ void FixEPSAdh::post_force(int vflag)
 		  dely = ytmp - x[j][1];
 		  delz = ztmp - x[j][2];
 		  rsq = delx*delx + dely*dely + delz*delz;
+
 		  outerRadj = outerRadius[j];
       if (type[j] == 4) {
         epsMassj = rmass[j];
@@ -167,9 +171,10 @@ void FixEPSAdh::post_force(int vflag)
       	continue;
       }
 
-			ccelx = delx*ccel*rinv ;
-			ccely = dely*ccel*rinv ;
-			ccelz = delz*ccel*rinv ;
+  		ccelx = delx*ccel*rinv ;
+  		ccely = dely*ccel*rinv ;
+  		ccelz = delz*ccel*rinv ;
+
 			f[i][0] += ccelx;
 			f[i][1] += ccely;
 			f[i][2] += ccelz;

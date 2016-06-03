@@ -33,8 +33,8 @@ class FixDeath : public Fix {
   void pre_exchange();
 
  private:
- // char **var;
- // int *ivar;
+  char *var;
+  int ivar;
   void death();
 };
 

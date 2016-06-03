@@ -265,6 +265,8 @@ void FixEPSExtract::pre_exchange()
         atom->outerRadius[n] = childRadius;
 
         atom->natoms++;
+
+        delete[] coord;
       }
     }
   }
