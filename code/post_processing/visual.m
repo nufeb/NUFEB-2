@@ -63,6 +63,12 @@ fid=fopen('data_p.pov','w');
         GREEN = 0.345;
         BLUE = 0.5653;
         end 
+
+       if (Tp(l)==6)
+        RED = 0.0;
+        GREEN = 0.0;
+        BLUE = 0.0;
+        end 
         
             
         

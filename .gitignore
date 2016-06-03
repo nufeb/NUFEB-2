@@ -5,6 +5,7 @@
 *.obj
 *.ko
 *.elf
+*.orig
 code/lammps1Feb2014/src/Obj_serial/
 code/lammps1Feb2014/src/Obj_serial_debug/
 

@@ -33,6 +33,7 @@
 #include "error.h"
 #include "atom_vec.h"
 
+
 using namespace LAMMPS_NS;
 using namespace FixConst;
 using namespace MathConst;
@@ -41,10 +42,14 @@ using namespace MathConst;
 
 FixDeath::FixDeath(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
-  if (narg != 4) error->all(FLERR,"Illegal fix death command");
+  if (narg != 5) error->all(FLERR,"Illegal fix death command");
 
   nevery = force->inumeric(FLERR,arg[3]);
   if (nevery < 0) error->all(FLERR,"Illegal fix death command");
+
+  int n = strlen(&arg[4][2]) + 1;
+  var = new char[n];
+  strcpy(var,&arg[4][2]);
 
   force_reneighbor = 1;
   next_reneighbor = update->ntimestep + 1;
@@ -52,7 +57,9 @@ FixDeath::FixDeath(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 
 /* ---------------------------------------------------------------------- */
 
-FixDeath::~FixDeath(){}
+FixDeath::~FixDeath(){
+  delete [] var;
+}
 
 /* ---------------------------------------------------------------------- */
 
@@ -65,7 +72,13 @@ int FixDeath::setmask()
 
 /* ---------------------------------------------------------------------- */
 
-void FixDeath::init(){}
+void FixDeath::init(){
+  ivar = input->variable->find(var);
+  if (ivar < 0)
+    error->all(FLERR,"Variable name for fix death does not exist");
+  if (!input->variable->equalstyle(ivar))
+    error->all(FLERR,"Variable for fix death is invalid style");
+}
 
 /* ---------------------------------------------------------------------- */
 
@@ -79,7 +92,7 @@ void FixDeath::pre_exchange()
 
 void FixDeath::death()
 {
-  double criticalDia = 0.8e-6;
+  double criticalDia= input->variable->compute_equal(ivar);
   double criticalMass = 1e-20;
   double *radius = atom->radius;
   int *type = atom->type;

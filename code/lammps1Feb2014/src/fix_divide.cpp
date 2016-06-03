@@ -93,7 +93,7 @@ FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
   }
    
   force_reneighbor = 1;
-  next_reneighbor = update->ntimestep + 1;
+  next_reneighbor = update->ntimestep+1;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -135,8 +135,6 @@ void FixDivide::init()
 void FixDivide::pre_exchange()
 {
   if (next_reneighbor != update->ntimestep) return;
-
-	//fprintf(stdout, "before divide ,overlap pair= %i\n", overlap());
 
   double EPSdens = input->variable->compute_equal(ivar);
   double density;
@@ -320,16 +318,17 @@ void FixDivide::pre_exchange()
         atom->outerRadius[n] = childOuterRadius;
 
         atom->natoms++;
-        // divided ++;
+
+        delete[] coord;
       }
     }
   }
 	//fprintf(stdout, "after divide ,overlap pair= %i\n", overlap());
-    if (atom->map_style) {
-      atom->nghost = 0;
-      atom->map_init();
-      atom->map_set();
-    }
+	if (atom->map_style) {
+		atom->nghost = 0;
+		atom->map_init();
+		atom->map_set();
+	}
   next_reneighbor += nevery;
 }
 

@@ -91,9 +91,6 @@ FixDiffNuGrowth::FixDiffNuGrowth(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, n
     zlo = domain->boxlo_bound[2];
     zhi = domain->boxhi_bound[2];
   }
-
-  force_reneighbor = 1;
-  next_reneighbor = update->ntimestep + 1;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -101,7 +98,7 @@ FixDiffNuGrowth::FixDiffNuGrowth(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, n
 FixDiffNuGrowth::~FixDiffNuGrowth()
 {
   int i;
-  for (i = 0; i < 38; i++) {
+  for (i = 0; i < 42; i++) {
     delete [] var[i];
   }
   delete [] var;
@@ -296,6 +293,7 @@ void FixDiffNuGrowth::change_dia()
   	xAOB[cell] = 0.0;
   	xNOB[cell] = 0.0;
   	xEPS[cell] = 0.0;
+  	xDEAD[cell] = 0.0;
   	xTot[cell] = 0.0;
   }
 
@@ -391,8 +389,8 @@ void FixDiffNuGrowth::change_dia()
     R10[cell] = bmHET*(o2Cell[cell]/(Ko2HET+o2Cell[cell]));
     R11[cell] = bmAOB*(o2Cell[cell]/(Ko2AOB+o2Cell[cell]));
     R12[cell] = bmNOB*(o2Cell[cell]/(Ko2NOB+o2Cell[cell]));
-    R13[cell] = (-1/2.86)*bmHET*etaHET*(no3Cell[cell]/(Kno3HET+no3Cell[cell]));
-    R14[cell] = (-1/1.71)*bmHET*etaHET*(no2Cell[cell]/(Kno2HET+no2Cell[cell]));
+    R13[cell] = (1/2.86)*bmHET*etaHET*(no3Cell[cell]/(Kno3HET+no3Cell[cell]));
+    R14[cell] = (1/1.71)*bmHET*etaHET*(no2Cell[cell]/(Kno2HET+no2Cell[cell]));
 
     if(!(update->ntimestep % diffevery)){
 			Rs[cell] = ( (-1/YHET) * ( (R1[cell]+R4[cell]+R5[cell]) * xHET[cell] ) ) + ( (1-Y1) * ( bHET*xHET[cell]+bAOB*xAOB[cell]+bNOB*xNOB[cell] ) ) +( bEPS*xEPS[cell]) ;
@@ -405,6 +403,11 @@ void FixDiffNuGrowth::change_dia()
 			Ro2[cell] = Ro2[cell] - ((R10[cell] * xHET[cell]) + (R11[cell] * xAOB[cell]) + (R12[cell] * xNOB[cell]));
 			Rno2[cell] = Rno2[cell] - (R14[cell] * xHET[cell]);
 			Rno3[cell] = Rno3[cell] - (R13[cell] * xHET[cell]);
+
+//			 printf("cell= %e, rs=%e, ro2=%e, rnh4=%e, Rno2=%e, forw=%e, Rno3=%e,  \n",cell, Rs[cell],
+//					 Ro2[cell] , Rnh4[cell], Rno2[cell], Rno3[cell]);
+
+//						 printf("cell= %i, rs=%e, \n",cell, xDEAD[cell]);
 
 			double diffusionFunction = 1 - ((0.43 * pow(xTot[cell], 0.92))/(11.19+0.27*pow(xTot[cell], 0.99)));
 
@@ -484,7 +487,7 @@ void FixDiffNuGrowth::change_dia()
 			if(is_convergence(no2Cell, no2Prev, no2BC, tol)) no2Convergence = true;
 			if(is_convergence(no3Cell, no3Prev, no3BC, tol)) no3Convergence = true;
 
-			if((subConvergence && o2Convergence && nh4Convergence && no2Convergence && no3Convergence) || iteration == 10000) {
+			if((subConvergence && o2Convergence && nh4Convergence && no2Convergence && no3Convergence) || iteration == 5000) {
 				convergence = true;
 			}
 		}
@@ -554,7 +557,6 @@ void FixDiffNuGrowth::change_dia()
     }
   }
 
- // printf("type: %i, minimal radius : %.10e \n", no, r*2);
 	//output concentration
 	if(!(update->ntimestep % outputevery)){
 	  output_data(outputevery,1);
@@ -571,6 +573,7 @@ void FixDiffNuGrowth::change_dia()
   delete [] xAOB;
   delete [] xNOB;
   delete [] xEPS;
+  delete [] xDEAD;
   delete [] xTot;
 
   delete [] R1;
@@ -578,6 +581,11 @@ void FixDiffNuGrowth::change_dia()
   delete [] R3;
   delete [] R4;
   delete [] R5;
+  delete [] R10;
+  delete [] R11;
+  delete [] R12;
+  delete [] R13;
+  delete [] R14;
 
   delete [] Rs;
   delete [] Ro2;
@@ -680,6 +688,7 @@ void FixDiffNuGrowth::compute_flux(double *cellDNu, double *nuCell, double *nuPr
 		}
 	}
 	else {
+
 		double dRight = (cellDNu[cell] + cellDNu[rightCell]) / 2;
 		double jRight = dRight*(nuPrev[rightCell] - nuPrev[cell])/xstep;
 		double dLeft = (cellDNu[cell] + cellDNu[leftCell]) / 2;
@@ -703,7 +712,8 @@ void FixDiffNuGrowth::compute_flux(double *cellDNu, double *nuCell, double *nuPr
 		//Updating the value: Ratesub*diffT + nuCell[cell](previous)
 		nuCell[cell] += Ratesub*diffT;
 
-		if(nuCell[cell] <= 1e-20){
+		// printf("cell= %i, right=%i, left=%i, up=%i, down=%i, forw=%i, back=%i,  \n",cell, rightCell, leftCell, upCell, downCell, forwardCell, backwardCell);
+	  if(nuCell[cell] <= 1e-20){
 			nuCell[cell] = 1e-20;
 		}
 	}
