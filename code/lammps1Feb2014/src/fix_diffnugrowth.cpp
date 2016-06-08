@@ -207,8 +207,8 @@ void FixDiffNuGrowth::init()
   //create folders for concentration data
   int status1, status2;
 
-  status1 = system("rm -rf sub o2 no2 no3 nh4");
-	status2 = system("mkdir sub o2 no2 no3 nh4");
+  status1 = system("rm -rf sub o2 no2 no3 nh4 r-values");
+  status2 = system("mkdir sub o2 no2 no3 nh4 r-values");
 
 	if(status1 < 0 || status2 < 0){
 		 error->all(FLERR,"Fail to create concentration output dir");
@@ -247,9 +247,9 @@ void FixDiffNuGrowth::change_dia()
   double bNOB = input->variable->compute_equal(ivar[14]); // R8
   double bEPS = input->variable->compute_equal(ivar[15]); // R9
   double bmHET = input->variable->compute_equal(ivar[16]);
-	double bmAOB = input->variable->compute_equal(ivar[17]);
-	double bmNOB =input->variable->compute_equal(ivar[18]);
-	double bX =input->variable->compute_equal(ivar[19]);
+  double bmAOB = input->variable->compute_equal(ivar[17]);
+  double bmNOB =input->variable->compute_equal(ivar[18]);
+  double bX =input->variable->compute_equal(ivar[19]);
   double YHET = input->variable->compute_equal(ivar[20]);
   double YAOB = input->variable->compute_equal(ivar[21]);
   double YNOB = input->variable->compute_equal(ivar[22]);
@@ -456,12 +456,12 @@ void FixDiffNuGrowth::change_dia()
 				R3[cell] = MumNOB*(no2Prev[cell]/(Kno2NOB+no2Prev[cell]))*(o2Prev[cell]/(Ko2NOB+o2Prev[cell]));
 				R4[cell] = etaHET*MumHET*(subPrev[cell]/(KsHET+subPrev[cell]))*(no3Prev[cell]/(Kno3HET+no3Prev[cell]))*(Ko2HET/(Ko2HET+o2Prev[cell]));
 				R5[cell] = etaHET*MumHET*(subPrev[cell]/(KsHET+subPrev[cell]))*(no2Prev[cell]/(Kno2HET+no2Prev[cell]))*(Ko2HET/(Ko2HET+o2Prev[cell]));
-				//Decay and maintenance
-		    R10[cell] = bmHET*(o2Prev[cell]/(Ko2HET+o2Prev[cell]));
-		    R11[cell] = bmAOB*(o2Prev[cell]/(Ko2AOB+o2Prev[cell]));
-		    R12[cell] = bmNOB*(o2Prev[cell]/(Ko2NOB+o2Prev[cell]));
-		    R13[cell] = (-1/2.86)*bmHET*etaHET*(no3Prev[cell]/(Kno3HET+no3Prev[cell]));
-		    R14[cell] = (-1/1.71)*bmHET*etaHET*(no2Prev[cell]/(Kno2HET+no2Prev[cell]));
+					//Decay and maintenance
+				R10[cell] = bmHET*(o2Prev[cell]/(Ko2HET+o2Prev[cell]));
+				R11[cell] = bmAOB*(o2Prev[cell]/(Ko2AOB+o2Prev[cell]));
+				R12[cell] = bmNOB*(o2Prev[cell]/(Ko2NOB+o2Prev[cell]));
+				R13[cell] = (-1/2.86)*bmHET*etaHET*(no3Prev[cell]/(Kno3HET+no3Prev[cell]));
+				R14[cell] = (-1/1.71)*bmHET*etaHET*(no2Prev[cell]/(Kno2HET+no2Prev[cell]));
 
 				Rs[cell] = ((-1/YHET) * ( (R1[cell]+R4[cell]+R5[cell]) * xHET[cell] ) ) + ( (1-Y1) * ( bHET*xHET[cell]+bAOB*xAOB[cell]+bNOB*xNOB[cell] ) ) + ( bEPS*xEPS[cell] );
 				Ro2[cell] = (-((1-YHET-YEPS)/YHET)*R1[cell]*xHET[cell])-(((3.42-YAOB)/YAOB)*R2[cell]*xAOB[cell])-(((1.15-YNOB)/YNOB)*R3[cell]*xNOB[cell]);
@@ -557,13 +557,15 @@ void FixDiffNuGrowth::change_dia()
     }
   }
 
-	//output concentration
+	//output data
 	if(!(update->ntimestep % outputevery)){
 	  output_data(outputevery,1);
 	  output_data(outputevery,2);
 	  output_data(outputevery,3);
 	  output_data(outputevery,4);
 	  output_data(outputevery,5);
+	  compute_Rvalues(Rs, Ro2, Rno2, Rno3, Rnh4);
+	  output_data(outputevery,6);
 	}
 
   modify->addstep_compute(update->ntimestep + nevery);
@@ -719,6 +721,24 @@ void FixDiffNuGrowth::compute_flux(double *cellDNu, double *nuCell, double *nuPr
 	}
 }
 
+void FixDiffNuGrowth::compute_Rvalues(double* Rs, double* Ro2, double* Rno2, double* Rno3, double* Rnh4){
+	sumRs = 0.0;
+	sumRo2 = 0.0;
+	sumRno2 = 0.0;
+	sumRno3 = 0.0;
+	sumRnh4 = 0.0;
+
+	for (int cell = 0; cell < numCells; cell++) {
+		  if(!ghost[cell]){
+			sumRs += (Rs[cell] * cellVol[cell]);
+			sumRo2 += (Ro2[cell] * cellVol[cell]);
+			sumRno2 += (Rno2[cell] * cellVol[cell]);
+			sumRno3 += (Rno3[cell] * cellVol[cell]);
+			sumRnh4 += (Rnh4[cell] * cellVol[cell]);
+		  }
+	}
+}
+
 void FixDiffNuGrowth::output_data(int every, int n){
   if(!(update->ntimestep%every)){
 	  FILE* pFile;
@@ -742,34 +762,41 @@ void FixDiffNuGrowth::output_data(int every, int n){
 	  case 5 :
 	  	str = "./nh4/nh4.csv."+ stm.str();
 	  	break;
+	  case 6 :
+	  	str = "./r-values/r-values.txt";
+	  	break;
 	  }
 
-	  pFile = fopen (str.c_str(), "w");
+	  if(n == 6){
+		  pFile = fopen (str.c_str(), "a");
+		  if(update->ntimestep == every) fprintf(pFile, "time \t sumRs \t sumRo2 \t sumRno2 \t sumRno3 \t sumRnh4 \n");
+		  fprintf(pFile, "%i,\t%e,\t%e,\t%e,\t%e,\t%e\n",update->ntimestep, sumRs, sumRo2, sumRno2, sumRno3, sumRnh4);
+	  }else{
+		  pFile = fopen (str.c_str(), "w");
+		  fprintf(pFile, ",x,y,z,scalar,1,1,1,0.5\n");
+		  for(int i = 0; i < numCells; i++){
+			  if(!ghost[i]){
 
-	  fprintf(pFile, ",x,y,z,scalar,1,1,1,0.5\n");
-	  for(int i = 0; i < numCells; i++){
-		  if(!ghost[i]){
-
-			  switch(n) {
-			  case 1 :
-			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], subCell[i]);
-			  	break;
-			  case 2 :
-			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], o2Cell[i]);
-			  	break;
-			  case 3 :
-			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], no2Cell[i]);
-			  	break;
-			  case 4 :
-			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], no3Cell[i]);
-			  	break;
-			  case 5 :
-			  	fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], nh4Cell[i]);
-			  	break;
+				  switch(n) {
+				  case 1 :
+					fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], subCell[i]);
+					break;
+				  case 2 :
+					fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], o2Cell[i]);
+					break;
+				  case 3 :
+					fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], no2Cell[i]);
+					break;
+				  case 4 :
+					fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], no3Cell[i]);
+					break;
+				  case 5 :
+					fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, xCell[i], yCell[i], zCell[i], nh4Cell[i]);
+					break;
+				  }
 			  }
 		  }
 	  }
-
 	  fclose(pFile);
   }
 }
