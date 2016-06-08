@@ -487,7 +487,7 @@ void FixDiffNuGrowth::change_dia()
 			if(is_convergence(no2Cell, no2Prev, no2BC, tol)) no2Convergence = true;
 			if(is_convergence(no3Cell, no3Prev, no3BC, tol)) no3Convergence = true;
 
-			if((subConvergence && o2Convergence && nh4Convergence && no2Convergence && no3Convergence) || iteration == 5000) {
+			if((subConvergence && o2Convergence && nh4Convergence && no2Convergence && no3Convergence) || iteration == 10000) {
 				convergence = true;
 			}
 		}
