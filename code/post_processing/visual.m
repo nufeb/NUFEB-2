@@ -66,8 +66,8 @@ fid=fopen('data_p.pov','w');
 
        if (Tp(l)==6)
         RED = 0.0;
-        GREEN = 0.0;
-        BLUE = 0.0;
+        GREEN = 0.75;
+        BLUE = 1.0;
         end 
         
             
@@ -79,7 +79,7 @@ fprintf(fid,['sphere{<' num2str(X(l)) ',' num2str(Y(l)) ',' num2str(Z(l)) '>,' n
     j=i+1000000;   
 POV_RAY=Pvr(image)
 
-generate=['povray +H1000 +W1000 +FJ Display=-D +O0_images/image' num2str(j) '.jpg import.pov'];
+generate=['povray +H3000 +W3000 +FJ Display=-D +O0_images/image' num2str(j) '.jpg import.pov'];
 system(generate);
     
     i=i+1;
