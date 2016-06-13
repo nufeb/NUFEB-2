@@ -397,16 +397,15 @@ void FixDiffNuGrowth::change_dia()
     R10[cell] = bmHET*(o2Cell[cell]/(Ko2HET+o2Cell[cell]));
     R11[cell] = bmAOB*(o2Cell[cell]/(Ko2AOB+o2Cell[cell]));
     R12[cell] = bmNOB*(o2Cell[cell]/(Ko2NOB+o2Cell[cell]));
-    R13[cell] = (1/2.86)*bmHET*etaHET*(no3Cell[cell]/(Kno3HET+no3Cell[cell]));
-    R14[cell] = (1/1.71)*bmHET*etaHET*(no2Cell[cell]/(Kno2HET+no2Cell[cell]));
+    R13[cell] = (1/2.86)*bmHET*etaHET*(no3Cell[cell]/(Kno3HET+no3Cell[cell]))*(Ko2HET/(Ko2HET+o2Cell[cell]));
+    R14[cell] = (1/1.71)*bmHET*etaHET*(no2Cell[cell]/(Kno2HET+no2Cell[cell]))*(Ko2HET/(Ko2HET+o2Cell[cell]));
 
     if(!(update->ntimestep % diffevery)){
-			//Rs[cell] = ( (-1/YHET) * ( (R1[cell]+R4[cell]+R5[cell]) * xHET[cell] ) ) + ( (1-Y1) * ( bHET*xHET[cell]+bAOB*xAOB[cell]+bNOB*xNOB[cell] ) ) +( bEPS*xEPS[cell]) ;
-			Rs[cell] = ( (-1/YHET) * ( (R1[cell]+R4[cell]+R5[cell]) * xHET[cell] ) ) + (bEPS*xEPS[cell]) ;
+      Rs[cell] = ( (-1/YHET) * ( (R1[cell]+R4[cell]+R5[cell]) * xHET[cell] ) ) + R6[cell]*xHET[cell] + R7[cell]*xAOB[cell] + R8[cell]*xNOB[cell] + R9[cell]*xEPS[cell];
 			Ro2[cell] = (-((1-YHET-YEPS)/YHET)*R1[cell]*xHET[cell])-(((3.42-YAOB)/YAOB)*R2[cell]*xAOB[cell])-(((1.15-YNOB)/YNOB)*R3[cell]*xNOB[cell]);
 			Rnh4[cell] = -(1/YAOB)*R2[cell]*xAOB[cell];
 			Rno2[cell] = ((1/YAOB)*R2[cell]*xAOB[cell])-((1/YNOB)*R3[cell]*xNOB[cell])-(((1-YHET-YEPS)/(1.17*YHET))*R5[cell]*xHET[cell]);
-			Rno3[cell] = ((1/YNOB)*R3[cell]*xNOB[cell])-(((1-YHET-YEPS)/(2.86*YHET))*R4[cell]*xHET[cell]) - (R14[cell] * xHET[cell]);
+			Rno3[cell] = ((1/YNOB)*R3[cell]*xNOB[cell])-(((1-YHET-YEPS)/(2.86*YHET))*R4[cell]*xHET[cell]);
 			//Decay and maintenance
 			Rs[cell] += (bX * xDEAD[cell]);
 			Ro2[cell] = Ro2[cell] - ((R10[cell] * xHET[cell]) + (R11[cell] * xAOB[cell]) + (R12[cell] * xNOB[cell]));
@@ -469,11 +468,10 @@ void FixDiffNuGrowth::change_dia()
 				R10[cell] = bmHET*(o2Prev[cell]/(Ko2HET+o2Prev[cell]));
 				R11[cell] = bmAOB*(o2Prev[cell]/(Ko2AOB+o2Prev[cell]));
 				R12[cell] = bmNOB*(o2Prev[cell]/(Ko2NOB+o2Prev[cell]));
-				R13[cell] = (-1/2.86)*bmHET*etaHET*(no3Prev[cell]/(Kno3HET+no3Prev[cell]));
-				R14[cell] = (-1/1.71)*bmHET*etaHET*(no2Prev[cell]/(Kno2HET+no2Prev[cell]));
+				R13[cell] = (1/2.86)*bmHET*etaHET*(no3Prev[cell]/(Kno3HET+no3Prev[cell]))*(Ko2HET/(Ko2HET+o2Prev[cell]));
+				R14[cell] = (1/1.71)*bmHET*etaHET*(no2Prev[cell]/(Kno2HET+no2Prev[cell]))*(Ko2HET/(Ko2HET+o2Prev[cell]));
 
-				//Rs[cell] = ((-1/YHET) * ( (R1[cell]+R4[cell]+R5[cell]) * xHET[cell] ) ) + ( (1-Y1) * ( bHET*xHET[cell]+bAOB*xAOB[cell]+bNOB*xNOB[cell] ) ) + ( bEPS*xEPS[cell] );
-				Rs[cell] = ((-1/YHET) * ( (R1[cell]+R4[cell]+R5[cell]) * xHET[cell] ) ) + ( bEPS*xEPS[cell] );
+	      Rs[cell] = ( (-1/YHET) * ( (R1[cell]+R4[cell]+R5[cell]) * xHET[cell] ) ) + R6[cell]*xHET[cell] + R7[cell]*xAOB[cell] + R8[cell]*xNOB[cell] + R9[cell]*xEPS[cell];
 				Ro2[cell] = (-((1-YHET-YEPS)/YHET)*R1[cell]*xHET[cell])-(((3.42-YAOB)/YAOB)*R2[cell]*xAOB[cell])-(((1.15-YNOB)/YNOB)*R3[cell]*xNOB[cell]);
 				Rnh4[cell] = -(1/YAOB)*R2[cell]*xAOB[cell];
 				Rno2[cell] = ((1/YAOB)*R2[cell]*xAOB[cell])-((1/YNOB)*R3[cell]*xNOB[cell])-(((1-YHET-YEPS)/(1.17*YHET))*R5[cell]*xHET[cell]);
@@ -548,7 +546,7 @@ void FixDiffNuGrowth::change_dia()
       double oldMass = rmass[i];
       rmass[i] = rmass[i]*(1 + (value*nevery));
 
-      double value2 = update->dt * (YEPS/YHET)*(gHET*(R1[cellIn[i]]+R4[cellIn[i]]+R5[cellIn[i]]-R6[cellIn[i]]-R10[cellIn[i]]-R13[cellIn[i]]-R14[cellIn[i]]));
+      double value2 = update->dt * (YEPS/YHET)*(gHET*(R1[cellIn[i]]+R4[cellIn[i]]+R5[cellIn[i]]));
       double oldRadius = radius[i];
       if (type[i] == 1) {
         outerMass[i] = (((4.0*MY_PI/3.0)*((outerRadius[i]*outerRadius[i]*outerRadius[i])-(radius[i]*radius[i]*radius[i])))*EPSdens)+(value2*nevery*rmass[i]);
