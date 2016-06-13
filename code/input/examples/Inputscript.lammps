@@ -147,6 +147,6 @@ thermo_style    custom step atoms nhet naob nnob neps ndead
 thermo		1000
 thermo_modify	lost ignore
 
-run  50000
+run  10000
 	
 

@@ -126,7 +126,7 @@ variable height equal 5e-5
 
 ##############Ibm functions##############
 
-fix g1 all diffnugrowth 1 200 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bHET v_bAOB v_bNOB v_bEPS v_bmHET v_bmAOB v_bmNOB b_bX v_YHET v_YAOB v_YNOB v_YEPS v_Y1 v_EPSdens v_Do2 v_Dnh4 v_Dno2 v_Dno3 v_Ds v_diffT v_sub v_o2 v_no2 v_no3 v_nh4 10 10 19 mixed v_BCsub v_BCo2 v_BCno2 v_BCno3 v_BCnh4 1000
+fix g1 all diffnugrowth 1 200 v_KsHET v_Ko2HET v_Kno2HET v_Kno3HET v_Knh4AOB v_Ko2AOB v_Kno2NOB v_Ko2NOB v_MumHET v_MumAOB v_MumNOB v_etaHET v_bHET v_bAOB v_bNOB v_bEPS v_bmHET v_bmAOB v_bmNOB b_bX v_YHET v_YAOB v_YNOB v_YEPS v_Y1 v_EPSdens v_Do2 v_Dnh4 v_Dno2 v_Dno3 v_Ds v_diffT v_sub v_o2 v_no2 v_no3 v_nh4 10 10 10 mixed v_BCsub v_BCo2 v_BCno2 v_BCno3 v_BCnh4 1000
 
 #fix dt1 HET inert 1 v_bHET v_factor 4123
 #fix dt2 AOB inert 1 v_bAOB v_factor 412321
@@ -147,6 +147,6 @@ thermo_style    custom step atoms nhet naob nnob neps ndead
 thermo		1000
 thermo_modify	lost ignore
 
-run  50000
+run  10000
 	
 
