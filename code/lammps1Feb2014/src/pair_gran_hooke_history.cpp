@@ -158,7 +158,6 @@ void PairGranHookeHistory::compute(int eflag, int vflag)
     jlist = firstneigh[i];
     jnum = numneigh[i];
 
-
     for (jj = 0; jj < jnum; jj++) {
       j = jlist[jj];
       j &= NEIGHMASK;
@@ -321,8 +320,6 @@ void PairGranHookeHistory::compute(int eflag, int vflag)
       }
     }
   }
-//  for(int i = 0; i < nlocal; i++)
-//    printf("after nlocal = %i, f[i][0] = %.20f \n",i, f[i][0]);
 }
 
 /* ----------------------------------------------------------------------
