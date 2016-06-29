@@ -14,6 +14,7 @@
 // C or Fortran style library interface to LAMMPS
 // new LAMMPS-specific functions can be added
 
+#include <USER-NUFEB/fix_fluid_drag.h> // added JS
 #include "mpi.h"
 #include "library.h"
 #include "lammps.h"
@@ -21,7 +22,6 @@
 #include "input.h"
 #include "atom.h"
 #include "atom_vec.h"
-#include "fix_fluid_drag.h" // added JS
 #include "modify.h"
 #include "string.h"
 #include "stdio.h"

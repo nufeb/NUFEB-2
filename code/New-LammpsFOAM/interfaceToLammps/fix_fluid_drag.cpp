@@ -11,10 +11,10 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
+#include <USER-NUFEB/fix_fluid_drag.h>
 #include "math.h"
 #include "stdlib.h"
 #include "string.h"
-#include "fix_fluid_drag.h"
 #include "atom.h"
 #include "update.h"
 #include "respa.h"
