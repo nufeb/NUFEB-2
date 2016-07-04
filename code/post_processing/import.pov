@@ -1,10 +1,20 @@
+#include "shapes.inc"
 // Right-handed coordinate system in which the z-axis points upwards
 camera {
-location <5.0e-2, 60e-2, 5.0e-2>
-sky y
+location <0, 60e-2, 0>
+sky z
 right 0.24*x*image_width/image_height
 up 0.24*y
-look_at <5.0e-2, 0.0, 5.0e-2>
+look_at <0, 0, 0>
+rotate <0, 0, 21*10>
+}
+// Create simualtion box
+#declare b_x=0.05;
+#declare b_y=0.05;
+#declare b_z=0.05;
+object{ 
+Wire_Box(<b_x, b_y, b_z>, <-b_x, -b_y, -b_z>, 0.0002, 0) 
+ texture{ pigment{ color rgb<1,1,1>}}
 }
 // White background
 background{rgb 1}

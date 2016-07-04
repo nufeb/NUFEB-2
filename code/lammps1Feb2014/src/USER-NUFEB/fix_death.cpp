@@ -93,7 +93,7 @@ void FixDeath::pre_exchange()
 void FixDeath::death()
 {
   double criticalDia= input->variable->compute_equal(ivar);
-  double criticalMass = 1e-20;
+  double criticalMass = 1e-18;
   double *radius = atom->radius;
   int *type = atom->type;
   int *mask = atom->mask;
