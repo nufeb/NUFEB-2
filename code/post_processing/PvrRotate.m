@@ -1,4 +1,4 @@
-function [ POV_RAY ] = Pvr(image)
+function [ POV_RAY ] = PvrRotate(image, rotate)
 
 %==================================
 
@@ -7,15 +7,25 @@ function [ POV_RAY ] = Pvr(image)
 % WRITE import.pov FILE FOR POVRAY
 fid=fopen('import.pov','w');
 
+fprintf(fid,'#include "shapes.inc"\n');
+
 fprintf(fid,'// Right-handed coordinate system in which the z-axis points upwards\n');
 fprintf(fid,'camera {\n');
-
-fprintf(fid,['location <5.0e-2, 60e-2, 5.0e-2>\n']);
-fprintf(fid,'sky y\n');
+fprintf(fid,['location <0, 60e-2, 0>\n']);
+fprintf(fid,'sky z\n');
 fprintf(fid,'right 0.24*x*image_width/image_height\n');
 fprintf(fid,'up 0.24*y\n');
-fprintf(fid,'look_at <5.0e-2, 0.0, 5.0e-2>\n');
-fprintf(fid,'rotate <0,clock*360,0>\n');
+fprintf(fid,'look_at <0, 0, 0>\n');
+%fprintf(fid,'look_at 0\n')
+fprintf(fid,'rotate <0, 0, %i*10>\n', rotate);
+fprintf(fid,'}\n');
+fprintf(fid,'// Create simualtion box\n');
+fprintf(fid,'#declare b_x=0.05;\n');
+fprintf(fid,'#declare b_y=0.05;\n');
+fprintf(fid,'#declare b_z=0.05;\n');
+fprintf(fid,'object{ \n');
+fprintf(fid,['Wire_Box(<b_x, b_y, b_z>, <-b_x, -b_y, -b_z>, 0.0002, 0) \n']);
+fprintf(fid,[' texture{ pigment{ color rgb<1,1,1>}}\n']);
 fprintf(fid,'}\n');
 fprintf(fid,'// White background\n');
 fprintf(fid,'background{rgb 1}\n');

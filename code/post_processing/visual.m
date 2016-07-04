@@ -25,9 +25,9 @@ while feof(dump) == 0
 Tp = C{2};
 ID = C{1};
 D = C{3}*1e+3;
-X = C{4}*1e+3;
-Y = C{5}*1e+3;
-Z = C{6}*1e+3;
+X = C{4}*1e+3-0.05;
+Y = C{5}*1e+3-0.05;
+Z = C{6}*1e+3-0.05;
 
 
 fid=fopen('data_p.pov','w');
@@ -77,7 +77,7 @@ fprintf(fid,['sphere{<' num2str(X(l)) ',' num2str(Y(l)) ',' num2str(Z(l)) '>,' n
     end
     fclose(fid);
     j=i+1000000;   
-POV_RAY=Pvr(image)
+POV_RAY=PvrRotate(image, i)
 
 generate=['povray +H3000 +W3000 +FJ Display=-D +O0_images/image' num2str(j) '.jpg import.pov'];
 system(generate);
