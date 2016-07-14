@@ -545,6 +545,59 @@ void FixDiffNuGrowth::change_dia()
 	  delete [] no3Prev;
   }
 
+//  for (i = 0; i < nall; i++) {
+//    if (mask[i] & groupbit) {
+//      double gHET = 0;
+//      double gAOB = 0;
+//      double gNOB = 0;
+//      double gEPS = 0;
+//      double gDEAD = 0;
+//
+//      if (type[i] == 1) {
+//        gHET = 1;
+//      }
+//      if (type[i] == 2) {
+//        gAOB = 1;
+//      }
+//      if (type[i] == 3) {
+//        gNOB = 1;
+//      }
+//      if (type[i] == 4) {
+//        gEPS = 1;
+//      }
+//      if (type[i] == 6) {
+//      	gDEAD = 1;
+//      }
+//
+//      sub[i] = subCell[cellIn[i]];
+//      o2[i] = o2Cell[cellIn[i]];
+//      nh4[i] = nh4Cell[cellIn[i]];
+//      no2[i] = no2Cell[cellIn[i]];
+//      no3[i] = no3Cell[cellIn[i]];
+//
+//      double value = update->dt * (gHET*(R1[cellIn[i]]+R4[cellIn[i]]+R5[cellIn[i]]-R6[cellIn[i]]-R10[cellIn[i]]-R13[cellIn[i]]-R14[cellIn[i]]) + gAOB*(R2[cellIn[i]]-R7[cellIn[i]]-R11[cellIn[i]]) + gNOB*(R3[cellIn[i]]-R8[cellIn[i]]-R12[cellIn[i]]) - gEPS*bEPS - gDEAD*bX);
+//
+//      density = rmass[i] / (4.0*MY_PI/3.0 *
+//                      radius[i]*radius[i]*radius[i]);
+//      double oldMass = rmass[i];
+//      rmass[i] = rmass[i]*(1 + (value*nevery));
+//
+//      double value2 = update->dt * (YEPS/YHET)*(gHET*(R1[cellIn[i]]+R4[cellIn[i]]+R5[cellIn[i]]));
+//      double oldRadius = radius[i];
+//      if (type[i] == 1) {
+//        outerMass[i] = (((4.0*MY_PI/3.0)*((outerRadius[i]*outerRadius[i]*outerRadius[i])-(radius[i]*radius[i]*radius[i])))*EPSdens)+(value2*nevery*rmass[i]);
+//
+//        outerRadius[i] = pow((3.0/(4.0*MY_PI))*((rmass[i]/density)+(outerMass[i]/EPSdens)),(1.0/3.0));
+//        radius[i] = pow((3.0/(4.0*MY_PI))*(rmass[i]/density),(1.0/3.0));
+//      }
+//      else {
+//        radius[i] = pow((3.0/(4.0*MY_PI))*(rmass[i]/density),(1.0/3.0));
+//        outerMass[i] = 0.0;
+//        outerRadius[i] = radius[i];
+//      }
+//    }
+//  }
+
   const double threeQuartersPI = (3.0/(4.0*MY_PI));
   const double fourThirdsPI = 4.0*MY_PI/3.0;
   const double third = 1.0/3.0;
@@ -556,7 +609,7 @@ void FixDiffNuGrowth::change_dia()
 
   for (int j = 0; j < numCells; j++) {
       caseOneOne[j] = (R1[j] + R4[j] + R5[j] - R6[j] - R10[j] - R13[j] - R14[j]) * update->dt;
-      caseOneTwo[j] = (R1[j] + R4[j] + R5[j]) * update->dt * (YEPS/YHET);
+      caseOneTwo[j] = (R1[i] + R4[i] + R5[i]) * update->dt * (YEPS/YHET);
       caseTwo[j] = (R2[j] - R7[j] - R11[j]) * update->dt;
       caseThree[j] = (R3[j] - R8[j] - R12[j]) * update->dt;
   }
