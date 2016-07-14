@@ -49,6 +49,39 @@ class FixDiffNuGrowth : public Fix {
   double *no2Cell;
   double *no3Cell;
 
+  double KsHET;
+  double Ko2HET;
+  double Kno2HET;
+  double Kno3HET;
+  double Knh4AOB;
+  double Ko2AOB;
+  double Kno2NOB;
+  double Ko2NOB;
+  double MumHET;
+  double MumAOB;
+  double MumNOB;
+  double etaHET;
+  double bHET; // R6
+  double bAOB; // R7
+  double bNOB; // R8
+  double bEPS; // R9
+  double bmHET;
+  double bmAOB;
+  double bmNOB;
+  double bX;
+  double YHET;
+  double YAOB;
+  double YNOB;
+  double YEPS;
+  double Y1;
+  double EPSdens;
+  double Do2;
+  double Dnh4;
+  double Dno2;
+  double Dno3;
+  double Ds;
+  double diffT;
+
   int numCells;
   int nx, ny, nz;
   double initsub, inito2, initnh4, initno2, initno3;
