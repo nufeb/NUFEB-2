@@ -37,7 +37,7 @@ fix 10 all viscous 0.1
 
 fix xw all wall/gran 200 NULL 50.0 NULL 1.5 0 xplane  0.000000e-04 1.000000e-04
 fix yw all wall/gran 200 NULL 50.0 NULL 1.5 0 yplane  0.000000e-04 1.000000e-04
-fix zw all wall/gran 200 NULL 50.0 NULL 1.5 0 zplane  0.000000e-04 1.000000e-04
+fix zw all wall/gran 200 NULL 50.0 NULL 1.5 0 zplane  0.000000e-04 1.00000	0e-04
 
 variable kanc equal 50
 

@@ -240,14 +240,16 @@ void FixDiffNuGrowth::init()
   }
 
   //create folders for concentration data
-  int status1, status2;
+  if (outputevery != 0){
+    int status1, status2;
 
-  status1 = system("rm -rf sub o2 no2 no3 nh4 r-values");
-  status2 = system("mkdir sub o2 no2 no3 nh4 r-values");
+    status1 = system("rm -rf sub o2 no2 no3 nh4 r-values");
+    status2 = system("mkdir sub o2 no2 no3 nh4 r-values");
 
-	if(status1 < 0 || status2 < 0){
-		 error->all(FLERR,"Fail to create concentration output dir");
-	}
+    if(status1 < 0 || status2 < 0){
+       error->all(FLERR,"Fail to create concentration output dir");
+    }
+  }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -390,7 +392,7 @@ void FixDiffNuGrowth::change_dia()
     R13[cell] = (1/2.86)*bmHET*etaHET*(no3Cell[cell]/(Kno3HET+no3Cell[cell]))*(Ko2HET/(Ko2HET+o2Cell[cell]));
     R14[cell] = (1/1.71)*bmHET*etaHET*(no2Cell[cell]/(Kno2HET+no2Cell[cell]))*(Ko2HET/(Ko2HET+o2Cell[cell]));
 
-    if(!(update->ntimestep % diffevery)){
+    if(diffevery != 0 && !(update->ntimestep % diffevery)){
       Rs[cell] = ( (-1/YHET) * ( (R1[cell]+R4[cell]+R5[cell]) * xHET[cell] ) ) + R6[cell]*xHET[cell] + R7[cell]*xAOB[cell] + R8[cell]*xNOB[cell] + R9[cell]*xEPS[cell];
 			Ro2[cell] = (-((1-YHET-YEPS)/YHET)*R1[cell]*xHET[cell])-(((3.42-YAOB)/YAOB)*R2[cell]*xAOB[cell])-(((1.15-YNOB)/YNOB)*R3[cell]*xNOB[cell]);
 			Rnh4[cell] = -(1/YAOB)*R2[cell]*xAOB[cell];
@@ -411,7 +413,7 @@ void FixDiffNuGrowth::change_dia()
 			cellDs[cell] = diffusionFunction * Ds;
     }
   }
-  if(!(update->ntimestep % diffevery)) {
+  if(diffevery != 0 && !(update->ntimestep % diffevery)) {
 
     double* subPrev  = new double[numCells];
     double* subCellCurrent = subCell;
@@ -530,7 +532,7 @@ void FixDiffNuGrowth::change_dia()
       }
   }
 
-		fprintf(stdout, "Number of iterations:  %i\n", iteration);
+		//fprintf(stdout, "Number of iterations:  %i\n", iteration);
 
 	  delete [] subPrev;
 	  delete [] o2Prev;
@@ -611,7 +613,7 @@ void FixDiffNuGrowth::change_dia()
   delete [] caseThree;
 
 	//output data
-	if(!(update->ntimestep % outputevery)){
+	if(outputevery != 0 && !(update->ntimestep % outputevery)){
 	  output_data(outputevery,1);
 	  output_data(outputevery,2);
 	  output_data(outputevery,3);
