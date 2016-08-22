@@ -215,11 +215,13 @@ class Atom : protected Pointers {
   void check_mass();
 
   //NUFEB CODE
-
-  void set_growth(const char *str);
-  void set_ks(const char *str);
-  void set_yield(const char *str);
-  void set_diffusion(const char *str);
+  void data_nutrients(int, char **);
+  void set_growth(const char *);
+  void set_ks(const char *);
+  void set_yield(const char *);
+  void set_diffusion(const char *);
+  void set_catCoeff(int, char **);
+  void set_anabCoeff(int, char **);
 
   int find_typeID(char *name);
   int find_nuID(char *name);

@@ -1916,6 +1916,48 @@ int Atom::memcheck(const char *str)
   return 1;
 }
 
+//NUFEB
+
+void Atom::data_nutrients(int narg, char **arg)
+{
+  if (narg != 4) error->all(FLERR,"Incorrect args for nutrient definitions");
+
+  int id = force->numeric(FLERR,arg[0]);
+  double scell = force->numeric(FLERR,arg[2]);
+  double sbc = force->numeric(FLERR,arg[3]);
+
+  char *name;
+
+  int n = strlen(arg[1]) + 1;
+  name = new char[n];
+  strcpy(name,arg[1]);
+
+  for (int i = 0; i < n-1; i++)
+    if (!isalnum(name[i]) && name[i] != '_')
+      error->all(FLERR,"Nutrient name must be "
+                 "alphanumeric or underscore characters");
+
+  for (int i = 0; i < nNutrients+1; i++)
+    if ((nuName[i] != NULL) && (strcmp(nuName[i], name) == 0)
+        && (i != id)){
+      error->one(FLERR,"Repeat nutrient names");
+    }
+
+  if (nuName[id] == NULL) {
+    nuName[id] = new char[n];
+  } else if (strcmp(nuName[id], name) != 0){
+    error->one(FLERR,"Incompatible nutrient names");
+  }
+
+  strcpy(nuName[id],name);
+  delete name;
+
+  if (nuConc == NULL) error->all(FLERR,"Cannot set nutrient concentration for this nutrient style");
+  nuConc[id][0] = scell;
+  nuConc[id][1] = sbc;
+
+}
+
 /* ----------------------------------------------------------------------
    set growth values for all types
    called from reading of data file
@@ -1980,7 +2022,7 @@ void Atom::set_ks(const char *str)
 
 void Atom::set_yield(const char *str)
 {
-  if (growth == NULL) error->all(FLERR,"Cannot set growth for this atom style");
+  if (yield == NULL) error->all(FLERR,"Cannot set yield for this atom style");
 
   char* typeName;
   double yield_one;
@@ -2002,7 +2044,7 @@ void Atom::set_yield(const char *str)
 }
 
 /* ----------------------------------------------------------------------
-   set diffusion values for all types
+   set diffusion values for all nutrients
    called from reading of data file
 ------------------------------------------------------------------------- */
 
@@ -2021,7 +2063,7 @@ void Atom::set_diffusion(const char *str)
   int iNu = find_nuID(nuName);
 
   if (iNu < 1 || iNu > nNutrients)
-    error->all(FLERR,"Invalid type for growth set");
+    error->all(FLERR,"Invalid nutrient for diffusion coefficient set");
 
   diffCoeff[iNu] = diffu_one;
   //mass_setflag[itype] = 1;
@@ -2029,6 +2071,57 @@ void Atom::set_diffusion(const char *str)
   if (yield[iNu] <= 0.0) error->all(FLERR,"Invalid growth value");
 }
 
+/* ----------------------------------------------------------------------
+   set catabolism coefficient for all types
+   called from reading of data file
+------------------------------------------------------------------------- */
+
+void Atom::set_catCoeff(int narg, char **arg)
+{
+  if (catCoeff == NULL) error->all(FLERR,"Cannot set catCoeff for this atom style");
+  if (narg != nNutrients+1) error->all(FLERR,"Invalid catCoeff line in data file");
+
+  char* nuName;
+  double diffu_one;
+  int len = strlen(arg[0]);
+  nuName = new char[len];
+
+  int itype = find_typeID(nuName);
+
+  if (itype < 1 || itype > ntypes)
+    error->all(FLERR,"Invalid type for catabolism coefficient set");
+
+  for(int i = 1; i < nNutrients+1; i++) {
+    int value = force->numeric(FLERR,arg[i]);
+    catCoeff[itype][i] = value;
+  }
+}
+
+/* ----------------------------------------------------------------------
+   set anabolism coefficient for all types
+   called from reading of data file
+------------------------------------------------------------------------- */
+
+void Atom::set_anabCoeff(int narg, char **arg)
+{
+  if (anabCoeff == NULL) error->all(FLERR,"Cannot set anabCoeff for this atom style");
+  if (narg != nNutrients+1) error->all(FLERR,"Invalid anabCoeff line in data file");
+
+  char* nuName;
+  double diffu_one;
+  int len = strlen(arg[0]);
+  nuName = new char[len];
+
+  int itype = find_typeID(nuName);
+
+  if (itype < 1 || itype > ntypes)
+    error->all(FLERR,"Invalid type for anabolism coefficient set");
+
+  for(int i = 1; i < nNutrients+1; i++) {
+    int value = force->numeric(FLERR,arg[i]);
+    anabCoeff[itype][i] = value;
+  }
+}
 
 int Atom::find_typeID(char *name) {
 

@@ -129,10 +129,10 @@ void AtomVecBio::data_atom(double *coord, imageint imagetmp, char **values)
       error->one(FLERR,"Repeat type names");
     }
 
-  if (typeName[type] == NULL){;
+  if (typeName[type] == NULL){
     typeName[type] = new char[n];
   } else if (strcmp(typeName[type], name) != 0){
-      error->one(FLERR,"Incompatible type names");
+    error->one(FLERR,"Incompatible type names");
   }
 
   strcpy(typeName[type],name);
