@@ -283,10 +283,9 @@ void ReadData::command(int narg, char **arg)
 
       // NUFEB CODE
       } else if (strcmp(keyword,"Nutrients") == 0) {
-        nuflag == 1;
+        nuflag = 1;
         if (firstpass) nutrients();
         else skip_lines(atom->nNutrients);
-      // NUFEB CODE
       }else if (strcmp(keyword,"Growth") == 0) {
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) growth();
@@ -299,8 +298,24 @@ void ReadData::command(int narg, char **arg)
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) yield();
         else skip_lines(atom->ntypes);
+      } else if (strcmp(keyword,"Diffusion Coeffs") == 0) {
+        if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
+        if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
+        if (firstpass) diffCoeff();
+        else skip_lines(atom->nNutrients);
+      } else if (strcmp(keyword,"Catabolism Coeffs") == 0) {
+        if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
+        if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
+        if (firstpass) catCoeff();
+        else skip_lines(atom->ntypes);
+      } else if (strcmp(keyword,"Anabolism Coeffs") == 0) {
+        if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
+        if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
+        if (firstpass) anabCoeff();
+        else skip_lines(atom->ntypes);
+      }
 
-      } else if (strcmp(keyword,"Pair Coeffs") == 0) {
+      else if (strcmp(keyword,"Pair Coeffs") == 0) {
         if (force->pair == NULL)
           error->all(FLERR,"Must define pair_style before Pair Coeffs");
         if (firstpass) paircoeffs();
@@ -1617,7 +1632,7 @@ void ReadData::nutrient_coeffs(){
   atom->diffCoeff = memory->grow(atom->diffCoeff,nNu+1,"atom:diffCoeff");
   atom->catCoeff = memory->grow(atom->catCoeff,ntypes+1,nNu+1,"atom:catCoeff");
   atom->anabCoeff = memory->grow(atom->anabCoeff,ntypes+1,nNu+1,"atom:anabCoeff");
-  atom->nuConc = memory->grow(atom->nuConc,ntypes+1,nNu+1,"atom:nuConc");
+  atom->nuConc = memory->grow(atom->nuConc,nNu+1,2,"atom:nuConc");
 }
 
 /* ----------------------------------------------------------------------
@@ -1638,7 +1653,8 @@ void ReadData::nutrients()
   for (i = 0; i < nNutrients; i++) {
     next = strchr(buf,'\n');
     *next = '\0';
-    atom->set_nutrients(buf);
+    parse_coeffs(buf,NULL,0);
+    atom->data_nutrients(narg,arg);
     buf = next + 1;
   }
   delete [] original;
@@ -1688,6 +1704,27 @@ void ReadData::ks()
 
 /* ---------------------------------------------------------------------- */
 
+void ReadData::diffCoeff()
+{
+  int i,m;
+  char *next;
+  char *buf = new char[atom->nNutrients*MAXLINE];
+
+  int eof = comm->read_lines_from_file(fp,atom->nNutrients,MAXLINE,buf);
+  if (eof) error->all(FLERR,"Unexpected end of data file");
+
+  char *original = buf;
+  for (i = 0; i < atom->nNutrients; i++) {
+    next = strchr(buf,'\n');
+    *next = '\0';
+    atom->set_diffusion(buf);
+    buf = next + 1;
+  }
+  delete [] original;
+}
+
+/* ---------------------------------------------------------------------- */
+
 void ReadData::yield()
 {
   int i,m;
@@ -1706,3 +1743,48 @@ void ReadData::yield()
   }
   delete [] original;
 }
+
+/* ---------------------------------------------------------------------- */
+
+void ReadData::catCoeff()
+{
+  int i,m;
+  char *next;
+  char *buf = new char[atom->ntypes*MAXLINE];
+
+  int eof = comm->read_lines_from_file(fp,atom->ntypes,MAXLINE,buf);
+  if (eof) error->all(FLERR,"Unexpected end of data file");
+
+  char *original = buf;
+  for (i = 0; i < atom->ntypes; i++) {
+    next = strchr(buf,'\n');
+    *next = '\0';
+    parse_coeffs(buf,NULL,0);
+    atom->set_catCoeff(narg,arg);
+    buf = next + 1;
+  }
+  delete [] original;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void ReadData::anabCoeff()
+{
+  int i,m;
+  char *next;
+  char *buf = new char[atom->ntypes*MAXLINE];
+
+  int eof = comm->read_lines_from_file(fp,atom->ntypes,MAXLINE,buf);
+  if (eof) error->all(FLERR,"Unexpected end of data file");
+
+  char *original = buf;
+  for (i = 0; i < atom->ntypes; i++) {
+    next = strchr(buf,'\n');
+    *next = '\0';
+    parse_coeffs(buf,NULL,0);
+    atom->set_anabCoeff(narg,arg);
+    buf = next + 1;
+  }
+  delete [] original;
+}
+

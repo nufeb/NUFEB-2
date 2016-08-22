@@ -90,6 +90,11 @@ class ReadData : protected Pointers {
   void growth();
   void ks();
   void yield();
+
+  void catCoeff();
+  void anabCoeff();
+  void nuConcCoeff();
+  void diffCoeff();
 };
 
 }

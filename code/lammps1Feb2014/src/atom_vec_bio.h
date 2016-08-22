@@ -56,7 +56,7 @@ class AtomVecBio : public AtomVecSphere {
   //nutrient
   int nsubs;
   char **nuName;
-  double **cellConc;
+  double **nuConc;
   double *diffCoeff;
 };
 
