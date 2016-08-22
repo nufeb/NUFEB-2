@@ -81,6 +81,15 @@ class ReadData : protected Pointers {
   void impropercoeffs(int);
 
   void fix(int, char *);
+
+  void type_coeffs();
+  void nutrient_coeffs();
+
+  void nutrients();
+
+  void growth();
+  void ks();
+  void yield();
 };
 
 }

@@ -35,12 +35,8 @@ using namespace MathConst;
 
 AtomVecBio::AtomVecBio(LAMMPS *lmp) : AtomVecSphere(lmp)
 {
-  size_data_atom = 13;
-  atom->sub = NULL;
-  atom->o2 = NULL;
-  atom->no2 = NULL;
-  atom->no3 = NULL;
-  atom->nh4 = NULL;
+  size_data_atom = 8;
+
   atom->outerMass = NULL;
   atom->outerRadius = NULL;
   atom->virtualMass = NULL;
@@ -72,11 +68,6 @@ void AtomVecBio::init()
 void AtomVecBio::grow(int n)
 {
   AtomVecSphere::grow(n);
-  sub = memory->grow(atom->sub,nmax,"atom:sub");
-  o2 = memory->grow(atom->o2,nmax,"atom:o2");
-  no2 = memory->grow(atom->no2,nmax,"atom:no2");
-  no3 = memory->grow(atom->no3,nmax,"atom:no3");
-  nh4 = memory->grow(atom->nh4,nmax,"atom:nh4");
   outerMass = memory->grow(atom->outerMass,nmax,"atom:outerMass");
   outerRadius = memory->grow(atom->outerRadius,nmax,"atom:outerRadius");
 }
@@ -85,12 +76,6 @@ void AtomVecBio::create_atom(int itype, double *coord)
 {
   int nlocal = atom->nlocal;
   AtomVecSphere::create_atom(itype, coord);
-
-  sub[nlocal] = 0.0;
-  o2[nlocal] = 0.0;
-  nh4[nlocal] = 0.0;
-  no2[nlocal] = 0.0;
-  no3[nlocal] = 0.0;
 
   outerRadius[nlocal] = 0.5;
   outerMass[nlocal] = 0.0;
@@ -109,11 +94,6 @@ void AtomVecBio::data_atom(double *coord, imageint imagetmp, char **values)
   else if (outerRadius[nlocal] < radius[nlocal]) {
     error->one(FLERR,"Outer radius must be greater than or equal to radius");
   }
-  sub[nlocal] = atof(values[8]);
-  o2[nlocal] = atof(values[9]);
-  nh4[nlocal] = atof(values[10]);
-  no2[nlocal] = atof(values[11]);
-  no3[nlocal] = atof(values[12]);
 
   outerMass[nlocal] = 0.0;
 
@@ -123,22 +103,13 @@ void AtomVecBio::data_atom(double *coord, imageint imagetmp, char **values)
 void AtomVecBio::grow_reset()
 {
   AtomVecSphere::grow_reset();
-  sub = atom->sub;
-  o2 = atom->o2;
-  nh4 = atom->nh4;
-  no2 = atom->no2;
-  no3 = atom->no3;
+
   outerMass = atom->outerMass;
   outerRadius = atom->outerRadius;
 }
 
 void AtomVecBio::copy(int i, int j, int delflag)
 {
-  sub[j] = sub[i];
-  o2[j] = o2[i];
-  nh4[j] = nh4[i];
-  no2[j] = no2[i];
-  no3[j] = no3[i];
   outerMass[j] = outerMass[i];
   outerRadius[j] = outerRadius[i];
 
@@ -150,11 +121,6 @@ bigint AtomVecBio::memory_usage()
 {
   bigint bytes = AtomVecSphere::memory_usage();
 
-  if (atom->memcheck("sub")) bytes += memory->usage(sub,nmax);
-  if (atom->memcheck("o2")) bytes += memory->usage(o2,nmax);
-  if (atom->memcheck("nh4")) bytes += memory->usage(nh4,nmax);
-  if (atom->memcheck("no2")) bytes += memory->usage(no2,nmax);
-  if (atom->memcheck("no3")) bytes += memory->usage(no3,nmax);
   if (atom->memcheck("outerMass")) bytes += memory->usage(outerMass,nmax);
   if (atom->memcheck("outerRadius")) bytes += memory->usage(outerRadius,nmax);
 

@@ -251,17 +251,32 @@ Atom::~Atom()
   memory->destroy(improper_atom3);
   memory->destroy(improper_atom4);
 
-  memory->destroy(sub);
-  memory->destroy(o2);
-  memory->destroy(nh4);
-  memory->destroy(no2);
-  memory->destroy(no3);
-
+  //NUFEB code
   memory->destroy(virtualMass);
-
   memory->destroy(outerRadius);
   memory->destroy(outerMass);
 
+  memory->destroy(yield);
+  memory->destroy(growth);
+  memory->destroy(ks);
+  memory->destroy(diffCoeff);
+
+  for (int i = 0; i < ntypes+1; i++) {
+    delete [] typeName[i];
+  }
+
+  for (int i = 0; i < nNutrients+1; i++) {
+    delete [] nuName[i];
+    delete [] anabCoeff[i];
+    delete [] catCoeff[i];
+    delete [] nuConc[i];
+  }
+
+  memory->sfree(nuName);
+  memory->sfree(anabCoeff);
+  memory->sfree(catCoeff);
+  memory->sfree(typeName);
+  memory->sfree(nuConc);
   // delete user-defined molecules
 
   for (int i = 0; i < nmolecule; i++) delete molecules[i];
@@ -1188,6 +1203,7 @@ void Atom::set_mass(const char *str)
   if (mass[itype] <= 0.0) error->all(FLERR,"Invalid mass value");
 }
 
+
 /* ----------------------------------------------------------------------
    set a mass and flag it as set
    called from EAM pair routine
@@ -1899,3 +1915,139 @@ int Atom::memcheck(const char *str)
   delete [] padded;
   return 1;
 }
+
+/* ----------------------------------------------------------------------
+   set growth values for all types
+   called from reading of data file
+------------------------------------------------------------------------- */
+
+void Atom::set_growth(const char *str)
+{
+  if (growth == NULL) error->all(FLERR,"Cannot set growth for this atom style");
+
+  char* typeName;
+  double growth_one;
+  int len = strlen(str);
+  typeName = new char[len];
+
+  int n = sscanf(str,"%s %lg",typeName,&growth_one);
+  //printf("name = %s \n", typeName);
+  if (n != 2) error->all(FLERR,"Invalid growth line in data file");
+
+
+  int itype = find_typeID(typeName);
+  //printf("itype = %d \n", itype);
+  if (itype < 1 || itype > ntypes)
+    error->all(FLERR,"Invalid type for growth set");
+
+  growth[itype] = growth_one;
+  //mass_setflag[itype] = 1;
+
+  if (growth[itype] <= 0.0) error->all(FLERR,"Invalid growth value");
+ //printf("name = %s type = %d, rate = %e \n", typeName, itype, growth[itype]);
+}
+/* ----------------------------------------------------------------------
+   set ks values for all types
+   called from reading of data file
+------------------------------------------------------------------------- */
+
+void Atom::set_ks(const char *str)
+{
+  if (ks == NULL) error->all(FLERR,"Cannot set ks value for this atom style");
+
+  char* typeName;
+  double ks_one;
+  int len = strlen(str);
+  typeName = new char[len];
+
+  int n = sscanf(str,"%s %lg",typeName,&ks_one);
+  if (n != 2) error->all(FLERR,"Invalid growth line in data file");
+
+  int itype = find_typeID(typeName);
+  if (itype < 1 || itype > ntypes)
+    error->all(FLERR,"Invalid type for growth set");
+
+  ks[itype] = ks_one;
+  //mass_setflag[itype] = 1;
+
+  if (ks[itype] <= 0.0) error->all(FLERR,"Invalid growth value");
+}
+
+/* ----------------------------------------------------------------------
+   set yield values for all types
+   called from reading of data file
+------------------------------------------------------------------------- */
+
+void Atom::set_yield(const char *str)
+{
+  if (growth == NULL) error->all(FLERR,"Cannot set growth for this atom style");
+
+  char* typeName;
+  double yield_one;
+  int len = strlen(str);
+  typeName = new char[len];
+
+  int n = sscanf(str,"%s %lg",typeName,&yield_one);
+  if (n != 2) error->all(FLERR,"Invalid growth line in data file");
+
+  int itype = find_typeID(typeName);
+
+  if (itype < 1 || itype > ntypes)
+    error->all(FLERR,"Invalid type for growth set");
+
+  yield[itype] = yield_one;
+  //mass_setflag[itype] = 1;
+
+  if (yield[itype] <= 0.0) error->all(FLERR,"Invalid growth value");
+}
+
+/* ----------------------------------------------------------------------
+   set diffusion values for all types
+   called from reading of data file
+------------------------------------------------------------------------- */
+
+void Atom::set_diffusion(const char *str)
+{
+  if (diffCoeff == NULL) error->all(FLERR,"Cannot set diffCoeff for this atom style");
+
+  char* nuName;
+  double diffu_one;
+  int len = strlen(str);
+  nuName = new char[len];
+
+  int n = sscanf(str,"%s %lg",nuName,&diffu_one);
+  if (n != 2) error->all(FLERR,"Invalid diffCoeff line in data file");
+
+  int iNu = find_nuID(nuName);
+
+  if (iNu < 1 || iNu > nNutrients)
+    error->all(FLERR,"Invalid type for growth set");
+
+  diffCoeff[iNu] = diffu_one;
+  //mass_setflag[itype] = 1;
+
+  if (yield[iNu] <= 0.0) error->all(FLERR,"Invalid growth value");
+}
+
+
+int Atom::find_typeID(char *name) {
+
+  for (int i = 0; i < atom->ntypes+1; i++)
+    if (typeName[i] && strcmp(typeName[i],name) == 0) {
+      return i;
+    }
+
+  return -1;
+}
+
+int Atom::find_nuID(char *name) {
+
+  for (int i = 0; i < atom->nNutrients+1; i++)
+    if (nuName[i] && strcmp(nuName[i],name) == 0) {
+      return i;
+    }
+
+  return -1;
+}
+
+
