@@ -56,8 +56,26 @@ class Atom : protected Pointers {
   double *q,**mu;
   double **omega,**angmom,**torque;
   double *radius,*rmass,*vfrac,*s0;
+
+
+  //NUFEB code
+
+  //atoem
   double *outerRadius;
-  double *outerMass;
+  double *virtualMass, *outerMass;
+
+  //type
+  char **typeName;
+  double *ks, *growth, *yield;
+  int **catCoeff;
+  int **anabCoeff;
+
+  //nutrient
+  int nNutrients;
+  char **nuName;
+  double **nuConc;
+  double *diffCoeff;
+
   double **x0;
   int *ellipsoid,*line,*tri,*body;
   int *spin;
@@ -68,10 +86,6 @@ class Atom : protected Pointers {
   double *e, *de;
   double **vest;
   double *cv;
-
-  double *sub, *o2, *nh4, *no2, *no3;
-
-  double *virtualMass;
 
   int **nspecial;               // 0,1,2 = cummulative # of 1-2,1-3,1-4 neighs
   tagint **special;             // IDs of 1-2,1-3,1-4 neighs of each atom
@@ -199,6 +213,16 @@ class Atom : protected Pointers {
   void set_mass(int, char **);
   void set_mass(double *);
   void check_mass();
+
+  //NUFEB CODE
+
+  void set_growth(const char *str);
+  void set_ks(const char *str);
+  void set_yield(const char *str);
+  void set_diffusion(const char *str);
+
+  int find_typeID(char *name);
+  int find_nuID(char *name);
 
   int radius_consistency(int, double &);
   int shape_consistency(int, double &, double &, double &);

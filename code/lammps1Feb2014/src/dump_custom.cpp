@@ -838,21 +838,6 @@ int DumpCustom::count()
       } else if (thresh_array[ithresh] == OUTERMASS) {
         ptr = atom->outerMass;
         nstride = 1;
-      } else if (thresh_array[ithresh] == SUB) {
-        ptr = atom->sub;
-        nstride = 1;
-      } else if (thresh_array[ithresh] == O2) {
-        ptr = atom->o2;
-        nstride = 1;
-      } else if (thresh_array[ithresh] == NH4) {
-        ptr = atom->nh4;
-        nstride = 1;
-      } else if (thresh_array[ithresh] == NO3) {
-        ptr = atom->no3;
-        nstride = 1;
-      } else if (thresh_array[ithresh] == NO2) {
-        ptr = atom->no2;
-        nstride = 1;
       } else if (thresh_array[ithresh] == COMPUTE) {
         i = nfield + ithresh;
         if (argindex[i] == 0) {
@@ -1212,21 +1197,6 @@ int DumpCustom::parse_fields(int narg, char **arg)
       if (!atom->erforce_flag)
         error->all(FLERR,"Dumping an atom quantity that isn't allocated");
       pack_choice[i] = &DumpCustom::pack_erforce;
-      vtype[i] = DOUBLE;
-    } else if (strcmp(arg[iarg],"sub") == 0) {
-      pack_choice[i] = &DumpCustom::pack_sub;
-      vtype[i] = DOUBLE;
-    } else if (strcmp(arg[iarg],"o2") == 0) {
-      pack_choice[i] = &DumpCustom::pack_o2;
-      vtype[i] = DOUBLE;
-    } else if (strcmp(arg[iarg],"nh4") == 0) {
-      pack_choice[i] = &DumpCustom::pack_nh4;
-      vtype[i] = DOUBLE;
-    } else if (strcmp(arg[iarg],"no2") == 0) {
-      pack_choice[i] = &DumpCustom::pack_no2;
-      vtype[i] = DOUBLE;
-    } else if (strcmp(arg[iarg],"no3") == 0) {
-      pack_choice[i] = &DumpCustom::pack_no3;
       vtype[i] = DOUBLE;
     } else if (strcmp(arg[iarg],"outerradius") == 0) {
       pack_choice[i] = &DumpCustom::pack_outerradius;
@@ -2515,66 +2485,6 @@ void DumpCustom::pack_erforce(int n)
 
   for (int i = 0; i < nchoose; i++) {
     buf[n] = erforce[clist[i]];
-    n += size_one;
-  }
-}
-
-/* ---------------------------------------------------------------------- */
-
-void DumpCustom::pack_sub(int n)
-{
-  double *sub = atom->sub;
-
-  for (int i = 0; i < nchoose; i++) {
-    buf[n] = sub[clist[i]];
-    n += size_one;
-  }
-}
-
-/* ---------------------------------------------------------------------- */
-
-void DumpCustom::pack_o2(int n)
-{
-  double *o2 = atom->o2;
-
-  for (int i = 0; i < nchoose; i++) {
-    buf[n] = o2[clist[i]];
-    n += size_one;
-  }
-}
-
-/* ---------------------------------------------------------------------- */
-
-void DumpCustom::pack_nh4(int n)
-{
-  double *nh4 = atom->nh4;
-
-  for (int i = 0; i < nchoose; i++) {
-    buf[n] = nh4[clist[i]];
-    n += size_one;
-  }
-}
-
-/* ---------------------------------------------------------------------- */
-
-void DumpCustom::pack_no2(int n)
-{
-  double *n02 = atom->no2;
-
-  for (int i = 0; i < nchoose; i++) {
-    buf[n] = n02[clist[i]];
-    n += size_one;
-  }
-}
-
-/* ---------------------------------------------------------------------- */
-
-void DumpCustom::pack_no3(int n)
-{
-  double *n03 = atom->no3;
-
-  for (int i = 0; i < nchoose; i++) {
-    buf[n] = n03[clist[i]];
     n += size_one;
   }
 }
