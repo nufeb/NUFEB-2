@@ -1920,6 +1920,7 @@ int Atom::memcheck(const char *str)
 
 void Atom::data_nutrients(int narg, char **arg)
 {
+  //printf("narg = %i, nNu = %i\n", narg, nNutrients);
   if (narg != 4) error->all(FLERR,"Incorrect args for nutrient definitions");
 
   int id = force->numeric(FLERR,arg[0]);
@@ -2081,12 +2082,13 @@ void Atom::set_catCoeff(int narg, char **arg)
   if (catCoeff == NULL) error->all(FLERR,"Cannot set catCoeff for this atom style");
   if (narg != nNutrients+1) error->all(FLERR,"Invalid catCoeff line in data file");
 
-  char* nuName;
-  double diffu_one;
+  char* typeName;
+  double yield_one;
   int len = strlen(arg[0]);
-  nuName = new char[len];
+  typeName = new char[len];
+  strcpy(typeName,arg[0]);
 
-  int itype = find_typeID(nuName);
+  int itype = find_typeID(typeName);
 
   if (itype < 1 || itype > ntypes)
     error->all(FLERR,"Invalid type for catabolism coefficient set");
@@ -2107,12 +2109,13 @@ void Atom::set_anabCoeff(int narg, char **arg)
   if (anabCoeff == NULL) error->all(FLERR,"Cannot set anabCoeff for this atom style");
   if (narg != nNutrients+1) error->all(FLERR,"Invalid anabCoeff line in data file");
 
-  char* nuName;
-  double diffu_one;
+  char* typeName;
+  double yield_one;
   int len = strlen(arg[0]);
-  nuName = new char[len];
+  typeName = new char[len];
+  strcpy(typeName,arg[0]);
 
-  int itype = find_typeID(nuName);
+  int itype = find_typeID(typeName);
 
   if (itype < 1 || itype > ntypes)
     error->all(FLERR,"Invalid type for anabolism coefficient set");

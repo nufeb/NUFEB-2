@@ -700,7 +700,7 @@ void ReadData::header()
     else if (strstr(line,"atom types")) {
       sscanf(line,"%d",&atom->ntypes);
       type_coeffs();
-    }else if (strstr(line,"atom types")) {
+    }else if (strstr(line,"nutrients")) {
       sscanf(line,"%d",&atom->nNutrients);
       nutrient_coeffs();
     }

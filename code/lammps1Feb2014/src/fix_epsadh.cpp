@@ -41,11 +41,6 @@ using namespace FixConst;
 FixEPSAdh::FixEPSAdh(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
-
-  for (int i = 1; i < atom->ntypes+1; i++){
-    printf("name = %s, type = %i, growth = %f, ks = %f, yield = %f \n", atom->typeName[i], i, atom->growth[i], atom->ks[i], atom->yield[i]);
-  }
-
   if (narg != 6) error->all(FLERR,"Illegal fix eps adhesion command");
 
   nevery = force->inumeric(FLERR,arg[3]);

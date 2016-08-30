@@ -38,26 +38,70 @@
 #include "memory.h"
 #include "error.h"
 #include "comm.h"
+#include <iostream>
+#include <Eigen/Eigen>
+#include <unsupported/Eigen/KroneckerProduct>
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
 using namespace MathConst;
 
-#define CHUNK 1000
-#define MAXLINE 256
+using namespace std;
+using namespace Eigen;
 
-#define NSECTIONS 4
 
 /* ---------------------------------------------------------------------- */
 
 FixMetabolism::FixMetabolism(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
 
-  line = new char[MAXLINE];
-  keyword = new char[MAXLINE];
-  buffer = new char[CHUNK*MAXLINE];
+  if (narg != 10) error->all(FLERR,"Not enough arguments in fix metabolism command");
 
-  readfile(arg[3]);
+  nevery = force->inumeric(FLERR,arg[3]);
+  diffevery = force->inumeric(FLERR,arg[4]);
+  if (nevery < 0 || diffevery < 0) error->all(FLERR,"Illegal fix growth command");
+
+  var = new char*[1];
+  ivar = new int[1];
+
+  for (int i = 0; i < 1; i++) {
+    int n = strlen(&arg[5+i][2]) + 1;
+    var[i] = new char[n];
+    strcpy(var[i],&arg[5+i][2]);
+  }
+
+  nx = atoi(arg[6]);
+  ny = atoi(arg[7]);
+  nz = atoi(arg[8]);
+
+  if(strcmp(arg[9], "dirich") == 0) bflag = 1;
+  else if(strcmp(arg[9], "neu") == 0) bflag = 2;
+  else if(strcmp(arg[9], "mixed") == 0) bflag = 3;
+  else error->all(FLERR,"Illegal boundary condition command");
+
+//  // test
+//  for (int i = 1; i < atom->ntypes+1; i++){
+//    printf("Atom info:\n");
+//    printf("name = %s \n", atom->typeName[i]);
+//    printf("type = %i, growth = %f, ks = %f, yield = %f \n",i, atom->growth[i], atom->ks[i], atom->yield[i]);
+//    printf("Catabolism coeffs:\n");
+//    for (int ii = 1; ii < atom->nNutrients +1; ii++) {
+//      printf("%i ", atom->catCoeff[i][ii]);
+//    }
+//    printf("\n");
+//    printf("Anabolism coeffs:\n");
+//    for (int ii = 1; ii < atom->nNutrients +1; ii++) {
+//      printf("%i ", atom->anabCoeff[i][ii]);
+//    }
+//    printf("\n");
+//    printf("\n");
+//  }
+//
+//  for (int i = 1; i < atom->nNutrients+1; i++){
+//    printf("Nutrient info:\n");
+//    printf("name = %s \n", atom->nuName[i]);
+//    printf("type = %i, diff coeffs = %e, Scell = %e, Sbc=%e \n", i, atom->diffCoeff[i], atom->nuConc[i][0], atom->nuConc[i][1]);
+//  }
 
 }
 
@@ -65,24 +109,12 @@ FixMetabolism::FixMetabolism(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg,
 
 FixMetabolism::~FixMetabolism()
 {
-  memory->destroy(cellConc);
-  memory->destroy(bcConc);
-  memory->destroy(diffCoeff);
-
-  for (int i = 0; i < atom->ntypes+1; i++) {
-    delete [] catCoeff[i];
-    delete [] anabCoeff[i];
+  int i;
+  for (i = 0; i < 1; i++) {
+    delete [] var[i];
   }
-
-  memory->sfree(catCoeff);
-  memory->sfree(anabCoeff);
-  //memory->sfree(metaCoeff);
-
-  for (int i = 0; i < nsubs+1; i++) {
-    delete [] subName[i];
-  }
-
-  memory->sfree(subName);
+  delete [] var;
+  delete [] ivar;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -98,8 +130,88 @@ int FixMetabolism::setmask()
 
 void FixMetabolism::init()
 {
+  if (!atom->radius_flag)
+    error->all(FLERR,"Fix requires atom attribute diameter");
 
+  for (int n = 0; n < 1; n++) {
+    ivar[n] = input->variable->find(var[n]);
+    if (ivar[n] < 0)
+      error->all(FLERR,"Variable name for fix  does not exist");
+    if (!input->variable->equalstyle(ivar[n]))
+      error->all(FLERR,"Variable for fix  is invalid style");
+  }
+
+  diffT = input->variable->compute_equal(ivar[0]);
+  nNus = atom->nNutrients;
+  subname = atom->nuName;
+  nuConc = atom->nuConc;
+  catCoeff = atom->catCoeff;
+  anabCoeff = atom->anabCoeff;
+  diffCoeff = atom->diffCoeff;
+
+  laplacian_matrix();
 }
+
+void FixMetabolism::laplacian_matrix()
+{
+  VectorXi ex1(nx);
+  ex1.setOnes();
+  MatrixXi  ex (nx, 3);
+  ex << ex1, -3*ex1, ex1;
+  VectorXi dx(3);
+  dx << -1, 0, 1;
+  SparseMatrix<int> Lx = spdiags(ex, dx, nx, ny, 3);
+
+  VectorXi ey1(nx);
+  ey1.setOnes();
+  MatrixXi  ey (nx, 3);
+  ey << ey1, -3*ey1, ey1;
+  VectorXi dy(3);
+  dy << -1, 0, 1;
+  SparseMatrix<int> Ly = spdiags(ex, dy, nx, ny, 3);
+
+  SparseMatrix<int> Ix(nx, nx);
+  Ix.setIdentity();
+  SparseMatrix<int> Iy(ny, ny);
+  Iy.setIdentity();
+
+  SparseMatrix<int> L2a = kroneckerProduct(Iy, Lx);
+  SparseMatrix<int> L2b = kroneckerProduct(Ly, Ix);
+  SparseMatrix<int> L2 = L2a + L2b;
+
+  int N=nx*ny*nz;
+  VectorXi ez1(N);
+  ez1.setOnes();
+  MatrixXi  ez (N, 2);
+  ez << ez1, ez1;
+  VectorXi dz(2);
+  dz << -nx*ny, nx*ny;
+  SparseMatrix<int> L = spdiags(ez, dz, N, N, 2);
+
+  SparseMatrix<int> Iz(nz, nz);
+  Iz.setIdentity();
+  SparseMatrix<int> Aa = kroneckerProduct(Iz, L2);
+  SparseMatrix<int> A = Aa + L;
+
+  cout << "done!!!" <<endl;
+}
+
+SparseMatrix<int> FixMetabolism::spdiags(MatrixXi& B, VectorXi& d, int m, int n, int size_d)
+{
+  SparseMatrix<int> A(m,n);
+
+  for (int k = 0; k < size_d; k++) {
+    int i_min = max(0, (int)(-d(k)));
+    int i_max = min(m - 1, (int)(n - d(k) - 1));
+    int B_idx_start = m >= n ? d(k) : 0;
+
+    for (int i = i_min; i <= i_max; i++) {
+     A.insert(i, (int)(i+d(k))) = B(B_idx_start + i, k);
+    }
+  }
+  return A;
+}
+
 
 /* ---------------------------------------------------------------------- */
 
@@ -110,308 +222,8 @@ void FixMetabolism::pre_force(int vflag)
 
 /* ---------------------------------------------------------------------- */
 
-void FixMetabolism::change_dia()
+void FixMetabolism::metabolism()
 {
 
 }
 
-/* ----------------------------------------------------------------------
-   read target coordinates from file, store with appropriate atom
-------------------------------------------------------------------------- */
-
-void FixMetabolism::readfile(char *file)
-{
-  int firstpass = 1;
-  int subflag;
-
-  subflag = 0;
-  while (1) {
-    // open file on proc 0
-
-    if (me == 0) {
-      if (firstpass && screen) fprintf(screen,"Reading subtrate file ...\n");
-      open(file);
-    } else fp = NULL;
-
-    // read header info
-
-    header();
-
-    // allocate arrays
-
-    if (firstpass) {
-      allocate_arrays();
-    }
-
-    while (strlen(keyword)) {
-
-      if (strcmp(keyword,"Substrates") == 0) {
-        subflag = 1;
-        if (firstpass) substrate();
-        else skip_lines(nsubs);
-      } else if (strcmp(keyword,"Diffusion") == 0) {
-        if (subflag == 0) error->all(FLERR,"Must read Substrates before Lines");
-        if (firstpass) diffusion();
-        else skip_lines(nsubs);
-      } else if (strcmp(keyword,"Cat") == 0) {
-        if (subflag == 0) error->all(FLERR,"Must read Substrates before Lines");
-        if (firstpass) cat();
-        else skip_lines(atom->ntypes);
-      } else if (strcmp(keyword,"Anab") == 0) {
-        if (subflag == 0) error->all(FLERR,"Must read Substrates before Lines");
-        if (firstpass) anab();
-        else skip_lines(atom->ntypes);
-    }  else {
-      char str[128];
-      sprintf(str,"Unknown identifier in data file: %s",keyword);
-      error->all(FLERR,str);
-    }
-
-    parse_keyword(0);
-    }
-
-    // error if natoms > 0 yet no atoms were read
-
-    if (nsubs > 0 && subflag == 0)
-      error->all(FLERR,"No Substrates in data file");
-
-    // close file
-
-    if (me == 0) {
-      if (compressed) pclose(fp);
-      else fclose(fp);
-    }
-
-    // done if this was 2nd pass
-
-    if (!firstpass) break;
-  }
-}
-
-
-/*------------------------------------------------------------------------- */
-
-void FixMetabolism::header()
-{
-  int n;
-  char *ptr;
-
-  // customize for new sections
-
-  const char *section_keywords[NSECTIONS] =
-    {"Substrates", "Diffusion", "Cat", "Anab"};
-
-  // skip 1st line of file
-
-  if (me == 0) {
-    char *eof = fgets(line,MAXLINE,fp);
-    if (eof == NULL) error->one(FLERR,"Unexpected end of data file");
-  }
-  while (1) {
-
-    // read a line and bcast length if flag is set
-
-    if (me == 0) {
-      if (fgets(line,MAXLINE,fp) == NULL) n = 0;
-      else n = strlen(line) + 1;
-    }
-
-
-    MPI_Bcast(&n,1,MPI_INT,0,world);
-
-    // if n = 0 then end-of-file so return with blank line
-
-    if (n == 0) {
-      line[0] = '\0';
-      return;
-    }
-    MPI_Bcast(line,n,MPI_CHAR,0,world);
-
-    // trim anything from '#' onward
-    // if line is blank, continue
-
-    if (ptr = strchr(line,'#')) *ptr = '\0';
-    if (strspn(line," \t\n\r") == strlen(line)) continue;
-
-    // search line for header keyword and set corresponding variable
-
-    if (strstr(line,"substrates")) {
-      sscanf(line,"%i",&nsubs);
-    } else break;
-  }
-
-  // check that exiting string is a valid section keyword
-
-  parse_keyword(1);
-  for (n = 0; n < NSECTIONS; n++)
-    if (strcmp(keyword,section_keywords[n]) == 0) break;
-  if (n == NSECTIONS) {
-    char str[128];
-    sprintf(str,"Unknown identifier in data file: %s",keyword);
-    error->all(FLERR,str);
-  }
-}
-
-/* ----------------------------------------------------------------------
-   proc 0 opens substrate data file
-   test if gzipped
-------------------------------------------------------------------------- */
-
-void FixMetabolism::open(char *file)
-{
-  compressed = 0;
-  char *suffix = file + strlen(file) - 3;
-  if (suffix > file && strcmp(suffix,".gz") == 0) compressed = 1;
-  if (!compressed) fp = fopen(file,"r");
-  else {
-#ifdef LAMMPS_GZIP
-    char gunzip[128];
-    sprintf(gunzip,"gzip -c -d %s",file);
-
-#ifdef _WIN32
-    fp = _popen(gunzip,"rb");
-#else
-    fp = popen(gunzip,"r");
-#endif
-
-#else
-    error->one(FLERR,"Cannot open gzipped file");
-#endif
-  }
-
-  if (fp == NULL) {
-    char str[128];
-    sprintf(str,"Cannot open file %s",file);
-    error->one(FLERR,str);
-  }
-}
-
-void FixMetabolism::allocate_arrays()
-{
-  subName = (char **) memory->srealloc(atom->typeName,(nsubs+1)*sizeof(char *),
-                                     "atom:typeName");
-  cellConc = new double[nsubs+1];
-  bcConc = new double[nsubs+1];
-  diffCoeff = new double[nsubs+1];
-
-  for (int i = 0; i < atom->ntypes+1; i++) {
-    catCoeff[i] = new int[nsubs+1];
-    anabCoeff[i] = new int[nsubs+1];
-  }
-
-}
-
-/* ----------------------------------------------------------------------
-   grab next keyword
-   read lines until one is non-blank
-   keyword is all text on line w/out leading & trailing white space
-   read one additional line (assumed blank)
-   if any read hits EOF, set keyword to empty
-   if first = 1, line variable holds non-blank line that ended header
-------------------------------------------------------------------------- */
-
-void FixMetabolism::parse_keyword(int first)
-{
-  int eof = 0;
-
-  // proc 0 reads upto non-blank line plus 1 following line
-  // eof is set to 1 if any read hits end-of-file
-
-  if (me == 0) {
-    if (!first) {
-      if (fgets(line,MAXLINE,fp) == NULL) eof = 1;
-    }
-    while (eof == 0 && strspn(line," \t\n\r") == strlen(line)) {
-      if (fgets(line,MAXLINE,fp) == NULL) eof = 1;
-    }
-    if (fgets(buffer,MAXLINE,fp) == NULL) eof = 1;
-  }
-
-  // if eof, set keyword empty and return
-
-  MPI_Bcast(&eof,1,MPI_INT,0,world);
-  if (eof) {
-    keyword[0] = '\0';
-    return;
-  }
-
-  // bcast keyword line to all procs
-
-  int n;
-  if (me == 0) n = strlen(line) + 1;
-  MPI_Bcast(&n,1,MPI_INT,0,world);
-  MPI_Bcast(line,n,MPI_CHAR,0,world);
-
-  // copy non-whitespace portion of line into keyword
-
-  int start = strspn(line," \t\n\r");
-  int stop = strlen(line) - 1;
-  while (line[stop] == ' ' || line[stop] == '\t'
-         || line[stop] == '\n' || line[stop] == '\r') stop--;
-  line[stop+1] = '\0';
-  strcpy(keyword,&line[start]);
-}
-
-/* ----------------------------------------------------------------------
-   proc 0 reads N lines from file
-   could be skipping Natoms lines, so use bigints
-------------------------------------------------------------------------- */
-
-void FixMetabolism::skip_lines(bigint n)
-{
-  if (me) return;
-  char *eof;
-  for (bigint i = 0; i < n; i++) eof = fgets(line,MAXLINE,fp);
-  if (eof == NULL) error->one(FLERR,"Unexpected end of data file");
-}
-
-void FixMetabolism::diffusion()
-{
-  int i,m;
-  char *next;
-  char *buf = new char[atom->ntypes*MAXLINE];
-
-  int eof = comm->read_lines_from_file(fp,nsubs,MAXLINE,buf);
-  if (eof) error->all(FLERR,"Unexpected end of data file");
-
-  char *original = buf;
-  for (i = 0; i < nsubs; i++) {
-    next = strchr(buf,'\n');
-    *next = '\0';
-    atom->set_ks(buf);
-    buf = next + 1;
-  }
-  delete [] original;
-}
-//
-//void FixMetabolism::set_diffusion(const char *str)
-//{
-//  if (diffCoeff == NULL) error->all(FLERR,"Cannot set ks value for this atom style");
-//
-//  char* typeName;
-//  double diffCoeff_one;
-//  int len = strlen(str);
-//  typeName = new char[len];
-//
-//  int n = sscanf(str,"%s %lg",typeName,&diffCoeff_one);
-//  if (n != 2) error->all(FLERR,"Invalid growth line in data file");
-//
-//  int itype = find_typeID(typeName);
-//  if (itype < 1 || itype > ntypes)
-//    error->all(FLERR,"Invalid type for diffCoeff set");
-//
-//  diffCoeff[itype] = diffCoeff_one;
-//  //mass_setflag[itype] = 1;
-//
-//  if (ks[itype] <= 0.0) error->all(FLERR,"Invalid growth value");
-//}
-//
-//int FixMetabolism::find_subID(char *name) {
-//
-//  for (int i = 0; i < atom->ntypes+1; i++)
-//    if (typeName[i] && strcmp(typeName[i],name) == 0) {
-//      return i;
-//    }
-//
-//  return -1;
-//}
