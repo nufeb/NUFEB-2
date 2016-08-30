@@ -15,6 +15,9 @@ FixStyle(metabolism,FixMetabolism)
 #define SRC_FIX_METABOLISM_H
 
 #include "fix.h"
+#include <Eigen/Eigen>
+
+using namespace Eigen;
 
 namespace LAMMPS_NS {
 
@@ -27,25 +30,19 @@ class FixMetabolism : public Fix {
   void pre_force(int);
 
  private:
-  int me;
-  char *line,*keyword,*buffer;
-  int compressed;
-  FILE *fp;
-
   char **var;
   int *ivar;
-  int nsubs;
-  char **subName;
+  int nNus;
+  char **subname;
   int diffevery;
   int outputevery;
-  double *xCell;
-  double *yCell;
-  double *zCell;
-  double *cellVol;
-  bool *ghost;
+//  double *xCell;
+//  double *yCell;
+//  double *zCell;
+//  double *cellVol;
+//  bool *ghost;
 
-  double *cellConc;
-  double *bcConc;
+  double **nuConc;
 
   int **catCoeff;
   int **anabCoeff;
@@ -59,27 +56,10 @@ class FixMetabolism : public Fix {
   int bflag; // 1 = dirichlet, 2 = neumann, 3 = mixed
   double xstep, ystep, zstep;
 
-  void change_dia();
-
-
-  void readfile(char*);
-  void open(char *);
-  void header();
-  void allocate_arrays();
-  void parse_keyword(int first);
-  void skip_lines(bigint n);
-
-  void substrate();
-  void diffusion();
-  void cat();
-  void anab();
-
-  void set_diffusion(const char *str);
-  void set_substrate(const char *str);
-  void set_cat(const char *str);
-  void set_anab(const char *str);
-
-  int find_subID(char *name);
+  void laplacian_matrix();
+  void metabolism();
+  SparseMatrix<int> spdiags(MatrixXi&, VectorXi&, int, int, int);
+ // arma::imat spdiags(const arma::imat&, const arma::irowvec&, int, int);
 };
 
 }
