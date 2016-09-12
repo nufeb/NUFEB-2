@@ -67,7 +67,7 @@ void AtomVecBio::init()
   // set radvary if particle diameters are time-varying due to fix adapt
 
   for (int i = 0; i < modify->nfix; i++)
-    if (strcmp(modify->fix[i]->style,"growth") == 0 || strcmp(modify->fix[i]->style,"divide") == 0) {
+    if (strcmp(modify->fix[i]->style,"growth") == 0 || strcmp(modify->fix[i]->style,"divide") == 0 || strcmp(modify->fix[i]->style,"metabolism") == 0) {
       FixAdapt *fix = (FixAdapt *) modify->fix[i];
       radvary = 1;
       comm_x_only = 0;
@@ -80,6 +80,7 @@ void AtomVecBio::grow(int n)
   AtomVecSphere::grow(n);
   outerMass = memory->grow(atom->outerMass,nmax,"atom:outerMass");
   outerRadius = memory->grow(atom->outerRadius,nmax,"atom:outerRadius");
+
 }
 
 void AtomVecBio::create_atom(int itype, double *coord)
@@ -124,21 +125,22 @@ void AtomVecBio::data_atom(double *coord, imageint imagetmp, char **values)
                  "alphanumeric or underscore characters");
 
   for (int i = 0; i < ntypes+1; i++)
-    if ((typeName[i] != NULL) && (strcmp(typeName[i], name) == 0)
-        && (i != type)){
+    if (typeName[i] != NULL)
+        if((strcmp(typeName[i], name) == 0) && (i != type)){
       error->one(FLERR,"Repeat type names");
     }
 
   if (typeName[type] == NULL){
     typeName[type] = new char[n];
-  } else if (strcmp(typeName[type], name) != 0){
+  }
+  else if (strcmp(typeName[type], name) != 0){
     error->one(FLERR,"Incompatible type names");
   }
 
   strcpy(typeName[type],name);
 
-  delete name;
- // printf("name = %s type = %i \n", typeName[type], type);
+  delete[] name;
+  //printf("name = %s type = %i \n", typeName[type], type);
 }
 
 void AtomVecBio::grow_reset()

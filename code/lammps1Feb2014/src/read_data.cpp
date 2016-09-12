@@ -1614,12 +1614,16 @@ void ReadData::type_coeffs(){
 
   int ntypes = atom->ntypes;
 
-  atom->virtualMass = memory->grow(atom->virtualMass,ntypes+1,"atom:virtualMass");
-  atom->ks = memory->grow(atom->ks,ntypes+1,"atom:ks");
-  atom->growth = memory->grow(atom->growth,ntypes+1,"atom:growth");
-  atom->yield = memory->grow(atom->yield,ntypes+1,"atom:yield");
+  atom->virtualMass = memory->create(atom->virtualMass,ntypes+1,"atom:virtualMass");
+  atom->ks = memory->create(atom->ks,ntypes+1,"atom:ks");
+  atom->growth = memory->create(atom->growth,ntypes+1,"atom:growth");
+  atom->yield = memory->create(atom->yield,ntypes+1,"atom:yield");
+  //atom->typeName = (char **) calloc(ntypes+1, sizeof(char *));
   atom->typeName = (char **) memory->srealloc(atom->typeName,(ntypes+1)*sizeof(char *),
                                      "atom:typeName");
+  for (int i = 0; i < ntypes+1; i++){
+    atom->typeName[i] = NULL;
+  }
 }
 
 void ReadData::nutrient_coeffs(){
@@ -1627,12 +1631,16 @@ void ReadData::nutrient_coeffs(){
   int nNu = atom->nNutrients;
   int ntypes = atom->ntypes;
 
+  //atom->nuName = (char **) calloc(nNu+1, sizeof(char *));
   atom->nuName = (char **) memory->srealloc(atom->nuName,(nNu+1)*sizeof(char *),
                                      "atom:nuName");
-  atom->diffCoeff = memory->grow(atom->diffCoeff,nNu+1,"atom:diffCoeff");
-  atom->catCoeff = memory->grow(atom->catCoeff,ntypes+1,nNu+1,"atom:catCoeff");
-  atom->anabCoeff = memory->grow(atom->anabCoeff,ntypes+1,nNu+1,"atom:anabCoeff");
-  atom->nuConc = memory->grow(atom->nuConc,nNu+1,2,"atom:nuConc");
+  for (int i = 0; i < nNu+1; i++){
+    atom->nuName[i] = NULL;
+  }
+  atom->diffCoeff = memory->create(atom->diffCoeff,nNu+1,"atom:diffCoeff");
+  atom->catCoeff = memory->create(atom->catCoeff,ntypes+1,nNu+1,"atom:catCoeff");
+  atom->anabCoeff = memory->create(atom->anabCoeff,ntypes+1,nNu+1,"atom:anabCoeff");
+  atom->nuConc = memory->create(atom->nuConc,nNu+1,7,"atom:nuConc");
 }
 
 /* ----------------------------------------------------------------------

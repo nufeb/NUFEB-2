@@ -261,22 +261,21 @@ Atom::~Atom()
   memory->destroy(ks);
   memory->destroy(diffCoeff);
 
+  memory->destroy(anabCoeff);
+  memory->destroy(catCoeff);
+  memory->destroy(nuConc);
+
   for (int i = 0; i < ntypes+1; i++) {
     delete [] typeName[i];
   }
 
   for (int i = 0; i < nNutrients+1; i++) {
     delete [] nuName[i];
-    delete [] anabCoeff[i];
-    delete [] catCoeff[i];
-    delete [] nuConc[i];
   }
 
-  memory->sfree(nuName);
-  memory->sfree(anabCoeff);
-  memory->sfree(catCoeff);
   memory->sfree(typeName);
-  memory->sfree(nuConc);
+  memory->sfree(nuName);
+
   // delete user-defined molecules
 
   for (int i = 0; i < nmolecule; i++) delete molecules[i];
@@ -1921,11 +1920,16 @@ int Atom::memcheck(const char *str)
 void Atom::data_nutrients(int narg, char **arg)
 {
   //printf("narg = %i, nNu = %i\n", narg, nNutrients);
-  if (narg != 4) error->all(FLERR,"Incorrect args for nutrient definitions");
+  if (narg != 9) error->all(FLERR,"Incorrect args for nutrient definitions");
 
   int id = force->numeric(FLERR,arg[0]);
   double scell = force->numeric(FLERR,arg[2]);
-  double sbc = force->numeric(FLERR,arg[3]);
+  double xbcm = force->numeric(FLERR,arg[3]);
+  double xbcp = force->numeric(FLERR,arg[4]);
+  double ybcm = force->numeric(FLERR,arg[5]);
+  double ybcp = force->numeric(FLERR,arg[6]);
+  double zbcm = force->numeric(FLERR,arg[7]);
+  double zbcp = force->numeric(FLERR,arg[8]);
 
   char *name;
 
@@ -1951,11 +1955,16 @@ void Atom::data_nutrients(int narg, char **arg)
   }
 
   strcpy(nuName[id],name);
-  delete name;
+  delete [] name;
 
   if (nuConc == NULL) error->all(FLERR,"Cannot set nutrient concentration for this nutrient style");
   nuConc[id][0] = scell;
-  nuConc[id][1] = sbc;
+  nuConc[id][1] = xbcm;
+  nuConc[id][2] = xbcp;
+  nuConc[id][3] = ybcm;
+  nuConc[id][4] = ybcp;
+  nuConc[id][5] = zbcm;
+  nuConc[id][6] = zbcp;
 
 }
 
@@ -1970,7 +1979,7 @@ void Atom::set_growth(const char *str)
 
   char* typeName;
   double growth_one;
-  int len = strlen(str);
+  int len = strlen(str) + 1;
   typeName = new char[len];
 
   int n = sscanf(str,"%s %lg",typeName,&growth_one);
@@ -1979,6 +1988,7 @@ void Atom::set_growth(const char *str)
 
 
   int itype = find_typeID(typeName);
+  delete [] typeName;
   //printf("itype = %d \n", itype);
   if (itype < 1 || itype > ntypes)
     error->all(FLERR,"Invalid type for growth set");
@@ -2000,13 +2010,15 @@ void Atom::set_ks(const char *str)
 
   char* typeName;
   double ks_one;
-  int len = strlen(str);
+  int len = strlen(str) + 1;
   typeName = new char[len];
 
   int n = sscanf(str,"%s %lg",typeName,&ks_one);
   if (n != 2) error->all(FLERR,"Invalid growth line in data file");
 
   int itype = find_typeID(typeName);
+  delete [] typeName;
+
   if (itype < 1 || itype > ntypes)
     error->all(FLERR,"Invalid type for growth set");
 
@@ -2027,13 +2039,14 @@ void Atom::set_yield(const char *str)
 
   char* typeName;
   double yield_one;
-  int len = strlen(str);
+  int len = strlen(str) + 1;
   typeName = new char[len];
 
   int n = sscanf(str,"%s %lg",typeName,&yield_one);
   if (n != 2) error->all(FLERR,"Invalid growth line in data file");
 
   int itype = find_typeID(typeName);
+  delete [] typeName;
 
   if (itype < 1 || itype > ntypes)
     error->all(FLERR,"Invalid type for growth set");
@@ -2055,13 +2068,14 @@ void Atom::set_diffusion(const char *str)
 
   char* nuName;
   double diffu_one;
-  int len = strlen(str);
+  int len = strlen(str) + 1;
   nuName = new char[len];
 
   int n = sscanf(str,"%s %lg",nuName,&diffu_one);
   if (n != 2) error->all(FLERR,"Invalid diffCoeff line in data file");
 
   int iNu = find_nuID(nuName);
+  delete [] nuName;
 
   if (iNu < 1 || iNu > nNutrients)
     error->all(FLERR,"Invalid nutrient for diffusion coefficient set");
@@ -2069,7 +2083,7 @@ void Atom::set_diffusion(const char *str)
   diffCoeff[iNu] = diffu_one;
   //mass_setflag[itype] = 1;
 
-  if (yield[iNu] <= 0.0) error->all(FLERR,"Invalid growth value");
+  if (diffCoeff[iNu] <= 0.0) error->all(FLERR,"Invalid diffCoeff value");
 }
 
 /* ----------------------------------------------------------------------
@@ -2084,11 +2098,12 @@ void Atom::set_catCoeff(int narg, char **arg)
 
   char* typeName;
   double yield_one;
-  int len = strlen(arg[0]);
+  int len = strlen(arg[0]) + 1;
   typeName = new char[len];
   strcpy(typeName,arg[0]);
 
   int itype = find_typeID(typeName);
+  delete [] typeName;
 
   if (itype < 1 || itype > ntypes)
     error->all(FLERR,"Invalid type for catabolism coefficient set");
@@ -2111,11 +2126,12 @@ void Atom::set_anabCoeff(int narg, char **arg)
 
   char* typeName;
   double yield_one;
-  int len = strlen(arg[0]);
+  int len = strlen(arg[0]) + 1;
   typeName = new char[len];
   strcpy(typeName,arg[0]);
 
   int itype = find_typeID(typeName);
+  delete [] typeName;
 
   if (itype < 1 || itype > ntypes)
     error->all(FLERR,"Invalid type for anabolism coefficient set");
