@@ -33,14 +33,8 @@ class FixMetabolism : public Fix {
   char **var;
   int *ivar;
   int nNus;
-  char **subname;
   int diffevery;
   int outputevery;
-//  double *xCell;
-//  double *yCell;
-//  double *zCell;
-//  double *cellVol;
-//  bool *ghost;
 
   double **nuConc;
 
@@ -52,14 +46,21 @@ class FixMetabolism : public Fix {
 
   int numCells;
   int nx, ny, nz;
+  int N;
   double xlo,xhi,ylo,yhi,zlo,zhi;
-  int bflag; // 1 = dirichlet, 2 = neumann, 3 = mixed
-  double xstep, ystep, zstep;
+  int xbcflag, ybcflag, zbcflag; // 0=PERIODIC-PERIODIC, 1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
+  double grid;
+  double xbcm, xbcp, ybcm, ybcp, zbcm, zbcp;
 
-  void laplacian_matrix();
+  SparseMatrix<double> A;
+
+  SparseMatrix<double> laplacian_matrix();
   void metabolism();
-  SparseMatrix<int> spdiags(MatrixXi&, VectorXi&, int, int, int);
- // arma::imat spdiags(const arma::imat&, const arma::irowvec&, int, int);
+  SparseMatrix<double> spdiags(MatrixXi&, VectorXi&, int, int, int);
+  VectorXd bc_matrix(VectorXd&, double);
+  VectorXd rs_matrix();
+  bool isEuqal(double, double, double);
+
 };
 
 }

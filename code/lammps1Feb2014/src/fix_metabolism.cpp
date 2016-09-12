@@ -38,9 +38,11 @@
 #include "memory.h"
 #include "error.h"
 #include "comm.h"
+#include "domain.h"
 #include <iostream>
 #include <Eigen/Eigen>
 #include <unsupported/Eigen/KroneckerProduct>
+#include <iomanip>
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -55,7 +57,7 @@ using namespace Eigen;
 FixMetabolism::FixMetabolism(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
 
-  if (narg != 10) error->all(FLERR,"Not enough arguments in fix metabolism command");
+  if (narg != 12) error->all(FLERR,"Not enough arguments in fix metabolism command");
 
   nevery = force->inumeric(FLERR,arg[3]);
   diffevery = force->inumeric(FLERR,arg[4]);
@@ -74,12 +76,29 @@ FixMetabolism::FixMetabolism(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg,
   ny = atoi(arg[7]);
   nz = atoi(arg[8]);
 
-  if(strcmp(arg[9], "dirich") == 0) bflag = 1;
-  else if(strcmp(arg[9], "neu") == 0) bflag = 2;
-  else if(strcmp(arg[9], "mixed") == 0) bflag = 3;
-  else error->all(FLERR,"Illegal boundary condition command");
+  if(strcmp(arg[9], "pp") == 0) xbcflag = 0;
+  else if(strcmp(arg[9], "dd") == 0) xbcflag = 1;
+  else if(strcmp(arg[9], "nd") == 0) xbcflag = 2;
+  else if(strcmp(arg[9], "nn") == 0) xbcflag = 3;
+  else if(strcmp(arg[9], "dn") == 0) xbcflag = 4;
+  else error->all(FLERR,"Illegal x-axis boundary condition command");
+
+  if(strcmp(arg[10], "pp") == 0) ybcflag = 0;
+  else if(strcmp(arg[10], "dd") == 0) ybcflag = 1;
+  else if(strcmp(arg[10], "nd") == 0) ybcflag = 2;
+  else if(strcmp(arg[10], "nn") == 0) ybcflag = 3;
+  else if(strcmp(arg[10], "dn") == 0) ybcflag = 4;
+  else error->all(FLERR,"Illegal y-axis boundary condition command");
+
+  if(strcmp(arg[11], "pp") == 0) zbcflag = 0;
+  else if(strcmp(arg[11], "dd") == 0) zbcflag = 1;
+  else if(strcmp(arg[11], "nd") == 0) zbcflag = 2;
+  else if(strcmp(arg[11], "nn") == 0) zbcflag = 3;
+  else if(strcmp(arg[11], "dn") == 0) zbcflag = 4;
+  else error->all(FLERR,"Illegal z-axis boundary condition command");
 
 //  // test
+//  cout << xbcflag << ybcflag << zbcflag << endl;
 //  for (int i = 1; i < atom->ntypes+1; i++){
 //    printf("Atom info:\n");
 //    printf("name = %s \n", atom->typeName[i]);
@@ -109,6 +128,7 @@ FixMetabolism::FixMetabolism(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg,
 
 FixMetabolism::~FixMetabolism()
 {
+
   int i;
   for (i = 0; i < 1; i++) {
     delete [] var[i];
@@ -143,16 +163,42 @@ void FixMetabolism::init()
 
   diffT = input->variable->compute_equal(ivar[0]);
   nNus = atom->nNutrients;
-  subname = atom->nuName;
   nuConc = atom->nuConc;
   catCoeff = atom->catCoeff;
   anabCoeff = atom->anabCoeff;
   diffCoeff = atom->diffCoeff;
 
-  laplacian_matrix();
+  N=nx*ny*nz;
+
+  //Get computational domain size
+  if (domain->triclinic == 0) {
+    xlo = domain->boxlo[0];
+    xhi = domain->boxhi[0];
+    ylo = domain->boxlo[1];
+    yhi = domain->boxhi[1];
+    zlo = domain->boxlo[2];
+    zhi = domain->boxhi[2];
+  }
+  else {
+    xlo = domain->boxlo_bound[0];
+    xhi = domain->boxhi_bound[0];
+    ylo = domain->boxlo_bound[1];
+    yhi = domain->boxhi_bound[1];
+    zlo = domain->boxlo_bound[2];
+    zhi = domain->boxhi_bound[2];
+  }
+
+  double gridx = (xhi-xlo)/nx;
+  double gridy = (yhi-ylo)/ny;
+  double gridz = (zhi-zlo)/nz;
+
+  if (!isEuqal(gridx, gridy, gridz)) error->all(FLERR,"Grid is not cubic");
+  grid = gridx;
+
+  A = laplacian_matrix();
 }
 
-void FixMetabolism::laplacian_matrix()
+SparseMatrix<double> FixMetabolism::laplacian_matrix()
 {
   VectorXi ex1(nx);
   ex1.setOnes();
@@ -160,7 +206,7 @@ void FixMetabolism::laplacian_matrix()
   ex << ex1, -3*ex1, ex1;
   VectorXi dx(3);
   dx << -1, 0, 1;
-  SparseMatrix<int> Lx = spdiags(ex, dx, nx, ny, 3);
+  SparseMatrix<double> Lx = spdiags(ex, dx, nx, ny, 3);
 
   VectorXi ey1(nx);
   ey1.setOnes();
@@ -168,37 +214,36 @@ void FixMetabolism::laplacian_matrix()
   ey << ey1, -3*ey1, ey1;
   VectorXi dy(3);
   dy << -1, 0, 1;
-  SparseMatrix<int> Ly = spdiags(ex, dy, nx, ny, 3);
+  SparseMatrix<double> Ly = spdiags(ex, dy, nx, ny, 3);
 
-  SparseMatrix<int> Ix(nx, nx);
+  SparseMatrix<double> Ix(nx, nx);
   Ix.setIdentity();
-  SparseMatrix<int> Iy(ny, ny);
+  SparseMatrix<double> Iy(ny, ny);
   Iy.setIdentity();
 
-  SparseMatrix<int> L2a = kroneckerProduct(Iy, Lx);
-  SparseMatrix<int> L2b = kroneckerProduct(Ly, Ix);
-  SparseMatrix<int> L2 = L2a + L2b;
+  SparseMatrix<double> L2a = kroneckerProduct(Iy, Lx);
+  SparseMatrix<double> L2b = kroneckerProduct(Ly, Ix);
+  SparseMatrix<double> L2 = L2a + L2b;
 
-  int N=nx*ny*nz;
   VectorXi ez1(N);
   ez1.setOnes();
   MatrixXi  ez (N, 2);
   ez << ez1, ez1;
   VectorXi dz(2);
   dz << -nx*ny, nx*ny;
-  SparseMatrix<int> L = spdiags(ez, dz, N, N, 2);
+  SparseMatrix<double> L = spdiags(ez, dz, N, N, 2);
 
-  SparseMatrix<int> Iz(nz, nz);
+  SparseMatrix<double> Iz(nz, nz);
   Iz.setIdentity();
-  SparseMatrix<int> Aa = kroneckerProduct(Iz, L2);
-  SparseMatrix<int> A = Aa + L;
+  SparseMatrix<double> Aa = kroneckerProduct(Iz, L2);
+  SparseMatrix<double> A = Aa + L;
 
-  cout << "done!!!" <<endl;
+  return A;
 }
 
-SparseMatrix<int> FixMetabolism::spdiags(MatrixXi& B, VectorXi& d, int m, int n, int size_d)
+SparseMatrix<double> FixMetabolism::spdiags(MatrixXi& B, VectorXi& d, int m, int n, int size_d)
 {
-  SparseMatrix<int> A(m,n);
+  SparseMatrix<double> A(m,n);
 
   for (int k = 0; k < size_d; k++) {
     int i_min = max(0, (int)(-d(k)));
@@ -206,24 +251,175 @@ SparseMatrix<int> FixMetabolism::spdiags(MatrixXi& B, VectorXi& d, int m, int n,
     int B_idx_start = m >= n ? d(k) : 0;
 
     for (int i = i_min; i <= i_max; i++) {
-     A.insert(i, (int)(i+d(k))) = B(B_idx_start + i, k);
+     A.insert(i, (double)(i+d(k))) = B(B_idx_start + i, k);
     }
   }
   return A;
 }
 
-
 /* ---------------------------------------------------------------------- */
 
 void FixMetabolism::pre_force(int vflag)
 {
+  if (nevery == 0) return;
+  if (update->ntimestep % nevery) return;
 
+  metabolism();
 }
 
 /* ---------------------------------------------------------------------- */
 
 void FixMetabolism::metabolism()
 {
+  bool convergence = false;
+  double tol = 1e-6; // Tolerance for convergence criteria for nutrient balance equation
+  int iteration = 0;
+  double r = diffCoeff[1]*diffT/(grid*grid);
+  bool isConv [nNus+1];
+  VectorXd* S = new VectorXd[nNus+1];
 
+  for (int i = 1; i < nNus+1; i++) {
+    VectorXd s(N);
+    s.fill(nuConc[i][0]);
+    S[i] = s;
+  }
+
+  VectorXd BC(N);
+  VectorXd RES(N);
+
+  while (!convergence) {
+    iteration ++;
+
+    for (int i = 1; i < nNus+1; i++) {
+      if (!isConv[i]) {
+        xbcm = nuConc[i][1];
+        xbcp = nuConc[i][2];
+        ybcm = nuConc[i][3];
+        ybcp = nuConc[i][4];
+        zbcm = nuConc[i][5];
+        zbcp = nuConc[i][6];
+        BC = bc_matrix(S[i], grid);
+        RES = r * (A * S[i] + BC);
+        S[i] = RES + S[i];
+        for (size_t j = 0; j < S[i].size(); j++) {
+          if (S[i][j] < 0) S[i][j] = 0;
+        }
+        double max = S[i].maxCoeff();
+
+        if (fabs(max) < tol) isConv[i] = true;
+      }
+    }
+  }
+//
+//  std::cout << std::setprecision(15) << std::fixed;
+//  cout << S[1] << endl;
+  delete S;
+}
+
+VectorXd FixMetabolism::bc_matrix(VectorXd& S, double h)
+{
+  VectorXd B(N);
+  B.setZero();
+  int i_m;
+  int i_p;
+
+  //X-AXIS SURFACE
+  for(int i = 1; i < ny +1; i++) {
+    for(int j = 1; j < nz +1; j++) {
+      int k = 1+(i-1)*nx+(j-1)*nx*ny;
+
+      i_m = k-1 ;
+      i_p = k+nx-2;
+      //cout << i_m << " ip " << h << endl;
+      if (xbcflag == 0) {
+        B(i_m) = B(i_m)+S(i_p); //BOTTOM, X_MINUS
+        B(i_p) = B(i_p)+S(i_m); //TOP, X_PLUS
+      }
+      else if (xbcflag == 1) {
+        B(i_m) = B(i_m)+2*xbcm-S(i_m); //BOTTOM, X_MINUS
+        B(i_p) = B(i_p)+2*xbcp-S(i_p); //TOP, X_PLUS
+      }
+      else if (xbcflag == 2) {
+        B(i_m) = B(i_m)-h*xbcm+S(i_m); //BOTTOM,X_MINUS
+        B(i_p) = B(i_p)+2*xbcp-S(i_p); //TOP, X_PLUS
+      }
+      else if (xbcflag == 3) {
+        B(i_m) = B(i_m)-h*xbcm+S(i_m); //BOTTOM,X_MINUS
+        B(i_p) = B(i_p)+h*xbcp+S(i_p); //TOP,X_PLUS
+      }
+      else if (xbcflag == 4) {
+        B(i_m) = B(i_m)+2*xbcm-S(i_m); //BOTTOM, X_MINUS
+        B(i_p) = B(i_p)+h*xbcp+S(i_p); //TOP,X_PLUS
+      }
+    }
+  }
+
+  //Y-AXIS SURFACE
+  for(int i = 1; i < nz +1; i++) {
+    i_p = (i)*nx*ny-nx;
+    for (i_m = (i-1)*nx*ny; i_m <= (i-1)*nx*ny+nx-1; i_m++) {
+      //error ip im?
+      if (ybcflag == 0) {
+        B(i_m) = B(i_m)+ S(i_p); //BOTTOM, Y_MINUS
+        B(i_p)=B(i_p)+S(i_m); //TOP, Y_PLUS
+      }
+      else if (ybcflag == 1) {
+        B(i_m)=B(i_m)+2*ybcm-S(i_m); //BOTTOM, Y_MINUS
+        B(i_p)=B(i_p)+2*ybcp-S(i_p); //TOP, Y_PLUS
+      }
+      else if (ybcflag == 2) {
+        B(i_m)=B(i_m)-h*ybcm+S(i_m); //BOTTOM,Y_MINUS
+        B(i_p)=B(i_p)+2*ybcp-S(i_p); //TOP, Y_PLUS
+      }
+      else if (ybcflag == 3) {
+        B(i_m)=B(i_m)-h*ybcm+S(i_m); //BOTTOM,Y_MINUS
+        B(i_p)=B(i_p)+h*ybcp+S(i_p); //TOP,Y_PLUS
+      }
+      else if (ybcflag == 4) {
+        B(i_m)=B(i_m)+2*ybcm-S(i_m); //BOTTOM, Y_MINUS
+        B(i_p)=B(i_p)+h*ybcp+S(i_p); //TOP,Y_PLUS
+      }
+      i_p++;
+    }
+  }
+
+  //Z-AXIS SURFACE
+  i_p = nx*ny*(nz-1);
+  for (i_m = 0; i_m < nx*ny; i_m++) {
+
+    //error ip im?
+    if (zbcflag == 0) {
+      B(i_m)=B(i_m)+S(i_p); //BOTTOM, Z_MINUS
+      B(i_p)=B(i_p)+S(i_m); //TOP, Z_PLUS
+    }
+    else if (zbcflag == 1) {
+      B(i_m)=B(i_m)+2*zbcm-S(i_m); //BOTTOM, Z_MINUS
+      B(i_p)=B(i_p)+2*zbcp-S(i_p); //TOP, Z_PLUS
+    }
+    else if (zbcflag == 2) {
+      B(i_m)=B(i_m)-h*zbcm+S(i_m); //BOTTOM,Z_MINUS
+      B(i_p)=B(i_p)+2*zbcp-S(i_p); //TOP, Z_PLUS
+    }
+    else if (zbcflag == 3) {
+      B(i_m)=B(i_m)-h*zbcm+S(i_m); //BOTTOM,Z_MINUS
+      B(i_p)=B(i_p)+h*zbcp+S(i_p); //TOP,Z_PLUS
+    }
+    else if (zbcflag == 4) {
+      B(i_m)=B(i_m)+2*zbcm-S(i_m); //BOTTOM, Z_MINUS
+      B(i_p)=B(i_p)+h*zbcp+S(i_p); //TOP,Z_PLUS
+    }
+    i_p++;
+  }
+
+  return B;
+}
+
+bool FixMetabolism::isEuqal(double a, double b, double c)
+{
+    double epsilon = 0.00001;
+    if ((fabs(a - b) > epsilon)|| (fabs(a - b) > epsilon) || (fabs(a - b) > epsilon))
+      return false;
+
+    return true;
 }
 
