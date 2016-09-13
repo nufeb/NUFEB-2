@@ -1,0 +1,42 @@
+jj=5
+path=getwd()
+#cnam=c("type","diameter","mass")
+cnam=c("type","diameter","x","y","z")
+
+dat=list()
+for (num in 1:jj){
+#path=getwd()
+setwd(sub("num",num,paste(getwd(),"inputnum",sep="/")))
+dirname=getwd()
+#index=grep("ITEM: ATOMS id type diameter mass",readLines("snapshot.bubblemd"),value=FALSE,fixed=TRUE)
+index=grep("ITEM: ATOMS id type diameter x y z vx vy vz fx fy fz",readLines("snapshot.bubblemd"),value=FALSE,fixed=TRUE)
+ind=length(readLines("snapshot.bubblemd"))
+#ind=countLines("snapshot.bubblemd")
+dd=list()
+index=c(index,ind+9)
+for (i in 1:(length(index)-1)){
+dd[i]=list(read.csv("snapshot.bubblemd",sep="",skip=index[i]-1,header=TRUE,colClasses=numeric(),nrows=index[i+1]-index[i]-9)[,2:(length(cnam)+1)]);names(dd[[i]])=cnam
+###
+ww=array(NA,c(length(dd),5,ncol(dd[[j]])-1))###5 particle types
+for(j in 1:length(dd)){
+for(k in 1:5){
+ww[j,k,]=rbind(colMeans(subset(dd[[j]],type==k,select=c("diameter","x","y","z"))))##type k
+}}
+dat[num]=ww
+}
+
+###################
+#subset(dd[[1]],ATOMS=2,select=c("diameter","mass"))
+
+#for(i in 1:1000){
+
+ww=array(NA,c(length(dd),5,ncol(dd[[j]])-1))###5 particle types
+for(j in 1:length(dd)){
+for(k in 1:5){
+#ww[,k]=rbind(colMeans(subset(dd[[j]],type==k,select=c("diameter","x","y","z"))))##type k
+ww[j,k,]=rbind(colMeans(subset(dd[[j]],type==k,select=c("diameter","x","y","z"))))##type k
+}}
+save()
+#}
+
+
