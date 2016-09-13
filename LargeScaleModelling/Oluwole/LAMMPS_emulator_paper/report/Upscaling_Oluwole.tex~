@@ -1,0 +1,236 @@
+\documentclass[12pt,titlepage]{report}
+\usepackage[authoryear,semicolon]{natbib}
+\usepackage{mathptmx} 
+\usepackage{pdfpages}
+%\usepackage{chicago}
+\usepackage[onehalfspacing]{setspace}
+%\doublespacing
+%\linespread{1.6}
+\setstretch{1.5}
+%\usepackage{figure}
+\onehalfspacing
+\usepackage[left=40mm,right=25mm,top=30mm,bottom=20mm,headsep=10mm]{geometry}
+\geometry{a4paper}
+\usepackage[titletoc]{appendix}
+\usepackage{fnpara}
+\usepackage{graphicx}
+\usepackage{epstopdf}
+%\usepackage{mathtools}
+\usepackage{amsmath,amsfonts,amsthm,amssymb}
+\usepackage{fancybox}
+
+%\usepackage[active]{srcltx}
+\usepackage{afterpage}
+\usepackage[mathscr]{eucal}
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname
+#1`/`basename #1 .tif`.png}
+%\usepackage{fancyhdr}
+%\pagestyle{fancy}
+%\fancyhf{}
+%\rhead{ \leftmark}
+%\rhead[\thepage]{\chaptermark}
+%\lhead{Oyebamiji, O.K.}
+%\cfoot{ \thepage}
+
+
+\usepackage{setspace}
+\usepackage[small]{caption}
+\usepackage{color}
+\usepackage{apalike}
+%\usepackage{subcaption}
+\usepackage{placeins}
+\usepackage{epstopdf}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usepackage{subcaption}
+%\usepackage{color,framed} %Utilisation des couleurs et de l'environnement shaded
+%\definecolor{shadecolor2}{rgb}{.92,.92,.92} % choix de la teinte de ``shaded''
+%\definecolor{shadecolor}{rgb}{.6,.95,.6} % choix de la teinte de ``shaded''
+\usepackage[pagebackref=true,colorlinks=true, linkcolor=blue,anchorcolor=blue,citecolor=blue,filecolor=blue,menucolor=blue,
+urlcolor=black,plainpages=false,pdfpagemode=UseThumbs,pdftitle={Titre},pdfauthor={oluwole},
+pdfsubject={Thesis},pdfstartview=FitH]{hyperref} % Extensions PDF
+%\def\pdfBorderAttrs{/Border [0 0 0] } % Options PDF (No border around Links)
+%\usepackage[plainpages=false,backref=page,hypertexnames=true,linktocpage=true,colorlinks=true,citecolor=blue,linkcolor=blue]{hyperref}
+
+
+%=========Standard sets===========:
+\newcommand{\stsets}[1]{\mathbb{#1}}
+\newcommand{\R}{\stsets{R}}
+\newcommand{\N}{\stsets{N}}
+\newcommand{\C}{\stsets{C}}
+
+%===============Theorems etc.========================
+%Paul
+\newcommand{\bt}{{\bf t}}
+\newcommand{\bB}{{\bf B}}
+\newcommand{\bSigma}{{\bf \Sigma}}
+\newcommand{\tbSigma}{{\tilde {\bf \Sigma}}}
+\newcommand{\tbu}{{\tilde {\bf u}}}
+\newcommand{\tbU}{{\tilde {\bf U}}}
+\newcommand{\bh}{{\bf h}}
+\newcommand{\bH}{{\bf H}}
+\newcommand{\bD}{{\bf D}}
+\newcommand{\bU}{{\bf U}}
+\newcommand{\bu}{{\bf u}}
+\newcommand{\bZ}{{\bf Z}}
+\newcommand{\bz}{{\bf z}}
+\newcommand{\bC}{{\bf C}}
+\newcommand{\bc}{{\bf c}}
+%%
+\newcommand{\bx}{{\bf x}}
+\newcommand{\bX}{{\bf X}}
+\newcommand{\by}{{\bf y}}
+\newcommand{\bY}{{\bf Y}}
+\newcommand{\bE}{{\bf E}}
+\newcommand{\bW}{{\bf W}}
+\newcommand{\tbx}{{\tilde {\bf x}}}
+\newcommand{\tbX}{{\tilde {\bf X}}}
+\newcommand{\tby}{{\tilde {\bf y}}}
+\newcommand{\tbY}{{\tilde {\bf Y}}}
+\newcommand{\hbX}{{\hat {\bf X}}}
+\newcommand{\hbY}{{\hat {\bf Y}}}
+\newcommand{\hby}{{\hat {\bf y}}}
+\newcommand{\ty}{{\tilde {y}}}
+\newcommand{\hy}{{\hat {y}}}
+\newcommand{\bs}{{\bf s}}
+
+
+\newcommand{\bLambda}{\mathbf{\Lambda}}
+\newcommand{\bGamma}{\mathbf{\Gamma}}
+\newcommand{\hbGamma}{\hat {\mathbf{\Gamma}}}
+
+\newcommand{\bgamma}{{\boldsymbol{\gamma}}}
+\newcommand{\bepsilon}{{\boldsymbol{\varepsilon}}}
+\newcommand{\tbepsilon}{{\tilde{\boldsymbol{\varepsilon}}}}
+\newcommand{\hbepsilon}{{\hat{\boldsymbol{\varepsilon}}}}
+\newcommand{\bbeta}{{\boldsymbol{\beta}}}
+\newcommand{\hbbeta}{{\hat{\boldsymbol{\beta}}}}
+\newcommand{\btau}{{{\boldsymbol{\tau}}}}
+\newcommand{\balpha}{{\boldsymbol{\alpha}}}
+\newcommand{\bhalpha}{{\hat{\boldsymbol{\alpha}}}}
+
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}[definition]{Remark}
+\newtheorem{example}[definition]{Example}
+
+%\newtheoremstyle{mytheorem}{0.5cm}{0.2cm}{\slshape}{ }{\bfseries}{.}{}{}
+%\theoremstyle{my theorem}
+\newtheorem{Th}[definition]{Theorem}
+%\newtheorem{Prop}[definition]{Proposition}
+\newtheorem{lemma}[definition]{Lemma}
+\newtheorem{Cor}[definition]{Corollary}
+%\restylefloat{figure}
+
+%==========Probabilistic===========:
+%\renewcommand{\cite}{\shortciteN}
+\renewcommand{\P}{\mathbf{P}}
+\renewcommand{\Re}{\mathrm{Re\,}}
+\renewcommand{\Im}{\mathrm{Im\,}}
+%\newcommand{\Prob}[1]{\mathbf{P}\{#1\}}
+\DeclareMathOperator{\E}{{\bf E}}
+\DeclareMathOperator{\var}{{\bfvar}}
+\DeclareMathOperator{\supp}{supp}
+\DeclareMathOperator{\dist}{dist}
+\DeclareMathOperator{\one}{{1\hspace*{-0.55ex}I}}
+%\DeclareMathOperator{\one}{{\mathbf{1}}}
+\newcommand{\Ind}[1]{\one_{#1}}
+\newcommand{\cond}{\hspace*{1ex} \rule[-1ex]{0.15ex}{3ex}\hspace*{1ex}}
+
+%==========Divers===========:
+\DeclareMathOperator*{\ssum}{{\textstyle \sum}}
+%small\sum for\sum\delta_x
+\newcommand{\comp}{\mathbf{c}}
+\newcommand{\mydot}{{\raisebox{.3ex}{$\scriptscriptstyle{\,\bullet\,}$}}}
+%\newcommand{\myline}{\newline\underline{\hskip\textwidth}}
+\newcommand{\mytimes}{\!\times\!}
+\newcommand{\mytilde}{{\!\raisebox{-0.9ex}{$\tilde{\ }$}}}
+\renewcommand{\epsilon}{\varepsilon}
+\renewcommand{\vec}[1]{\mathbf{#1}}
+%\renewcommand{\phi}{\varphi}
+\newcommand{\ti}{\to\infty}
+\newcommand{\ssp}{\hspace{2pt}}
+\newcommand{\seg}{see, \hbox{e.\ssp g.,}\ }
+\newcommand{\ie}{\hbox{i.\ssp e.}\ }
+\newcommand{\eg}{\hbox{e.\ssp g.,}\ }
+\newcommand{\cf}{\hbox{c.\ssp f.}\ }
+\newcommand{\etc}{\hbox{etc.}\ }
+\newcommand{\iid}{\hbox{i.\ssp i.\ssp d.}\ }
+\newcommand{\as}{\hbox{a.\ssp s.s}\ }
+\newcommand{\viz}{\hbox{viz.}\ }
+\renewcommand{\bibname}{References}
+\renewcommand{\abstractname}{Abstract}
+
+
+%\pagenumbering{roman}
+
+\begin{document}
+\chapter{Emulation and upscaling of LAMMPS model}
+We describe the brief requirements and strategies for building an emulator of LAMMPS model output and upscaling problem.
+The macro scale characteristics of waste water treatment plants are the consequences of micro scale characteristics of a large amount of individual particles that produce the floc. Floc are aggregation of microbes mixed together by an adhensive material called EPS.
+In other words, the properties of cells or particles at micro level is used for characterising the behaviour of waste water treatment plant at macro scale despite a wide separation in their spatial and temporal dimensions at which their biological and physical processes take place. The complex nature of the transition from cell (micro-scale) to floc/biofilm (meso-scale) and to waste water treatment plant (macro-scale) requires a multi-scale modelling strategy to efficiently handle the problem.
+
+The first face of the problem is the 
+which requires a large amount of simulation runs and because of the non-visibility of this with the current LAMPPS model. LAMMP is like a single-step simulator being run iteratively many times. A single run from LAMMPS model consists of a simulation over many time steps which requires a lot of computer workload and time taken. Therefore, there is a need to introduce statistical emulator as surrogate to scale up the model to the desired level.
+
+Basically, there are two different approaches to this problem. Firstly, we could emulate the simulator outputs (eg particle at micro level) and use the emulator to link to the simulator at meso-scale for a floc/biofilm. Secondly, we could approximate the aggregation of particles as a floc/biofilm and emulate their properties directly.
+
+\section{Emulator fundamental}
+Emulation is an attempt to statistically imitate the internal design of a simulator, in other words, emulation is a statistical representation of a simulator. We shall describe briefly in this report how an emulator works and discuss the key steps in building an emulator, requirements and challenges of building an emulator with special focus on the NUFEB project. The fundamental issue here is the development of statistical algorithms for emulation and calibration of complex multi-scale stochastic biological models (LAMMPS).
+ 
+The purpose of building an emulator is to facilitate other calculations that would be too computationally demanding using the simulator itself. Under this project, emulator will be using mainly for prediction/extrapolation (upscaling) and for parameter calibration. 
+
+LAMMPS model is stochastic and dynamic in nature because running the simulator for the same input configuration gives different outputs and being involves a system that is evolving over time and operates iteratively over ﬁxed time steps. A single run from LAMMPS model consists of a simulation over many time steps. Suppose at time
+step $t$, the LAMMPS output is written in the form 
+\begin{equation}
+Y=f(x_t,Y_{t-1})
+\end{equation}
+Where $Y_{t-1}$ the state vector at the previous time step, $x_t$ are the input at time $t$ which includes the model parameters, forcings and initial conditions
+
+%terms of a simpler, single-step simulator being run iteratively many times.
+We shall be describing 
+What are the requirements for building the stochastic emulator under the NUFEB project. We shall describe mainly the procedure.
+The size and complexity of a simulator become a problem when it is necessary to make very many runs for different input values and in this case to produce an emulator that predicts reasonable outputs (“perfect” emulator) requires a large number of runs from LAMMP model.
+
+\section{Overview}
+The current work here involves developing a statistical modelling
+ technique to best represent the relationship between the outputs and inputs (initial conditions) of LAMMPS simulator.
+
+\section{The challenges}
+The second issue we address here is the upscaling problem which involves transferring of information from one spatial or temporal scale to another. This is one of the major challenges of LAMMP emulation. For instance, emulation of floc or biofilm equivalent diameter from particle diameter, emulation of floc/biofilm shape from component particles etc
+
+The models of reality are becoming more and
+more complicated for us to be able to perform
+these operations exactly.
+
+The system is sufficiently complex
+The model is expensive to evaluate
+The model output is dynamic
+The model is stochastic
+The model produce multiple outputsT
+The model outputs are affected by few inputs
+
+\cite{l2} Presents a wide range of techniques for measuring floc structural characteristics of size, shape and
+fractal dimension and also emphasise the role of floc size distribution and fractal dimension as the important parameters for activated sludge.
+\cite{l3} describes several techniques for characterizing the floc dimensions, including most common size measurements that are used in the
+literature for flocs  
+
+
+\section{Main tasks}
+
+\begin{thebibliography}{94}
+%\cleardoublepage
+%\phantomsection
+\bibliographystyle{plain}
+\bibitem[Marrel et al.(2008)]{l1} Marrel, A., Iooss, B., Van Dorpe, F., \& Volkova, E. (2008). An efficient methodology for modeling complex computer codes with Gaussian processes. {\it Computational Statistics \& Data Analysis}, $52(10), 4731-4744$.
+
+\bibitem[Li et al.(2013)]{l2} Li, Z. L., Zhang, D. J., Lu, P. L., Zeng, S. W., \& Yang, Y.H. (2013). Influencing factors of floc size distribution and fractal dimension of activated sludge. {\it Huan Jing Ke Xue}, $34(10), 3975-3980$.
+
+\bibitem[Jarvis et al.(2005)]{l3} Jarvis, P., Jefferson, B., \& Parsons, S. A. (2005). Measuring floc structural characteristics. {\it Reviews in Environmental Science and Bio/Technology}, $4(1-2), 1-18$.
+
+\end{thebibliography}{}
+
+
+\end{document}
