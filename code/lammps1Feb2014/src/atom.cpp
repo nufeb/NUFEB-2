@@ -2109,7 +2109,7 @@ void Atom::set_catCoeff(int narg, char **arg)
     error->all(FLERR,"Invalid type for catabolism coefficient set");
 
   for(int i = 1; i < nNutrients+1; i++) {
-    int value = force->numeric(FLERR,arg[i]);
+    double value = force->numeric(FLERR,arg[i]);
     catCoeff[itype][i] = value;
   }
 }
@@ -2137,7 +2137,7 @@ void Atom::set_anabCoeff(int narg, char **arg)
     error->all(FLERR,"Invalid type for anabolism coefficient set");
 
   for(int i = 1; i < nNutrients+1; i++) {
-    int value = force->numeric(FLERR,arg[i]);
+    double value = force->numeric(FLERR,arg[i]);
     anabCoeff[itype][i] = value;
   }
 }

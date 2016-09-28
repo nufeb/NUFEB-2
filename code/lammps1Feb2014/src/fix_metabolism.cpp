@@ -43,6 +43,7 @@
 #include <Eigen/Eigen>
 #include <unsupported/Eigen/KroneckerProduct>
 #include <iomanip>
+#include <algorithm>
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -72,10 +73,13 @@ FixMetabolism::FixMetabolism(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg,
     strcpy(var[i],&arg[5+i][2]);
   }
 
+  //set grid size
   nx = atoi(arg[6]);
   ny = atoi(arg[7]);
   nz = atoi(arg[8]);
 
+  //set boundary condition flag:
+  //0=PERIODIC-PERIODIC,  1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
   if(strcmp(arg[9], "pp") == 0) xbcflag = 0;
   else if(strcmp(arg[9], "dd") == 0) xbcflag = 1;
   else if(strcmp(arg[9], "nd") == 0) xbcflag = 2;
@@ -128,7 +132,6 @@ FixMetabolism::FixMetabolism(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg,
 
 FixMetabolism::~FixMetabolism()
 {
-
   int i;
   for (i = 0; i < 1; i++) {
     delete [] var[i];
@@ -167,8 +170,9 @@ void FixMetabolism::init()
   catCoeff = atom->catCoeff;
   anabCoeff = atom->anabCoeff;
   diffCoeff = atom->diffCoeff;
+  yield = atom->yield;
 
-  N=nx*ny*nz;
+  ngrids=nx*ny*nz;
 
   //Get computational domain size
   if (domain->triclinic == 0) {
@@ -195,8 +199,15 @@ void FixMetabolism::init()
   if (!isEuqal(gridx, gridy, gridz)) error->all(FLERR,"Grid is not cubic");
   grid = gridx;
 
-  A = laplacian_matrix();
+  LAP = laplacian_matrix();
+  cout << LAP << endl;
+  met_matrix();
+
 }
+
+/* ----------------------------------------------------------------------
+  build laplacian matrix
+------------------------------------------------------------------------- */
 
 SparseMatrix<double> FixMetabolism::laplacian_matrix()
 {
@@ -207,7 +218,6 @@ SparseMatrix<double> FixMetabolism::laplacian_matrix()
   VectorXi dx(3);
   dx << -1, 0, 1;
   SparseMatrix<double> Lx = spdiags(ex, dx, nx, ny, 3);
-
   VectorXi ey1(nx);
   ey1.setOnes();
   MatrixXi  ey (nx, 3);
@@ -215,7 +225,6 @@ SparseMatrix<double> FixMetabolism::laplacian_matrix()
   VectorXi dy(3);
   dy << -1, 0, 1;
   SparseMatrix<double> Ly = spdiags(ex, dy, nx, ny, 3);
-
   SparseMatrix<double> Ix(nx, nx);
   Ix.setIdentity();
   SparseMatrix<double> Iy(ny, ny);
@@ -225,21 +234,26 @@ SparseMatrix<double> FixMetabolism::laplacian_matrix()
   SparseMatrix<double> L2b = kroneckerProduct(Ly, Ix);
   SparseMatrix<double> L2 = L2a + L2b;
 
-  VectorXi ez1(N);
+  VectorXi ez1(ngrids);
   ez1.setOnes();
-  MatrixXi  ez (N, 2);
+  MatrixXi  ez (ngrids, 2);
   ez << ez1, ez1;
   VectorXi dz(2);
   dz << -nx*ny, nx*ny;
-  SparseMatrix<double> L = spdiags(ez, dz, N, N, 2);
+  SparseMatrix<double> L = spdiags(ez, dz, ngrids, ngrids, 2);
 
   SparseMatrix<double> Iz(nz, nz);
   Iz.setIdentity();
   SparseMatrix<double> Aa = kroneckerProduct(Iz, L2);
+
   SparseMatrix<double> A = Aa + L;
 
   return A;
 }
+
+/* ----------------------------------------------------------------------
+  extract and create sparse band and diagonal matrices
+------------------------------------------------------------------------- */
 
 SparseMatrix<double> FixMetabolism::spdiags(MatrixXi& B, VectorXi& d, int m, int n, int size_d)
 {
@@ -257,6 +271,63 @@ SparseMatrix<double> FixMetabolism::spdiags(MatrixXi& B, VectorXi& d, int m, int
   return A;
 }
 
+/* ----------------------------------------------------------------------
+  create metabolic matrix for all microbial species
+------------------------------------------------------------------------- */
+
+MatrixXd FixMetabolism::met_matrix()
+{
+  MatrixXd A;
+
+  int ntypes = atom->ntypes;
+
+  MatrixXd InvYield;
+  RowVectorXd pThY(ntypes);
+  MatrixXd matCat(nNus+ntypes, ntypes);
+  MatrixXd matAn(nNus+ntypes, ntypes);
+
+  matCat.setZero();
+  matAn.setZero();
+
+  for (int i = 0; i < ntypes; i++) {
+    pThY[i] = 1/yield[i+1];
+    for (int j = 0; j < nNus; j++) {
+      matCat(j,i) = catCoeff[i+1][j+1];
+      matAn(j,i) = anabCoeff[i+1][j+1];
+    }
+    matAn(nNus+i, i) = 1;
+  }
+
+  InvYield = pThY.replicate(nNus+ntypes, 1);
+
+  A = matCat.cwiseProduct(InvYield) + matAn;
+
+  //Removal of H2O and H+ from the Metabolic matrix
+  int hIndex = -1;
+  int h2oIndex = -1;
+  for (int i = 1; i < nNus+1; i++) {
+    if (strcmp(atom->nuName[i], "h") == 0) hIndex = i-1;
+    else if (strcmp(atom->nuName[i], "h2o") == 0) h2oIndex = i-1;
+  }
+
+  if (hIndex != -1) removeRow(A, hIndex);
+  if (h2oIndex != -1) removeRow(A, h2oIndex);
+
+  cout << A << endl;
+  return A;
+}
+
+void FixMetabolism::removeRow(MatrixXd& matrix, unsigned int rowToRemove)
+{
+    unsigned int numRows = matrix.rows()-1;
+    unsigned int numCols = matrix.cols();
+
+    if( rowToRemove < numRows )
+        matrix.block(rowToRemove,0,numRows-rowToRemove,numCols) = matrix.block(rowToRemove+1,0,numRows-rowToRemove,numCols);
+
+    matrix.conservativeResize(numRows,numCols);
+}
+
 /* ---------------------------------------------------------------------- */
 
 void FixMetabolism::pre_force(int vflag)
@@ -264,61 +335,79 @@ void FixMetabolism::pre_force(int vflag)
   if (nevery == 0) return;
   if (update->ntimestep % nevery) return;
 
-  metabolism();
+  diffusion();
 }
 
-/* ---------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------
+  solve diffusion equations and metabolism
+------------------------------------------------------------------------- */
 
-void FixMetabolism::metabolism()
+void FixMetabolism::diffusion()
 {
   bool convergence = false;
-  double tol = 1e-6; // Tolerance for convergence criteria for nutrient balance equation
+  double tol = 1e-4; // Tolerance for convergence criteria for nutrient balance equation
   int iteration = 0;
-  double r = diffCoeff[1]*diffT/(grid*grid);
-  bool isConv [nNus+1];
+  double* r = new double[nNus+1]();
+  bool* isConv = new bool[nNus+1]();
   VectorXd* S = new VectorXd[nNus+1];
+  double maxBC [6];
 
+  //initialization
   for (int i = 1; i < nNus+1; i++) {
-    VectorXd s(N);
+    VectorXd s(ngrids);
     s.fill(nuConc[i][0]);
     S[i] = s;
+    isConv [i] = false;
+    double bc[6] = {nuConc[i][1], nuConc[i][2], nuConc[i][3], nuConc[i][4], nuConc[i][5], nuConc[i][6]};
+    maxBC[i] = *max_element(bc, bc+6);
+    r[i] = diffCoeff[1]*diffT/(grid*grid);
   }
 
-  VectorXd BC(N);
-  VectorXd RES(N);
+  VectorXd BC(ngrids);
+  VectorXd RES(ngrids);
 
   while (!convergence) {
     iteration ++;
 
     for (int i = 1; i < nNus+1; i++) {
       if (!isConv[i]) {
+        isConv[0] = false;
         xbcm = nuConc[i][1];
         xbcp = nuConc[i][2];
         ybcm = nuConc[i][3];
         ybcp = nuConc[i][4];
         zbcm = nuConc[i][5];
         zbcp = nuConc[i][6];
-        BC = bc_matrix(S[i], grid);
-        RES = r * (A * S[i] + BC);
+        BC = bc_vec(S[i], grid);
+        MatrixXd dMat;
+        dMat = MatrixXd(LAP);
+        RES = LAP * S[i] + BC;
+        RES = r[i] * RES;
         S[i] = RES + S[i];
         for (size_t j = 0; j < S[i].size(); j++) {
           if (S[i][j] < 0) S[i][j] = 0;
         }
-        double max = S[i].maxCoeff();
-
-        if (fabs(max) < tol) isConv[i] = true;
+        double max = RES.array().abs().maxCoeff();
+        double ratio = max/maxBC[i];
+        if (ratio < tol) isConv[i] = true;
       }
+      else isConv[0] = true;
     }
+    if (isConv[0]) break;
   }
-//
-//  std::cout << std::setprecision(15) << std::fixed;
-//  cout << S[1] << endl;
-  delete S;
+  cout << "number of iteration: " << iteration << endl;
+  delete [] S;
+  delete [] isConv;
+  delete [] r;
 }
 
-VectorXd FixMetabolism::bc_matrix(VectorXd& S, double h)
+/* ----------------------------------------------------------------------
+  build matrix of boundary condition
+------------------------------------------------------------------------- */
+
+VectorXd FixMetabolism::bc_vec(VectorXd& S, double h)
 {
-  VectorXd B(N);
+  VectorXd B(ngrids);
   B.setZero();
   int i_m;
   int i_p;
@@ -413,6 +502,10 @@ VectorXd FixMetabolism::bc_matrix(VectorXd& S, double h)
 
   return B;
 }
+
+/* ----------------------------------------------------------------------
+  compare double values for equality
+------------------------------------------------------------------------- */
 
 bool FixMetabolism::isEuqal(double a, double b, double c)
 {
