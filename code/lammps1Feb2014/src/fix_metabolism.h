@@ -32,34 +32,35 @@ class FixMetabolism : public Fix {
  private:
   char **var;
   int *ivar;
-  int nNus;
+  int nNus;                     // # of nutrients
   int diffevery;
   int outputevery;
 
-  double **nuConc;
+  double **nuConc;              // inlet concentrations of nutrients
+  double **catCoeff;               // catabolism coefficients of species
+  double **anabCoeff;              // anabolism  coefficients of species
+  double *yield;
 
-  int **catCoeff;
-  int **anabCoeff;
+  double *diffCoeff;            // diffusion coefficients of nutrients
+  double diffT;                 // diffusion timestamp
 
-  double *diffCoeff;
-  double diffT;
-
-  int numCells;
-  int nx, ny, nz;
-  int N;
+  int nx, ny, nz;               // grid size
+  int ngrids;                   // # of grids
   double xlo,xhi,ylo,yhi,zlo,zhi;
-  int xbcflag, ybcflag, zbcflag; // 0=PERIODIC-PERIODIC, 1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
-  double grid;
-  double xbcm, xbcp, ybcm, ybcp, zbcm, zbcp;
-
-  SparseMatrix<double> A;
+  int xbcflag, ybcflag, zbcflag;             // 0=PERIODIC-PERIODIC, 1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
+  double grid;                               // grid height
+  double xbcm, xbcp, ybcm, ybcp, zbcm, zbcp; //inlet BC concentrations for each surface
+  SparseMatrix<double> LAP;       //laplacian matrix
 
   SparseMatrix<double> laplacian_matrix();
-  void metabolism();
+  void diffusion();
   SparseMatrix<double> spdiags(MatrixXi&, VectorXi&, int, int, int);
-  VectorXd bc_matrix(VectorXd&, double);
-  VectorXd rs_matrix();
+  VectorXd bc_vec(VectorXd&, double);
+  VectorXd _matrix();
   bool isEuqal(double, double, double);
+
+  MatrixXd met_matrix();
+  void removeRow(MatrixXd& , unsigned int);
 
 };
 

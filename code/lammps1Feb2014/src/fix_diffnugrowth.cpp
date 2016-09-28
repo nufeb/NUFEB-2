@@ -668,6 +668,7 @@ void FixDiffNuGrowth::compute_flux(double *cellDNu, double *nuCell, double *nuPr
 	//2  11  20 			5  14  23				8  17  26
 	//1  10  19       4  13  22       7  16  25
 	//0  9   18       3  12  21       6  15  24
+
 	int leftCell = cell - (nz+2)*(ny+2); // x direction
 	int rightCell = cell + (nz+2)*(ny+2); // x direction
 	int downCell = cell - (nz+2); // y direction

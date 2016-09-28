@@ -67,8 +67,8 @@ class Atom : protected Pointers {
   //type
   char **typeName;
   double *ks, *growth, *yield;
-  int **catCoeff;
-  int **anabCoeff;
+  double **catCoeff;
+  double **anabCoeff;
 
   //nutrient
   int nNutrients;
