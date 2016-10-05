@@ -55,6 +55,7 @@ AtomVecBio::AtomVecBio(LAMMPS *lmp) : AtomVecSphere(lmp)
   atom->nuConc = NULL;
   atom->nuName = NULL;
   atom->diffCoeff = NULL;
+  atom->vecConc = NULL;
 
 }
 
@@ -80,7 +81,6 @@ void AtomVecBio::grow(int n)
   AtomVecSphere::grow(n);
   outerMass = memory->grow(atom->outerMass,nmax,"atom:outerMass");
   outerRadius = memory->grow(atom->outerRadius,nmax,"atom:outerRadius");
-
 }
 
 void AtomVecBio::create_atom(int itype, double *coord)
@@ -149,6 +149,7 @@ void AtomVecBio::grow_reset()
 
   outerMass = atom->outerMass;
   outerRadius = atom->outerRadius;
+  vecConc = atom->vecConc;
 }
 
 void AtomVecBio::copy(int i, int j, int delflag)

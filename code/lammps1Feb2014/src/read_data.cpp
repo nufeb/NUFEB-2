@@ -1628,19 +1628,24 @@ void ReadData::type_coeffs(){
 
 void ReadData::nutrient_coeffs(){
 
-  int nNu = atom->nNutrients;
+  int nnus = atom->nNutrients;
   int ntypes = atom->ntypes;
 
   //atom->nuName = (char **) calloc(nNu+1, sizeof(char *));
-  atom->nuName = (char **) memory->srealloc(atom->nuName,(nNu+1)*sizeof(char *),
+  atom->nuName = (char **) memory->srealloc(atom->nuName,(nnus+1)*sizeof(char *),
                                      "atom:nuName");
-  for (int i = 0; i < nNu+1; i++){
+  for (int i = 0; i < nnus+1; i++){
     atom->nuName[i] = NULL;
   }
-  atom->diffCoeff = memory->create(atom->diffCoeff,nNu+1,"atom:diffCoeff");
-  atom->catCoeff = memory->create(atom->catCoeff,ntypes+1,nNu+1,"atom:catCoeff");
-  atom->anabCoeff = memory->create(atom->anabCoeff,ntypes+1,nNu+1,"atom:anabCoeff");
-  atom->nuConc = memory->create(atom->nuConc,nNu+1,7,"atom:nuConc");
+
+  atom->diffCoeff = memory->create(atom->diffCoeff,nnus+1,"atom:diffCoeff");
+  atom->catCoeff = memory->create(atom->catCoeff,ntypes+1,nnus+1,"atom:catCoeff");
+  atom->anabCoeff = memory->create(atom->anabCoeff,ntypes+1,nnus+1,"atom:anabCoeff");
+  atom->nuConc = memory->create(atom->nuConc,nnus+1,7,"atom:nuConc");
+  atom->vecConc = memory->create(atom->vecConc,nnus+1,"atom:vecConc");
+  atom->vecRLiq = memory->create(atom->vecRLiq,nnus+1,"atom:vecRLiq");
+  atom->vecRGas = memory->create(atom->vecRGas,nnus+1,"atom:vecRGas");
+  atom->nuType = memory->create(atom->nuType, nnus+1, "atom::nuType");
 }
 
 /* ----------------------------------------------------------------------

@@ -12,6 +12,7 @@
 #include "fix_death.h"
 #include "fix_deform.h"
 #include "fix_diffnugrowth.h"
+#include "fix_diffusion.h"
 #include "fix_divide.h"
 #include "fix_dt_reset.h"
 #include "fix_enforce2d.h"
