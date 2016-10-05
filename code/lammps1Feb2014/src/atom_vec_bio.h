@@ -21,6 +21,7 @@ AtomStyle(bio,AtomVecBio)
 #define LMP_ATOM_VEC_BIO_H
 
 #include "atom_vec_sphere.h"
+#include <Eigen/Eigen>
 
 namespace LAMMPS_NS {
 
@@ -58,6 +59,7 @@ class AtomVecBio : public AtomVecSphere {
   char **nuName;
   double **nuConc;
   double *diffCoeff;
+  Eigen::VectorXd* vecConc;
 };
 
 }

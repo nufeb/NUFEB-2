@@ -15,6 +15,7 @@
 #define LMP_ATOM_H
 
 #include "pointers.h"
+#include <Eigen/Eigen>
 
 namespace LAMMPS_NS {
 
@@ -60,7 +61,7 @@ class Atom : protected Pointers {
 
   //NUFEB code
 
-  //atoem
+  //atom
   double *outerRadius;
   double *virtualMass, *outerMass;
 
@@ -73,8 +74,11 @@ class Atom : protected Pointers {
   //nutrient
   int nNutrients;
   char **nuName;
+  int *nuType;                //nutrient types 0 = liq, 1 = gas
   double **nuConc;
   double *diffCoeff;
+  Eigen::VectorXd* vecConc;   //vectors of concentration for all nutrients
+  Eigen::VectorXd* vecR;      //vectors of consumption rate for all nutrients
 
   double **x0;
   int *ellipsoid,*line,*tri,*body;

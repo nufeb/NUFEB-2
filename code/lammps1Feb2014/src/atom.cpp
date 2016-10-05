@@ -264,6 +264,7 @@ Atom::~Atom()
   memory->destroy(anabCoeff);
   memory->destroy(catCoeff);
   memory->destroy(nuConc);
+  memory->destroy(vecConc);
 
   for (int i = 0; i < ntypes+1; i++) {
     delete [] typeName[i];
@@ -1955,6 +1956,13 @@ void Atom::data_nutrients(int narg, char **arg)
   }
 
   strcpy(nuName[id],name);
+
+  if(name[0] == 'g') {
+    atom->nuType[id] = 1;
+  } else {
+    atom->nuType[id] = 0;
+  }
+
   delete [] name;
 
   if (nuConc == NULL) error->all(FLERR,"Cannot set nutrient concentration for this nutrient style");

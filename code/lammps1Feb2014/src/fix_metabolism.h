@@ -30,37 +30,26 @@ class FixMetabolism : public Fix {
   void pre_force(int);
 
  private:
-  char **var;
-  int *ivar;
-  int nNus;                     // # of nutrients
-  int diffevery;
-  int outputevery;
+  int nnus;                     // # of nutrients
+  int ntypes;
+  int nx, ny, nz;
+  int ngrids;
+  double stepx, stepy, stepz;
+  double xlo,xhi,ylo,yhi,zlo,zhi;
+  double vol;
+  double uniGas, temp;
 
-  double **nuConc;              // inlet concentrations of nutrients
   double **catCoeff;               // catabolism coefficients of species
   double **anabCoeff;              // anabolism  coefficients of species
   double *yield;
 
-  double *diffCoeff;            // diffusion coefficients of nutrients
-  double diffT;                 // diffusion timestamp
+  double** metCoeff;               //metabolism coefficients of species
+  int** matCons;                    //endergonic components of metabolic matrix
+  VectorXd* vecR, vecConc;
 
-  int nx, ny, nz;               // grid size
-  int ngrids;                   // # of grids
-  double xlo,xhi,ylo,yhi,zlo,zhi;
-  int xbcflag, ybcflag, zbcflag;             // 0=PERIODIC-PERIODIC, 1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
-  double grid;                               // grid height
-  double xbcm, xbcp, ybcm, ybcp, zbcm, zbcp; //inlet BC concentrations for each surface
-  SparseMatrix<double> LAP;       //laplacian matrix
-
-  SparseMatrix<double> laplacian_matrix();
-  void diffusion();
-  SparseMatrix<double> spdiags(MatrixXi&, VectorXi&, int, int, int);
-  VectorXd bc_vec(VectorXd&, double);
-  VectorXd _matrix();
-  bool isEuqal(double, double, double);
-
-  MatrixXd met_matrix();
-  void removeRow(MatrixXd& , unsigned int);
+  void metCoeff_calculus();
+  void metabolism();
+  double minimal_monod(int, int);
 
 };
 
