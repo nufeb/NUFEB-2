@@ -155,19 +155,19 @@ void FixDivide::pre_exchange()
   }
 
   for (i = 0; i < nall; i++) {
-    if (atom->type[i] == 1 || atom->type[i] == 2 || atom->type[i] == 3) {
-      averageMass = 1e-16;
-    } else continue;
-
+//    if (atom->type[i] == 1 || atom->type[i] == 2 || atom->type[i] == 3) {
+//      averageMass = 1e-16;
+//    } else continue;
+    averageMass = 1e-16;
     if ((atom->mask[i] & groupbit) &&
-    	  atom->x[i][0] >= sublo[0] && atom->x[i][0] < subhi[0] &&
-          atom->x[i][1] >= sublo[1] && atom->x[i][1] < subhi[1] &&
-          atom->x[i][2] >= sublo[2] && atom->x[i][2] < subhi[2]) {
+      atom->x[i][0] >= sublo[0] && atom->x[i][0] < subhi[0] &&
+      atom->x[i][1] >= sublo[1] && atom->x[i][1] < subhi[1] &&
+      atom->x[i][2] >= sublo[2] && atom->x[i][2] < subhi[2]) {
       density = atom->rmass[i] / (4.0*MY_PI/3.0 *
-      					atom->radius[i]*atom->radius[i]*atom->radius[i]);
+                atom->radius[i]*atom->radius[i]*atom->radius[i]);
 
       if (atom->rmass[i] >= growthFactor * averageMass) {
-      	double newX, newY, newZ;
+        double newX, newY, newZ;
 
         double splitF = 0.4 + (random->uniform()*0.2);
         double parentMass = atom->rmass[i] * splitF;
@@ -206,22 +206,22 @@ void FixDivide::pre_exchange()
         newY = oldY + (atom->outerRadius[i]*sin(thetaD)*sin(phiD)*DELTA);
         newZ = oldZ + (atom->outerRadius[i]*cos(phiD)*DELTA);
         if (newX - atom->outerRadius[i] < xlo) {
-        	newX = xlo + atom->outerRadius[i];
+          newX = xlo + atom->outerRadius[i];
         }
         else if (newX + atom->outerRadius[i] > xhi) {
-        	newX = xhi - atom->outerRadius[i];
+          newX = xhi - atom->outerRadius[i];
         }
         if (newY - atom->outerRadius[i] < ylo) {
-        	newY = ylo + atom->outerRadius[i];
+          newY = ylo + atom->outerRadius[i];
         }
         else if (newY + atom->outerRadius[i] > yhi) {
-        	newY = yhi - atom->outerRadius[i];
+          newY = yhi - atom->outerRadius[i];
         }
         if (newZ - atom->outerRadius[i] < zlo) {
-        	newZ = zlo + atom->outerRadius[i];
+          newZ = zlo + atom->outerRadius[i];
         }
         else if (newZ + atom->outerRadius[i] > zhi) {
-        	newZ = zhi - atom->outerRadius[i];
+          newZ = zhi - atom->outerRadius[i];
         }
         atom->x[i][0] = newX;
         atom->x[i][1] = newY;

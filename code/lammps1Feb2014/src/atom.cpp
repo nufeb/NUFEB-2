@@ -263,8 +263,10 @@ Atom::~Atom()
 
   memory->destroy(anabCoeff);
   memory->destroy(catCoeff);
-  memory->destroy(nuConc);
-  memory->destroy(vecConc);
+  memory->destroy(iniS);
+  memory->destroy(nuR);
+  memory->destroy(nuS);
+  memory->destroy(nuType);
 
   for (int i = 0; i < ntypes+1; i++) {
     delete [] typeName[i];
@@ -1921,19 +1923,19 @@ int Atom::memcheck(const char *str)
 void Atom::data_nutrients(int narg, char **arg)
 {
   //printf("narg = %i, nNu = %i\n", narg, nNutrients);
-  if (narg != 9) error->all(FLERR,"Incorrect args for nutrient definitions");
+  if (narg != 10) error->all(FLERR,"Incorrect args for nutrient definitions");
 
   int id = force->numeric(FLERR,arg[0]);
-  double scell = force->numeric(FLERR,arg[2]);
-  double xbcm = force->numeric(FLERR,arg[3]);
-  double xbcp = force->numeric(FLERR,arg[4]);
-  double ybcm = force->numeric(FLERR,arg[5]);
-  double ybcp = force->numeric(FLERR,arg[6]);
-  double zbcm = force->numeric(FLERR,arg[7]);
-  double zbcp = force->numeric(FLERR,arg[8]);
+  double scell = force->numeric(FLERR,arg[3]);
+  double xbcm = force->numeric(FLERR,arg[4]);
+  double xbcp = force->numeric(FLERR,arg[5]);
+  double ybcm = force->numeric(FLERR,arg[6]);
+  double ybcp = force->numeric(FLERR,arg[7]);
+  double zbcm = force->numeric(FLERR,arg[8]);
+  double zbcp = force->numeric(FLERR,arg[9]);
 
+  //nutrient name
   char *name;
-
   int n = strlen(arg[1]) + 1;
   name = new char[n];
   strcpy(name,arg[1]);
@@ -1957,22 +1959,27 @@ void Atom::data_nutrients(int narg, char **arg)
 
   strcpy(nuName[id],name);
 
-  if(name[0] == 'g') {
-    atom->nuType[id] = 1;
-  } else {
-    atom->nuType[id] = 0;
-  }
-
   delete [] name;
 
-  if (nuConc == NULL) error->all(FLERR,"Cannot set nutrient concentration for this nutrient style");
-  nuConc[id][0] = scell;
-  nuConc[id][1] = xbcm;
-  nuConc[id][2] = xbcp;
-  nuConc[id][3] = ybcm;
-  nuConc[id][4] = ybcp;
-  nuConc[id][5] = zbcm;
-  nuConc[id][6] = zbcp;
+  //nutrient type
+  int m = strlen(arg[2]);
+  if (m != 1) error->all(FLERR,"Nutrient type must be a single char, "
+      "l = liq, g = gas, s = substrate");
+  char type = arg[2][0];
+  if (type == 's') atom->nuType[id] = 0;
+  else if (type == 'l') atom->nuType[id] = 1;
+  else if (type == 'g') atom->nuType[id] = 2;
+  else error->all(FLERR,"Undefined nutrient type, "
+      "l = liq, g = gas, s = substrate");
+
+  if (iniS == NULL) error->all(FLERR,"Cannot set nutrient concentration for this nutrient style");
+  iniS[id][0] = scell;
+  iniS[id][1] = xbcm;
+  iniS[id][2] = xbcp;
+  iniS[id][3] = ybcm;
+  iniS[id][4] = ybcp;
+  iniS[id][5] = zbcm;
+  iniS[id][6] = zbcp;
 
 }
 

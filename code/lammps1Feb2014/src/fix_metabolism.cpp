@@ -40,17 +40,15 @@
 #include "comm.h"
 #include "domain.h"
 #include <iostream>
-#include <Eigen/Eigen>
-#include <unsupported/Eigen/KroneckerProduct>
 #include <iomanip>
 #include <algorithm>
+#include <unordered_set>
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
 using namespace MathConst;
 
 using namespace std;
-using namespace Eigen;
 
 
 /* ---------------------------------------------------------------------- */
@@ -58,10 +56,19 @@ using namespace Eigen;
 FixMetabolism::FixMetabolism(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
 
-  if (narg != 4) error->all(FLERR,"Not enough arguments in fix metabolism command");
+  if (narg != 7) error->all(FLERR,"Not enough arguments in fix metabolism command");
 
   nevery = force->inumeric(FLERR,arg[3]);
   if (nevery < 0) error->all(FLERR,"Illegal fix metabolism command");
+
+  var = new char*[3];
+  ivar = new int[3];
+
+  for (int i = 0; i < 3; i++) {
+    int n = strlen(&arg[4+i][2]) + 1;
+    var[i] = new char[n];
+    strcpy(var[i],&arg[4+i][2]);
+  }
 
 }
 
@@ -69,8 +76,15 @@ FixMetabolism::FixMetabolism(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg,
 
 FixMetabolism::~FixMetabolism()
 {
-  memory->destroy(anabCoeff);
-  memory->destroy(catCoeff);
+  int i;
+  for (i = 0; i < 3; i++) {
+    delete [] var[i];
+  }
+  delete [] var;
+  delete [] ivar;
+
+  memory->destroy(metCoeff);
+  memory->destroy(matConsume);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -89,13 +103,23 @@ void FixMetabolism::init()
   if (!atom->radius_flag)
     error->all(FLERR,"Fix requires atom attribute diameter");
 
+  for (int n = 0; n < 3; n++) {
+    ivar[n] = input->variable->find(var[n]);
+    if (ivar[n] < 0)
+      error->all(FLERR,"Variable name for fix metabolism does not exist");
+    if (!input->variable->equalstyle(ivar[n]))
+      error->all(FLERR,"Variable for fix metabolism is invalid style");
+  }
+
+  temp = input->variable->compute_equal(ivar[0]);
+  gasTran = input->variable->compute_equal(ivar[1]);
+  gvol = input->variable->compute_equal(ivar[2]);
+
   nnus = atom->nNutrients;
   ntypes = atom->ntypes;
   catCoeff = atom->catCoeff;
   anabCoeff = atom->anabCoeff;
   yield = atom->yield;
-  vecConc = atom->vecConc;
-  vecR = atom->vecR;
 
   metCoeff_calculus();
 
@@ -128,42 +152,32 @@ void FixMetabolism::init()
   stepz = (zhi - zlo) / nz;
 
   vol = stepx * stepy * stepz;
-//
-//  //initialise cells
-//  int grid = 0;
-//  for (double i = xlo - (stepx/2); i < xhi + stepx; i += stepx) {
-//    for (double j = ylo - (stepy/2); j < yhi + stepy; j += stepy) {
-//      for (double k = zlo - (stepy/2); k < zhi + stepy; k += stepy) {
-//        cellVol[cell] = xstep * ystep * zstep;
-//      }
-//    }
-//  }
-  //printf("stepX = %e \n", stepX);
 }
 
 /* ----------------------------------------------------------------------
-  create metabolic coefficient for all microbial species
+  calculate metabolic coefficient for all microbial species
 ------------------------------------------------------------------------- */
 
 void FixMetabolism::metCoeff_calculus()
 {
   metCoeff = memory->create(metCoeff,ntypes+1,nnus+1,"atom:metCoeff");
-  matCons = memory->create(matCons,ntypes+1,nnus+1,"atom:matCons");
+  matConsume = memory->create(matConsume,ntypes+1,nnus+1,"atom:matCons");
 
-  for (int i = 1; i < ntypes+1; i++) {
-    for (int j = 1; j < nnus+1; j++) {
+  for (int i = 1; i <= ntypes; i++) {
+    for (int j = 1; j <= nnus; j++) {
+     // cout << "type = " << atom->nuType[j] << endl;
       if (strcmp(atom->nuName[j], "h") == 0 || strcmp(atom->nuName[j], "h2o") == 0) {
         metCoeff[i][j] = 0;
-        matCons[i][j] = 0;
+        matConsume[i][j] = 0;
         continue;
       }
       double pThY = 1/yield[i];
       double coeff = catCoeff[i][j] * pThY + anabCoeff[i][j];
       metCoeff[i][j] = coeff;
       if (coeff < 0) {
-        matCons[i][j] = 1;
+        matConsume[i][j] = 1;
       } else {
-        matCons[i][j] = 0;
+        matConsume[i][j] = 0;
       }
     }
   }
@@ -185,11 +199,22 @@ void FixMetabolism::metabolism()
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
   int* type = atom->type;
+  unordered_set<int> posInds;
+  nuS = atom->nuS;
+  nuR = atom->nuR;
 
-  double** biomass = new double[ntypes+1];
+  double *radius = atom->radius;
+  double *rmass = atom->rmass;
+  double *outerMass = atom->outerMass;
+  double *outerRadius = atom->outerRadius;
+
+  double** biomass = new double*[ntypes+1];
   double** minMonod = new double*[ntypes+1];
+  int* bacIn = new int[nall]();
+  double* growthRate = new double[nall]();
 
-  for (int i = 1; i <= ntypes; i++) {
+  //initialization
+  for (int i = 0; i <= ntypes; i++) {
     minMonod[i] = new double[ngrids];
     biomass[i] = new double[ngrids]();
     for (int j = 0; j < ngrids; j++) {
@@ -197,9 +222,15 @@ void FixMetabolism::metabolism()
     }
   }
 
+  for (int i = 0; i <= nnus; i++) {
+    for (int j = 0; j < ngrids; j++) {
+      nuR[i][j] = 0;
+    }
+  }
+
   for (int i = 0; i < nall; i++) {
     if (mask[i] & groupbit) {
-      // get indices of grid containing atom
+      // get index of grid containing atom
       int xpos = (atom->x[i][0] - xlo) / stepx + 1;
       int ypos = (atom->x[i][1] - ylo) / stepy + 1;
       int zpos = (atom->x[i][2] - zlo) / stepz + 1;
@@ -208,67 +239,99 @@ void FixMetabolism::metabolism()
       if (pos >= ngrids) {
          printf("Too big! pos=%d   size = %i\n", pos, ngrids);
       }
+      //save non-empty grid
+      posInds.insert(pos);
+      bacIn[i] = pos;
 
       //calculate growth rate
-      int type = type[i];
-      double monod = minMonod[type][pos];
+      int t = type[i];
+      double monod = minMonod[t][pos];
       if (monod < 0) {
-        monod[pos] = minimal_monod(pos, type);
+        minMonod[t][pos] = minimal_monod(pos, t);
+        growthRate[i] = atom->growth[t] * minMonod[t][pos];
+      } else {
+        growthRate[i] = atom->growth[t] * monod;
       }
-      double growth = atom->growth[type] * minMonod;
-
+      //cout << "monod = " << minMonod[t][pos] << endl;
       //calculate amount of biomass formed
-      biomass[type][pos] = biomass[type][pos] + growth*atom->mass[i];
+      biomass[t][pos] +=  growthRate[i] * atom->rmass[i];
+   //   cout << atom->growth[t] << " ";
     }
   }
 
-  for (int i = 1; i <= nnus; i++) {
-    //create consumption vector
-    VectorXd r (ngrids);
-    r.setZero();
-    for (int j = 0; j < ngrids; j++) {
+  for (const int& pos: posInds) {
+    for (int i = 1; i <= nnus; i++) {
       //total consumption of all types per grid
-      double sNu;
-      for (int k = 1; k <= ntypes; k++) {
-        //amount of nutrient consumed per type per grid
-        double cons = metCoeff[k][i] * biomass[i][j];
-        //calculate liquid concentrations
-        if(atom->nuType == 0) {
-          double sLiq = cons/vol;
-          sNu += sLiq;
+      for (int t = 1; t <= ntypes; t++) {
+        double consume = metCoeff[t][i] * biomass[t][pos];
+        //cout << "name "<< atom->nuName[i] << " metCoeff" << metCoeff[t][i] << endl;
+        if (atom->nuType[i] == 0) {
+          //amount of substrate consumed
+          nuR[i][pos] += consume;
+        } else if(atom->nuType[i] == 1) {
+          //calculate liquid concentrations
+          double sLiq = consume/(vol*1000);
+          nuR[i][pos] += sLiq;
+        } else if (atom->nuType[i] == 2) {
           // calculate gas partial pressures
-        } else if (atom->nuType == 1) {
-          double sGas = cons*uniGas*temp/vol;
-          sNu += sGas;
+          double pGas = consume*gasTran*temp/gvol;
+          nuR[i][pos] += pGas;
         }
       }
-      r(j) = sNu;
     }
-    vecR[i] = r;
+  }
+//
+//  for (int i = 1; i <= ntypes; i++) {
+//    cout << atom->typeName[i] << endl;
+//    if (atom->nuType[i] == 0){
+//      for (int j = 0; j < ngrids; j++) {
+//        if (biomass[i][j] > 0.0001)
+//          cout << biomass[i][j] << " ";
+//      }
+//    }
+//    cout << endl;
+//  }
+
+  double density;
+  const double threeQuartersPI = (3.0/(4.0*MY_PI));
+  const double fourThirdsPI = 4.0*MY_PI/3.0;
+  const double third = 1.0/3.0;
+
+  //update mass and radius
+  for (int i = 0; i < nall; i++) {
+    if (mask[i] & groupbit) {
+      double value = growthRate[i] * update->dt;
+
+      rmass[i] = rmass[i] * (1 + (value * nevery));
+      density = rmass[i] / (fourThirdsPI * radius[i]*radius[i]*radius[i]);
+      radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
+    }
   }
 
-  for (int i = 1; i <= ntypes; i++) {
-    delete biomass[i];
-    delete minMonod[i];
+  for (int i = 0; i <= ntypes; i++) {
+    delete [] biomass[i];
+    delete [] minMonod[i];
   }
 
   delete [] biomass;
   delete [] minMonod;
+  delete [] bacIn;
+  delete [] growthRate;
 }
 
 double FixMetabolism::minimal_monod(int pos, int type)
 {
-  double* mon = new double[];
+  vector<double> mon;
   int size = 0;
 
   for (int i = 1; i <= nnus; i++ ) {
-    if (matCons[type] != 0) {
-      mon = new double [size+1];
-      mon[size] = (vecConc[i][pos]) / (atom->ks[type] + vecConc[i][pos]);
+    if (matConsume[type][i] != 0 && atom->nuType[i] == 0) {
+      double v = nuS[i][pos]/(atom->ks[type] + nuS[i][pos]);
+      mon.push_back(v);
       size++;
+      cout << nuS[i][pos] << " ";
     }
   }
-  double min = *min_element(mon, mon+size);
-  delete [] mon;
+  double min = *min_element(mon.begin(), mon.end());
   return min;
 }

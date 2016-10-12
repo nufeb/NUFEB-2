@@ -74,11 +74,13 @@ class Atom : protected Pointers {
   //nutrient
   int nNutrients;
   char **nuName;
-  int *nuType;                //nutrient types 0 = liq, 1 = gas
-  double **nuConc;
+  int *nuType;                //nutrient types 0 = sub, 1 = liq, 2 = gas
+  double **iniS;              //inlet nutrient concentrations
   double *diffCoeff;
-  Eigen::VectorXd* vecConc;   //vectors of concentration for all nutrients
-  Eigen::VectorXd* vecR;      //vectors of consumption rate for all nutrients
+//  Eigen::VectorXd* vecConc;   //vectors of concentration for all nutrients
+//  Eigen::VectorXd* vecR;      //vectors of consumption rate for all nutrients
+  double ** nuS;          //vectors of concentration for all nutrients
+  double ** nuR;              //vectors of consumption rate for all nutrients
 
   double **x0;
   int *ellipsoid,*line,*tri,*body;
