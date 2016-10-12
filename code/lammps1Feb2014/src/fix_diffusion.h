@@ -32,12 +32,15 @@ class FixDiffusion : public Fix {
  private:
   char **var;
   int *ivar;
-  int nNus;                     // # of nutrients
+  int nnus;                     // # of nutrients
 
   double **nuConc;              // inlet concentrations of nutrients
   double *diffCoeff;            // diffusion coefficients of nutrients
   double diffT;                 // diffusion timestamp
-  VectorXd* vecConc;
+  double ** nuR;
+  double ** nuS;
+  //VectorXd* vecConc;
+  //double ** vecConc;
 
   int nx, ny, nz;               // # of grids in x, y and z
   int ngrids;                   // total # of grids

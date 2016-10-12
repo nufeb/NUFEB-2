@@ -158,18 +158,15 @@ void FixDiffusion::init()
   for (int n = 0; n < 1; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
-      error->all(FLERR,"Variable name for fix  does not exist");
+      error->all(FLERR,"Variable name for fix diffusion does not exist");
     if (!input->variable->equalstyle(ivar[n]))
-      error->all(FLERR,"Variable for fix  is invalid style");
+      error->all(FLERR,"Variable for fix diffusion is invalid style");
   }
 
   diffT = input->variable->compute_equal(ivar[0]);
-  nNus = atom->nNutrients;
-  nuConc = atom->nuConc;
+  nnus = atom->nNutrients;
+  nuConc = atom->iniS;
   diffCoeff = atom->diffCoeff;
-  vecConc = atom->vecConc;
-
- // vecConc = new Eigen::VectorXd[atom->nNutrients+1]();
 
   nx = domain->nx;
   ny = domain->ny;
@@ -201,6 +198,16 @@ void FixDiffusion::init()
 
   if (!isEuqal(gridx, gridy, gridz)) error->all(FLERR,"Grid is not cubic");
   grid = gridx;
+
+  nuS = memory->grow(atom->nuS, nnus+1, ngrids, "atom:nuS");
+  nuR = memory->grow(atom->nuR, nnus+1, ngrids, "atom:nuR");
+
+  //inlet concentration
+  for (int i = 1; i <= nnus; i++) {
+    for (int j = 0; j < ngrids; j++) {
+      nuS[i][j] = nuConc[i][0];
+    }
+  }
 
   LAP = laplacian_matrix();
 }
@@ -288,17 +295,22 @@ void FixDiffusion::pre_force(int vflag)
 void FixDiffusion::diffusion()
 {
   bool convergence = false;
-  double tol = 1e-4; // Tolerance for convergence criteria for nutrient balance equation
+  double tol = 1e-4; // tolerance for convergence criteria for nutrient balance equation
   int iteration = 0;
-  double* r = new double[nNus+1]();
-  bool* isConv = new bool[nNus+1]();
-  double* maxBC = new double[nNus+1]();
+  double* r = new double[nnus+1]();
+  bool* isConv = new bool[nnus+1]();
+  double* maxBC = new double[nnus+1]();
+  VectorXd* vecS = new VectorXd[nnus+1];
+  VectorXd* vecR = new VectorXd[nnus+1];
+
+  nuS = atom->nuS;
+  nuR = atom->nuR;
 
   //initialization
-  for (int i = 1; i < nNus+1; i++) {
-    VectorXd s(ngrids);
-    s.fill(nuConc[i][0]);
-    vecConc[i] = s;
+  for (int i = 1; i <= nnus; i++) {
+    //convert concentration and consumption data types to Eigen vector type
+    vecS[i] = Map<VectorXd> (nuS[i], ngrids, 1);
+    vecR[i] = Map<VectorXd> (nuR[i], ngrids, 1);
     isConv [i] = false;
     //get maximum boundary condition conc value
     double bc[6];
@@ -306,7 +318,7 @@ void FixDiffusion::diffusion()
       bc[j] = nuConc[i][j+1];
     }
     maxBC[i] = *max_element(bc, bc+6);
-    r[i] = diffCoeff[1]*diffT/(grid*grid);
+    r[i] = diffCoeff[i]*diffT/(grid*grid);
   }
 
   VectorXd BC(ngrids);
@@ -315,8 +327,8 @@ void FixDiffusion::diffusion()
   while (!convergence) {
     iteration ++;
 
-    for (int i = 1; i < nNus+1; i++) {
-      if (!isConv[i]) {
+    for (int i = 1; i <= nnus; i++) {
+      if (!isConv[i] && atom->nuType[i] == 0) {
         isConv[0] = false;
         xbcm = nuConc[i][1];
         xbcp = nuConc[i][2];
@@ -324,14 +336,12 @@ void FixDiffusion::diffusion()
         ybcp = nuConc[i][4];
         zbcm = nuConc[i][5];
         zbcp = nuConc[i][6];
-        BC = bc_vec(vecConc[i], grid);
-        MatrixXd dMat;
-        dMat = MatrixXd(LAP);
-        RES = LAP * vecConc[i] + BC;
+        BC = bc_vec(vecS[i], grid);
+        RES = LAP * vecS[i] + BC + (diffT * vecR[i]);
         RES = r[i] * RES;
-        vecConc[i] = RES + vecConc[i];
-        for (size_t j = 0; j < vecConc[i].size(); j++) {
-          if (vecConc[i][j] < 0) vecConc[i][j] = 1e-16;
+        vecS[i] = RES + vecS[i];
+        for (size_t j = 0; j < vecS[i].size(); j++) {
+          if (vecS[i][j] < 0) vecS[i][j] = 1e-16;
         }
         double max = RES.array().abs().maxCoeff();
         double ratio = max/maxBC[i];
@@ -343,9 +353,26 @@ void FixDiffusion::diffusion()
   }
   cout << "number of iteration: " << iteration << endl;
 
+  //convert concentration vector into normal data type
+  for (int i = 1; i <= nnus; i++) {
+    Map<MatrixXd>(nuS[i], vecS[i].rows(), vecS[i].cols()) =  vecS[i];
+  }
+
+//    for (int i = 1; i <= nnus; i++) {
+//      cout << atom->nuName[i] << endl;
+//      if (atom->nuType[i] == 0){
+//        for (int j = 0; j < ngrids; j++) {
+//          cout << nuS[i][j] << " ";
+//        }
+//      }
+//      cout << endl;
+//    }
+
   delete [] isConv;
   delete [] r;
   delete [] maxBC;
+  delete [] vecS;
+  delete [] vecR;
 }
 
 /* ----------------------------------------------------------------------

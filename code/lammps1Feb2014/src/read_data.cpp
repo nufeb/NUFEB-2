@@ -1621,7 +1621,7 @@ void ReadData::type_coeffs(){
   //atom->typeName = (char **) calloc(ntypes+1, sizeof(char *));
   atom->typeName = (char **) memory->srealloc(atom->typeName,(ntypes+1)*sizeof(char *),
                                      "atom:typeName");
-  for (int i = 0; i < ntypes+1; i++){
+  for (int i = 0; i < ntypes+1; i++) {
     atom->typeName[i] = NULL;
   }
 }
@@ -1641,10 +1641,9 @@ void ReadData::nutrient_coeffs(){
   atom->diffCoeff = memory->create(atom->diffCoeff,nnus+1,"atom:diffCoeff");
   atom->catCoeff = memory->create(atom->catCoeff,ntypes+1,nnus+1,"atom:catCoeff");
   atom->anabCoeff = memory->create(atom->anabCoeff,ntypes+1,nnus+1,"atom:anabCoeff");
-  atom->nuConc = memory->create(atom->nuConc,nnus+1,7,"atom:nuConc");
-  atom->vecConc = memory->create(atom->vecConc,nnus+1,"atom:vecConc");
-  atom->vecRLiq = memory->create(atom->vecRLiq,nnus+1,"atom:vecRLiq");
-  atom->vecRGas = memory->create(atom->vecRGas,nnus+1,"atom:vecRGas");
+  atom->iniS = memory->create(atom->iniS,nnus+1,7,"atom:nuConc");
+  atom->nuS = memory->create(atom->nuS,nnus+1, 1, "atom:nuS");
+  atom->nuR = memory->create(atom->nuR,nnus+1, 1, "atom:nuR");
   atom->nuType = memory->create(atom->nuType, nnus+1, "atom::nuType");
 }
 

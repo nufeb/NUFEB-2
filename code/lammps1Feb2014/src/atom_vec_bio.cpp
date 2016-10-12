@@ -52,10 +52,12 @@ AtomVecBio::AtomVecBio(LAMMPS *lmp) : AtomVecSphere(lmp)
 
   //nutrient
   atom->nNutrients = 0;
-  atom->nuConc = NULL;
+  atom->iniS = NULL;
   atom->nuName = NULL;
   atom->diffCoeff = NULL;
-  atom->vecConc = NULL;
+  atom->nuS = NULL;
+  atom->nuR = NULL;
+  atom->nuType = NULL;
 
 }
 
@@ -149,7 +151,6 @@ void AtomVecBio::grow_reset()
 
   outerMass = atom->outerMass;
   outerRadius = atom->outerRadius;
-  vecConc = atom->vecConc;
 }
 
 void AtomVecBio::copy(int i, int j, int delflag)
