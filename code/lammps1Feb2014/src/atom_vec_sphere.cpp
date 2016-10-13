@@ -947,8 +947,10 @@ void AtomVecSphere::create_atom(int itype, double *coord)
   v[nlocal][1] = 0.0;
   v[nlocal][2] = 0.0;
 
-  radius[nlocal] = 0.5;
-  rmass[nlocal] = 4.0*MY_PI/3.0 * radius[nlocal]*radius[nlocal]*radius[nlocal];
+  radius[nlocal] = 5e-7;
+  rmass[nlocal] = 1.57e-16;
+  //radius[nlocal] = 0.5;
+  //rmass[nlocal] = 4.0*MY_PI/3.0 * radius[nlocal]*radius[nlocal]*radius[nlocal];
   omega[nlocal][0] = 0.0;
   omega[nlocal][1] = 0.0;
   omega[nlocal][2] = 0.0;
@@ -971,7 +973,7 @@ void AtomVecSphere::data_atom(double *coord, imageint imagetmp, char **values)
   if (type[nlocal] <= 0 || type[nlocal] > atom->ntypes)
     error->one(FLERR,"Invalid atom type in Atoms section of data file");
 
-  radius[nlocal] = 0.5 * atof(values[2]);
+  radius[nlocal] = atof(values[2]);
   if (radius[nlocal] < 0.0)
     error->one(FLERR,"Invalid radius in Atoms section of data file");
 
@@ -981,8 +983,9 @@ void AtomVecSphere::data_atom(double *coord, imageint imagetmp, char **values)
 
   if (radius[nlocal] == 0.0) rmass[nlocal] = density;
   else
-    rmass[nlocal] = 4.0*MY_PI/3.0 *
-      radius[nlocal]*radius[nlocal]*radius[nlocal] * density;
+    rmass[nlocal] = 6.0661e-18;
+//    rmass[nlocal] = 4.0*MY_PI/3.0 *
+//      radius[nlocal]*radius[nlocal]*radius[nlocal] * density;
 
   x[nlocal][0] = coord[0];
   x[nlocal][1] = coord[1];
