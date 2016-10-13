@@ -64,6 +64,7 @@ class Atom : protected Pointers {
   //atom
   double *outerRadius;
   double *virtualMass, *outerMass;
+  double *atom_growth;
 
   //type
   char **typeName;
@@ -77,8 +78,6 @@ class Atom : protected Pointers {
   int *nuType;                //nutrient types 0 = sub, 1 = liq, 2 = gas
   double **iniS;              //inlet nutrient concentrations
   double *diffCoeff;
-//  Eigen::VectorXd* vecConc;   //vectors of concentration for all nutrients
-//  Eigen::VectorXd* vecR;      //vectors of consumption rate for all nutrients
   double ** nuS;          //vectors of concentration for all nutrients
   double ** nuR;              //vectors of consumption rate for all nutrients
 

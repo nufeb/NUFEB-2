@@ -41,6 +41,7 @@ AtomVecBio::AtomVecBio(LAMMPS *lmp) : AtomVecSphere(lmp)
   atom->outerMass = NULL;
   atom->outerRadius = NULL;
   atom->virtualMass = NULL;
+  atom->atom_growth = NULL;
 
   //type
   atom->ks = NULL;
@@ -83,6 +84,7 @@ void AtomVecBio::grow(int n)
   AtomVecSphere::grow(n);
   outerMass = memory->grow(atom->outerMass,nmax,"atom:outerMass");
   outerRadius = memory->grow(atom->outerRadius,nmax,"atom:outerRadius");
+  atom_growth = memory->grow(atom->atom_growth,nmax,"atom:atom_growth");
 }
 
 void AtomVecBio::create_atom(int itype, double *coord)
@@ -90,8 +92,9 @@ void AtomVecBio::create_atom(int itype, double *coord)
   int nlocal = atom->nlocal;
   AtomVecSphere::create_atom(itype, coord);
 
-  outerRadius[nlocal] = 0.5;
+  outerRadius[nlocal] = 0.0;
   outerMass[nlocal] = 0.0;
+  atom_growth[nlocal] = 0.0;
 }
 
 
@@ -103,7 +106,8 @@ void AtomVecBio::data_atom(double *coord, imageint imagetmp, char **values)
 
   AtomVecSphere::data_atom(coord, imagetmp, values);
 
-  outerRadius[nlocal] = 0.5 * atof(values[7]);
+  outerRadius[nlocal] = atof(values[7]);
+  //outerRadius[nlocal] = 0.5 * atof(values[7]);
 //  if (type[nlocal] != 1 && outerRadius[nlocal] != radius[nlocal]) {
 //    error->one(FLERR,"Outer radius must be equal to radius for all AOB, NOB, EPS, and inert particles");
 //  }
@@ -151,12 +155,14 @@ void AtomVecBio::grow_reset()
 
   outerMass = atom->outerMass;
   outerRadius = atom->outerRadius;
+  atom_growth = atom->atom_growth;
 }
 
 void AtomVecBio::copy(int i, int j, int delflag)
 {
   outerMass[j] = outerMass[i];
   outerRadius[j] = outerRadius[i];
+  atom_growth[j] = atom_growth[i];
 
   AtomVecSphere::copy(i, j, delflag);
 
@@ -168,6 +174,7 @@ bigint AtomVecBio::memory_usage()
 
   if (atom->memcheck("outerMass")) bytes += memory->usage(outerMass,nmax);
   if (atom->memcheck("outerRadius")) bytes += memory->usage(outerRadius,nmax);
+  if (atom->memcheck("atom_growth")) bytes += memory->usage(atom_growth,nmax);
 
   return bytes;
 }

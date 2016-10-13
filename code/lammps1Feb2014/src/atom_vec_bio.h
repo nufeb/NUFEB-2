@@ -45,6 +45,7 @@ class AtomVecBio : public AtomVecSphere {
   double *virtualMass;
   double *outerRadius;
   double *outerMass;
+  double *atom_growth;
   char **typeName;
 
   //type

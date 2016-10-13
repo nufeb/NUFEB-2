@@ -295,7 +295,7 @@ void FixDiffusion::pre_force(int vflag)
 void FixDiffusion::diffusion()
 {
   bool convergence = false;
-  double tol = 1e-4; // tolerance for convergence criteria for nutrient balance equation
+  double tol = 1e-9; // tolerance for convergence criteria for nutrient balance equation
   int iteration = 0;
   double* r = new double[nnus+1]();
   bool* isConv = new bool[nnus+1]();
@@ -338,8 +338,9 @@ void FixDiffusion::diffusion()
         zbcp = nuConc[i][6];
         BC = bc_vec(vecS[i], grid);
         RES = LAP * vecS[i] + BC + (diffT * vecR[i]);
-        RES = r[i] * RES;
+
         vecS[i] = RES + vecS[i];
+        //cout << vecS[i] << endl;
         for (size_t j = 0; j < vecS[i].size(); j++) {
           if (vecS[i][j] < 0) vecS[i][j] = 1e-16;
         }

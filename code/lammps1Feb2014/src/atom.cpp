@@ -1382,7 +1382,7 @@ void Atom::add_molecule_atom(Molecule *onemol, int iatom,
   if (onemol->qflag && q_flag) q[ilocal] = onemol->q[iatom];
   if (onemol->radiusflag && radius_flag) radius[ilocal] = onemol->radius[iatom];
   if (onemol->rmassflag && rmass_flag) rmass[ilocal] = onemol->rmass[iatom];
-  else if (rmass_flag) 
+  else if (rmass_flag)
     rmass[ilocal] = 4.0*MY_PI/3.0 *
       radius[ilocal]*radius[ilocal]*radius[ilocal];
   if (molecular != 1) return;
@@ -1964,13 +1964,12 @@ void Atom::data_nutrients(int narg, char **arg)
   //nutrient type
   int m = strlen(arg[2]);
   if (m != 1) error->all(FLERR,"Nutrient type must be a single char, "
-      "l = liq, g = gas, s = substrate");
+      "l = liq, g = gas");
   char type = arg[2][0];
-  if (type == 's') atom->nuType[id] = 0;
-  else if (type == 'l') atom->nuType[id] = 1;
-  else if (type == 'g') atom->nuType[id] = 2;
+  if (type == 'l') atom->nuType[id] = 0;
+  else if (type == 'g') atom->nuType[id] = 1;
   else error->all(FLERR,"Undefined nutrient type, "
-      "l = liq, g = gas, s = substrate");
+      "l = liq, g = gas");
 
   if (iniS == NULL) error->all(FLERR,"Cannot set nutrient concentration for this nutrient style");
   iniS[id][0] = scell;
@@ -1998,20 +1997,25 @@ void Atom::set_growth(const char *str)
   typeName = new char[len];
 
   int n = sscanf(str,"%s %lg",typeName,&growth_one);
-  //printf("name = %s \n", typeName);
-  if (n != 2) error->all(FLERR,"Invalid growth line in data file");
 
+  if (n != 2) error->all(FLERR,"Invalid growth line in data file");
 
   int itype = find_typeID(typeName);
   delete [] typeName;
-  //printf("itype = %d \n", itype);
+
   if (itype < 1 || itype > ntypes)
     error->all(FLERR,"Invalid type for growth set");
 
   growth[itype] = growth_one;
-  //mass_setflag[itype] = 1;
 
-  if (growth[itype] <= 0.0) error->all(FLERR,"Invalid growth value");
+  if (growth[itype] < 0.0) error->all(FLERR,"Invalid growth value");
+
+  //set growth rate for each atom
+  for (int i = 0; i < nlocal; i++) {
+    if (type[i] == itype)
+      atom_growth[i] = growth[itype];
+  }
+
  //printf("name = %s type = %d, rate = %e \n", typeName, itype, growth[itype]);
 }
 /* ----------------------------------------------------------------------
@@ -2029,18 +2033,18 @@ void Atom::set_ks(const char *str)
   typeName = new char[len];
 
   int n = sscanf(str,"%s %lg",typeName,&ks_one);
-  if (n != 2) error->all(FLERR,"Invalid growth line in data file");
+  if (n != 2) error->all(FLERR,"Invalid ks line in data file");
 
   int itype = find_typeID(typeName);
   delete [] typeName;
 
   if (itype < 1 || itype > ntypes)
-    error->all(FLERR,"Invalid type for growth set");
+    error->all(FLERR,"Invalid type for ks set");
 
   ks[itype] = ks_one;
   //mass_setflag[itype] = 1;
 
-  if (ks[itype] <= 0.0) error->all(FLERR,"Invalid growth value");
+  if (ks[itype] < 0.0) error->all(FLERR,"Invalid ks value");
 }
 
 /* ----------------------------------------------------------------------
@@ -2058,18 +2062,18 @@ void Atom::set_yield(const char *str)
   typeName = new char[len];
 
   int n = sscanf(str,"%s %lg",typeName,&yield_one);
-  if (n != 2) error->all(FLERR,"Invalid growth line in data file");
+  if (n != 2) error->all(FLERR,"Invalid set_yield line in data file");
 
   int itype = find_typeID(typeName);
   delete [] typeName;
 
   if (itype < 1 || itype > ntypes)
-    error->all(FLERR,"Invalid type for growth set");
+    error->all(FLERR,"Invalid type for set_yield set");
 
   yield[itype] = yield_one;
   //mass_setflag[itype] = 1;
 
-  if (yield[itype] <= 0.0) error->all(FLERR,"Invalid growth value");
+  if (yield[itype] < 0.0) error->all(FLERR,"Invalid set_yield value");
 }
 
 /* ----------------------------------------------------------------------
@@ -2098,7 +2102,7 @@ void Atom::set_diffusion(const char *str)
   diffCoeff[iNu] = diffu_one;
   //mass_setflag[itype] = 1;
 
-  if (diffCoeff[iNu] <= 0.0) error->all(FLERR,"Invalid diffCoeff value");
+  if (diffCoeff[iNu] < 0.0) error->all(FLERR,"Invalid diffCoeff value");
 }
 
 /* ----------------------------------------------------------------------

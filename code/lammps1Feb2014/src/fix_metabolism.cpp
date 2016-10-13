@@ -248,14 +248,12 @@ void FixMetabolism::metabolism()
       double monod = minMonod[t][pos];
       if (monod < 0) {
         minMonod[t][pos] = minimal_monod(pos, t);
-        growthRate[i] = atom->growth[t] * minMonod[t][pos];
+        growthRate[i] = atom->atom_growth[i] * minMonod[t][pos];
       } else {
-        growthRate[i] = atom->growth[t] * monod;
+        growthRate[i] = atom->atom_growth[i] * monod;
       }
-      //cout << "monod = " << minMonod[t][pos] << endl;
       //calculate amount of biomass formed
       biomass[t][pos] +=  growthRate[i] * atom->rmass[i];
-   //   cout << atom->growth[t] << " ";
     }
   }
 
@@ -265,30 +263,25 @@ void FixMetabolism::metabolism()
       for (int t = 1; t <= ntypes; t++) {
         double consume = metCoeff[t][i] * biomass[t][pos];
         //cout << "name "<< atom->nuName[i] << " metCoeff" << metCoeff[t][i] << endl;
-        if (atom->nuType[i] == 0) {
-          //amount of substrate consumed
-          nuR[i][pos] += consume;
-        } else if(atom->nuType[i] == 1) {
+        if(atom->nuType[i] == 0) {
           //calculate liquid concentrations
-          double sLiq = consume/(vol*1000);
+          double sLiq = consume/vol*1000;
+          //5.0000e-12
           nuR[i][pos] += sLiq;
-        } else if (atom->nuType[i] == 2) {
+        } else if (atom->nuType[i] == 1) {
           // calculate gas partial pressures
-          double pGas = consume*gasTran*temp/gvol;
+          double pGas = consume * gasTran * temp / gvol;
           nuR[i][pos] += pGas;
         }
       }
     }
   }
 //
-//  for (int i = 1; i <= ntypes; i++) {
-//    cout << atom->typeName[i] << endl;
-//    if (atom->nuType[i] == 0){
+//  for (int i = 1; i <= nnus; i++) {
+//    cout << atom->nuName[i] << endl;
 //      for (int j = 0; j < ngrids; j++) {
-//        if (biomass[i][j] > 0.0001)
-//          cout << biomass[i][j] << " ";
+//          cout << nuR[i][j] << " ";
 //      }
-//    }
 //    cout << endl;
 //  }
 
@@ -329,7 +322,6 @@ double FixMetabolism::minimal_monod(int pos, int type)
       double v = nuS[i][pos]/(atom->ks[type] + nuS[i][pos]);
       mon.push_back(v);
       size++;
-      cout << nuS[i][pos] << " ";
     }
   }
   double min = *min_element(mon.begin(), mon.end());
