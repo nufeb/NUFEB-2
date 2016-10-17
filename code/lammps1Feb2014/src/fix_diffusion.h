@@ -49,6 +49,7 @@ class FixDiffusion : public Fix {
   double grid;                               // grid height
   double xbcm, xbcp, ybcm, ybcp, zbcm, zbcp; //inlet BC concentrations for each surface
   SparseMatrix<double> LAP;       //laplacian matrix
+  SparseMatrix<double> I;       //sparse identity matrix
 
   SparseMatrix<double> laplacian_matrix();
   void diffusion();

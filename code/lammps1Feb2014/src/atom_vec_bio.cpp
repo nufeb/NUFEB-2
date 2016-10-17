@@ -106,7 +106,7 @@ void AtomVecBio::data_atom(double *coord, imageint imagetmp, char **values)
 
   AtomVecSphere::data_atom(coord, imagetmp, values);
 
-  outerRadius[nlocal] = atof(values[7]);
+  outerRadius[nlocal] = 0.5 * atof(values[7]);
   //outerRadius[nlocal] = 0.5 * atof(values[7]);
 //  if (type[nlocal] != 1 && outerRadius[nlocal] != radius[nlocal]) {
 //    error->one(FLERR,"Outer radius must be equal to radius for all AOB, NOB, EPS, and inert particles");

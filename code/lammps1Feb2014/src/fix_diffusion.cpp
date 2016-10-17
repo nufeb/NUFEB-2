@@ -99,32 +99,6 @@ FixDiffusion::FixDiffusion(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, a
   else if(strcmp(arg[10], "nn") == 0) zbcflag = 3;
   else if(strcmp(arg[10], "dn") == 0) zbcflag = 4;
   else error->all(FLERR,"Illegal z-axis boundary condition command");
-
-//  // test
-//  cout << xbcflag << ybcflag << zbcflag << endl;
-//  for (int i = 1; i < atom->ntypes+1; i++){
-//    printf("Atom info:\n");
-//    printf("name = %s \n", atom->typeName[i]);
-//    printf("type = %i, growth = %f, ks = %f, yield = %f \n",i, atom->growth[i], atom->ks[i], atom->yield[i]);
-//    printf("Catabolism coeffs:\n");
-//    for (int ii = 1; ii < atom->nNutrients +1; ii++) {
-//      printf("%i ", atom->catCoeff[i][ii]);
-//    }
-//    printf("\n");
-//    printf("Anabolism coeffs:\n");
-//    for (int ii = 1; ii < atom->nNutrients +1; ii++) {
-//      printf("%i ", atom->anabCoeff[i][ii]);
-//    }
-//    printf("\n");
-//    printf("\n");
-//  }
-//
-//  for (int i = 1; i < atom->nNutrients+1; i++){
-//    printf("Nutrient info:\n");
-//    printf("name = %s \n", atom->nuName[i]);
-//    printf("type = %i, diff coeffs = %e, Scell = %e, Sbc=%e \n", i, atom->diffCoeff[i], atom->nuConc[i][0], atom->nuConc[i][1]);
-//  }
-
 }
 
 /* ---------------------------------------------------------------------- */
@@ -210,6 +184,9 @@ void FixDiffusion::init()
   }
 
   LAP = laplacian_matrix();
+  SparseMatrix<double> In(ngrids, ngrids);
+  In.setIdentity();
+  I = In;
 }
 
 /* ----------------------------------------------------------------------
@@ -295,7 +272,7 @@ void FixDiffusion::pre_force(int vflag)
 void FixDiffusion::diffusion()
 {
   bool convergence = false;
-  double tol = 1e-9; // tolerance for convergence criteria for nutrient balance equation
+  double tol = 1e-6; // tolerance for convergence criteria for nutrient balance equation
   int iteration = 0;
   double* r = new double[nnus+1]();
   bool* isConv = new bool[nnus+1]();
@@ -322,7 +299,9 @@ void FixDiffusion::diffusion()
   }
 
   VectorXd BC(ngrids);
-  VectorXd RES(ngrids);
+  VectorXd x(ngrids);
+  MatrixXd B;
+  MatrixXd A;
 
   while (!convergence) {
     iteration ++;
@@ -337,14 +316,20 @@ void FixDiffusion::diffusion()
         zbcm = nuConc[i][5];
         zbcp = nuConc[i][6];
         BC = bc_vec(vecS[i], grid);
-        RES = LAP * vecS[i] + BC + (diffT * vecR[i]);
+//
+        B = (r[i] * LAP + I) * x + 2 * r[i] * BC + update->dt * vecR[i];
+        A = I - r[i] * LAP;
+        x = A.colPivHouseholderQr().solve(B);
+        //cout << x << endl;
 
-        vecS[i] = RES + vecS[i];
-        //cout << vecS[i] << endl;
+//        RES = LAP * vecS[i] + BC + (diffT * vecR[i]);
+//        vecS[i] = RES + vecS[i];
+
         for (size_t j = 0; j < vecS[i].size(); j++) {
           if (vecS[i][j] < 0) vecS[i][j] = 1e-16;
         }
-        double max = RES.array().abs().maxCoeff();
+
+        double max = x.array().abs().maxCoeff();
         double ratio = max/maxBC[i];
         if (ratio < tol) isConv[i] = true;
       }

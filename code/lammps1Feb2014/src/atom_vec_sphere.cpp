@@ -973,7 +973,7 @@ void AtomVecSphere::data_atom(double *coord, imageint imagetmp, char **values)
   if (type[nlocal] <= 0 || type[nlocal] > atom->ntypes)
     error->one(FLERR,"Invalid atom type in Atoms section of data file");
 
-  radius[nlocal] = atof(values[2]);
+  radius[nlocal] = 0.5 * atof(values[2]);
   if (radius[nlocal] < 0.0)
     error->one(FLERR,"Invalid radius in Atoms section of data file");
 
