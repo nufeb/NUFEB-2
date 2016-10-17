@@ -199,7 +199,6 @@ void FixMetabolism::metabolism()
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
   int* type = atom->type;
-  unordered_set<int> posInds;
   nuS = atom->nuS;
   nuR = atom->nuR;
 
@@ -208,15 +207,16 @@ void FixMetabolism::metabolism()
   double *outerMass = atom->outerMass;
   double *outerRadius = atom->outerRadius;
 
-  double** biomass = new double*[ntypes+1];
   double** minMonod = new double*[ntypes+1];
-  int* bacIn = new int[nall]();
-  double* growthRate = new double[nall]();
+
+  double density;
+  const double threeQuartersPI = (3.0/(4.0*MY_PI));
+  const double fourThirdsPI = 4.0*MY_PI/3.0;
+  const double third = 1.0/3.0;
 
   //initialization
   for (int i = 0; i <= ntypes; i++) {
     minMonod[i] = new double[ngrids];
-    biomass[i] = new double[ngrids]();
     for (int j = 0; j < ngrids; j++) {
       minMonod[i][j] = -1;
     }
@@ -230,6 +230,8 @@ void FixMetabolism::metabolism()
 
   for (int i = 0; i < nall; i++) {
     if (mask[i] & groupbit) {
+      double growthRate = 0;
+      double growthRate2 = 0;
       // get index of grid containing atom
       int xpos = (atom->x[i][0] - xlo) / stepx + 1;
       int ypos = (atom->x[i][1] - ylo) / stepy + 1;
@@ -239,29 +241,21 @@ void FixMetabolism::metabolism()
       if (pos >= ngrids) {
          printf("Too big! pos=%d   size = %i\n", pos, ngrids);
       }
-      //save non-empty grid
-      posInds.insert(pos);
-      bacIn[i] = pos;
 
       //calculate growth rate
       int t = type[i];
       double monod = minMonod[t][pos];
       if (monod < 0) {
         minMonod[t][pos] = minimal_monod(pos, t);
-        growthRate[i] = atom->atom_growth[i] * minMonod[t][pos];
+        growthRate = atom->atom_growth[i] * minMonod[t][pos];
       } else {
-        growthRate[i] = atom->atom_growth[i] * monod;
+        growthRate = atom->atom_growth[i] * monod;
       }
       //calculate amount of biomass formed
-      biomass[t][pos] +=  growthRate[i] * atom->rmass[i];
-    }
-  }
+      growthRate2 = growthRate * atom->rmass[i];
 
-  for (const int& pos: posInds) {
-    for (int i = 1; i <= nnus; i++) {
-      //total consumption of all types per grid
-      for (int t = 1; t <= ntypes; t++) {
-        double consume = metCoeff[t][i] * biomass[t][pos];
+      for (int i = 1; i <= nnus; i++) {
+        double consume = metCoeff[t][i] * growthRate2;
         //cout << "name "<< atom->nuName[i] << " metCoeff" << metCoeff[t][i] << endl;
         if(atom->nuType[i] == 0) {
           //calculate liquid concentrations
@@ -274,6 +268,15 @@ void FixMetabolism::metabolism()
           nuR[i][pos] += pGas;
         }
       }
+
+      //update mass and radius
+      if (mask[i] & groupbit) {
+        double value = growthRate * update->dt;
+
+        rmass[i] = rmass[i] * (1 + (value * nevery));
+        density = rmass[i] / (fourThirdsPI * radius[i]*radius[i]*radius[i]);
+        radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
+      }
     }
   }
 //
@@ -285,31 +288,11 @@ void FixMetabolism::metabolism()
 //    cout << endl;
 //  }
 
-  double density;
-  const double threeQuartersPI = (3.0/(4.0*MY_PI));
-  const double fourThirdsPI = 4.0*MY_PI/3.0;
-  const double third = 1.0/3.0;
-
-  //update mass and radius
-  for (int i = 0; i < nall; i++) {
-    if (mask[i] & groupbit) {
-      double value = growthRate[i] * update->dt;
-
-      rmass[i] = rmass[i] * (1 + (value * nevery));
-      density = rmass[i] / (fourThirdsPI * radius[i]*radius[i]*radius[i]);
-      radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
-    }
-  }
 
   for (int i = 0; i <= ntypes; i++) {
-    delete [] biomass[i];
     delete [] minMonod[i];
   }
-
-  delete [] biomass;
   delete [] minMonod;
-  delete [] bacIn;
-  delete [] growthRate;
 }
 
 double FixMetabolism::minimal_monod(int pos, int type)
