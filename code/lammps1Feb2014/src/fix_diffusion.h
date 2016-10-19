@@ -37,8 +37,11 @@ class FixDiffusion : public Fix {
   double **nuConc;              // inlet concentrations of nutrients
   double *diffCoeff;            // diffusion coefficients of nutrients
   double diffT;                 // diffusion timestamp
+  double tol;                   // tolerance for convergence criteria for nutrient balance equation
   double ** nuR;
   double ** nuS;
+  double *r;
+  double* maxBC;
   //VectorXd* vecConc;
   //double ** vecConc;
 
@@ -57,6 +60,7 @@ class FixDiffusion : public Fix {
   VectorXd bc_vec(VectorXd&, double);
   bool isEuqal(double, double, double);
 
+  void output_data();
 };
 
 }

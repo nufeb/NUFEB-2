@@ -58,46 +58,46 @@ using namespace Eigen;
 FixDiffusion::FixDiffusion(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
 
-  if (narg != 11) error->all(FLERR,"Not enough arguments in fix diffusion command");
+  if (narg != 12) error->all(FLERR,"Not enough arguments in fix diffusion command");
 
   nevery = force->inumeric(FLERR,arg[3]);
   if (nevery < 0) error->all(FLERR,"Illegal fix diffusion command");
 
-  var = new char*[1];
-  ivar = new int[1];
+  var = new char*[2];
+  ivar = new int[2];
 
-  for (int i = 0; i < 1; i++) {
+  for (int i = 0; i < 2; i++) {
     int n = strlen(&arg[4+i][2]) + 1;
     var[i] = new char[n];
     strcpy(var[i],&arg[4+i][2]);
   }
 
   //set grid size
-  domain->nx = atoi(arg[5]);
-  domain->ny = atoi(arg[6]);
-  domain->nz = atoi(arg[7]);
+  domain->nx = atoi(arg[6]);
+  domain->ny = atoi(arg[7]);
+  domain->nz = atoi(arg[8]);
 
   //set boundary condition flag:
   //0=PERIODIC-PERIODIC,  1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
-  if(strcmp(arg[8], "pp") == 0) xbcflag = 0;
-  else if(strcmp(arg[8], "dd") == 0) xbcflag = 1;
-  else if(strcmp(arg[8], "nd") == 0) xbcflag = 2;
-  else if(strcmp(arg[8], "nn") == 0) xbcflag = 3;
-  else if(strcmp(arg[8], "dn") == 0) xbcflag = 4;
+  if(strcmp(arg[9], "pp") == 0) xbcflag = 0;
+  else if(strcmp(arg[9], "dd") == 0) xbcflag = 1;
+  else if(strcmp(arg[9], "nd") == 0) xbcflag = 2;
+  else if(strcmp(arg[9], "nn") == 0) xbcflag = 3;
+  else if(strcmp(arg[9], "dn") == 0) xbcflag = 4;
   else error->all(FLERR,"Illegal x-axis boundary condition command");
 
-  if(strcmp(arg[9], "pp") == 0) ybcflag = 0;
-  else if(strcmp(arg[9], "dd") == 0) ybcflag = 1;
-  else if(strcmp(arg[9], "nd") == 0) ybcflag = 2;
-  else if(strcmp(arg[9], "nn") == 0) ybcflag = 3;
-  else if(strcmp(arg[9], "dn") == 0) ybcflag = 4;
+  if(strcmp(arg[10], "pp") == 0) ybcflag = 0;
+  else if(strcmp(arg[10], "dd") == 0) ybcflag = 1;
+  else if(strcmp(arg[10], "nd") == 0) ybcflag = 2;
+  else if(strcmp(arg[10], "nn") == 0) ybcflag = 3;
+  else if(strcmp(arg[10], "dn") == 0) ybcflag = 4;
   else error->all(FLERR,"Illegal y-axis boundary condition command");
 
-  if(strcmp(arg[10], "pp") == 0) zbcflag = 0;
-  else if(strcmp(arg[10], "dd") == 0) zbcflag = 1;
-  else if(strcmp(arg[10], "nd") == 0) zbcflag = 2;
-  else if(strcmp(arg[10], "nn") == 0) zbcflag = 3;
-  else if(strcmp(arg[10], "dn") == 0) zbcflag = 4;
+  if(strcmp(arg[11], "pp") == 0) zbcflag = 0;
+  else if(strcmp(arg[11], "dd") == 0) zbcflag = 1;
+  else if(strcmp(arg[11], "nd") == 0) zbcflag = 2;
+  else if(strcmp(arg[11], "nn") == 0) zbcflag = 3;
+  else if(strcmp(arg[11], "dn") == 0) zbcflag = 4;
   else error->all(FLERR,"Illegal z-axis boundary condition command");
 }
 
@@ -106,11 +106,13 @@ FixDiffusion::FixDiffusion(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, a
 FixDiffusion::~FixDiffusion()
 {
   int i;
-  for (i = 0; i < 1; i++) {
+  for (i = 0; i < 2; i++) {
     delete [] var[i];
   }
   delete [] var;
   delete [] ivar;
+  delete [] r;
+  delete [] maxBC;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -129,7 +131,7 @@ void FixDiffusion::init()
   if (!atom->radius_flag)
     error->all(FLERR,"Fix requires atom attribute diameter");
 
-  for (int n = 0; n < 1; n++) {
+  for (int n = 0; n < 2; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
       error->all(FLERR,"Variable name for fix diffusion does not exist");
@@ -138,9 +140,12 @@ void FixDiffusion::init()
   }
 
   diffT = input->variable->compute_equal(ivar[0]);
+  tol = input->variable->compute_equal(ivar[1]);
   nnus = atom->nNutrients;
   nuConc = atom->iniS;
   diffCoeff = atom->diffCoeff;
+  r = new double[nnus+1]();
+  maxBC = new double[nnus+1]();
 
   nx = domain->nx;
   ny = domain->ny;
@@ -176,18 +181,29 @@ void FixDiffusion::init()
   nuS = memory->grow(atom->nuS, nnus+1, ngrids, "atom:nuS");
   nuR = memory->grow(atom->nuR, nnus+1, ngrids, "atom:nuR");
 
-  //inlet concentration
+  //inlet concentration, diffusion constant
+  //and maximum boundary condition conc value
   for (int i = 1; i <= nnus; i++) {
+    r[i] = diffCoeff[i]*diffT/(2 * gridx * gridx);
+
+    double bc[6];
+    for (int j = 0; j < 6; j++ ) {
+      bc[j] = nuConc[i][j+1];
+    }
+    maxBC[i] = *max_element(bc, bc+6);
+
     for (int j = 0; j < ngrids; j++) {
       nuS[i][j] = nuConc[i][0];
     }
   }
 
   LAP = laplacian_matrix();
+  //create identity matrix
   SparseMatrix<double> In(ngrids, ngrids);
   In.setIdentity();
   I = In;
 }
+
 
 /* ----------------------------------------------------------------------
   build laplacian matrix
@@ -263,6 +279,7 @@ void FixDiffusion::pre_force(int vflag)
   if (update->ntimestep % nevery) return;
 
   diffusion();
+  output_data();
 }
 
 /* ----------------------------------------------------------------------
@@ -272,11 +289,8 @@ void FixDiffusion::pre_force(int vflag)
 void FixDiffusion::diffusion()
 {
   bool convergence = false;
-  double tol = 1e-6; // tolerance for convergence criteria for nutrient balance equation
   int iteration = 0;
-  double* r = new double[nnus+1]();
   bool* isConv = new bool[nnus+1]();
-  double* maxBC = new double[nnus+1]();
   VectorXd* vecS = new VectorXd[nnus+1];
   VectorXd* vecR = new VectorXd[nnus+1];
 
@@ -289,54 +303,64 @@ void FixDiffusion::diffusion()
     vecS[i] = Map<VectorXd> (nuS[i], ngrids, 1);
     vecR[i] = Map<VectorXd> (nuR[i], ngrids, 1);
     isConv [i] = false;
-    //get maximum boundary condition conc value
-    double bc[6];
-    for (int j = 0; j < 6; j++ ) {
-      bc[j] = nuConc[i][j+1];
-    }
-    maxBC[i] = *max_element(bc, bc+6);
-    r[i] = diffCoeff[i]*diffT/(grid*grid);
   }
 
+//  cout << atom->nuName[1] << endl;
+//    for (int j = 0; j < ngrids; j++) {
+//      printf("%e ", vecS[1][j]);
+//  }
+//  cout << endl;
+
   VectorXd BC(ngrids);
-  VectorXd x(ngrids);
+  SparseMatrix<double> sdiagBC;
   MatrixXd B;
   MatrixXd A;
+  MatrixXd diagBC;
+  VectorXd vecPrvS;
 
   while (!convergence) {
     iteration ++;
 
     for (int i = 1; i <= nnus; i++) {
-      if (!isConv[i] && atom->nuType[i] == 0) {
-        isConv[0] = false;
-        xbcm = nuConc[i][1];
-        xbcp = nuConc[i][2];
-        ybcm = nuConc[i][3];
-        ybcp = nuConc[i][4];
-        zbcm = nuConc[i][5];
-        zbcp = nuConc[i][6];
-        BC = bc_vec(vecS[i], grid);
-//
-        B = (r[i] * LAP + I) * x + 2 * r[i] * BC + update->dt * vecR[i];
-        A = I - r[i] * LAP;
-        x = A.colPivHouseholderQr().solve(B);
-        //cout << x << endl;
+      if (atom->nuType[i] == 0) {
+        if (!isConv[i]) {
+          isConv[0] = false;
+          xbcm = nuConc[i][1];
+          xbcp = nuConc[i][2];
+          ybcm = nuConc[i][3];
+          ybcp = nuConc[i][4];
+          zbcm = nuConc[i][5];
+          zbcp = nuConc[i][6];
+          BC = bc_vec(vecS[i], grid);
+          vecPrvS = vecS[i].replicate(1, 1);
+          diagBC = BC.asDiagonal();
+          sdiagBC = diagBC.sparseView();
 
-//        RES = LAP * vecS[i] + BC + (diffT * vecR[i]);
-//        vecS[i] = RES + vecS[i];
+          B = (r[i] * LAP + I) * vecS[i] + r[i] * BC + diffT * vecR[i];
+          A = I - r[i] * LAP - r[i] * sdiagBC;
+          vecS[i] = A.colPivHouseholderQr().solve(B);
 
-        for (size_t j = 0; j < vecS[i].size(); j++) {
-          if (vecS[i][j] < 0) vecS[i][j] = 1e-16;
+          for (size_t j = 0; j < vecS[i].size(); j++) {
+            if (vecS[i][j] < 0) vecS[i][j] = 1e-16;
+          }
+
+          VectorXd vecDiffS = vecS[i] - vecPrvS;
+          double max = vecDiffS.array().abs().maxCoeff();
+          double ratio = max/maxBC[i];
+          if (ratio < tol) isConv[i] = true;
         }
-
-        double max = x.array().abs().maxCoeff();
-        double ratio = max/maxBC[i];
-        if (ratio < tol) isConv[i] = true;
+        else isConv[0] = true;
       }
-      else isConv[0] = true;
     }
     if (isConv[0]) break;
   }
+
+//  cout << atom->nuName[1] << endl;
+//    for (int j = 0; j < ngrids; j++) {
+//      printf("%e ", vecS[1][j]);
+//  }
+//  cout << endl;
+
   cout << "number of iteration: " << iteration << endl;
 
   //convert concentration vector into normal data type
@@ -344,19 +368,7 @@ void FixDiffusion::diffusion()
     Map<MatrixXd>(nuS[i], vecS[i].rows(), vecS[i].cols()) =  vecS[i];
   }
 
-//    for (int i = 1; i <= nnus; i++) {
-//      cout << atom->nuName[i] << endl;
-//      if (atom->nuType[i] == 0){
-//        for (int j = 0; j < ngrids; j++) {
-//          cout << nuS[i][j] << " ";
-//        }
-//      }
-//      cout << endl;
-//    }
-
   delete [] isConv;
-  delete [] r;
-  delete [] maxBC;
   delete [] vecS;
   delete [] vecR;
 }
@@ -469,10 +481,37 @@ VectorXd FixDiffusion::bc_vec(VectorXd& S, double h)
 
 bool FixDiffusion::isEuqal(double a, double b, double c)
 {
-    double epsilon = 0.00001;
-    if ((fabs(a - b) > epsilon)|| (fabs(a - b) > epsilon) || (fabs(a - b) > epsilon))
-      return false;
+  double epsilon = 0.00001;
+  if ((fabs(a - b) > epsilon)|| (fabs(a - b) > epsilon) || (fabs(a - b) > epsilon))
+    return false;
 
-    return true;
+  return true;
 }
 
+/* ----------------------------------------------------------------------
+  output nutrient concentrations to data file
+------------------------------------------------------------------------- */
+
+void FixDiffusion::output_data(){
+  FILE* pFile;
+  string str = "concentration";
+  pFile = fopen (str.c_str(), "w");
+  fprintf(pFile, ",x,y,z,scalar,1,1,1,0.5\n");
+
+  double stepx = (xhi - xlo) / nx;
+  double stepy = (yhi - ylo) / ny;
+  double stepz = (zhi - zlo) / nz;
+
+  for(int i = 0; i < ngrids; i++){
+    int zpos = i/(nx * ny) + 1;
+    int ypos = (i - (zpos - 1) * (nx * ny)) / nx + 1;
+    int xpos = i - (zpos - 1) * (nx * ny) - (ypos - 1) * nx + 1;
+
+    double x = xpos * stepx - stepx/2;
+    double y = ypos * stepy - stepy/2;
+    double z = zpos * stepz - stepz/2;
+
+    fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, x, y, z, nuS[1][i]);
+  }
+  fclose(pFile);
+}

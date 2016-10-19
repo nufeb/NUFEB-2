@@ -70,19 +70,7 @@ int FixUtilities::setmask()
 
 void FixUtilities::init()
 {
-//	int irequest = neighbor->request((void *) this);
-//  neighbor->requests[irequest]->pair = 0;
-//  neighbor->requests[irequest]->fix = 1;
-
 }
-
-///* ---------------------------------------------------------------------- */
-//
-//void FixUtilities::init_list(int id, NeighList *ptr)
-//{
-//  list = ptr;
-//}
-
 
 void FixUtilities::post_force(int vflag)
 {
@@ -95,46 +83,69 @@ void FixUtilities::post_force(int vflag)
   fourThirdsPI = 4.0*MY_PI/3.0;
 
   visit = new int[nall]();
-  vector<double> floc_vol;
-  vector<int> floc_sizes;
+  vector <vector<int>> flocs;
+  int *id = new int[nall]();
+  vector<int> parent_floc;
+  int max_size = 0;
 
+  //build neighbor list
   neighbor_list();
   
   for (int i = 0; i < nall; i++) {
     if (visit[i] == 0) {
-      int size = 1;
-      double radius = atom->radius[i];
-      double volume = fourThirdsPI * radius * radius * radius;
-      double vol = volume;
+      vector<int> floc;
+      floc.push_back(i);
+      get_floc (i, floc);
 
-      floc_size (vol, i, size);
-      floc_vol.push_back(vol);
-      floc_sizes.push_back(size);
+      //get parent floc
+      if (floc.size() > max_size) {
+        max_size = floc.size();
+        parent_floc = floc;
+      }
     }
   }
 
-  int n = 0;
-  for (auto i = floc_vol.begin(); i != floc_vol.end(); ++i) {
-      n++;
-      cout << "Floc " << n << " size = " << floc_sizes.at(n-1) << endl;
-      cout <<  *i << ' ';
-      cout << endl;
+  //remove parent floc
+  flocs.erase(remove(flocs.begin(), flocs.end(), parent_floc), flocs.end());
+
+  for (const vector<int> &floc : flocs) {
+    //new detached floc
+    if (id[floc.at(0)] == 0) {
+      double vol;
+      double x, y ,z;
+      printf("New floc at nstep = %i:\n", update->nsteps);
+      for (const int &i : floc) {
+        if (id[0] == 1) cout << "warning: floc is mixed with pre-detached atoms" << endl;
+        id[i] = 1;
+        double radius = atom->radius[i];
+        double volume = fourThirdsPI * radius * radius * radius;
+        vol += volume;
+        x += atom->x[i][0];
+        y += atom->x[i][1];
+        z += atom->x[i][2];
+      }
+      double size = floc.size();
+      x = x/size;
+      y = y/size;
+      z = z/size;
+      printf("  Size = %e:\n", size);
+      printf("  Average position x = %e, y = %e, z = %e:\n", x, y, z);
+      printf("  Volume = %e:\n", vol);
+    }
   }
 
   delete[] visit;
+  delete[] id;
 }
 
-void FixUtilities::floc_size (double &vol, int bac, int &size) {
+void FixUtilities::get_floc (int bac, vector<int>& floc) {
   visit[bac] = 1;
 
   for (int const& j: list.at(bac)) {
-//    int j = jlist[jj];
+
     if (visit[j] == 0) {
-      double radius = atom->radius[j];
-      double volume = fourThirdsPI * radius * radius * radius;
-      vol = vol + volume;
-      size ++;
-      floc_size (vol, j, size);
+      floc.push_back(j);
+      get_floc (j, floc);
     }
   }
 }
