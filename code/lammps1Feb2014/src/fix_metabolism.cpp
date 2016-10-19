@@ -193,6 +193,9 @@ void FixMetabolism::pre_force(int vflag)
   metabolism();
 }
 
+/* ----------------------------------------------------------------------
+  metabolism and atom update
+------------------------------------------------------------------------- */
 void FixMetabolism::metabolism()
 {
   int *mask = atom->mask;
@@ -228,11 +231,12 @@ void FixMetabolism::metabolism()
     }
   }
 
+  //Metabolism
   for (int i = 0; i < nall; i++) {
     if (mask[i] & groupbit) {
       double growthRate = 0;
-      double growthRate2 = 0;
-      // get index of grid containing atom
+      double growthBac = 0;
+      // get index of grid containing i
       int xpos = (atom->x[i][0] - xlo) / stepx + 1;
       int ypos = (atom->x[i][1] - ylo) / stepy + 1;
       int zpos = (atom->x[i][2] - zlo) / stepz + 1;
@@ -242,7 +246,7 @@ void FixMetabolism::metabolism()
          printf("Too big! pos=%d   size = %i\n", pos, ngrids);
       }
 
-      //calculate growth rate
+      //calculate growth rate using minimum monod
       int t = type[i];
       double monod = minMonod[t][pos];
       if (monod < 0) {
@@ -252,11 +256,11 @@ void FixMetabolism::metabolism()
         growthRate = atom->atom_growth[i] * monod;
       }
       //calculate amount of biomass formed
-      growthRate2 = growthRate * atom->rmass[i];
-
+      growthBac = growthRate * atom->rmass[i];
+     // cout << growthRate << endl;
       for (int i = 1; i <= nnus; i++) {
-        double consume = metCoeff[t][i] * growthRate2;
-        //cout << "name "<< atom->nuName[i] << " metCoeff" << metCoeff[t][i] << endl;
+        double consume = metCoeff[t][i] * growthBac;
+
         if(atom->nuType[i] == 0) {
           //calculate liquid concentrations
           double sLiq = consume/vol*1000;
@@ -279,7 +283,7 @@ void FixMetabolism::metabolism()
       }
     }
   }
-//
+
 //  for (int i = 1; i <= nnus; i++) {
 //    cout << atom->nuName[i] << endl;
 //      for (int j = 0; j < ngrids; j++) {
@@ -288,12 +292,15 @@ void FixMetabolism::metabolism()
 //    cout << endl;
 //  }
 
-
   for (int i = 0; i <= ntypes; i++) {
     delete [] minMonod[i];
   }
   delete [] minMonod;
 }
+
+/* ----------------------------------------------------------------------
+  get minimum monod term w.r.t all nutrients
+------------------------------------------------------------------------- */
 
 double FixMetabolism::minimal_monod(int pos, int type)
 {

@@ -33,21 +33,12 @@ class FixUtilities : public Fix {
   int setmask();
   void init();
   virtual void post_force(int);
-  void floc_size (double&, int, int&);
+  void get_floc (int, std::vector<int>&);
   void neighbor_list ();
 
  private:
 
   int nall;
-//  int nmax, nvalues;
-//  int npairs;
-//  bigint laststep;
-//  bigint laststep_local;
-//  int flag;
-
-//  int *jlist,*ilist;
-//  int *numneigh,inum,**firstneigh;
-  int *mask;
   int *visit;
   double fourThirdsPI;
 

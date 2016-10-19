@@ -31,22 +31,22 @@ class FixMetabolism : public Fix {
   int *ivar;
 
   int nnus;                     // # of nutrients
-  int ntypes;
-  int nx, ny, nz;
-  int ngrids;
-  double stepx, stepy, stepz;
-  double xlo,xhi,ylo,yhi,zlo,zhi;
-  double vol, gvol;
-  double gasTran, temp;
+  int ntypes;                   // # of species
+  int nx, ny, nz;               // number of grids in x y z axis
+  int ngrids;                   //# of grids
+  double stepx, stepy, stepz;   // grids size
+  double xlo,xhi,ylo,yhi,zlo,zhi;  //simulaton box size
+  double vol, gvol;                //grid volume and gas volume
+  double gasTran, temp;            //gas transfer constant and temperature
 
   double **catCoeff;               // catabolism coefficients of species
   double **anabCoeff;              // anabolism  coefficients of species
-  double *yield;
+  double *yield;                   // yield coefficients
 
   double **metCoeff;               //metabolism coefficients of species
-  int **matConsume;                    //endergonic components of metabolic matrix
-  double **nuS;
-  double **nuR;
+  int **matConsume;                //endergonic components of metabolic matrix
+  double **nuS;                    //nutrient concentration for all grids
+  double **nuR;                    //nutrient consumption for all grids
 
   void metCoeff_calculus();
   void metabolism();
