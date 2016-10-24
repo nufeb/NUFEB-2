@@ -41,6 +41,8 @@ class FixUtilities : public Fix {
   int nall;
   int *visit;
   double fourThirdsPI;
+  std::vector<bigint> id;
+  FILE* pFile;
 
   std::vector< std::vector<int> > list;
 

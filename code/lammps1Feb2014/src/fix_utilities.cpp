@@ -33,6 +33,7 @@
 #include <iostream>
 #include "math_const.h"
 #include <vector>
+#include <algorithm>
 
 
 using namespace LAMMPS_NS;
@@ -77,20 +78,21 @@ void FixUtilities::post_force(int vflag)
   if (nevery == 0) return;
   if (update->ntimestep % nevery) return;
 
+  pFile = fopen ("floc", "a");
+
   list.clear();
   int nlocal = atom->nlocal;
-  nall = nlocal + atom->nghost;
+  nall = nlocal;
   fourThirdsPI = 4.0*MY_PI/3.0;
 
   visit = new int[nall]();
   vector <vector<int>> flocs;
-  int *id = new int[nall]();
   vector<int> parent_floc;
   int max_size = 0;
 
   //build neighbor list
   neighbor_list();
-  
+
   for (int i = 0; i < nall; i++) {
     if (visit[i] == 0) {
       vector<int> floc;
@@ -102,40 +104,67 @@ void FixUtilities::post_force(int vflag)
         max_size = floc.size();
         parent_floc = floc;
       }
+      flocs.push_back(floc);
     }
   }
-
+  fprintf(pFile, "ntimestep = %i \n", update->ntimestep);
+  fprintf(pFile, "Parent floc size = %i \n", parent_floc.size());
   //remove parent floc
-  flocs.erase(remove(flocs.begin(), flocs.end(), parent_floc), flocs.end());
+  flocs.erase( remove( flocs.begin(), flocs.end(), parent_floc ), flocs.end() );
 
   for (const vector<int> &floc : flocs) {
     //new detached floc
-    if (id[floc.at(0)] == 0) {
-      double vol;
-      double x, y ,z;
-      printf("New floc at nstep = %i:\n", update->nsteps);
-      for (const int &i : floc) {
-        if (id[0] == 1) cout << "warning: floc is mixed with pre-detached atoms" << endl;
-        id[i] = 1;
-        double radius = atom->radius[i];
-        double volume = fourThirdsPI * radius * radius * radius;
-        vol += volume;
-        x += atom->x[i][0];
-        y += atom->x[i][1];
-        z += atom->x[i][2];
+    int newSize = 0;
+    int oldSize = 0;
+
+    double oldVol = 0;
+    double newVol = 0;
+    double x, y ,z;
+
+    for (const int &i : floc) {
+      double radius = atom->radius[i];
+      double volume = fourThirdsPI * radius * radius * radius;
+      //i not in id
+      if (find(id.begin(), id.end(), atom->tag[i]) == id.end()) {
+        newSize++;
+        id.push_back(atom->tag[i]);
+        newVol = volume + newVol;
+      } else {
+        oldSize++;
+        oldVol = volume + oldVol;
       }
-      double size = floc.size();
-      x = x/size;
-      y = y/size;
-      z = z/size;
-      printf("  Size = %e:\n", size);
-      printf("  Average position x = %e, y = %e, z = %e:\n", x, y, z);
-      printf("  Volume = %e:\n", vol);
+      x += atom->x[i][0];
+      y += atom->x[i][1];
+      z += atom->x[i][2];
+    }
+
+    int size = floc.size();
+    x = x/size;
+    y = y/size;
+    z = z/size;
+
+    if (oldSize == size) continue;
+    else if (newSize == size) {
+      fprintf(pFile, "New floc at ntimestep = %i \n", update->ntimestep);
+      fprintf(pFile, "  Average position x = %e, y = %e, z = %e \n", x, y, z);
+      fprintf(pFile, "  Size = %i \n", size);
+      fprintf(pFile, "  Volume = %e \n", newVol);
+      fprintf(pFile, "\n");
+    } else {
+      fprintf(pFile, "Mixed floc at ntimestep = %i \n", update->ntimestep);
+      fprintf(pFile, "  Average position x = %e, y = %e, z = %e \n", x, y, z);
+      fprintf(pFile, "  Size = %i \n", size);
+      fprintf(pFile, "  Old size = %i \n", oldSize);
+      fprintf(pFile, "  New size = %i \n", newSize);
+      fprintf(pFile, "  Volume = %e \n", newVol + oldVol);
+      fprintf(pFile, "  Old volume = %e \n", oldVol);
+      fprintf(pFile, "  New volume = %e \n", newVol);
+      fprintf(pFile, "\n");
     }
   }
 
+  fclose(pFile);
   delete[] visit;
-  delete[] id;
 }
 
 void FixUtilities::get_floc (int bac, vector<int>& floc) {

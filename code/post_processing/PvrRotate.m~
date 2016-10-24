@@ -17,8 +17,8 @@ fprintf(fid,'right 0.24*x*image_width/image_height\n');
 fprintf(fid,'up 0.24*y\n');
 fprintf(fid,'look_at <0, 0, 0>\n');
 %fprintf(fid,'look_at 0\n')
-fprintf(fid,'rotate <0, 0, %i*36>\n', rotate);
-fprintf(fid,'}\n');
+%fprintf(fid,'rotate <0, 0, %i*10>\n', rotate);
+%fprintf(fid,'}\n');
 fprintf(fid,'// Create simualtion box\n');
 fprintf(fid,'#declare b_x=0.05;\n');
 fprintf(fid,'#declare b_y=0.05;\n');
