@@ -58,7 +58,7 @@ using namespace Eigen;
 FixDiffusion::FixDiffusion(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
 
-  if (narg != 12) error->all(FLERR,"Not enough arguments in fix diffusion command");
+  if (narg != 13) error->all(FLERR,"Not enough arguments in fix diffusion command");
 
   nevery = force->inumeric(FLERR,arg[3]);
   if (nevery < 0) error->all(FLERR,"Illegal fix diffusion command");
@@ -66,38 +66,42 @@ FixDiffusion::FixDiffusion(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, a
   var = new char*[2];
   ivar = new int[2];
 
+  if(strcmp(arg[4], "exp") == 0) sflag = 0;
+  else if(strcmp(arg[4], "imp") == 0) sflag = 1;
+  else error->all(FLERR,"Illegal PDE method command");
+
   for (int i = 0; i < 2; i++) {
-    int n = strlen(&arg[4+i][2]) + 1;
+    int n = strlen(&arg[5+i][2]) + 1;
     var[i] = new char[n];
-    strcpy(var[i],&arg[4+i][2]);
+    strcpy(var[i],&arg[5+i][2]);
   }
 
   //set grid size
-  domain->nx = atoi(arg[6]);
-  domain->ny = atoi(arg[7]);
-  domain->nz = atoi(arg[8]);
+  domain->nx = atoi(arg[7]);
+  domain->ny = atoi(arg[8]);
+  domain->nz = atoi(arg[9]);
 
   //set boundary condition flag:
   //0=PERIODIC-PERIODIC,  1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
-  if(strcmp(arg[9], "pp") == 0) xbcflag = 0;
-  else if(strcmp(arg[9], "dd") == 0) xbcflag = 1;
-  else if(strcmp(arg[9], "nd") == 0) xbcflag = 2;
-  else if(strcmp(arg[9], "nn") == 0) xbcflag = 3;
-  else if(strcmp(arg[9], "dn") == 0) xbcflag = 4;
+  if(strcmp(arg[10], "pp") == 0) xbcflag = 0;
+  else if(strcmp(arg[10], "dd") == 0) xbcflag = 1;
+  else if(strcmp(arg[10], "nd") == 0) xbcflag = 2;
+  else if(strcmp(arg[10], "nn") == 0) xbcflag = 3;
+  else if(strcmp(arg[10], "dn") == 0) xbcflag = 4;
   else error->all(FLERR,"Illegal x-axis boundary condition command");
 
-  if(strcmp(arg[10], "pp") == 0) ybcflag = 0;
-  else if(strcmp(arg[10], "dd") == 0) ybcflag = 1;
-  else if(strcmp(arg[10], "nd") == 0) ybcflag = 2;
-  else if(strcmp(arg[10], "nn") == 0) ybcflag = 3;
-  else if(strcmp(arg[10], "dn") == 0) ybcflag = 4;
+  if(strcmp(arg[11], "pp") == 0) ybcflag = 0;
+  else if(strcmp(arg[11], "dd") == 0) ybcflag = 1;
+  else if(strcmp(arg[11], "nd") == 0) ybcflag = 2;
+  else if(strcmp(arg[11], "nn") == 0) ybcflag = 3;
+  else if(strcmp(arg[11], "dn") == 0) ybcflag = 4;
   else error->all(FLERR,"Illegal y-axis boundary condition command");
 
-  if(strcmp(arg[11], "pp") == 0) zbcflag = 0;
-  else if(strcmp(arg[11], "dd") == 0) zbcflag = 1;
-  else if(strcmp(arg[11], "nd") == 0) zbcflag = 2;
-  else if(strcmp(arg[11], "nn") == 0) zbcflag = 3;
-  else if(strcmp(arg[11], "dn") == 0) zbcflag = 4;
+  if(strcmp(arg[12], "pp") == 0) zbcflag = 0;
+  else if(strcmp(arg[12], "dd") == 0) zbcflag = 1;
+  else if(strcmp(arg[12], "nd") == 0) zbcflag = 2;
+  else if(strcmp(arg[12], "nn") == 0) zbcflag = 3;
+  else if(strcmp(arg[12], "dn") == 0) zbcflag = 4;
   else error->all(FLERR,"Illegal z-axis boundary condition command");
 }
 
@@ -184,7 +188,7 @@ void FixDiffusion::init()
   //inlet concentration, diffusion constant
   //and maximum boundary condition conc value
   for (int i = 1; i <= nnus; i++) {
-    r[i] = diffCoeff[i]*diffT/(2 * gridx * gridx);
+    r[i] = diffCoeff[i]/(2 * gridx * gridx);
 
     double bc[6];
     for (int j = 0; j < 6; j++ ) {
@@ -305,13 +309,9 @@ void FixDiffusion::diffusion()
     isConv [i] = false;
   }
 
-//  cout << atom->nuName[1] << endl;
-//    for (int j = 0; j < ngrids; j++) {
-//      printf("%e ", vecS[1][j]);
-//  }
-//  cout << endl;
-
   VectorXd BC(ngrids);
+  VectorXd RES(ngrids);
+
   SparseMatrix<double> sdiagBC;
   MatrixXd B;
   MatrixXd A;
@@ -332,20 +332,36 @@ void FixDiffusion::diffusion()
           zbcm = nuConc[i][5];
           zbcp = nuConc[i][6];
           BC = bc_vec(vecS[i], grid);
-          vecPrvS = vecS[i].replicate(1, 1);
-          diagBC = BC.asDiagonal();
-          sdiagBC = diagBC.sparseView();
+          double max;
+          //Explicit method
+          if (sflag == 0) {
+            RES = LAP * vecS[i] + BC;
+            RES = (2 * r[i] * RES + vecR[i]) * diffT;
+            vecS[i] = RES + vecS[i];
 
-          B = (r[i] * LAP + I) * vecS[i] + r[i] * BC + diffT * vecR[i];
-          A = I - r[i] * LAP - r[i] * sdiagBC;
-          vecS[i] = A.colPivHouseholderQr().solve(B);
+            for (size_t j = 0; j < vecS[i].size(); j++) {
+              if (vecS[i][j] < 0) vecS[i][j] = 1e-16;
+            }
 
-          for (size_t j = 0; j < vecS[i].size(); j++) {
-            if (vecS[i][j] < 0) vecS[i][j] = 1e-16;
+            max = RES.array().abs().maxCoeff();
+          //Implicit method
+          } else {
+            vecPrvS = vecS[i].replicate(1, 1);
+            diagBC = BC.asDiagonal();
+            sdiagBC = diagBC.sparseView();
+
+            B = ((r[i] * LAP + I) * vecS[i] + r[i] * BC +  vecR[i]) * diffT;
+            A = I - r[i] * LAP * diffT - r[i] * sdiagBC * diffT;
+            vecS[i] = A.colPivHouseholderQr().solve(B);
+
+            for (size_t j = 0; j < vecS[i].size(); j++) {
+              if (vecS[i][j] < 0) vecS[i][j] = 1e-16;
+            }
+
+            VectorXd vecDiffS = vecS[i] - vecPrvS;
+            max = vecDiffS.array().abs().maxCoeff();
           }
 
-          VectorXd vecDiffS = vecS[i] - vecPrvS;
-          double max = vecDiffS.array().abs().maxCoeff();
           double ratio = max/maxBC[i];
           if (ratio < tol) isConv[i] = true;
         }

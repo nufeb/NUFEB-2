@@ -34,6 +34,7 @@ class FixDiffusion : public Fix {
   int *ivar;
   int nnus;                     // # of nutrients
 
+  int sflag;
   double **nuConc;              // inlet concentrations of nutrients
   double *diffCoeff;            // diffusion coefficients of nutrients
   double diffT;                 // diffusion timestamp
