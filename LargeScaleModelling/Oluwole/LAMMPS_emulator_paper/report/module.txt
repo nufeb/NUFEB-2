@@ -1,0 +1,19 @@
+POV-Ray
+Matlab 2015b
+R Enterprise
+OpenFOAM 2.1.1
+
+
+Use the "module" command to set everything up in your PATH as follows:
+
+Matlab:
+module add apps/MATLAB
+module add apps/POV-Ray
+POVRay:
+module add apps/POV-Ray
+
+R-Enterprise:
+module add apps/R/R-Enterprise-3.2.2 
+
+OpenFOAM:
+module add apps/OpenFOAM/2.1.1
