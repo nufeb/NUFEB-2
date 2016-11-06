@@ -22,6 +22,7 @@ using namespace Eigen;
 namespace LAMMPS_NS {
 
 class FixDiffusion : public Fix {
+  friend class FixKinetics;
  public:
   FixDiffusion(class LAMMPS *, int, char **);
   ~FixDiffusion();

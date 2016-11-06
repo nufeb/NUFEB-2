@@ -59,6 +59,8 @@ AtomVecBio::AtomVecBio(LAMMPS *lmp) : AtomVecSphere(lmp)
   atom->nuS = NULL;
   atom->nuR = NULL;
   atom->nuType = NULL;
+  atom->nuG = NULL;
+  atom->typeG = NULL;
 
 }
 
