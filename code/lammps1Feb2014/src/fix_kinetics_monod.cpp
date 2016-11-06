@@ -18,7 +18,9 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#include <fix_metabolism.h>
+#include <fix_kinetics_monod.h>
+#include <fix_kinetics.h>
+#include <fix_diffusion.h>
 #include "math.h"
 #include "string.h"
 #include "stdlib.h"
@@ -53,31 +55,32 @@ using namespace std;
 
 /* ---------------------------------------------------------------------- */
 
-FixMetabolism::FixMetabolism(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
+FixKineticsMonod::FixKineticsMonod(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
 
-  if (narg != 7) error->all(FLERR,"Not enough arguments in fix metabolism command");
+  if (narg != 6) error->all(FLERR,"Not enough arguments in fix kinetics/monod command");
 
   nevery = force->inumeric(FLERR,arg[3]);
-  if (nevery < 0) error->all(FLERR,"Illegal fix metabolism command");
+  if (nevery < 0) error->all(FLERR,"Illegal fix kinetics command");
 
-  var = new char*[3];
-  ivar = new int[3];
+  var = new char*[2];
+  ivar = new int[2];
 
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 2; i++) {
     int n = strlen(&arg[4+i][2]) + 1;
     var[i] = new char[n];
     strcpy(var[i],&arg[4+i][2]);
   }
 
+  kinetics = NULL;
 }
 
 /* ---------------------------------------------------------------------- */
 
-FixMetabolism::~FixMetabolism()
+FixKineticsMonod::~FixKineticsMonod()
 {
   int i;
-  for (i = 0; i < 3; i++) {
+  for (i = 0; i < 2; i++) {
     delete [] var[i];
   }
   delete [] var;
@@ -89,7 +92,7 @@ FixMetabolism::~FixMetabolism()
 
 /* ---------------------------------------------------------------------- */
 
-int FixMetabolism::setmask()
+int FixKineticsMonod::setmask()
 {
   int mask = 0;
   mask |= PRE_FORCE;
@@ -98,36 +101,46 @@ int FixMetabolism::setmask()
 
 /* ---------------------------------------------------------------------- */
 
-void FixMetabolism::init()
+void FixKineticsMonod::init()
 {
   if (!atom->radius_flag)
     error->all(FLERR,"Fix requires atom attribute diameter");
 
-  for (int n = 0; n < 3; n++) {
+  for (int n = 0; n < 2; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
-      error->all(FLERR,"Variable name for fix metabolism does not exist");
+      error->all(FLERR,"Variable name for fix kinetics/monod does not exist");
     if (!input->variable->equalstyle(ivar[n]))
-      error->all(FLERR,"Variable for fix metabolism is invalid style");
+      error->all(FLERR,"Variable for fix kinetics/monod is invalid style");
   }
 
-  temp = input->variable->compute_equal(ivar[0]);
-  gasTran = input->variable->compute_equal(ivar[1]);
-  gvol = input->variable->compute_equal(ivar[2]);
+  // register fix kinetics with this class
+  int nfix = modify->nfix;
+  for (int j = 0; j < nfix; j++) {
+    if (strcmp(modify->fix[j]->style,"kinetics") == 0) {
+      kinetics = static_cast<FixKinetics *>(lmp->modify->fix[j]);
+      break;
+    }
+  }
 
-  nnus = atom->nNutrients;
-  ntypes = atom->ntypes;
-  catCoeff = atom->catCoeff;
-  anabCoeff = atom->anabCoeff;
-  yield = atom->yield;
+  if (kinetics == NULL)
+    lmp->error->all(FLERR,"The fix kinetics command is required for kinetics/monod styles");
 
-  metCoeff_calculus();
+  gasTran = input->variable->compute_equal(ivar[0]);
+  gvol = input->variable->compute_equal(ivar[1]);
 
-  nx = domain->nx;
-  ny = domain->ny;
-  nz = domain->nz;
+  nx = kinetics->nx;
+  ny = kinetics->ny;
+  nz = kinetics->nz;
 
   ngrids = nx * ny * nz;
+  nnus = kinetics->nnus;
+  ntypes = kinetics->ntypes;
+  catCoeff = kinetics->catCoeff;
+  anabCoeff = kinetics->anabCoeff;
+  yield = kinetics->yield;
+
+  metCoeff_calculus();
 
   //Get computational domain size
   if (domain->triclinic == 0) {
@@ -158,10 +171,10 @@ void FixMetabolism::init()
   calculate metabolic coefficient for all microbial species
 ------------------------------------------------------------------------- */
 
-void FixMetabolism::metCoeff_calculus()
+void FixKineticsMonod::metCoeff_calculus()
 {
-  metCoeff = memory->create(metCoeff,ntypes+1,nnus+1,"atom:metCoeff");
   matConsume = memory->create(matConsume,ntypes+1,nnus+1,"atom:matCons");
+  metCoeff = memory->create(metCoeff,ntypes+1,nnus+1,"atom:metCoeff");
 
   for (int i = 1; i <= ntypes; i++) {
     for (int j = 1; j <= nnus; j++) {
@@ -185,25 +198,26 @@ void FixMetabolism::metCoeff_calculus()
 
 /* ---------------------------------------------------------------------- */
 
-void FixMetabolism::pre_force(int vflag)
+void FixKineticsMonod::pre_force(int vflag)
 {
   if (nevery == 0) return;
   if (update->ntimestep % nevery) return;
 
-  metabolism();
+  monod();
 }
 
 /* ----------------------------------------------------------------------
   metabolism and atom update
 ------------------------------------------------------------------------- */
-void FixMetabolism::metabolism()
+void FixKineticsMonod::monod()
 {
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
   int* type = atom->type;
-  nuS = atom->nuS;
-  nuR = atom->nuR;
+
+  nuS = kinetics->nuS;
+  nuR = kinetics->nuR;
 
   double *radius = atom->radius;
   double *rmass = atom->rmass;
@@ -284,10 +298,10 @@ void FixMetabolism::metabolism()
     }
   }
 
-//  for (int i = 1; i <= nnus; i++) {
-//    cout << atom->nuName[i] << endl;
-//      for (int j = 0; j < ngrids; j++) {
-//          cout << nuR[i][j] << " ";
+//  for (int i = 1; i <= ntypes; i++) {
+//    cout << atom->typeName[i] << endl;
+//      for (int j = 0; j < 5; j++) {
+//          cout << atom->typeG[i][j] << " ";
 //      }
 //    cout << endl;
 //  }
@@ -302,7 +316,7 @@ void FixMetabolism::metabolism()
   get minimum monod term w.r.t all nutrients
 ------------------------------------------------------------------------- */
 
-double FixMetabolism::minimal_monod(int pos, int type)
+double FixKineticsMonod::minimal_monod(int pos, int type)
 {
   vector<double> mon;
   int size = 0;

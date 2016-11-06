@@ -81,6 +81,10 @@ FixDiffusion::FixDiffusion(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, a
   domain->ny = atoi(arg[8]);
   domain->nz = atoi(arg[9]);
 
+  nx = domain->nx;
+  ny = domain->ny;
+  nz = domain->nz;
+
   //set boundary condition flag:
   //0=PERIODIC-PERIODIC,  1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
   if(strcmp(arg[10], "pp") == 0) xbcflag = 0;
@@ -151,10 +155,6 @@ void FixDiffusion::init()
   r = new double[nnus+1]();
   maxBC = new double[nnus+1]();
 
-  nx = domain->nx;
-  ny = domain->ny;
-  nz = domain->nz;
-
   ngrids=nx*ny*nz;
 
   //Get computational domain size
@@ -198,6 +198,7 @@ void FixDiffusion::init()
 
     for (int j = 0; j < ngrids; j++) {
       nuS[i][j] = nuConc[i][0];
+      nuR[i][j] = 0;
     }
   }
 
@@ -283,7 +284,7 @@ void FixDiffusion::pre_force(int vflag)
   if (update->ntimestep % nevery) return;
 
   diffusion();
-  output_data();
+  //output_data();
 }
 
 /* ----------------------------------------------------------------------
@@ -339,7 +340,7 @@ void FixDiffusion::diffusion()
             RES = (2 * r[i] * RES + vecR[i]) * diffT;
             vecS[i] = RES + vecS[i];
 
-            for (size_t j = 0; j < vecS[i].size(); j++) {
+            for (int j = 0; j < ngrids; j++) {
               if (vecS[i][j] < 0) vecS[i][j] = 1e-16;
             }
 

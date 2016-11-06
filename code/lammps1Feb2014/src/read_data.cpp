@@ -48,7 +48,7 @@ using namespace LAMMPS_NS;
 #define MAXBODY 20         // max # of lines in one body, also in Atom class
 
                            // customize for new sections
-#define NSECTIONS 32      // change when add to header::section_keywords
+#define NSECTIONS 34      // change when add to header::section_keywords
 
 /* ---------------------------------------------------------------------- */
 
@@ -312,6 +312,14 @@ void ReadData::command(int narg, char **arg)
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
         if (firstpass) anabCoeff();
+        else skip_lines(atom->ntypes);
+      } else if (strcmp(keyword,"Nutrient Energy") == 0) {
+        if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
+        if (firstpass) nuGCoeff();
+        else skip_lines(atom->nNutrients);
+      } else if (strcmp(keyword,"Type Energy") == 0) {
+        if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
+        if (firstpass) typeGCoeff();
         else skip_lines(atom->ntypes);
       }
 
@@ -614,7 +622,7 @@ void ReadData::header()
      "EndBondTorsion Coeffs","AngleTorsion Coeffs",
      "AngleAngleTorsion Coeffs","BondBond13 Coeffs","AngleAngle Coeffs",
      "Growth","Ks","Yield","Nutrients","Diffusion Coeffs","Catabolism Coeffs",
-     "Anabolism Coeffs"};
+     "Anabolism Coeffs","Nutrient Energy","Type Energy"};
 
   // skip 1st line of file
 
@@ -1644,7 +1652,10 @@ void ReadData::nutrient_coeffs(){
   atom->iniS = memory->create(atom->iniS,nnus+1,7,"atom:nuConc");
   atom->nuS = memory->create(atom->nuS,nnus+1, 1, "atom:nuS");
   atom->nuR = memory->create(atom->nuR,nnus+1, 1, "atom:nuR");
+  atom->nuG= memory->create(atom->nuG,nnus+1, 5, "atom:nuG");
+  atom->typeG= memory->create(atom->typeG,ntypes+1, 5, "atom:typeG");
   atom->nuType = memory->create(atom->nuType, nnus+1, "atom::nuType");
+
 }
 
 /* ----------------------------------------------------------------------
@@ -1799,4 +1810,49 @@ void ReadData::anabCoeff()
   }
   delete [] original;
 }
+
+/* ---------------------------------------------------------------------- */
+
+void ReadData::nuGCoeff()
+{
+  int i,m;
+  char *next;
+  char *buf = new char[atom->nNutrients*MAXLINE];
+
+  int eof = comm->read_lines_from_file(fp,atom->nNutrients,MAXLINE,buf);
+  if (eof) error->all(FLERR,"Unexpected end of data file");
+
+  char *original = buf;
+  for (i = 0; i < atom->nNutrients; i++) {
+    next = strchr(buf,'\n');
+    *next = '\0';
+    parse_coeffs(buf,NULL,0);
+    atom->set_nuGCoeff(narg,arg);
+    buf = next + 1;
+  }
+  delete [] original;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void ReadData::typeGCoeff()
+{
+  int i,m;
+  char *next;
+  char *buf = new char[atom->ntypes*MAXLINE];
+
+  int eof = comm->read_lines_from_file(fp,atom->ntypes,MAXLINE,buf);
+  if (eof) error->all(FLERR,"Unexpected end of data file");
+
+  char *original = buf;
+  for (i = 0; i < atom->ntypes; i++) {
+    next = strchr(buf,'\n');
+    *next = '\0';
+    parse_coeffs(buf,NULL,0);
+    atom->set_typeGCoeff(narg,arg);
+    buf = next + 1;
+  }
+  delete [] original;
+}
+
 

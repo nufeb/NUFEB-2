@@ -95,6 +95,10 @@ class ReadData : protected Pointers {
   void anabCoeff();
   void nuConcCoeff();
   void diffCoeff();
+
+  void nuGCoeff();
+  void typeGCoeff();
+
 };
 
 }
