@@ -25,11 +25,8 @@
 #include "stdlib.h"
 #include "atom.h"
 #include "update.h"
-#include "group.h"
 #include "modify.h"
 #include "force.h"
-#include "pair.h"
-#include "pair_hybrid.h"
 #include "kspace.h"
 #include "fix_store.h"
 #include "input.h"
@@ -40,10 +37,6 @@
 #include "error.h"
 #include "comm.h"
 #include "domain.h"
-#include <iostream>
-#include <iomanip>
-#include <algorithm>
-#include <unordered_set>
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -56,8 +49,7 @@ using namespace std;
 
 FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
- // if (narg != 7) error->all(FLERR,"Not enough arguments in fix kinetics command");
-  if (narg !=4) error->all(FLERR,"Illegal fix kinetics command");
+  if (narg != 5) error->all(FLERR,"Not enough arguments in fix kinetics command");
 
   nx = ny = nz = 1;
   nnus = 0;
@@ -96,7 +88,7 @@ FixKinetics::~FixKinetics()
   delete [] var;
   delete [] ivar;
 
-  //memory->destroy(metCoeff);
+  memory->destroy(metCoeff);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -112,7 +104,6 @@ int FixKinetics::setmask()
 
 void FixKinetics::init()
 {
-
   // register fix kinetics with this class
   int nfix = modify->nfix;
   for (int j = 0; j < nfix; j++) {
@@ -120,6 +111,14 @@ void FixKinetics::init()
       diffusion = static_cast<FixDiffusion *>(lmp->modify->fix[j]);
       break;
     }
+  }
+
+  for (int n = 0; n < 1; n++) {
+    ivar[n] = input->variable->find(var[n]);
+    if (ivar[n] < 0)
+      error->all(FLERR,"Variable name for fix kinetics does not exist");
+    if (!input->variable->equalstyle(ivar[n]))
+      error->all(FLERR,"Variable for fix kinetics is invalid style");
   }
 
   temp = input->variable->compute_equal(ivar[0]);
@@ -135,13 +134,16 @@ void FixKinetics::init()
   ntypes = atom->ntypes;
   catCoeff = atom->catCoeff;
   anabCoeff = atom->anabCoeff;
+  nuGCoeff = atom->nuGCoeff;
+  typeGCoeff = atom->typeGCoeff;
   yield = atom->yield;
 
   nuS = atom->nuS;
   nuR = atom->nuR;
-  nuG = atom->nuG;
+  nuG = atom->nuGCoeff;
 
-  //metCoeff = memory->create(metCoeff,ntypes+1,nnus+1,"atom:metCoeff");
+  metCoeff = memory->create(metCoeff,ntypes+1,nnus+1,"kinetic:metCoeff");
 
 }
+
 

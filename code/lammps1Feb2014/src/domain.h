@@ -90,9 +90,6 @@ class Domain : protected Pointers {
   int maxregion;                           // max # list can hold
   class Region **regions;                  // list of defined Regions
 
-  //NUFEB code
-  int nx, ny, nz;
-
   Domain(class LAMMPS *);
   virtual ~Domain();
   virtual void init();

@@ -71,7 +71,7 @@ class Atom : protected Pointers {
   double *ks, *growth, *yield;
   double **catCoeff;
   double **anabCoeff;
-  double **typeG;
+  double **typeGCoeff;
 
   //nutrient
   int nNutrients;
@@ -81,7 +81,7 @@ class Atom : protected Pointers {
   double *diffCoeff;
   double **nuS;          //vectors of concentration for all nutrients
   double **nuR;              //vectors of consumption rate for all nutrients
-  double **nuG;
+  double **nuGCoeff;
 
   double **x0;
   int *ellipsoid,*line,*tri,*body;

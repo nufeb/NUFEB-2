@@ -98,8 +98,6 @@ Domain::Domain(LAMMPS *lmp) : Pointers(lmp)
 
   nregion = maxregion = 0;
   regions = NULL;
-
-  nx = ny = ny = 1;
 }
 
 /* ---------------------------------------------------------------------- */
