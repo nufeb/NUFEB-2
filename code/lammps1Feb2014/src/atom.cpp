@@ -261,8 +261,8 @@ Atom::~Atom()
   memory->destroy(growth);
   memory->destroy(ks);
   memory->destroy(diffCoeff);
-  memory->destroy(nuG);
-  memory->destroy(typeG);
+  memory->destroy(nuGCoeff);
+  memory->destroy(typeGCoeff);
 
   memory->destroy(anabCoeff);
   memory->destroy(catCoeff);
@@ -2169,7 +2169,7 @@ void Atom::set_anabCoeff(int narg, char **arg)
 
 void Atom::set_nuGCoeff(int narg, char **arg)
 {
-  if (nuG == NULL) error->all(FLERR,"Cannot set energy coeff for this nutrient");
+  if (nuGCoeff == NULL) error->all(FLERR,"Cannot set energy coeff for this nutrient");
   if (narg != 6) error->all(FLERR,"Invalid nuG line in data file");
 
   char* nuName;
@@ -2185,10 +2185,10 @@ void Atom::set_nuGCoeff(int narg, char **arg)
 
   for(int i = 0; i < 5; i++) {
     if (strcmp(arg[i+1], "inf") == 0) {
-      nuG[inu][i] = 10001;
+      nuGCoeff[inu][i] = 10001;
     } else {
       double value = force->numeric(FLERR,arg[i+1]);
-      nuG[inu][i] = value;
+      nuGCoeff[inu][i] = value;
     }
   }
 }
@@ -2200,7 +2200,7 @@ void Atom::set_nuGCoeff(int narg, char **arg)
 
 void Atom::set_typeGCoeff(int narg, char **arg)
 {
-  if (typeG == NULL) error->all(FLERR,"Cannot set energy coeff for this type");
+  if (typeGCoeff == NULL) error->all(FLERR,"Cannot set energy coeff for this type");
   if (narg != 6) error->all(FLERR,"Invalid typeG line in data file");
 
   char* typeName;
@@ -2216,10 +2216,10 @@ void Atom::set_typeGCoeff(int narg, char **arg)
 
   for(int i = 0; i < 5; i++) {
     if (strcmp(arg[i+1], "inf") == 0) {
-      typeG[itype][i] = 10001;
+      typeGCoeff[itype][i] = 10001;
     } else {
       double value = force->numeric(FLERR,arg[i+1]);
-      typeG[itype][i] = value;
+      typeGCoeff[itype][i] = value;
     }
   }
 }

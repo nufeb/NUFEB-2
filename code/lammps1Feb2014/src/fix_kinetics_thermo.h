@@ -14,11 +14,11 @@ FixStyle(kinetics/thermo,FixKineticsThermo)
 #ifndef SRC_FIX_KINETICSTHERMO_H
 #define SRC_FIX_KINETICSTHERMO_H
 
-#include <fix_kinetics.h>
+#include <fix.h>
 
 namespace LAMMPS_NS {
 
-class FixKineticsThermo : public FixKinetics {
+class FixKineticsThermo : public Fix {
  public:
   FixKineticsThermo(class LAMMPS *, int, char **);
   ~FixKineticsThermo();
@@ -29,9 +29,31 @@ class FixKineticsThermo : public FixKinetics {
  private:
   char **var;
   int *ivar;
-  double temp;            //gas transfer constant and temperature
+
+  int nnus;                     // # of nutrients
+  int ntypes;                   // # of species
+  int nx, ny, nz;               // number of grids in x y z axis
+  int ngrids;                   //# of grids
+
+  double rth, temp;            //Universal gas constant (thermodynamics) and temperature
+
+  double **catCoeff;               // catabolism coefficients of species
+  double **anabCoeff;              // anabolism  coefficients of species
+  double **metCoeff;               //metabolism coefficients of species
+  double **nuGCoeff;
+  double **typeGCoeff;
+  double *yield;                   // yield coefficients
+  double **typeG;                  //type energy for all grids
+
+  double **nuS;                    //nutrient concentration for all grids
+  double **nuG;                    //nutrient energy for all grids
+
+  double **dG0;
+
+  class FixKinetics *kinetics;
 
   void thermo();
+  void init_dG0();
 };
 
 }

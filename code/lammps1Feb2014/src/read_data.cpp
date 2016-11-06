@@ -1622,16 +1622,17 @@ void ReadData::type_coeffs(){
 
   int ntypes = atom->ntypes;
 
-  atom->virtualMass = memory->create(atom->virtualMass,ntypes+1,"atom:virtualMass");
-  atom->ks = memory->create(atom->ks,ntypes+1,"atom:ks");
-  atom->growth = memory->create(atom->growth,ntypes+1,"atom:growth");
-  atom->yield = memory->create(atom->yield,ntypes+1,"atom:yield");
-  //atom->typeName = (char **) calloc(ntypes+1, sizeof(char *));
   atom->typeName = (char **) memory->srealloc(atom->typeName,(ntypes+1)*sizeof(char *),
                                      "atom:typeName");
   for (int i = 0; i < ntypes+1; i++) {
     atom->typeName[i] = NULL;
   }
+
+  atom->virtualMass = memory->create(atom->virtualMass,ntypes+1,"atom:virtualMass");
+  atom->ks = memory->create(atom->ks,ntypes+1,"atom:ks");
+  atom->growth = memory->create(atom->growth,ntypes+1,"atom:growth");
+  atom->yield = memory->create(atom->yield,ntypes+1,"atom:yield");
+  atom->typeGCoeff= memory->create(atom->typeGCoeff,ntypes+1, 5, "atom:typeGCoeff");
 }
 
 void ReadData::nutrient_coeffs(){
@@ -1639,7 +1640,6 @@ void ReadData::nutrient_coeffs(){
   int nnus = atom->nNutrients;
   int ntypes = atom->ntypes;
 
-  //atom->nuName = (char **) calloc(nNu+1, sizeof(char *));
   atom->nuName = (char **) memory->srealloc(atom->nuName,(nnus+1)*sizeof(char *),
                                      "atom:nuName");
   for (int i = 0; i < nnus+1; i++){
@@ -1652,9 +1652,8 @@ void ReadData::nutrient_coeffs(){
   atom->iniS = memory->create(atom->iniS,nnus+1,7,"atom:nuConc");
   atom->nuS = memory->create(atom->nuS,nnus+1, 1, "atom:nuS");
   atom->nuR = memory->create(atom->nuR,nnus+1, 1, "atom:nuR");
-  atom->nuG= memory->create(atom->nuG,nnus+1, 5, "atom:nuG");
-  atom->typeG= memory->create(atom->typeG,ntypes+1, 5, "atom:typeG");
-  atom->nuType = memory->create(atom->nuType, nnus+1, "atom::nuType");
+  atom->nuGCoeff= memory->create(atom->nuGCoeff,nnus+1, 5, "atom:nuG");
+  atom->nuType = memory->create(atom->nuType, nnus+1, "atom::nuGCoeff");
 
 }
 

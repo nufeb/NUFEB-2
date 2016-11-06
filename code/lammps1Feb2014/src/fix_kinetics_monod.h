@@ -38,7 +38,7 @@ class FixKineticsMonod : public Fix {
   double stepx, stepy, stepz;   // grids size
   double xlo,xhi,ylo,yhi,zlo,zhi;  //simulaton box size
   double vol, gvol;                //grid volume and gas volume
-  double gasTran, temp;            //gas transfer constant and temperature
+  double rg, temp;            //gas transfer constant and temperature
 
   int **matConsume;                //endergonic components of metabolic matrix
   double **catCoeff;               // catabolism coefficients of species
@@ -48,11 +48,10 @@ class FixKineticsMonod : public Fix {
 
   double **nuS;                    //nutrient concentration for all grids
   double **nuR;                    //nutrient consumption for all grids
-  double **nuG;                    //energy for all grids
 
   class FixKinetics *kinetics;
 
-  void metCoeff_calculus();
+  void create_metaMatrix();
   void monod();
   double minimal_monod(int, int);
 

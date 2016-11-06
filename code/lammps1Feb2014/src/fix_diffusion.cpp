@@ -77,13 +77,9 @@ FixDiffusion::FixDiffusion(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, a
   }
 
   //set grid size
-  domain->nx = atoi(arg[7]);
-  domain->ny = atoi(arg[8]);
-  domain->nz = atoi(arg[9]);
-
-  nx = domain->nx;
-  ny = domain->ny;
-  nz = domain->nz;
+  nx = atoi(arg[7]);
+  ny = atoi(arg[8]);
+  nz = atoi(arg[9]);
 
   //set boundary condition flag:
   //0=PERIODIC-PERIODIC,  1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU

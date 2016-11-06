@@ -20,7 +20,6 @@
 
 #include <fix_kinetics_monod.h>
 #include <fix_kinetics.h>
-#include <fix_diffusion.h>
 #include "math.h"
 #include "string.h"
 #include "stdlib.h"
@@ -61,7 +60,7 @@ FixKineticsMonod::FixKineticsMonod(LAMMPS *lmp, int narg, char **arg) : Fix(lmp,
   if (narg != 6) error->all(FLERR,"Not enough arguments in fix kinetics/monod command");
 
   nevery = force->inumeric(FLERR,arg[3]);
-  if (nevery < 0) error->all(FLERR,"Illegal fix kinetics command");
+  if (nevery < 0) error->all(FLERR,"Illegal fix kinetics/monod command");
 
   var = new char*[2];
   ivar = new int[2];
@@ -86,7 +85,6 @@ FixKineticsMonod::~FixKineticsMonod()
   delete [] var;
   delete [] ivar;
 
-  memory->destroy(metCoeff);
   memory->destroy(matConsume);
 }
 
@@ -126,7 +124,7 @@ void FixKineticsMonod::init()
   if (kinetics == NULL)
     lmp->error->all(FLERR,"The fix kinetics command is required for kinetics/monod styles");
 
-  gasTran = input->variable->compute_equal(ivar[0]);
+  rg = input->variable->compute_equal(ivar[0]);
   gvol = input->variable->compute_equal(ivar[1]);
 
   nx = kinetics->nx;
@@ -138,9 +136,10 @@ void FixKineticsMonod::init()
   ntypes = kinetics->ntypes;
   catCoeff = kinetics->catCoeff;
   anabCoeff = kinetics->anabCoeff;
+  metCoeff = kinetics->metCoeff;
   yield = kinetics->yield;
 
-  metCoeff_calculus();
+  create_metaMatrix();
 
   //Get computational domain size
   if (domain->triclinic == 0) {
@@ -171,10 +170,9 @@ void FixKineticsMonod::init()
   calculate metabolic coefficient for all microbial species
 ------------------------------------------------------------------------- */
 
-void FixKineticsMonod::metCoeff_calculus()
+void FixKineticsMonod::create_metaMatrix()
 {
   matConsume = memory->create(matConsume,ntypes+1,nnus+1,"atom:matCons");
-  metCoeff = memory->create(metCoeff,ntypes+1,nnus+1,"atom:metCoeff");
 
   for (int i = 1; i <= ntypes; i++) {
     for (int j = 1; j <= nnus; j++) {
@@ -282,7 +280,7 @@ void FixKineticsMonod::monod()
           nuR[i][pos] += sLiq;
         } else if (atom->nuType[i] == 1) {
           // calculate gas partial pressures
-          double pGas = consume * gasTran * temp / gvol;
+          double pGas = consume * rg * temp / gvol;
           nuR[i][pos] += pGas;
         }
       }
