@@ -98,6 +98,7 @@ class ReadData : protected Pointers {
 
   void nuGCoeff();
   void typeGCoeff();
+  void dissipation();
 
 };
 

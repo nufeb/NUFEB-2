@@ -21,6 +21,7 @@ namespace LAMMPS_NS {
 class FixKinetics : public Fix {
   friend class FixKineticsMonod;
   friend class FixKineticsThermo;
+  friend class FixDiffusion;
  public:
   FixKinetics(class LAMMPS *, int, char **);
   ~FixKinetics();
@@ -45,6 +46,8 @@ class FixKinetics : public Fix {
   double **typeGCoeff;
 
   double *yield;                   // yield coefficients
+  double **iyield;                  // inverse yield
+  double *dissipation;
 
   double **nuS;                    //nutrient concentration for all grids
   double **nuR;                    //nutrient consumption for all grids

@@ -56,6 +56,8 @@ class FixDiffusion : public Fix {
   SparseMatrix<double> LAP;       //laplacian matrix
   SparseMatrix<double> I;       //sparse identity matrix
 
+  class FixKinetics *kinetics;
+
   SparseMatrix<double> laplacian_matrix();
   void diffusion();
   SparseMatrix<double> spdiags(MatrixXi&, VectorXi&, int, int, int);

@@ -278,11 +278,12 @@ void FixKineticsMonod::monod()
           double sLiq = consume/vol*1000;
           //5.0000e-12
           nuR[i][pos] += sLiq;
-        } else if (atom->nuType[i] == 1) {
-          // calculate gas partial pressures
-          double pGas = consume * rg * temp / gvol;
-          nuR[i][pos] += pGas;
         }
+//          else if (atom->nuType[i] == 1) {
+//          // calculate gas partial pressures
+//          double pGas = consume * rg * temp / gvol;
+//          nuR[i][pos] += pGas;
+//        }
       }
 
       //update mass and radius

@@ -80,6 +80,8 @@ FixKineticsThermo::~FixKineticsThermo()
   delete [] ivar;
 
   memory->destroy(dG0);
+  memory->destroy(iyield);
+//  memory->destroy(dGrxn);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -131,7 +133,11 @@ void FixKineticsThermo::init()
   nuGCoeff = kinetics->nuGCoeff;
   typeGCoeff = kinetics->typeGCoeff;
   yield = kinetics->yield;
+  temp = kinetics->temp;
+  diss = kinetics->dissipation;
 
+  iyield = memory->create(iyield,ntypes+1,ngrids,"kinetic/thermo:iyield");
+  //dGrxn = memory->create(dGrxn,ntypes+1,2,ngrids,"kinetics/thermo:dGrxn");
   init_dG0();
 }
 
@@ -141,12 +147,13 @@ void FixKineticsThermo::init()
 
 void FixKineticsThermo::init_dG0()
 {
-  dG0 = memory->create(dG0,ntypes+1,2,"kinetics/thermo:matCons");
+  dG0 = memory->create(dG0,ntypes+1,2,"kinetics/thermo:dG0");
 
   for (int i = 1; i <= ntypes; i++) {
     dG0[i][0] = 0;
     dG0[i][1] = 0;
-    for (int j =1; j < nnus; j++) {
+
+    for (int j = 1; j <= nnus; j++) {
       if (nuGCoeff[j][1] < 1e4) {
         dG0[i][0] += catCoeff[i][j] * nuGCoeff[j][1];
         dG0[i][1] += anabCoeff[i][j] * nuGCoeff[j][1];
@@ -156,6 +163,7 @@ void FixKineticsThermo::init_dG0()
     if (typeGCoeff[i][1] < 1e4) {
       dG0[i][1] += typeGCoeff[i][1];
     }
+//
 //    printf("dG0[%i][0] = %e \n", i, dG0[i][0]);
 //    printf("dG0[%i][1] = %e \n", i, dG0[i][1]);
   }
@@ -179,9 +187,32 @@ void FixKineticsThermo::thermo()
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
-  int* type = atom->type;
+  int *type = atom->type;
 
   nuS = kinetics->nuS;
 
+  for (int i = 0; i < ngrids; i++) {
+    for (int j = 1; j <= ntypes; j++) {
+      //Gibbs free energy of the reaction
+      double catG = dG0[j][0];  //catabolic energy values
+      double anaG = dG0[j][1];  //anabolic energy values
+
+      for (int k = 1; k <= nnus; k++) {
+        double x = temp * rth * log(nuS[k][i]);
+
+        if (nuGCoeff[k][1] < 1e4) {
+          catG += catCoeff[j][k] * x;
+          anaG += anabCoeff[j][k] * x;
+        }
+      }
+
+//      printf("dGrxn[%i][%i][0] = %e \n", i,j, catG);
+//      printf("dGrxn[%i][%i][1] = %e \n", i,j, anaG);
+
+      //use catabolic and anabolic energy values to derive catabolic reaction equation
+      iyield[j][i] = - anaG * (- (anaG + diss[j]) / catG);
+//      printf("iyield = %e \n",  iyield[j][i]);
+    }
+  }
 }
 

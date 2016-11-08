@@ -19,6 +19,7 @@
 ------------------------------------------------------------------------- */
 
 #include <fix_diffusion.h>
+#include <fix_kinetics.h>
 #include "math.h"
 #include "string.h"
 #include "stdlib.h"
@@ -141,6 +142,16 @@ void FixDiffusion::init()
       error->all(FLERR,"Variable name for fix diffusion does not exist");
     if (!input->variable->equalstyle(ivar[n]))
       error->all(FLERR,"Variable for fix diffusion is invalid style");
+  }
+
+
+  // register fix kinetics with this class
+  int nfix = modify->nfix;
+  for (int j = 0; j < nfix; j++) {
+    if (strcmp(modify->fix[j]->style,"kinetics") == 0) {
+      kinetics = static_cast<FixKinetics *>(lmp->modify->fix[j]);
+      break;
+    }
   }
 
   diffT = input->variable->compute_equal(ivar[0]);
@@ -295,8 +306,8 @@ void FixDiffusion::diffusion()
   VectorXd* vecS = new VectorXd[nnus+1];
   VectorXd* vecR = new VectorXd[nnus+1];
 
-  nuS = atom->nuS;
-  nuR = atom->nuR;
+  nuS = kinetics->nuS;
+  nuR = kinetics->nuR;
 
   //initialization
   for (int i = 1; i <= nnus; i++) {

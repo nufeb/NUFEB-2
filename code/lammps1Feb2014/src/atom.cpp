@@ -263,6 +263,7 @@ Atom::~Atom()
   memory->destroy(diffCoeff);
   memory->destroy(nuGCoeff);
   memory->destroy(typeGCoeff);
+  memory->destroy(dissipation);
 
   memory->destroy(anabCoeff);
   memory->destroy(catCoeff);
@@ -2108,6 +2109,36 @@ void Atom::set_diffusion(const char *str)
   if (diffCoeff[inu] < 0.0) error->all(FLERR,"Invalid diffCoeff value");
 }
 
+
+/* ----------------------------------------------------------------------
+   set dissipation values for all types
+   called from reading of data file
+------------------------------------------------------------------------- */
+
+void Atom::set_dissipation(const char *str)
+{
+  if (dissipation == NULL) error->all(FLERR,"Cannot set dissipation for this atom style");
+
+  char* typeName;
+  double diss_one;
+  int len = strlen(str) + 1;
+  typeName = new char[len];
+
+  int n = sscanf(str,"%s %lg",typeName,&diss_one);
+  if (n != 2) error->all(FLERR,"Invalid dissipation line in data file");
+
+  int itype = find_typeID(typeName);
+  delete [] typeName;
+
+  if (itype < 1 || itype > ntypes)
+    error->all(FLERR,"Invalid type for dissipation set");
+
+  dissipation[itype] = diss_one;
+  //mass_setflag[itype] = 1;
+
+  if (dissipation[itype] < 0.0) error->all(FLERR,"Invalid dissipation value");
+}
+
 /* ----------------------------------------------------------------------
    set catabolism coefficient for all types
    called from reading of data file
@@ -2170,7 +2201,7 @@ void Atom::set_anabCoeff(int narg, char **arg)
 void Atom::set_nuGCoeff(int narg, char **arg)
 {
   if (nuGCoeff == NULL) error->all(FLERR,"Cannot set energy coeff for this nutrient");
-  if (narg != 6) error->all(FLERR,"Invalid nuG line in data file");
+  if (narg != 6) error->all(FLERR,"Invalid nuGCOeff line in data file");
 
   char* nuName;
   int len = strlen(arg[0]) + 1;
@@ -2201,7 +2232,7 @@ void Atom::set_nuGCoeff(int narg, char **arg)
 void Atom::set_typeGCoeff(int narg, char **arg)
 {
   if (typeGCoeff == NULL) error->all(FLERR,"Cannot set energy coeff for this type");
-  if (narg != 6) error->all(FLERR,"Invalid typeG line in data file");
+  if (narg != 6) error->all(FLERR,"Invalid typeGCoeff line in data file");
 
   char* typeName;
   int len = strlen(arg[0]) + 1;

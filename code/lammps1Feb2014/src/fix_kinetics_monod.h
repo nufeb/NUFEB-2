@@ -40,10 +40,10 @@ class FixKineticsMonod : public Fix {
   double vol, gvol;                //grid volume and gas volume
   double rg, temp;            //gas transfer constant and temperature
 
-  int **matConsume;                //endergonic components of metabolic matrix
+  int **matConsume;                // endergonic components of metabolic matrix
   double **catCoeff;               // catabolism coefficients of species
   double **anabCoeff;              // anabolism  coefficients of species
-  double **metCoeff;               //metabolism coefficients of species
+  double **metCoeff;               // metabolism coefficients of species
   double *yield;                   // yield coefficients
 
   double **nuS;                    //nutrient concentration for all grids
