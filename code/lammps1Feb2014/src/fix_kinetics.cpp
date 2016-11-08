@@ -60,6 +60,11 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg
   anabCoeff = NULL;
   metCoeff = NULL;
   yield = NULL;
+  iyield = NULL;
+  dissipation = NULL;
+
+  typeGCoeff = NULL;
+  nuGCoeff = NULL;
 
   nuS = NULL;
   nuR = NULL;
@@ -137,13 +142,13 @@ void FixKinetics::init()
   nuGCoeff = atom->nuGCoeff;
   typeGCoeff = atom->typeGCoeff;
   yield = atom->yield;
+  dissipation = atom->dissipation;
 
   nuS = atom->nuS;
   nuR = atom->nuR;
   nuG = atom->nuGCoeff;
 
   metCoeff = memory->create(metCoeff,ntypes+1,nnus+1,"kinetic:metCoeff");
-
 }
 
 

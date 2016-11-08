@@ -72,6 +72,7 @@ class Atom : protected Pointers {
   double **catCoeff;
   double **anabCoeff;
   double **typeGCoeff;
+  double *dissipation;
 
   //nutrient
   int nNutrients;
@@ -231,6 +232,7 @@ class Atom : protected Pointers {
   void set_anabCoeff(int, char **);
   void set_nuGCoeff(int, char **);
   void set_typeGCoeff(int, char **);
+  void set_dissipation(const char *);
 
   int find_typeID(char *name);
   int find_nuID(char *name);

@@ -48,7 +48,7 @@ using namespace LAMMPS_NS;
 #define MAXBODY 20         // max # of lines in one body, also in Atom class
 
                            // customize for new sections
-#define NSECTIONS 34      // change when add to header::section_keywords
+#define NSECTIONS 35      // change when add to header::section_keywords
 
 /* ---------------------------------------------------------------------- */
 
@@ -297,6 +297,10 @@ void ReadData::command(int narg, char **arg)
       } else if (strcmp(keyword,"Yield") == 0) {
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) yield();
+        else skip_lines(atom->ntypes);
+      } else if (strcmp(keyword,"Dissipation") == 0) {
+        if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
+        if (firstpass) dissipation();
         else skip_lines(atom->ntypes);
       } else if (strcmp(keyword,"Diffusion Coeffs") == 0) {
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
@@ -622,7 +626,7 @@ void ReadData::header()
      "EndBondTorsion Coeffs","AngleTorsion Coeffs",
      "AngleAngleTorsion Coeffs","BondBond13 Coeffs","AngleAngle Coeffs",
      "Growth","Ks","Yield","Nutrients","Diffusion Coeffs","Catabolism Coeffs",
-     "Anabolism Coeffs","Nutrient Energy","Type Energy"};
+     "Anabolism Coeffs","Nutrient Energy","Type Energy", "Dissipation"};
 
   // skip 1st line of file
 
@@ -1632,6 +1636,7 @@ void ReadData::type_coeffs(){
   atom->ks = memory->create(atom->ks,ntypes+1,"atom:ks");
   atom->growth = memory->create(atom->growth,ntypes+1,"atom:growth");
   atom->yield = memory->create(atom->yield,ntypes+1,"atom:yield");
+  atom->dissipation = memory->create(atom->dissipation,ntypes+1,"atom:dissipation");
   atom->typeGCoeff= memory->create(atom->typeGCoeff,ntypes+1, 5, "atom:typeGCoeff");
 }
 
@@ -1761,6 +1766,28 @@ void ReadData::yield()
     next = strchr(buf,'\n');
     *next = '\0';
     atom->set_yield(buf);
+    buf = next + 1;
+  }
+  delete [] original;
+}
+
+
+/* ---------------------------------------------------------------------- */
+
+void ReadData::dissipation()
+{
+  int i,m;
+  char *next;
+  char *buf = new char[atom->ntypes*MAXLINE];
+
+  int eof = comm->read_lines_from_file(fp,atom->ntypes,MAXLINE,buf);
+  if (eof) error->all(FLERR,"Unexpected end of data file");
+
+  char *original = buf;
+  for (i = 0; i < atom->ntypes; i++) {
+    next = strchr(buf,'\n');
+    *next = '\0';
+    atom->set_dissipation(buf);
     buf = next + 1;
   }
   delete [] original;

@@ -44,6 +44,8 @@ class FixKineticsThermo : public Fix {
   double **typeGCoeff;
   double *yield;                   // yield coefficients
   double **typeG;                  //type energy for all grids
+  double *diss;                     // Gibbs free energy of dissipation
+  double **iyield;
 
   double **nuS;                    //nutrient concentration for all grids
   double **nuG;                    //nutrient energy for all grids
