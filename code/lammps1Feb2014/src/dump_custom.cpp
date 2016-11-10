@@ -833,10 +833,10 @@ int DumpCustom::count()
         ptr = atom->erforce;
         nstride = 1;
       } else if (thresh_array[ithresh] == OUTERRADIUS) {
-        ptr = atom->outerRadius;
+        //ptr = atom->outerRadius;
         nstride = 1;
       } else if (thresh_array[ithresh] == OUTERMASS) {
-        ptr = atom->outerMass;
+        //ptr = atom->outerMass;
         nstride = 1;
       } else if (thresh_array[ithresh] == COMPUTE) {
         i = nfield + ithresh;
@@ -1198,17 +1198,18 @@ int DumpCustom::parse_fields(int narg, char **arg)
         error->all(FLERR,"Dumping an atom quantity that isn't allocated");
       pack_choice[i] = &DumpCustom::pack_erforce;
       vtype[i] = DOUBLE;
-    } else if (strcmp(arg[iarg],"outerradius") == 0) {
-      pack_choice[i] = &DumpCustom::pack_outerradius;
-      vtype[i] = DOUBLE;
-    } else if (strcmp(arg[iarg],"outermass") == 0) {
-      pack_choice[i] = &DumpCustom::pack_outermass;
-      vtype[i] = DOUBLE;
-
+    }
+//    else if (strcmp(arg[iarg],"outerradius") == 0) {
+//      pack_choice[i] = &DumpCustom::pack_outerradius;
+//      vtype[i] = DOUBLE;
+//    } else if (strcmp(arg[iarg],"outermass") == 0) {
+//      pack_choice[i] = &DumpCustom::pack_outermass;
+//      vtype[i] = DOUBLE;
+//  }
     // compute value = c_ID
     // if no trailing [], then arg is set to 0, else arg is int between []
 
-    } else if (strncmp(arg[iarg],"c_",2) == 0) {
+     else if (strncmp(arg[iarg],"c_",2) == 0) {
       pack_choice[i] = &DumpCustom::pack_compute;
       vtype[i] = DOUBLE;
 
@@ -2489,22 +2490,22 @@ void DumpCustom::pack_erforce(int n)
   }
 }
 
-void DumpCustom::pack_outerradius(int n)
-{
-  double *outerRadius = atom->outerRadius;
-
-  for (int i = 0; i < nchoose; i++) {
-    buf[n] = outerRadius[clist[i]];
-    n += size_one;
-  }
-}
-
-void DumpCustom::pack_outermass(int n)
-{
-  double *outerMass = atom->outerMass;
-
-  for (int i = 0; i < nchoose; i++) {
-    buf[n] = outerMass[clist[i]];
-    n += size_one;
-  }
-}
+//void DumpCustom::pack_outerradius(int n)
+//{
+//  double *outerRadius = atom->outerRadius;
+//
+//  for (int i = 0; i < nchoose; i++) {
+//    buf[n] = outerRadius[clist[i]];
+//    n += size_one;
+//  }
+//}
+//
+//void DumpCustom::pack_outermass(int n)
+//{
+//  double *outerMass = atom->outerMass;
+//
+//  for (int i = 0; i < nchoose; i++) {
+//    buf[n] = outerMass[clist[i]];
+//    n += size_one;
+//  }
+//}

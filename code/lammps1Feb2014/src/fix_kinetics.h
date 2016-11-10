@@ -32,28 +32,17 @@ class FixKinetics : public Fix {
   char **var;
   int *ivar;
 
-  int nnus;                        // # of nutrients
-  int ntypes;                      // # of species
   int nx, ny, nz;                  // number of grids in x y z axis
   int ngrids;                      // # of grids
-  int xyz;
   double temp;
-
-  double **catCoeff;               // catabolism coefficients of species
-  double **anabCoeff;              // anabolism  coefficients of species
   double **metCoeff;               //metabolism coefficients of species
-  double **nuGCoeff;               //energy for all grids
-  double **typeGCoeff;
-
-  double *yield;                   // yield coefficients
   double **iyield;                  // inverse yield
-  double *dissipation;
 
   double **nuS;                    //nutrient concentration for all grids
   double **nuR;                    //nutrient consumption for all grids
-  double **nuG;                    //Energy for all grids
 
-  class FixDiffusion *diffusion;
+  class AtomVecBio *avec;
+  class BIO *bio;
 };
 
 }

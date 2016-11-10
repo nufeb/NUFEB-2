@@ -15,6 +15,7 @@
 #include "string.h"
 #include "stdlib.h"
 #include "fix_eps_extract.h"
+#include "atom_vec_bio.h"
 #include "atom.h"
 #include "atom_vec.h"
 #include "update.h"
@@ -53,6 +54,9 @@ using namespace MathConst;
 
 FixEPSExtract::FixEPSExtract(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
+  avec = (AtomVecBio *) atom->style_match("bio");
+  if (!avec) error->all(FLERR,"Fix kinetics requires atom style bio");
+
   if (narg != 7) error->all(FLERR,"Illegal fix eps extract command: Missing arguments");
 
   nevery = force->inumeric(FLERR,arg[3]);
@@ -163,6 +167,8 @@ void FixEPSExtract::pre_exchange()
 
   double EPSratio = input->variable->compute_equal(ivar[0]);
   double EPSdens = input->variable->compute_equal(ivar[1]);
+  double *outerRadius = avec->outerRadius;
+  double *outerMass = avec->outerMass;
 
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
@@ -182,21 +188,21 @@ void FixEPSExtract::pre_exchange()
           atom->x[i][1] >= sublo[1] && atom->x[i][1] < subhi[1] &&
           atom->x[i][2] >= sublo[2] && atom->x[i][2] < subhi[2]) {
       // fprintf(stdout, "outerRadius/radius = %e\n", (outerRadius[i]/radius[i]));
-      if ((atom->outerRadius[i]/atom->radius[i]) > EPSratio) {
-      	atom->outerMass[i] = (4.0*MY_PI/3.0)*((atom->outerRadius[i] *
-      												atom->outerRadius[i]*atom->outerRadius[i])-
+      if ((outerRadius[i]/atom->radius[i]) > EPSratio) {
+      	outerMass[i] = (4.0*MY_PI/3.0)*((outerRadius[i] *
+      												outerRadius[i]*outerRadius[i])-
       											 (atom->radius[i]*atom->radius[i]*atom->radius[i]))*EPSdens;
 
         double splitF = 0.4 + (random->uniform()*0.2);
 
-        double newOuterMass = atom->outerMass[i] * splitF;
-        double EPSMass = atom->outerMass[i] - newOuterMass;
+        double newOuterMass = outerMass[i] * splitF;
+        double EPSMass = outerMass[i] - newOuterMass;
 
-        atom->outerMass[i] = newOuterMass;
+        outerMass[i] = newOuterMass;
 
         double density = atom->rmass[i] / (4.0*MY_PI/3.0 *
         								 atom->radius[i]*atom->radius[i]*atom->radius[i]);
-        atom->outerRadius[i] = pow((3.0/(4.0*MY_PI))*((atom->rmass[i]/density)+(atom->outerMass[i]/EPSdens)),(1.0/3.0));
+        outerRadius[i] = pow((3.0/(4.0*MY_PI))*((atom->rmass[i]/density)+(outerMass[i]/EPSdens)),(1.0/3.0));
 
         double thetaD = random->uniform() * 2*MY_PI;
         double phiD = random->uniform() * (MY_PI);
@@ -208,9 +214,9 @@ void FixEPSExtract::pre_exchange()
         //create child
         double childRadius = pow(((6*EPSMass)/(EPSdens*MY_PI)),(1.0/3.0))*0.5;
         double* coord = new double[3];
-        double newX = oldX - ((childRadius+atom->outerRadius[i])*cos(thetaD)*sin(phiD)*DELTA);
-        double newY = oldY - ((childRadius+atom->outerRadius[i])*sin(thetaD)*sin(phiD)*DELTA);
-        double newZ = oldZ - ((childRadius+atom->outerRadius[i])*cos(phiD)*DELTA);
+        double newX = oldX - ((childRadius+outerRadius[i])*cos(thetaD)*sin(phiD)*DELTA);
+        double newY = oldY - ((childRadius+outerRadius[i])*sin(thetaD)*sin(phiD)*DELTA);
+        double newZ = oldZ - ((childRadius+outerRadius[i])*cos(phiD)*DELTA);
         if (newX - childRadius < xlo) {
           newX = xlo + childRadius;
         }
@@ -250,13 +256,13 @@ void FixEPSExtract::pre_exchange()
         atom->omega[n][1] = atom->omega[i][1];
         atom->omega[n][2] = atom->omega[i][2];
         atom->rmass[n] = EPSMass;
-        atom->outerMass[n] = 0;
+        outerMass[n] = 0;
 
         atom->torque[n][0] = atom->torque[i][0];
         atom->torque[n][1] = atom->torque[i][1];
         atom->torque[n][2] = atom->torque[i][2];
         atom->radius[n] = childRadius;
-        atom->outerRadius[n] = childRadius;
+        outerRadius[n] = childRadius;
 
         atom->natoms++;
 

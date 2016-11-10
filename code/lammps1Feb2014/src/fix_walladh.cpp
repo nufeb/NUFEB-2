@@ -15,7 +15,8 @@
    Contributing authors: Leo Silbert (SNL), Gary Grest (SNL)
 ------------------------------------------------------------------------- */
 
-#include <USER-NUFEB/fix_walladh.h>
+#include <fix_walladh.h>
+#include "atom_vec_bio.h"
 #include "math.h"
 #include "stdlib.h"
 #include "string.h"
@@ -46,6 +47,9 @@ enum{HOOKE,HOOKE_HISTORY,HERTZ_HISTORY};
 FixWallAhd::FixWallAhd(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
+  avec = (AtomVecBio *) atom->style_match("bio");
+  if (!avec) error->all(FLERR,"Fix kinetics requires atom style bio");
+
   if (narg != 7) error->all(FLERR,"Illegal fix walladh command");
 
   // if (!atom->sphere_flag)
@@ -156,9 +160,9 @@ void FixWallAhd::post_force(int vflag)
   double **f = atom->f;
   // double **omega = atom->omega;
   // double **torque = atom->torque;
-  double *outerRadius = atom->outerRadius;
+  double *outerRadius = avec->outerRadius;
   double *rmass = atom->rmass;
-  double *outerMass = atom->outerMass;
+  double *outerMass = avec->outerMass;
   int *type = atom->type;
   int *mask = atom->mask;
   int nlocal = atom->nlocal;

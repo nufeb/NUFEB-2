@@ -20,6 +20,7 @@
 
 #include "fix_kinetics_thermo.h"
 #include <fix_kinetics.h>
+#include <bio.h>
 #include "math.h"
 #include "string.h"
 #include "stdlib.h"
@@ -80,7 +81,6 @@ FixKineticsThermo::~FixKineticsThermo()
   delete [] ivar;
 
   memory->destroy(dG0);
-  memory->destroy(iyield);
 //  memory->destroy(dGrxn);
 }
 
@@ -118,6 +118,8 @@ void FixKineticsThermo::init()
   if (kinetics == NULL)
     lmp->error->all(FLERR,"The fix kinetics command is required for kinetics/monod styles");
 
+  bio = kinetics->bio;
+
   rth = input->variable->compute_equal(ivar[0]);
 
   nx = kinetics->nx;
@@ -125,18 +127,20 @@ void FixKineticsThermo::init()
   nz = kinetics->nz;
 
   ngrids = nx * ny * nz;
-  nnus = kinetics->nnus;
-  ntypes = kinetics->ntypes;
-  catCoeff = kinetics->catCoeff;
-  anabCoeff = kinetics->anabCoeff;
-  metCoeff = kinetics->metCoeff;
-  nuGCoeff = kinetics->nuGCoeff;
-  typeGCoeff = kinetics->typeGCoeff;
-  yield = kinetics->yield;
-  temp = kinetics->temp;
-  diss = kinetics->dissipation;
 
-  iyield = memory->create(iyield,ntypes+1,ngrids,"kinetic/thermo:iyield");
+  temp = kinetics->temp;
+  metCoeff = kinetics->metCoeff;
+
+  ntypes = atom->ntypes;
+
+  nnus = bio->nnus;
+  catCoeff = bio->catCoeff;
+  anabCoeff = bio->anabCoeff;
+  nuGCoeff = bio->nuGCoeff;
+  typeGCoeff = bio->typeGCoeff;
+  yield = bio->yield;
+  diss = bio->dissipation;
+
   //dGrxn = memory->create(dGrxn,ntypes+1,2,ngrids,"kinetics/thermo:dGrxn");
   init_dG0();
 }

@@ -173,8 +173,8 @@ class DumpCustom : public Dump {
   void pack_ervel(int);
   void pack_erforce(int);
 
-  void pack_outermass(int);
-  void pack_outerradius(int);
+ // void pack_outermass(int);
+ // void pack_outerradius(int);
 };
 
 }

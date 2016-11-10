@@ -49,7 +49,9 @@ class FixKineticsMonod : public Fix {
   double **nuS;                    //nutrient concentration for all grids
   double **nuR;                    //nutrient consumption for all grids
 
+  class AtomVecBio *avec;
   class FixKinetics *kinetics;
+  class BIO *bio;
 
   void create_metaMatrix();
   void monod();

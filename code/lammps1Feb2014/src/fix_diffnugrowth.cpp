@@ -13,6 +13,7 @@
 #include "string.h"
 #include "stdlib.h"
 #include "fix_diffnugrowth.h"
+#include "atom_vec_bio.h"
 #include "atom.h"
 #include "update.h"
 #include "group.h"
@@ -43,6 +44,9 @@ using namespace MathConst;
 
 FixDiffNuGrowth::FixDiffNuGrowth(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
+  avec = (AtomVecBio *) atom->style_match("bio");
+  if (!avec) error->all(FLERR,"Fix kinetics requires atom style bio");
+
   if (narg != 52) error->all(FLERR,"Not enough arguments in fix diff growth command");
 
   nevery = force->inumeric(FLERR,arg[3]);
@@ -271,8 +275,8 @@ void FixDiffNuGrowth::change_dia()
 
   double *radius = atom->radius;
   double *rmass = atom->rmass;
-  double *outerMass = atom->outerMass;
-  double *outerRadius = atom->outerRadius;
+  double *outerMass = avec->outerMass;
+  double *outerRadius = avec->outerRadius;
   int *mask = atom->mask;
   int *type = atom->type;
   int nlocal = atom->nlocal;

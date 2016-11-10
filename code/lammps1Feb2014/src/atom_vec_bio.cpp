@@ -25,6 +25,7 @@
 #include "math_const.h"
 #include "memory.h"
 #include "error.h"
+#include "bio.h"
 
 using namespace LAMMPS_NS;
 using namespace MathConst;
@@ -38,30 +39,21 @@ AtomVecBio::AtomVecBio(LAMMPS *lmp) : AtomVecSphere(lmp)
   size_data_atom = 9;
 
   //atom
-  atom->outerMass = NULL;
-  atom->outerRadius = NULL;
-  atom->virtualMass = NULL;
-  atom->atom_growth = NULL;
+  outerMass = memory->create(outerMass,nmax,"atom:outerMass");
+  outerRadius = memory->create(outerRadius,nmax,"atom:outerRadius");;
+  //virtualMass = NULL;
+  atom_growth = memory->create(atom_growth,nmax,"atom:atom_growth");
 
-  //type
-  atom->ks = NULL;
-  atom->growth = NULL;
-  atom->yield = NULL;
-  atom->typeName = NULL;
-  atom->anabCoeff = NULL;
-  atom->catCoeff = NULL;
+  bio = new BIO(lmp);
+}
 
-  //nutrient
-  atom->nNutrients = 0;
-  atom->iniS = NULL;
-  atom->nuName = NULL;
-  atom->diffCoeff = NULL;
-  atom->nuS = NULL;
-  atom->nuR = NULL;
-  atom->nuType = NULL;
-  atom->nuGCoeff = NULL;
-  atom->typeGCoeff = NULL;
-
+AtomVecBio::~AtomVecBio()
+{
+  delete bio;
+  memory->destroy(outerMass);
+  memory->destroy(outerRadius);
+  memory->destroy(atom_growth);
+  //memory->destroy(atom->virtualMass);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -73,20 +65,21 @@ void AtomVecBio::init()
   // set radvary if particle diameters are time-varying due to fix adapt
 
   for (int i = 0; i < modify->nfix; i++)
-    if (strcmp(modify->fix[i]->style,"growth") == 0 || strcmp(modify->fix[i]->style,"divide") == 0 || strcmp(modify->fix[i]->style,"metabolism") == 0) {
+    if (strcmp(modify->fix[i]->style,"growth") == 0 || strcmp(modify->fix[i]->style,"divide") == 0 || strcmp(modify->fix[i]->style,"kinetics/monod") == 0) {
       FixAdapt *fix = (FixAdapt *) modify->fix[i];
       radvary = 1;
       comm_x_only = 0;
       size_forward = 5;
     }
+
 }
 
 void AtomVecBio::grow(int n)
 {
   AtomVecSphere::grow(n);
-  outerMass = memory->grow(atom->outerMass,nmax,"atom:outerMass");
-  outerRadius = memory->grow(atom->outerRadius,nmax,"atom:outerRadius");
-  atom_growth = memory->grow(atom->atom_growth,nmax,"atom:atom_growth");
+  outerMass = memory->grow(outerMass,nmax,"atom:outerMass");
+  outerRadius = memory->grow(outerRadius,nmax,"atom:outerRadius");
+  atom_growth = memory->grow(atom_growth,nmax,"atom:atom_growth");
 }
 
 void AtomVecBio::create_atom(int itype, double *coord)
@@ -104,7 +97,7 @@ void AtomVecBio::data_atom(double *coord, imageint imagetmp, char **values)
 {
   int nlocal = atom->nlocal;
   int ntypes = atom->ntypes;
-  typeName = atom->typeName;
+  typeName = bio->typeName;
 
   AtomVecSphere::data_atom(coord, imagetmp, values);
 
@@ -149,15 +142,6 @@ void AtomVecBio::data_atom(double *coord, imageint imagetmp, char **values)
 
   delete[] name;
   //printf("name = %s type = %i \n", typeName[type], type);
-}
-
-void AtomVecBio::grow_reset()
-{
-  AtomVecSphere::grow_reset();
-
-  outerMass = atom->outerMass;
-  outerRadius = atom->outerRadius;
-  atom_growth = atom->atom_growth;
 }
 
 void AtomVecBio::copy(int i, int j, int delflag)

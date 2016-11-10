@@ -7,6 +7,7 @@
 #include "displace_atoms.h"
 #include "minimize.h"
 #include "read_data.h"
+#include "read_data_ibm.h"
 #include "read_dump.h"
 #include "read_restart.h"
 #include "replicate.h"

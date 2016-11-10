@@ -14,6 +14,7 @@
 #include "string.h"
 #include "stdlib.h"
 #include "fix_epsadh.h"
+#include "atom_vec_bio.h"
 #include "atom.h"
 #include "update.h"
 #include "domain.h"
@@ -41,6 +42,9 @@ using namespace FixConst;
 FixEPSAdh::FixEPSAdh(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
+  avec = (AtomVecBio *) atom->style_match("bio");
+  if (!avec) error->all(FLERR,"Fix kinetics requires atom style bio");
+
   if (narg != 6) error->all(FLERR,"Illegal fix eps adhesion command");
 
   nevery = force->inumeric(FLERR,arg[3]);
@@ -103,8 +107,8 @@ void FixEPSAdh::post_force(int vflag)
   double del;
   double **f = atom->f;
   double **x = atom->x;
-  double *outerRadius = atom->outerRadius;
-  double *outerMass = atom->outerMass;
+  double *outerRadius = avec->outerRadius;
+  double *outerMass = avec->outerMass;
   double *rmass = atom->rmass;
   int *type = atom->type;
   int nlocal = atom->nlocal;

@@ -30,18 +30,8 @@ class FixWallAhd : public Fix {
   virtual ~FixWallAhd();
   int setmask();
   void init();
-  // void setup(int);
   virtual void post_force(int);
-  // virtual void post_force_respa(int, int, int);
 
-  // double memory_usage();
-  // void grow_arrays(int);
-  // void copy_arrays(int, int, int);
-  // void set_arrays(int);
-  // int pack_exchange(int, double *);
-  // int unpack_exchange(int, double *);
-  // int pack_restart(int, double *);
-  // void unpack_restart(int, int);
   int size_restart(int);
   int maxsize_restart();
   void reset_dt();
@@ -61,14 +51,7 @@ class FixWallAhd : public Fix {
   double **shear;
   int shearupdate;
 
-  // void hooke(double, double, double, double, double *,
-  //            double *, double *, double *, double *, double, double);
-  // void hooke_history(double, double, double, double, double *,
-  //                    double *, double *, double *, double *, double, double,
-  //                    double *);
-  // void hertz_history(double, double, double, double, double *,
-  //                    double *, double *, double *, double *, double, double,
-  //                    double *);
+  class AtomVecBio *avec;
 };
 
 }

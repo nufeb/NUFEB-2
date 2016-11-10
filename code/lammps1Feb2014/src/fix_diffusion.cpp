@@ -20,6 +20,8 @@
 
 #include <fix_diffusion.h>
 #include <fix_kinetics.h>
+#include "atom_vec_bio.h"
+#include "bio.h"
 #include "math.h"
 #include "string.h"
 #include "stdlib.h"
@@ -59,7 +61,7 @@ using namespace Eigen;
 FixDiffusion::FixDiffusion(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
 
-  if (narg != 13) error->all(FLERR,"Not enough arguments in fix diffusion command");
+  if (narg != 10) error->all(FLERR,"Not enough arguments in fix diffusion command");
 
   nevery = force->inumeric(FLERR,arg[3]);
   if (nevery < 0) error->all(FLERR,"Illegal fix diffusion command");
@@ -77,32 +79,27 @@ FixDiffusion::FixDiffusion(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, a
     strcpy(var[i],&arg[5+i][2]);
   }
 
-  //set grid size
-  nx = atoi(arg[7]);
-  ny = atoi(arg[8]);
-  nz = atoi(arg[9]);
-
   //set boundary condition flag:
   //0=PERIODIC-PERIODIC,  1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
-  if(strcmp(arg[10], "pp") == 0) xbcflag = 0;
-  else if(strcmp(arg[10], "dd") == 0) xbcflag = 1;
-  else if(strcmp(arg[10], "nd") == 0) xbcflag = 2;
-  else if(strcmp(arg[10], "nn") == 0) xbcflag = 3;
-  else if(strcmp(arg[10], "dn") == 0) xbcflag = 4;
+  if(strcmp(arg[7], "pp") == 0) xbcflag = 0;
+  else if(strcmp(arg[7], "dd") == 0) xbcflag = 1;
+  else if(strcmp(arg[7], "nd") == 0) xbcflag = 2;
+  else if(strcmp(arg[7], "nn") == 0) xbcflag = 3;
+  else if(strcmp(arg[7], "dn") == 0) xbcflag = 4;
   else error->all(FLERR,"Illegal x-axis boundary condition command");
 
-  if(strcmp(arg[11], "pp") == 0) ybcflag = 0;
-  else if(strcmp(arg[11], "dd") == 0) ybcflag = 1;
-  else if(strcmp(arg[11], "nd") == 0) ybcflag = 2;
-  else if(strcmp(arg[11], "nn") == 0) ybcflag = 3;
-  else if(strcmp(arg[11], "dn") == 0) ybcflag = 4;
+  if(strcmp(arg[8], "pp") == 0) ybcflag = 0;
+  else if(strcmp(arg[8], "dd") == 0) ybcflag = 1;
+  else if(strcmp(arg[8], "nd") == 0) ybcflag = 2;
+  else if(strcmp(arg[8], "nn") == 0) ybcflag = 3;
+  else if(strcmp(arg[8], "dn") == 0) ybcflag = 4;
   else error->all(FLERR,"Illegal y-axis boundary condition command");
 
-  if(strcmp(arg[12], "pp") == 0) zbcflag = 0;
-  else if(strcmp(arg[12], "dd") == 0) zbcflag = 1;
-  else if(strcmp(arg[12], "nd") == 0) zbcflag = 2;
-  else if(strcmp(arg[12], "nn") == 0) zbcflag = 3;
-  else if(strcmp(arg[12], "dn") == 0) zbcflag = 4;
+  if(strcmp(arg[9], "pp") == 0) zbcflag = 0;
+  else if(strcmp(arg[9], "dd") == 0) zbcflag = 1;
+  else if(strcmp(arg[9], "nd") == 0) zbcflag = 2;
+  else if(strcmp(arg[9], "nn") == 0) zbcflag = 3;
+  else if(strcmp(arg[9], "dn") == 0) zbcflag = 4;
   else error->all(FLERR,"Illegal z-axis boundary condition command");
 }
 
@@ -154,15 +151,27 @@ void FixDiffusion::init()
     }
   }
 
+  if (kinetics == NULL)
+    lmp->error->all(FLERR,"The fix kinetics command is required for running iBM simulation");
+
+  bio = kinetics->bio;
   diffT = input->variable->compute_equal(ivar[0]);
   tol = input->variable->compute_equal(ivar[1]);
-  nnus = atom->nNutrients;
-  nuConc = atom->iniS;
-  diffCoeff = atom->diffCoeff;
+
+  //set grid size
+  nx = kinetics->nx;
+  ny = kinetics->ny;
+  nz = kinetics->nz;
+  ngrids=nx*ny*nz;
+  nuS = kinetics->nuS;
+  nuR = kinetics->nuR;
+
+  nnus = bio->nnus;
+  iniS = bio->iniS;
+  diffCoeff = bio->diffCoeff;
+
   r = new double[nnus+1]();
   maxBC = new double[nnus+1]();
-
-  ngrids=nx*ny*nz;
 
   //Get computational domain size
   if (domain->triclinic == 0) {
@@ -189,9 +198,6 @@ void FixDiffusion::init()
   if (!isEuqal(gridx, gridy, gridz)) error->all(FLERR,"Grid is not cubic");
   grid = gridx;
 
-  nuS = memory->grow(atom->nuS, nnus+1, ngrids, "atom:nuS");
-  nuR = memory->grow(atom->nuR, nnus+1, ngrids, "atom:nuR");
-
   //inlet concentration, diffusion constant
   //and maximum boundary condition conc value
   for (int i = 1; i <= nnus; i++) {
@@ -199,12 +205,12 @@ void FixDiffusion::init()
 
     double bc[6];
     for (int j = 0; j < 6; j++ ) {
-      bc[j] = nuConc[i][j+1];
+      bc[j] = iniS[i][j+1];
     }
     maxBC[i] = *max_element(bc, bc+6);
 
     for (int j = 0; j < ngrids; j++) {
-      nuS[i][j] = nuConc[i][0];
+      nuS[i][j] = iniS[i][0];
       nuR[i][j] = 0;
     }
   }
@@ -214,6 +220,8 @@ void FixDiffusion::init()
   SparseMatrix<double> In(ngrids, ngrids);
   In.setIdentity();
   I = In;
+
+ // test();
 }
 
 
@@ -330,15 +338,15 @@ void FixDiffusion::diffusion()
     iteration ++;
 
     for (int i = 1; i <= nnus; i++) {
-      if (atom->nuType[i] == 0) {
+      if (bio->nuType[i] == 0) {
         if (!isConv[i]) {
           isConv[0] = false;
-          xbcm = nuConc[i][1];
-          xbcp = nuConc[i][2];
-          ybcm = nuConc[i][3];
-          ybcp = nuConc[i][4];
-          zbcm = nuConc[i][5];
-          zbcp = nuConc[i][6];
+          xbcm = iniS[i][1];
+          xbcp = iniS[i][2];
+          ybcm = iniS[i][3];
+          ybcp = iniS[i][4];
+          zbcm = iniS[i][5];
+          zbcp = iniS[i][6];
           BC = bc_vec(vecS[i], grid);
           double max;
           //Explicit method
@@ -538,4 +546,12 @@ void FixDiffusion::output_data(){
     fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, x, y, z, nuS[1][i]);
   }
   fclose(pFile);
+}
+
+void FixDiffusion::test(){
+
+  cout << nnus << endl;
+  for (int i = 1; i <= nnus; i++) {
+    cout << bio->nuName[i] << diffCoeff[i] << endl;
+  }
 }

@@ -22,7 +22,7 @@ using namespace Eigen;
 namespace LAMMPS_NS {
 
 class FixDiffusion : public Fix {
-  friend class FixKinetics;
+
  public:
   FixDiffusion(class LAMMPS *, int, char **);
   ~FixDiffusion();
@@ -36,7 +36,7 @@ class FixDiffusion : public Fix {
   int nnus;                     // # of nutrients
 
   int sflag;
-  double **nuConc;              // inlet concentrations of nutrients
+  double **iniS;              // inlet concentrations of nutrients
   double *diffCoeff;            // diffusion coefficients of nutrients
   double diffT;                 // diffusion timestamp
   double tol;                   // tolerance for convergence criteria for nutrient balance equation
@@ -44,8 +44,6 @@ class FixDiffusion : public Fix {
   double ** nuS;
   double *r;
   double* maxBC;
-  //VectorXd* vecConc;
-  //double ** vecConc;
 
   int nx, ny, nz;               // # of grids in x, y and z
   int ngrids;                   // total # of grids
@@ -57,6 +55,7 @@ class FixDiffusion : public Fix {
   SparseMatrix<double> I;       //sparse identity matrix
 
   class FixKinetics *kinetics;
+  class BIO *bio;
 
   SparseMatrix<double> laplacian_matrix();
   void diffusion();
@@ -65,6 +64,7 @@ class FixDiffusion : public Fix {
   bool isEuqal(double, double, double);
 
   void output_data();
+  void test();
 };
 
 }

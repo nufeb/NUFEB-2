@@ -53,6 +53,7 @@ class FixKineticsThermo : public Fix {
   double **dG0;
 
   class FixKinetics *kinetics;
+  class BIO *bio;
 
   void thermo();
   void init_dG0();

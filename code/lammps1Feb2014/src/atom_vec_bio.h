@@ -21,25 +21,21 @@ AtomStyle(bio,AtomVecBio)
 #define LMP_ATOM_VEC_BIO_H
 
 #include "atom_vec_sphere.h"
-#include <Eigen/Eigen>
 
 namespace LAMMPS_NS {
 
 class AtomVecBio : public AtomVecSphere {
  public:
   AtomVecBio(class LAMMPS *);
-  ~AtomVecBio() {}
+  ~AtomVecBio();
   void init();
   void grow(int);
   void create_atom(int itype, double *coord);
   void data_atom(double *, imageint, char **);
   void copy(int, int, int);
-  void grow_reset();
   bigint memory_usage();
   int find_typeID(char *name);
   int find_nuID(char *name);
-
- private:
 
   //atom
   double *virtualMass;
@@ -48,19 +44,8 @@ class AtomVecBio : public AtomVecSphere {
   double *atom_growth;
   char **typeName;
 
-  //type
-  double *ks;
-  double *yield;
-  double *growth;
-  int **catCoeff;
-  int **anabCoeff;
+  class BIO *bio;
 
-  //nutrient
-  int nsubs;
-  char **nuName;
-  double **nuConc;
-  double *diffCoeff;
-  Eigen::VectorXd* vecConc;
 };
 
 }
