@@ -131,7 +131,8 @@ void FixInert::inert()
   int i;
 
   int typeVal = log2(groupbit);
-  double virtualMass = atom->virtualMass[typeVal];
+  double virtualMass = 0;
+  //= atom->virtualMass[typeVal];
 
   for (i = 0; i < nall; i++) {
      //fprintf(stdout, "Id, Type, Mask: %i, %i, %i\n", i, type[i], mask[i]);

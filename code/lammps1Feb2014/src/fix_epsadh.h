@@ -46,6 +46,7 @@ class FixEPSAdh : public Fix {
   int flag;
 
   class NeighList *list;
+  class AtomVecBio *avec;
 };
 
 }

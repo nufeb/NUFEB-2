@@ -15,7 +15,6 @@
 #define LMP_ATOM_H
 
 #include "pointers.h"
-#include <Eigen/Eigen>
 
 namespace LAMMPS_NS {
 
@@ -57,32 +56,6 @@ class Atom : protected Pointers {
   double *q,**mu;
   double **omega,**angmom,**torque;
   double *radius,*rmass,*vfrac,*s0;
-
-
-  //NUFEB code
-
-  //atom
-  double *outerRadius;
-  double *virtualMass, *outerMass;
-  double *atom_growth;
-
-  //type
-  char **typeName;
-  double *ks, *growth, *yield;
-  double **catCoeff;
-  double **anabCoeff;
-  double **typeGCoeff;
-  double *dissipation;
-
-  //nutrient
-  int nNutrients;
-  char **nuName;
-  int *nuType;                //nutrient types 0 = liq, 1 = gas
-  double **iniS;              //inlet nutrient concentrations
-  double *diffCoeff;
-  double **nuS;          //vectors of concentration for all nutrients
-  double **nuR;              //vectors of consumption rate for all nutrients
-  double **nuGCoeff;
 
   double **x0;
   int *ellipsoid,*line,*tri,*body;

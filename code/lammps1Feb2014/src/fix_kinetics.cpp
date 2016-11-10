@@ -20,6 +20,8 @@
 
 #include <fix_kinetics.h>
 #include <fix_diffusion.h>
+#include "atom_vec_bio.h"
+#include "bio.h"
 #include "math.h"
 #include "string.h"
 #include "stdlib.h"
@@ -37,6 +39,7 @@
 #include "error.h"
 #include "comm.h"
 #include "domain.h"
+#include <iostream>
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -49,36 +52,22 @@ using namespace std;
 
 FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
-  if (narg != 5) error->all(FLERR,"Not enough arguments in fix kinetics command");
+  avec = (AtomVecBio *) atom->style_match("bio");
+  if (!avec) error->all(FLERR,"Fix kinetics requires atom style bio");
 
-  nx = ny = nz = 1;
-  nnus = 0;
-  ntypes = 0;
-  temp = 0.0;
-
-  catCoeff = NULL;
-  anabCoeff = NULL;
-  metCoeff = NULL;
-  yield = NULL;
-  iyield = NULL;
-  dissipation = NULL;
-
-  typeGCoeff = NULL;
-  nuGCoeff = NULL;
-
-  nuS = NULL;
-  nuR = NULL;
-  nuG = NULL;
-
-  diffusion = NULL;
+  if (narg != 7) error->all(FLERR,"Not enough arguments in fix kinetics command");
 
   var = new char*[1];
   ivar = new int[1];
 
+  nx = atoi(arg[3]);
+  ny = atoi(arg[4]);
+  nz = atoi(arg[5]);
+
   for (int i = 0; i < 1; i++) {
-    int n = strlen(&arg[4+i][2]) + 1;
+    int n = strlen(&arg[6+i][2]) + 1;
     var[i] = new char[n];
-    strcpy(var[i],&arg[4+i][2]);
+    strcpy(var[i],&arg[6+i][2]);
   }
 }
 
@@ -94,6 +83,9 @@ FixKinetics::~FixKinetics()
   delete [] ivar;
 
   memory->destroy(metCoeff);
+  memory->destroy(iyield);
+  memory->destroy(nuR);
+  memory->destroy(nuS);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -109,15 +101,6 @@ int FixKinetics::setmask()
 
 void FixKinetics::init()
 {
-  // register fix kinetics with this class
-  int nfix = modify->nfix;
-  for (int j = 0; j < nfix; j++) {
-    if (strcmp(modify->fix[j]->style,"diffusion") == 0) {
-      diffusion = static_cast<FixDiffusion *>(lmp->modify->fix[j]);
-      break;
-    }
-  }
-
   for (int n = 0; n < 1; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
@@ -126,29 +109,17 @@ void FixKinetics::init()
       error->all(FLERR,"Variable for fix kinetics is invalid style");
   }
 
-  temp = input->variable->compute_equal(ivar[0]);
-
-  if (diffusion != NULL) {
-    nx = diffusion->nx;
-    ny = diffusion->ny;
-    nz = diffusion->nz;
-  }
+  bio = avec->bio;
 
   ngrids = nx * ny * nz;
-  nnus = atom->nNutrients;
-  ntypes = atom->ntypes;
-  catCoeff = atom->catCoeff;
-  anabCoeff = atom->anabCoeff;
-  nuGCoeff = atom->nuGCoeff;
-  typeGCoeff = atom->typeGCoeff;
-  yield = atom->yield;
-  dissipation = atom->dissipation;
+  temp = input->variable->compute_equal(ivar[0]);
 
-  nuS = atom->nuS;
-  nuR = atom->nuR;
-  nuG = atom->nuGCoeff;
-
+  int nnus = bio->nnus;
+  int ntypes = atom->ntypes;
+  nuS = memory->create(nuS,nnus+1, ngrids, "kinetics:nuS");
+  nuR = memory->create(nuR,nnus+1, ngrids, "kinetics:nuR");
   metCoeff = memory->create(metCoeff,ntypes+1,nnus+1,"kinetic:metCoeff");
+  iyield = memory->create(iyield,ntypes+1,ngrids,"kinetic:iyield");
 }
 
 

@@ -20,6 +20,8 @@
 
 #include <fix_kinetics_monod.h>
 #include <fix_kinetics.h>
+#include "atom_vec_bio.h"
+#include <bio.h>
 #include "math.h"
 #include "string.h"
 #include "stdlib.h"
@@ -43,7 +45,7 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
-#include <unordered_set>
+#include <vector>
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -56,6 +58,8 @@ using namespace std;
 
 FixKineticsMonod::FixKineticsMonod(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
+  avec = (AtomVecBio *) atom->style_match("bio");
+  if (!avec) error->all(FLERR,"Fix kinetics requires atom style bio");
 
   if (narg != 6) error->all(FLERR,"Not enough arguments in fix kinetics/monod command");
 
@@ -122,7 +126,10 @@ void FixKineticsMonod::init()
   }
 
   if (kinetics == NULL)
-    lmp->error->all(FLERR,"The fix kinetics command is required for kinetics/monod styles");
+    lmp->error->all(FLERR,"The fix kinetics command is required for running iBM simulation");
+
+  bio = kinetics->bio;
+  ntypes = atom->ntypes;
 
   rg = input->variable->compute_equal(ivar[0]);
   gvol = input->variable->compute_equal(ivar[1]);
@@ -132,12 +139,12 @@ void FixKineticsMonod::init()
   nz = kinetics->nz;
 
   ngrids = nx * ny * nz;
-  nnus = kinetics->nnus;
-  ntypes = kinetics->ntypes;
-  catCoeff = kinetics->catCoeff;
-  anabCoeff = kinetics->anabCoeff;
+  nnus = bio->nnus;
+  catCoeff = bio->catCoeff;
+  anabCoeff = bio->anabCoeff;
+  yield = bio->yield;
+
   metCoeff = kinetics->metCoeff;
-  yield = kinetics->yield;
 
   create_metaMatrix();
 
@@ -177,7 +184,7 @@ void FixKineticsMonod::create_metaMatrix()
   for (int i = 1; i <= ntypes; i++) {
     for (int j = 1; j <= nnus; j++) {
      // cout << "type = " << atom->nuType[j] << endl;
-      if (strcmp(atom->nuName[j], "h") == 0 || strcmp(atom->nuName[j], "h2o") == 0) {
+      if (strcmp(bio->nuName[j], "h") == 0 || strcmp(bio->nuName[j], "h2o") == 0) {
         metCoeff[i][j] = 0;
         matConsume[i][j] = 0;
         continue;
@@ -219,8 +226,8 @@ void FixKineticsMonod::monod()
 
   double *radius = atom->radius;
   double *rmass = atom->rmass;
-  double *outerMass = atom->outerMass;
-  double *outerRadius = atom->outerRadius;
+  double *outerMass = avec->outerMass;
+  double *outerRadius = avec->outerRadius;
 
   double** minMonod = new double*[ntypes+1];
 
@@ -263,9 +270,9 @@ void FixKineticsMonod::monod()
       double monod = minMonod[t][pos];
       if (monod < 0) {
         minMonod[t][pos] = minimal_monod(pos, t);
-        growthRate = atom->atom_growth[i] * minMonod[t][pos];
+        growthRate = avec->atom_growth[i] * minMonod[t][pos];
       } else {
-        growthRate = atom->atom_growth[i] * monod;
+        growthRate = avec->atom_growth[i] * monod;
       }
       //calculate amount of biomass formed
       growthBac = growthRate * atom->rmass[i];
@@ -273,7 +280,7 @@ void FixKineticsMonod::monod()
       for (int i = 1; i <= nnus; i++) {
         double consume = metCoeff[t][i] * growthBac;
 
-        if(atom->nuType[i] == 0) {
+        if(bio->nuType[i] == 0) {
           //calculate liquid concentrations
           double sLiq = consume/vol*1000;
           //5.0000e-12
@@ -321,8 +328,8 @@ double FixKineticsMonod::minimal_monod(int pos, int type)
   int size = 0;
 
   for (int i = 1; i <= nnus; i++ ) {
-    if (matConsume[type][i] != 0 && atom->nuType[i] == 0) {
-      double v = nuS[i][pos]/(atom->ks[type] + nuS[i][pos]);
+    if (matConsume[type][i] != 0 && bio->nuType[i] == 0) {
+      double v = nuS[i][pos]/(bio->ks[type] + nuS[i][pos]);
       mon.push_back(v);
       size++;
     }

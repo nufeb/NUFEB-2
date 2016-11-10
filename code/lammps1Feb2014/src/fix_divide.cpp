@@ -15,6 +15,8 @@
 #include "string.h"
 #include "stdlib.h"
 #include "fix_divide.h"
+#include "atom_vec_bio.h"
+#include "bio.h"
 #include "atom.h"
 #include "atom_vec.h"
 #include "update.h"
@@ -53,6 +55,9 @@ using namespace MathConst;
 
 FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
+  avec = (AtomVecBio *) atom->style_match("bio");
+  if (!avec) error->all(FLERR,"Fix kinetics requires atom style bio");
+
   if (narg != 7) error->all(FLERR,"Illegal fix divide command: Missing arguments");
 
   nevery = force->inumeric(FLERR,arg[3]);
@@ -91,6 +96,8 @@ FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
   	zlo = domain->boxlo_bound[2];
   	zhi = domain->boxhi_bound[2];
   }
+
+  bio = avec->bio;
    
   force_reneighbor = 1;
   next_reneighbor = update->ntimestep+1;
@@ -173,8 +180,8 @@ void FixDivide::pre_exchange()
         double parentMass = atom->rmass[i] * splitF;
         double childMass = atom->rmass[i] - parentMass;
 
-        double parentOuterMass = atom->outerMass[i] * splitF;
-        double childOuterMass = atom->outerMass[i] - parentOuterMass;
+        double parentOuterMass = avec->outerMass[i] * splitF;
+        double childOuterMass = avec->outerMass[i] - parentOuterMass;
 
         double parentfx = atom->f[i][0] * splitF;
         double childfx =  atom->f[i][0] - parentfx;
@@ -196,32 +203,32 @@ void FixDivide::pre_exchange()
 
         //Update parent
         atom->rmass[i] = parentMass;
-        atom->outerMass[i] = parentOuterMass;
+        avec->outerMass[i] = parentOuterMass;
         atom->f[i][0] = parentfx;
         atom->f[i][1] = parentfy;
         atom->f[i][2] = parentfz;
         atom->radius[i] = pow(((6*atom->rmass[i])/(density*MY_PI)),(1.0/3.0))*0.5;
-        atom->outerRadius[i] = pow((3.0/(4.0*MY_PI))*((atom->rmass[i]/density)+(parentOuterMass/EPSdens)),(1.0/3.0));
-        newX = oldX + (atom->outerRadius[i]*cos(thetaD)*sin(phiD)*DELTA);
-        newY = oldY + (atom->outerRadius[i]*sin(thetaD)*sin(phiD)*DELTA);
-        newZ = oldZ + (atom->outerRadius[i]*cos(phiD)*DELTA);
-        if (newX - atom->outerRadius[i] < xlo) {
-          newX = xlo + atom->outerRadius[i];
+        avec->outerRadius[i] = pow((3.0/(4.0*MY_PI))*((atom->rmass[i]/density)+(parentOuterMass/EPSdens)),(1.0/3.0));
+        newX = oldX + (avec->outerRadius[i]*cos(thetaD)*sin(phiD)*DELTA);
+        newY = oldY + (avec->outerRadius[i]*sin(thetaD)*sin(phiD)*DELTA);
+        newZ = oldZ + (avec->outerRadius[i]*cos(phiD)*DELTA);
+        if (newX - avec->outerRadius[i] < xlo) {
+          newX = xlo + avec->outerRadius[i];
         }
-        else if (newX + atom->outerRadius[i] > xhi) {
-          newX = xhi - atom->outerRadius[i];
+        else if (newX + avec->outerRadius[i] > xhi) {
+          newX = xhi - avec->outerRadius[i];
         }
-        if (newY - atom->outerRadius[i] < ylo) {
-          newY = ylo + atom->outerRadius[i];
+        if (newY - avec->outerRadius[i] < ylo) {
+          newY = ylo + avec->outerRadius[i];
         }
-        else if (newY + atom->outerRadius[i] > yhi) {
-          newY = yhi - atom->outerRadius[i];
+        else if (newY + avec->outerRadius[i] > yhi) {
+          newY = yhi - avec->outerRadius[i];
         }
-        if (newZ - atom->outerRadius[i] < zlo) {
-          newZ = zlo + atom->outerRadius[i];
+        if (newZ - avec->outerRadius[i] < zlo) {
+          newZ = zlo + avec->outerRadius[i];
         }
-        else if (newZ + atom->outerRadius[i] > zhi) {
-          newZ = zhi - atom->outerRadius[i];
+        else if (newZ + avec->outerRadius[i] > zhi) {
+          newZ = zhi - avec->outerRadius[i];
         }
         atom->x[i][0] = newX;
         atom->x[i][1] = newY;
@@ -278,7 +285,7 @@ void FixDivide::pre_exchange()
         atom->omega[n][2] = atom->omega[i][2];
 
         atom->rmass[n] = childMass;
-        atom->outerMass[n] = childOuterMass;
+        avec->outerMass[n] = childOuterMass;
 
         atom->f[n][0] = childfx;
         atom->f[n][1] = childfy;
@@ -289,8 +296,8 @@ void FixDivide::pre_exchange()
         atom->torque[n][2] = atom->torque[i][2];
 
         atom->radius[n] = childRadius;
-        atom->outerRadius[n] = childOuterRadius;
-        atom->atom_growth[n] = atom->growth[atom->type[i]];
+        avec->outerRadius[n] = childOuterRadius;
+        avec->atom_growth[n] = bio->growth[atom->type[i]];
 
         atom->natoms++;
 

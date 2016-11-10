@@ -44,6 +44,9 @@ class FixDivide : public Fix {
   double xlo,xhi,ylo,yhi,zlo,zhi;
   void find_maxid();
   int overlap();
+
+  class AtomVecBio *avec;
+  class BIO *bio;
 };
 
 }

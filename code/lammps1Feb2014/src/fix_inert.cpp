@@ -131,7 +131,8 @@ void FixInert::inert()
   int i;
 
   int typeVal = log2(groupbit);
-  double virtualMass = atom->virtualMass[typeVal];
+  double virtualMass = 0;
+  //double virtualMass = atom->virtualMass[typeVal];
 
   for (i = 0; i < nall; i++) {
      //fprintf(stdout, "Id, Type, Mask: %i, %i, %i\n", i, type[i], mask[i]);
@@ -170,6 +171,6 @@ void FixInert::inert()
 
   //fprintf(stdout, "Killed: %i\n", killed);
 
-  atom->virtualMass[typeVal] = virtualMass;
+  //avec->virtualMass[typeVal] = virtualMass;
   modify->addstep_compute(update->ntimestep + nevery);
 }

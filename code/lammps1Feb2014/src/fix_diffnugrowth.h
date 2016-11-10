@@ -90,12 +90,15 @@ class FixDiffNuGrowth : public Fix {
   int bflag; // 1 = dirichlet, 2 = neumann, 3 = mixed
   double xstep, ystep, zstep;
   double sumRs, sumRo2, sumRno2, sumRno3, sumRnh4;
+
   void change_dia();
   void compute_flux(double *, double *, double *, double, double, double, int);
   void output_data(int, int);
   bool is_convergence(double *, double *, double, double);
   int overlap();
   void compute_Rvalues(double*, double*, double*, double*, double*);
+
+  class AtomVecBio *avec;
 };
 
 }
