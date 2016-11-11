@@ -1641,7 +1641,8 @@ void ReadDataIBM::type_coeffs(){
   bio->growth = memory->create(bio->growth,ntypes+1,"bio:growth");
   bio->yield = memory->create(bio->yield,ntypes+1,"bio:yield");
   bio->dissipation = memory->create(bio->dissipation,ntypes+1,"bio:dissipation");
-  bio->typeGCoeff= memory->create(bio->typeGCoeff,ntypes+1, 5, "bio:typeGCoeff");
+  bio->typeGCoeff = memory->create(bio->typeGCoeff,ntypes+1,5,"bio:typeGCoeff");
+  bio->tgflag = memory->create(bio->tgflag,5,"bio:tgflag");
 }
 
 void ReadDataIBM::nutrient_coeffs(){
@@ -1661,7 +1662,7 @@ void ReadDataIBM::nutrient_coeffs(){
   bio->iniS = memory->create(bio->iniS,nnus+1,7,"bio:nuConc");
   bio->nuGCoeff= memory->create(bio->nuGCoeff,nnus+1, 5, "bio:nuG");
   bio->nuType = memory->create(bio->nuType, nnus+1, "bio::nuGCoeff");
-
+  bio->ngflag = memory->create(bio->ngflag,5,"bio:ngflag");
 }
 
 /* ----------------------------------------------------------------------

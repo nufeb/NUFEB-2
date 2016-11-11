@@ -25,6 +25,7 @@ class BIO : protected Pointers {
   double **catCoeff;          // catabolism coefficient [type][nutrient]
   double **anabCoeff;         // anabolism coefficient [type][nutrient]
   double **typeGCoeff;        // Gibbs free energy coefficient [type][5charges]
+  int *tgflag;                // Gibbs free energy flag
 
   //nutrient
   int nnus;                   // # of nutrients
@@ -34,6 +35,7 @@ class BIO : protected Pointers {
   double *diffCoeff;          // diffusion coefficient
   double **iniS;              // inlet nutrient concentrations [nutrient][1grid + 5bc]
   double **nuGCoeff;          // Gibbs free energy coefficient [nutrient][5charges]
+  int *ngflag;                // Gibbs free energy flag
 
   BIO(class LAMMPS *);
   ~BIO();
