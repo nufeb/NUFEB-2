@@ -285,7 +285,6 @@ void FixKineticsMonod::monod()
         if(bio->nuType[i] == 0) {
           //calculate liquid concentrations
           double sLiq = consume/vol*1000;
-          cout << bio->nuName[i] << vol << endl;
           //5.0000e-12
           nuR[i][pos] += sLiq;
         }

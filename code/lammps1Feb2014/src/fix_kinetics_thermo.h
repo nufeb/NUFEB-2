@@ -35,21 +35,22 @@ class FixKineticsThermo : public Fix {
   int nx, ny, nz;               // number of grids in x y z axis
   int ngrids;                   //# of grids
 
-  double rth, temp;            //Universal gas constant (thermodynamics) and temperature
+  double rth, temp;                //Universal gas constant (thermodynamics) and temperature
 
   double **catCoeff;               // catabolism coefficients of species
   double **anabCoeff;              // anabolism  coefficients of species
-  double **metCoeff;               //metabolism coefficients of species
+  double **metCoeff;               // metabolism coefficients of species
   double **nuGCoeff;
   double **typeGCoeff;
   double *yield;                   // yield coefficients
-  double **typeG;                  //type energy for all grids
-  double *diss;                     // Gibbs free energy of dissipation
+  double **typeG;                  // type energy for all grids
+  double *diss;                    // Gibbs free energy of dissipation
   double **iyield;
+  int *ngflag;
+  int *tgflag;
 
   double **nuS;                    //nutrient concentration for all grids
   double **nuG;                    //nutrient energy for all grids
-
   double **dG0;
 
   class FixKinetics *kinetics;

@@ -28,6 +28,7 @@ BIO::BIO(LAMMPS *lmp) : Pointers(lmp)
   catCoeff = NULL;
   typeGCoeff = NULL;
   dissipation = NULL;
+  tgflag = NULL;
 
   //nutrient
   nnus = 0;
@@ -36,6 +37,7 @@ BIO::BIO(LAMMPS *lmp) : Pointers(lmp)
   diffCoeff = NULL;
   nuType = NULL;
   nuGCoeff = NULL;
+  ngflag = NULL;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -49,11 +51,13 @@ BIO::~BIO()
   memory->destroy(catCoeff);
   memory->destroy(typeGCoeff);
   memory->destroy(dissipation);
+  memory->destroy(tgflag);
 
   memory->destroy(diffCoeff);
   memory->destroy(iniS);
   memory->destroy(nuType);
   memory->destroy(nuGCoeff);
+  memory->destroy(ngflag);
 
   for (int i = 0; i < atom->ntypes+1; i++) {
     delete [] typeName[i];
@@ -342,7 +346,7 @@ void BIO::set_anabCoeff(int narg, char **arg)
 void BIO::set_nuGCoeff(int narg, char **arg)
 {
   if (nuGCoeff == NULL) error->all(FLERR,"Cannot set energy coeff for this nutrient");
-  if (narg != 6) error->all(FLERR,"Invalid nuGCOeff line in data file");
+  if (narg != 7) error->all(FLERR,"Invalid nuGCOeff line in data file");
 
   char* nuName;
   int len = strlen(arg[0]) + 1;
@@ -363,6 +367,11 @@ void BIO::set_nuGCoeff(int narg, char **arg)
       nuGCoeff[inu][i] = value;
     }
   }
+
+  int flag = atoi(arg[6]);
+  if ((flag > 0) && (flag < 6) && (nuGCoeff[inu][flag-1] < 1e4))
+    ngflag[inu] = flag - 1;
+  else error->all(FLERR,"Invalid nutrient energy flag");
 }
 
 /* ----------------------------------------------------------------------
@@ -373,7 +382,7 @@ void BIO::set_nuGCoeff(int narg, char **arg)
 void BIO::set_typeGCoeff(int narg, char **arg)
 {
   if (typeGCoeff == NULL) error->all(FLERR,"Cannot set energy coeff for this type");
-  if (narg != 6) error->all(FLERR,"Invalid typeGCoeff line in data file");
+  if (narg != 7) error->all(FLERR,"Invalid typeGCoeff line in data file");
 
   char* typeName;
   int len = strlen(arg[0]) + 1;
@@ -394,6 +403,11 @@ void BIO::set_typeGCoeff(int narg, char **arg)
       typeGCoeff[itype][i] = value;
     }
   }
+
+  int flag = atoi(arg[6]);
+  if ((flag > 0) && (flag < 6) && (typeGCoeff[itype][flag-1] < 1e4))
+    tgflag[itype] = flag - 1;
+  else error->all(FLERR,"Invalid type energy flag");
 }
 
 int BIO::find_typeID(char *name) {
