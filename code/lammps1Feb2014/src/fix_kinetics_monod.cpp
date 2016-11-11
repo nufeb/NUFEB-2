@@ -189,8 +189,10 @@ void FixKineticsMonod::create_metaMatrix()
         matConsume[i][j] = 0;
         continue;
       }
+
       double pThY = 1/yield[i];
       double coeff = catCoeff[i][j] * pThY + anabCoeff[i][j];
+
       metCoeff[i][j] = coeff;
       if (coeff < 0) {
         matConsume[i][j] = 1;
@@ -276,13 +278,14 @@ void FixKineticsMonod::monod()
       }
       //calculate amount of biomass formed
       growthBac = growthRate * atom->rmass[i];
-     // cout << growthRate << endl;
+     // cout << growthBac << endl;
       for (int i = 1; i <= nnus; i++) {
         double consume = metCoeff[t][i] * growthBac;
-
+       // cout << consume << endl;
         if(bio->nuType[i] == 0) {
           //calculate liquid concentrations
           double sLiq = consume/vol*1000;
+          cout << bio->nuName[i] << vol << endl;
           //5.0000e-12
           nuR[i][pos] += sLiq;
         }
@@ -304,10 +307,10 @@ void FixKineticsMonod::monod()
     }
   }
 
-//  for (int i = 1; i <= ntypes; i++) {
-//    cout << atom->typeName[i] << endl;
-//      for (int j = 0; j < 5; j++) {
-//          cout << atom->typeG[i][j] << " ";
+//  for (int i = 1; i <= nnus; i++) {
+//    cout << bio->nuName[i] << endl;
+//      for (int j = 0; j < ngrids; j++) {
+//          cout << nuR[i][j] << " ";
 //      }
 //    cout << endl;
 //  }

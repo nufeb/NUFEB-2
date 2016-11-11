@@ -11,23 +11,16 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#include "USER-NUFEB/fix_shear.h"
-
-#include "string.h"
-#include "stdlib.h"
-#include "atom.h"
-#include "update.h"
-#include "domain.h"
-#include "respa.h"
-#include "error.h"
-#include "force.h"
-#include "math.h"
-#include "mpi.h"
-#include "comm.h"
-#include "memory.h"
-#include "input.h"
-#include "variable.h"
-#include "math_const.h"
+#include <atom.h>
+#include <error.h>
+#include <fix_shear.h>
+#include <force.h>
+#include <input.h>
+#include <math_const.h>
+#include <pointers.h>
+#include <string.h>
+#include <update.h>
+#include <variable.h>
 
 using namespace LAMMPS_NS;
 using namespace FixConst;

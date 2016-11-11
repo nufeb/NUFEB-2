@@ -11,21 +11,19 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#include "math.h"
-#include "stdlib.h"
-#include "string.h"
-#include "atom_vec_bio.h"
-#include "atom.h"
-#include "comm.h"
-#include "domain.h"
-#include "modify.h"
-#include "force.h"
-#include "fix.h"
-#include "fix_adapt.h"
-#include "math_const.h"
-#include "memory.h"
-#include "error.h"
-#include "bio.h"
+#include <atom.h>
+#include <atom_vec_bio.h>
+#include <bio.h>
+#include <error.h>
+#include <fix_adapt.h>
+#include <lmptype.h>
+#include <math_const.h>
+#include <memory.h>
+#include <modify.h>
+#include <pointers.h>
+#include <stdlib.h>
+#include <string.h>
+#include <cctype>
 
 using namespace LAMMPS_NS;
 using namespace MathConst;
@@ -41,9 +39,10 @@ AtomVecBio::AtomVecBio(LAMMPS *lmp) : AtomVecSphere(lmp)
   //atom
   outerMass = memory->create(outerMass,nmax,"atom:outerMass");
   outerRadius = memory->create(outerRadius,nmax,"atom:outerRadius");;
-  //virtualMass = NULL;
   atom_growth = memory->create(atom_growth,nmax,"atom:atom_growth");
+  //virtualMass = NULL;
 
+  //instantiate BIO class
   bio = new BIO(lmp);
 }
 
@@ -97,7 +96,7 @@ void AtomVecBio::data_atom(double *coord, imageint imagetmp, char **values)
 {
   int nlocal = atom->nlocal;
   int ntypes = atom->ntypes;
-  typeName = bio->typeName;
+  char **typeName  = bio->typeName;;
 
   AtomVecSphere::data_atom(coord, imagetmp, values);
 

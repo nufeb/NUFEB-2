@@ -18,33 +18,24 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#include "fix_kinetics_thermo.h"
-#include <fix_kinetics.h>
+#include <atom.h>
 #include <bio.h>
-#include "math.h"
-#include "string.h"
-#include "stdlib.h"
-#include "atom.h"
-#include "update.h"
-#include "group.h"
-#include "modify.h"
-#include "force.h"
-#include "pair.h"
-#include "pair_hybrid.h"
-#include "kspace.h"
-#include "fix_store.h"
-#include "input.h"
-#include "variable.h"
-#include "respa.h"
-#include "math_const.h"
-#include "memory.h"
-#include "error.h"
-#include "comm.h"
-#include "domain.h"
+#include <error.h>
+#include <fix_kinetics.h>
+#include <fix_kinetics_thermo.h>
+#include <force.h>
+#include <input.h>
+#include <lammps.h>
+#include <math.h>
+#include <memory.h>
+#include <modify.h>
+#include <pointers.h>
+#include <string.h>
+#include <update.h>
+#include <variable.h>
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
-using namespace MathConst;
 
 using namespace std;
 
@@ -192,6 +183,7 @@ void FixKineticsThermo::thermo()
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
   int *type = atom->type;
+  iyield = kinetics->iyield;
 
   nuS = kinetics->nuS;
 

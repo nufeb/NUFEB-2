@@ -26,6 +26,15 @@ namespace LAMMPS_NS {
 
 class AtomVecBio : public AtomVecSphere {
  public:
+
+  //atom
+  double *outerRadius;     //atom outer radius
+  double *outerMass;       //atom outer mass
+  double *atom_growth;     //atom maximum growth rate
+  //double *virtualMass;
+
+  class BIO *bio;
+
   AtomVecBio(class LAMMPS *);
   ~AtomVecBio();
   void init();
@@ -34,17 +43,11 @@ class AtomVecBio : public AtomVecSphere {
   void data_atom(double *, imageint, char **);
   void copy(int, int, int);
   bigint memory_usage();
+
+ private:
+
   int find_typeID(char *name);
   int find_nuID(char *name);
-
-  //atom
-  double *virtualMass;
-  double *outerRadius;
-  double *outerMass;
-  double *atom_growth;
-  char **typeName;
-
-  class BIO *bio;
 
 };
 

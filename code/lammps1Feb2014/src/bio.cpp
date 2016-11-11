@@ -5,14 +5,15 @@
  *      Author: bowen
  */
 
+#include <atom.h>
+#include <atom_vec_bio.h>
 #include <bio.h>
-#include "memory.h"
-#include "lmptype.h"
-#include "error.h"
-#include "atom.h"
-#include "force.h"
-#include "string.h"
-#include "atom_vec_bio.h"
+#include <error.h>
+#include <force.h>
+#include <memory.h>
+#include <string.h>
+#include <cctype>
+#include <cstdio>
 
 using namespace LAMMPS_NS;
 
@@ -41,12 +42,6 @@ BIO::BIO(LAMMPS *lmp) : Pointers(lmp)
 
 BIO::~BIO()
 {
-//
-//  memory->destroy(virtualMass);
-//  memory->destroy(outerRadius);
-//  memory->destroy(outerMass);
-//  memory->destroy(atom_growth);
-
   memory->destroy(yield);
   memory->destroy(growth);
   memory->destroy(ks);
@@ -132,7 +127,6 @@ void BIO::data_nutrients(int narg, char **arg)
   iniS[id][4] = ybcp;
   iniS[id][5] = zbcm;
   iniS[id][6] = zbcp;
-
 }
 
 /* ----------------------------------------------------------------------
@@ -162,6 +156,7 @@ void BIO::set_growth(const char *str)
   growth[itype] = growth_one;
 
   if (growth[itype] < 0.0) error->all(FLERR,"Invalid growth value");
+
   AtomVecBio* avec = (AtomVecBio *) atom->style_match("bio");
   //set growth rate for each atom
   for (int i = 0; i < atom->nlocal; i++) {

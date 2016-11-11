@@ -11,7 +11,7 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#include "USER-NUFEB/fix_inert.h"
+#include "fix_inert.h"
 
 #include "math.h"
 #include "string.h"

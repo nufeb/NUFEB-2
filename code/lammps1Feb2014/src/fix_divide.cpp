@@ -11,35 +11,24 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#include "math.h"
-#include "string.h"
-#include "stdlib.h"
-#include "fix_divide.h"
-#include "atom_vec_bio.h"
-#include "bio.h"
-#include "atom.h"
-#include "atom_vec.h"
-#include "update.h"
-#include "group.h"
-#include "modify.h"
-#include "force.h"
-#include "pair.h"
-#include "pair_hybrid.h"
-#include "kspace.h"
-#include "fix_store.h"
-#include "input.h"
-#include "variable.h"
-#include "respa.h"
-#include "comm.h"
-#include "domain.h"
-#include "region.h"
-#include "region_block.h"
-#include "region_cylinder.h"
-#include "random_park.h"
-#include "math_extra.h"
-#include "math_const.h"
-#include "memory.h"
-#include "error.h"
+#include <atom.h>
+#include <atom_vec_bio.h>
+#include <bio.h>
+#include <domain.h>
+#include <error.h>
+#include <fix_divide.h>
+#include <force.h>
+#include <input.h>
+#include <lmptype.h>
+#include <math.h>
+#include <math_const.h>
+#include <mpi.h>
+#include <pointers.h>
+#include <random_park.h>
+#include <stdlib.h>
+#include <string.h>
+#include <update.h>
+#include <variable.h>
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
