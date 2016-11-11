@@ -34,12 +34,12 @@ class FixKinetics : public Fix {
 
   int nx, ny, nz;                  // number of grids in x y z axis
   int ngrids;                      // # of grids
-  double temp;
-  double **metCoeff;               //metabolism coefficients of species
-  double **iyield;                  // inverse yield
+  double temp;                     // temperature
+  double **metCoeff;               // metabolism coefficients [type][nutrient]
+  double **iyield;                 // inverse yield [type][grid]
 
-  double **nuS;                    //nutrient concentration for all grids
-  double **nuR;                    //nutrient consumption for all grids
+  double **nuS;                    //nutrient concentration [nutrient][grid]
+  double **nuR;                    //nutrient consumption [nutrient][grid]
 
   class AtomVecBio *avec;
   class BIO *bio;

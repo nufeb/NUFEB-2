@@ -11,26 +11,19 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#include "string.h"
-#include "stdlib.h"
-#include "fix_epsadh.h"
-#include "atom_vec_bio.h"
-#include "atom.h"
-#include "update.h"
-#include "domain.h"
-#include "respa.h"
-#include "error.h"
-#include "force.h"
-#include "math.h"
-#include "neighbor.h"
-#include "neigh_list.h"
-#include "neigh_request.h"
-#include "pair.h"
-#include "mpi.h"
-#include "comm.h"
-#include "memory.h"
-#include "input.h"
-#include "variable.h"
+#include <atom.h>
+#include <atom_vec_bio.h>
+#include <error.h>
+#include <fix_epsadh.h>
+#include <force.h>
+#include <input.h>
+#include <math.h>
+#include <neigh_list.h>
+#include <neigh_request.h>
+#include <neighbor.h>
+#include <pointers.h>
+#include <string.h>
+#include <variable.h>
 
 
 using namespace LAMMPS_NS;

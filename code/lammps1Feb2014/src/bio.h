@@ -1,5 +1,5 @@
 /*
- * ibm.h
+ * bio.h
  *
  *  Created on: 8 Nov 2016
  *      Author: bowen
@@ -14,21 +14,26 @@ namespace LAMMPS_NS {
 
 class BIO : protected Pointers {
  public:
-  //type
-  char **typeName;
-  double *ks, *growth, *yield;
-  double **catCoeff;
-  double **anabCoeff;
-  double **typeGCoeff;
-  double *dissipation;
+  //type (species)
+  char **typeName;            // type name
+
+  double *ks;                 // half-saturation constant
+  double *growth;             // maximum species growth rate
+  double *yield;              // growth yield coefficient
+  double *dissipation;        // universal gas constant (thermodynamics)
+
+  double **catCoeff;          // catabolism coefficient [type][nutrient]
+  double **anabCoeff;         // anabolism coefficient [type][nutrient]
+  double **typeGCoeff;        // Gibbs free energy coefficient [type][5charges]
 
   //nutrient
-  int nnus;
-  char **nuName;
-  int *nuType;                //nutrient types 0 = liq, 1 = gas
-  double **iniS;              //inlet nutrient concentrations
-  double *diffCoeff;
-  double **nuGCoeff;
+  int nnus;                   // # of nutrients
+  int *nuType;                // nutrient types 0 = liq, 1 = gas
+  char **nuName;              // nutrient name
+
+  double *diffCoeff;          // diffusion coefficient
+  double **iniS;              // inlet nutrient concentrations [nutrient][1grid + 5bc]
+  double **nuGCoeff;          // Gibbs free energy coefficient [nutrient][5charges]
 
   BIO(class LAMMPS *);
   ~BIO();

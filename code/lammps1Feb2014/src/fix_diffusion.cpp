@@ -18,39 +18,31 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
+#include <atom.h>
+#include <bio.h>
+#include <domain.h>
+#include <error.h>
+#include <Eigen/Eigen>
 #include <fix_diffusion.h>
 #include <fix_kinetics.h>
-#include "atom_vec_bio.h"
-#include "bio.h"
-#include "math.h"
-#include "string.h"
-#include "stdlib.h"
-#include "atom.h"
-#include "update.h"
-#include "group.h"
-#include "modify.h"
-#include "force.h"
-#include "pair.h"
-#include "pair_hybrid.h"
-#include "kspace.h"
-#include "fix_store.h"
-#include "input.h"
-#include "variable.h"
-#include "respa.h"
-#include "math_const.h"
-#include "memory.h"
-#include "error.h"
-#include "comm.h"
-#include "domain.h"
-#include <iostream>
-#include <Eigen/Eigen>
+#include <force.h>
+#include <input.h>
+#include <lammps.h>
+#include <math.h>
+#include <modify.h>
+#include <pointers.h>
+#include <stddef.h>
+#include <string.h>
 #include <unsupported/Eigen/KroneckerProduct>
-#include <iomanip>
+#include <update.h>
+#include <variable.h>
 #include <algorithm>
+#include <cstdio>
+#include <iostream>
+#include <string>
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
-using namespace MathConst;
 
 using namespace std;
 using namespace Eigen;
@@ -208,11 +200,6 @@ void FixDiffusion::init()
       bc[j] = iniS[i][j+1];
     }
     maxBC[i] = *max_element(bc, bc+6);
-
-    for (int j = 0; j < ngrids; j++) {
-      nuS[i][j] = iniS[i][0];
-      nuR[i][j] = 0;
-    }
   }
 
   LAP = laplacian_matrix();
@@ -220,8 +207,6 @@ void FixDiffusion::init()
   SparseMatrix<double> In(ngrids, ngrids);
   In.setIdentity();
   I = In;
-
- // test();
 }
 
 
@@ -387,12 +372,6 @@ void FixDiffusion::diffusion()
     if (isConv[0]) break;
   }
 
-//  cout << atom->nuName[1] << endl;
-//    for (int j = 0; j < ngrids; j++) {
-//      printf("%e ", vecS[1][j]);
-//  }
-//  cout << endl;
-
   cout << "number of iteration: " << iteration << endl;
 
   //convert concentration vector into normal data type
@@ -400,6 +379,7 @@ void FixDiffusion::diffusion()
     Map<MatrixXd>(nuS[i], vecS[i].rows(), vecS[i].cols()) =  vecS[i];
   }
 
+  //test();
   delete [] isConv;
   delete [] vecS;
   delete [] vecR;
@@ -552,6 +532,8 @@ void FixDiffusion::test(){
 
   cout << nnus << endl;
   for (int i = 1; i <= nnus; i++) {
-    cout << bio->nuName[i] << diffCoeff[i] << endl;
+    cout << bio->nuName[i] << endl;
+    for (int j = 0; j < ngrids; j++)
+      cout << nuS[i][j] << endl;
   }
 }

@@ -18,32 +18,20 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
+#include <atom.h>
+#include <atom_vec_bio.h>
+#include <bio.h>
+#include <error.h>
 #include <fix_kinetics.h>
-#include <fix_diffusion.h>
-#include "atom_vec_bio.h"
-#include "bio.h"
-#include "math.h"
-#include "string.h"
-#include "stdlib.h"
-#include "atom.h"
-#include "update.h"
-#include "modify.h"
-#include "force.h"
-#include "kspace.h"
-#include "fix_store.h"
-#include "input.h"
-#include "variable.h"
-#include "respa.h"
-#include "math_const.h"
-#include "memory.h"
-#include "error.h"
-#include "comm.h"
-#include "domain.h"
-#include <iostream>
+#include <input.h>
+#include <memory.h>
+#include <pointers.h>
+#include <stdlib.h>
+#include <string.h>
+#include <variable.h>
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
-using namespace MathConst;
 
 using namespace std;
 
@@ -116,10 +104,19 @@ void FixKinetics::init()
 
   int nnus = bio->nnus;
   int ntypes = atom->ntypes;
+
   nuS = memory->create(nuS,nnus+1, ngrids, "kinetics:nuS");
   nuR = memory->create(nuR,nnus+1, ngrids, "kinetics:nuR");
   metCoeff = memory->create(metCoeff,ntypes+1,nnus+1,"kinetic:metCoeff");
   iyield = memory->create(iyield,ntypes+1,ngrids,"kinetic:iyield");
+
+  //initialize inlet concentration, consumption
+  for (int i = 1; i <= nnus; i++) {
+    for (int j = 0; j < ngrids; j++) {
+      nuS[i][j] = bio->iniS[i][0];
+      nuR[i][j] = 0;
+    }
+  }
 }
 
 
