@@ -199,7 +199,7 @@ void FixKineticsThermo::thermo()
 
       //use catabolic and anabolic energy values to derive catabolic reaction equation
       if (catG < 0)
-        iyield[j][i] = - (anaG + diss[j]) / catG;
+        iyield[j][i] = -(anaG + diss[j]) / catG;
       else
         iyield[j][i] = 0;
     }
