@@ -91,7 +91,7 @@ FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
   bio = avec->bio;
    
   force_reneighbor = 1;
-  next_reneighbor = update->ntimestep+1;
+  next_reneighbor = update->ntimestep + 1;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -153,10 +153,10 @@ void FixDivide::pre_exchange()
   }
 
   for (i = 0; i < nall; i++) {
-//    if (atom->type[i] == 1 || atom->type[i] == 2 || atom->type[i] == 3) {
-//      averageMass = 1e-16;
-//    } else continue;
-    averageMass = 1e-16;
+    if (atom->mask[i] != avec->maskEPS) {
+      averageMass = 1e-16;
+    } else continue;
+
     if ((atom->mask[i] & groupbit) &&
       atom->x[i][0] >= sublo[0] && atom->x[i][0] < subhi[0] &&
       atom->x[i][1] >= sublo[1] && atom->x[i][1] < subhi[1] &&

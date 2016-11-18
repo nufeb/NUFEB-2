@@ -50,6 +50,7 @@ class BIO : protected Pointers {
   void set_nuGCoeff(int, char **);
   void set_typeGCoeff(int, char **);
   void set_dissipation(const char *);
+  void set_group_mask();
 
   int find_typeID(char *name);
   int find_nuID(char *name);

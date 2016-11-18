@@ -149,6 +149,11 @@ void FixEPSExtract::init()
   if (groupbit != 2) {
     error->all(FLERR,"Fix eps extract is only valid for particles of type HET");
   }
+
+  typeEPS = avec->typeEPS;
+  if (typeEPS == 0) {
+    error->all(FLERR,"Cannot find EPS type");
+  }
 }
 
 
@@ -158,8 +163,6 @@ void FixEPSExtract::pre_exchange()
 
   double EPSratio = input->variable->compute_equal(ivar[0]);
   double EPSdens = input->variable->compute_equal(ivar[1]);
-  double *outerRadius = avec->outerRadius;
-  double *outerMass = avec->outerMass;
 
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
@@ -179,21 +182,20 @@ void FixEPSExtract::pre_exchange()
           atom->x[i][1] >= sublo[1] && atom->x[i][1] < subhi[1] &&
           atom->x[i][2] >= sublo[2] && atom->x[i][2] < subhi[2]) {
       // fprintf(stdout, "outerRadius/radius = %e\n", (outerRadius[i]/radius[i]));
-      if ((outerRadius[i]/atom->radius[i]) > EPSratio) {
-      	outerMass[i] = (4.0*MY_PI/3.0)*((outerRadius[i] *
-      												outerRadius[i]*outerRadius[i])-
-      											 (atom->radius[i]*atom->radius[i]*atom->radius[i]))*EPSdens;
+      if ((avec->outerRadius[i]/atom->radius[i]) > EPSratio) {
+        avec->outerMass[i] = (4.0*MY_PI/3.0)*(( avec->outerRadius[i] * avec->outerRadius[i]* avec->outerRadius[i])
+      	    - (atom->radius[i]*atom->radius[i]*atom->radius[i]))*EPSdens;
 
         double splitF = 0.4 + (random->uniform()*0.2);
 
-        double newOuterMass = outerMass[i] * splitF;
-        double EPSMass = outerMass[i] - newOuterMass;
+        double newOuterMass =  avec->outerMass[i] * splitF;
+        double EPSMass = avec->outerMass[i] - newOuterMass;
 
-        outerMass[i] = newOuterMass;
+        avec->outerMass[i] = newOuterMass;
 
         double density = atom->rmass[i] / (4.0*MY_PI/3.0 *
         								 atom->radius[i]*atom->radius[i]*atom->radius[i]);
-        outerRadius[i] = pow((3.0/(4.0*MY_PI))*((atom->rmass[i]/density)+(outerMass[i]/EPSdens)),(1.0/3.0));
+        avec->outerRadius[i] = pow((3.0/(4.0*MY_PI))*((atom->rmass[i]/density)+( avec->outerMass[i]/EPSdens)),(1.0/3.0));
 
         double thetaD = random->uniform() * 2*MY_PI;
         double phiD = random->uniform() * (MY_PI);
@@ -205,9 +207,9 @@ void FixEPSExtract::pre_exchange()
         //create child
         double childRadius = pow(((6*EPSMass)/(EPSdens*MY_PI)),(1.0/3.0))*0.5;
         double* coord = new double[3];
-        double newX = oldX - ((childRadius+outerRadius[i])*cos(thetaD)*sin(phiD)*DELTA);
-        double newY = oldY - ((childRadius+outerRadius[i])*sin(thetaD)*sin(phiD)*DELTA);
-        double newZ = oldZ - ((childRadius+outerRadius[i])*cos(phiD)*DELTA);
+        double newX = oldX - ((childRadius+ avec->outerRadius[i])*cos(thetaD)*sin(phiD)*DELTA);
+        double newY = oldY - ((childRadius+ avec->outerRadius[i])*sin(thetaD)*sin(phiD)*DELTA);
+        double newZ = oldZ - ((childRadius+ avec->outerRadius[i])*cos(phiD)*DELTA);
         if (newX - childRadius < xlo) {
           newX = xlo + childRadius;
         }
@@ -230,11 +232,11 @@ void FixEPSExtract::pre_exchange()
         coord[1] = newY;
         coord[2] = newZ;
         find_maxid();
-        atom->avec->create_atom(4,coord);
+        atom->avec->create_atom(typeEPS,coord);
         // fprintf(stdout, "Created atom\n");
         int n = atom->nlocal - 1;
-        atom->tag[n] = maxtag_all+1;
-        atom->mask[n] = 17;
+        atom->tag[n] = maxtag_all + 1;
+        atom->mask[n] = avec->maskEPS;
 
         atom->v[n][0] = atom->v[i][0];
         atom->v[n][1] = atom->v[i][1];
@@ -247,13 +249,13 @@ void FixEPSExtract::pre_exchange()
         atom->omega[n][1] = atom->omega[i][1];
         atom->omega[n][2] = atom->omega[i][2];
         atom->rmass[n] = EPSMass;
-        outerMass[n] = 0;
+        avec->outerMass[n] = 0;
 
         atom->torque[n][0] = atom->torque[i][0];
         atom->torque[n][1] = atom->torque[i][1];
         atom->torque[n][2] = atom->torque[i][2];
         atom->radius[n] = childRadius;
-        outerRadius[n] = childRadius;
+        avec->outerRadius[n] = childRadius;
 
         atom->natoms++;
 
