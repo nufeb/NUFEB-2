@@ -31,6 +31,9 @@ class AtomVecBio : public AtomVecSphere {
   double *outerRadius;     //atom outer radius
   double *outerMass;       //atom outer mass
   double *atom_growth;     //atom maximum growth rate
+  int maskEPS;               // mask of EPS group
+  int maskHET;               // mask of HET group
+  int typeEPS;                // itype of EPS
   //double *virtualMass;
 
   class BIO *bio;
@@ -45,9 +48,7 @@ class AtomVecBio : public AtomVecSphere {
   bigint memory_usage();
 
  private:
-
-  int find_typeID(char *name);
-  int find_nuID(char *name);
+  void set_group_mask();
 
 };
 

@@ -222,6 +222,9 @@ void BIO::set_yield(const char *str)
   if (itype < 1 || itype > atom->ntypes)
     error->all(FLERR,"Invalid type for set_yield set");
 
+  if (yield_one <= 0)
+    lmp->error->all(FLERR,"yield cannot be zero or less than zero");
+
   yield[itype] = yield_one;
   //mass_setflag[itype] = 1;
 
@@ -432,5 +435,3 @@ int BIO::find_nuID(char *name) {
 
   return -1;
 }
-
-
