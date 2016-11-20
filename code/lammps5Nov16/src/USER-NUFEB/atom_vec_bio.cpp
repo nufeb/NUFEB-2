@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <cctype>
+#include <math.h>
 
 #include "atom.h"
 #include "bio.h"
@@ -26,6 +27,7 @@
 #include "memory.h"
 #include "modify.h"
 #include "pointers.h"
+#include "group.h"
 
 using namespace LAMMPS_NS;
 using namespace MathConst;
@@ -42,6 +44,9 @@ AtomVecBio::AtomVecBio(LAMMPS *lmp) : AtomVecSphere(lmp)
   outerMass = memory->create(outerMass,nmax,"atom:outerMass");
   outerRadius = memory->create(outerRadius,nmax,"atom:outerRadius");;
   atom_growth = memory->create(atom_growth,nmax,"atom:atom_growth");
+  typeEPS = 0;
+  maskEPS = 0;
+  maskHET = 0;
   //virtualMass = NULL;
 
   //instantiate BIO class
@@ -73,7 +78,7 @@ void AtomVecBio::init()
       comm_x_only = 0;
       size_forward = 5;
     }
-
+  set_group_mask();
 }
 
 void AtomVecBio::grow(int n)
@@ -142,6 +147,10 @@ void AtomVecBio::data_atom(double *coord, imageint imagetmp, char **values)
     error->one(FLERR,"Incompatible type names");
   }
 
+  if (strcmp(name,"eps") == 0) {
+    typeEPS = type;
+  }
+
   strcpy(typeName[type],name);
 
   delete[] name;
@@ -167,5 +176,15 @@ bigint AtomVecBio::memory_usage()
   if (atom->memcheck("atom_growth")) bytes += memory->usage(atom_growth,nmax);
 
   return bytes;
+}
+
+void AtomVecBio::set_group_mask() {
+
+  for (int i = 1; i < group->ngroup; i++)
+    if (strcmp(group->names[i],"EPS") == 0) {
+      maskEPS = pow(2, i) + 1;
+    } else if (strcmp(group->names[i],"HET") == 0) {
+      maskHET = pow(2, i) + 1;
+    }
 }
 

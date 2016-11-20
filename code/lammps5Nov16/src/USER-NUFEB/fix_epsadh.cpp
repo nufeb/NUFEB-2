@@ -128,7 +128,7 @@ void FixEPSAdh::post_force(int vflag)
 	  outerRadi = outerRadius[i];
 	  jlist = firstneigh[i];
 	  jnum = numneigh[i];
-    if (type[i] == 4) {
+    if (atom->mask[i] == avec->maskEPS) {
       epsMassi = rmass[i];
     }
     else {
@@ -143,7 +143,7 @@ void FixEPSAdh::post_force(int vflag)
 		  rsq = delx*delx + dely*dely + delz*delz;
 
 		  outerRadj = outerRadius[j];
-      if (type[j] == 4) {
+		  if (atom->mask[j] == avec->maskEPS) {
         epsMassj = rmass[j];
       }
       else {

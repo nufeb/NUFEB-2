@@ -255,8 +255,8 @@ void FixKineticsMonod::monod()
   for (int i = 0; i < nall; i++) {
     if (mask[i] & groupbit) {
       //cout << "mask" << mask[i] << endl;
-      double growthRate = 0;
-      double growthBac = 0;
+      double growthRate = 0.0;
+      double growthBac = 0.0;
       // get index of grid containing i
       int xpos = (atom->x[i][0] - xlo) / stepx + 1;
       int ypos = (atom->x[i][1] - ylo) / stepy + 1;
@@ -277,18 +277,18 @@ void FixKineticsMonod::monod()
         growthRate = avec->atom_growth[i] * monod;
       }
       //calculate amount of biomass formed
-      growthBac = growthRate * atom->rmass[i];
+      growthBac = growthRate * rmass[i];
 
-      for (int i = 1; i <= nnus; i++) {
-        double consume = metCoeff[t][i] * growthBac;
-        if(bio->nuType[i] == 0) {
-          //calculate liquid concentrations
-          double sLiq = consume/vol*1000;
+      for (int j = 1; j <= nnus; j++) {
+        double consume = metCoeff[t][j] * growthBac;
+        if(bio->nuType[j] == 0) {
+          //calculate liquid concentrations, cover m3 to mol
+          double uptake = consume / vol;
          // cout << bio->nuName[i] << vol << endl;
           //5.0000e-12
-          nuR[i][pos] += sLiq;
+          nuR[j][pos] += uptake;
         }
-        cout << i << " "<< pos << " "<< consume << endl;
+ //       cout << j << " "<< pos << " "<< rmass[i] << endl;
 //          else if (atom->nuType[i] == 1) {
 //          // calculate gas partial pressures
 //          double pGas = consume * rg * temp / gvol;
@@ -297,7 +297,9 @@ void FixKineticsMonod::monod()
       }
 
       density = rmass[i] / (fourThirdsPI * radius[i] * radius[i] * radius[i]);
+     // cout<<"before mass " <<rmass[i] << endl;
       rmass[i] = rmass[i] * (1 + (growthRate * nevery));
+     // cout<<"after mass "<< std::setprecision(10) << growthRate << endl;
 
       //update mass and radius
       if (mask[i] == avec->maskHET) {
@@ -314,7 +316,6 @@ void FixKineticsMonod::monod()
       }
     }
   }
-
 //  for (int i = 1; i <= nnus; i++) {
 //    cout << bio->nuName[i] << endl;
 //      for (int j = 0; j < ngrids; j++) {
@@ -337,6 +338,7 @@ double FixKineticsMonod::minimal_monod(int pos, int type)
 {
   vector<double> mon;
   int size = 0;
+  double min = 0;
 
   for (int i = 1; i <= nnus; i++ ) {
     if (matConsume[type][i] != 0 && bio->nuType[i] == 0) {
@@ -345,6 +347,9 @@ double FixKineticsMonod::minimal_monod(int pos, int type)
       size++;
     }
   }
-  double min = *min_element(mon.begin(), mon.end());
+
+  if (mon.size() > 0)
+    min = *min_element(mon.begin(), mon.end());
+
   return min;
 }

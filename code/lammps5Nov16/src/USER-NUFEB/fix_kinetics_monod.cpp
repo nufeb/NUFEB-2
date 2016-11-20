@@ -43,6 +43,7 @@
 #include "pointers.h"
 #include "update.h"
 #include "variable.h"
+#include "group.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -58,15 +59,15 @@ FixKineticsMonod::FixKineticsMonod(LAMMPS *lmp, int narg, char **arg) : Fix(lmp,
   avec = (AtomVecBio *) atom->style_match("bio");
   if (!avec) error->all(FLERR,"Fix kinetics requires atom style bio");
 
-  if (narg != 6) error->all(FLERR,"Not enough arguments in fix kinetics/monod command");
+  if (narg != 7) error->all(FLERR,"Not enough arguments in fix kinetics/monod command");
 
   nevery = force->inumeric(FLERR,arg[3]);
   if (nevery < 0) error->all(FLERR,"Illegal fix kinetics/monod command");
 
-  var = new char*[2];
-  ivar = new int[2];
+  var = new char*[3];
+  ivar = new int[3];
 
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 3; i++) {
     int n = strlen(&arg[4+i][2]) + 1;
     var[i] = new char[n];
     strcpy(var[i],&arg[4+i][2]);
@@ -80,7 +81,7 @@ FixKineticsMonod::FixKineticsMonod(LAMMPS *lmp, int narg, char **arg) : Fix(lmp,
 FixKineticsMonod::~FixKineticsMonod()
 {
   int i;
-  for (i = 0; i < 2; i++) {
+  for (i = 0; i < 3; i++) {
     delete [] var[i];
   }
   delete [] var;
@@ -105,7 +106,7 @@ void FixKineticsMonod::init()
   if (!atom->radius_flag)
     error->all(FLERR,"Fix requires atom attribute diameter");
 
-  for (int n = 0; n < 2; n++) {
+  for (int n = 0; n < 3; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
       error->all(FLERR,"Variable name for fix kinetics/monod does not exist");
@@ -130,6 +131,7 @@ void FixKineticsMonod::init()
 
   rg = input->variable->compute_equal(ivar[0]);
   gvol = input->variable->compute_equal(ivar[1]);
+  EPSdens = input->variable->compute_equal(ivar[2]);
 
   nx = kinetics->nx;
   ny = kinetics->ny;
@@ -252,8 +254,9 @@ void FixKineticsMonod::monod()
   //Metabolism
   for (int i = 0; i < nall; i++) {
     if (mask[i] & groupbit) {
-      double growthRate = 0;
-      double growthBac = 0;
+      //cout << "mask" << mask[i] << endl;
+      double growthRate = 0.0;
+      double growthBac = 0.0;
       // get index of grid containing i
       int xpos = (atom->x[i][0] - xlo) / stepx + 1;
       int ypos = (atom->x[i][1] - ylo) / stepy + 1;
@@ -274,18 +277,18 @@ void FixKineticsMonod::monod()
         growthRate = avec->atom_growth[i] * monod;
       }
       //calculate amount of biomass formed
-      growthBac = growthRate * atom->rmass[i];
-     // cout << growthBac << endl;
-      for (int i = 1; i <= nnus; i++) {
-        double consume = metCoeff[t][i] * growthBac;
-       // cout << consume << endl;
-        if(bio->nuType[i] == 0) {
-          //calculate liquid concentrations
-          double sLiq = consume/vol*1000;
-          cout << bio->nuName[i] << vol << endl;
+      growthBac = growthRate * rmass[i];
+
+      for (int j = 1; j <= nnus; j++) {
+        double consume = metCoeff[t][j] * growthBac;
+        if(bio->nuType[j] == 0) {
+          //calculate liquid concentrations, cover m3 to mol
+          double uptake = consume / vol;
+         // cout << bio->nuName[i] << vol << endl;
           //5.0000e-12
-          nuR[i][pos] += sLiq;
+          nuR[j][pos] += uptake;
         }
+ //       cout << j << " "<< pos << " "<< rmass[i] << endl;
 //          else if (atom->nuType[i] == 1) {
 //          // calculate gas partial pressures
 //          double pGas = consume * rg * temp / gvol;
@@ -293,17 +296,26 @@ void FixKineticsMonod::monod()
 //        }
       }
 
-      //update mass and radius
-      if (mask[i] & groupbit) {
-        double value = growthRate * update->dt;
+      density = rmass[i] / (fourThirdsPI * radius[i] * radius[i] * radius[i]);
+     // cout<<"before mass " <<rmass[i] << endl;
+      rmass[i] = rmass[i] * (1 + (growthRate * nevery));
+     // cout<<"after mass "<< std::setprecision(10) << growthRate << endl;
 
-        rmass[i] = rmass[i] * (1 + (value * nevery));
-        density = rmass[i] / (fourThirdsPI * radius[i]*radius[i]*radius[i]);
-        radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
+      //update mass and radius
+      if (mask[i] == avec->maskHET) {
+          outerMass[i] = fourThirdsPI * (outerRadius[i] * outerRadius[i] * outerRadius[i] - radius[i] * radius[i] * radius[i]) * EPSdens
+          + growthRate * nevery * rmass[i];
+
+          outerRadius[i] = pow(threeQuartersPI * (rmass[i] / density + outerMass[i] / EPSdens), third);
+          radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
+      }
+      else if (mask[i] != avec->maskEPS){
+          radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
+          outerMass[i] = 0.0;
+          outerRadius[i] = radius[i];
       }
     }
   }
-
 //  for (int i = 1; i <= nnus; i++) {
 //    cout << bio->nuName[i] << endl;
 //      for (int j = 0; j < ngrids; j++) {
@@ -326,6 +338,7 @@ double FixKineticsMonod::minimal_monod(int pos, int type)
 {
   vector<double> mon;
   int size = 0;
+  double min = 0;
 
   for (int i = 1; i <= nnus; i++ ) {
     if (matConsume[type][i] != 0 && bio->nuType[i] == 0) {
@@ -334,6 +347,9 @@ double FixKineticsMonod::minimal_monod(int pos, int type)
       size++;
     }
   }
-  double min = *min_element(mon.begin(), mon.end());
+
+  if (mon.size() > 0)
+    min = *min_element(mon.begin(), mon.end());
+
   return min;
 }

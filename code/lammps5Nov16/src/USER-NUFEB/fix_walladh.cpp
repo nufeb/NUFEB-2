@@ -170,7 +170,7 @@ void FixWallAhd::post_force(int vflag)
   // if (update->setupflag) shearupdate = 0;
 
   for (int i = 0; i < nlocal; i++) {
-    if (type[i] == 4) {
+    if (atom->mask[i] == avec->maskEPS) {
       epsMass = rmass[i];
     }
     else {

@@ -15,38 +15,38 @@
 // due to OpenMPI bug which sets INT64_MAX via its mpi.h
 //   before lmptype.h can set flags to insure it is done correctly
 
-#include "read_data_bio.h"
-
-#include <ctype.h>
+#include "lmptype.h"
+#include <mpi.h>
+#include <math.h>
 #include <string.h>
-
-#include "angle.h"
-#include "atom.h"
+#include <stdlib.h>
+#include <ctype.h>
+#include "read_data_bio.h"
 #include "atom_vec_bio.h"
-#include "atom_vec_body.h"
+#include "atom.h"
+#include "bio.h"
+#include "atom_vec.h"
 #include "atom_vec_ellipsoid.h"
 #include "atom_vec_line.h"
 #include "atom_vec_tri.h"
-#include "bio.h"
-#include "bond.h"
+#include "force.h"
+#include "molecule.h"
+#include "group.h"
 #include "comm.h"
-#include "dihedral.h"
-#include "domain.h"
-#include "error.h"
+#include "update.h"
+#include "modify.h"
 #include "fix.h"
 #include "force.h"
-#include "group.h"
-#include "improper.h"
-#include "irregular.h"
-#include "lammps.h"
-#include "lmptype.h"
-#include "memory.h"
-#include "modify.h"
-#include "molecule.h"
 #include "pair.h"
+#include "domain.h"
+#include "bond.h"
+#include "angle.h"
+#include "dihedral.h"
+#include "improper.h"
 #include "special.h"
-#include "STUBS/mpi.h"
-#include "update.h"
+#include "irregular.h"
+#include "error.h"
+#include "memory.h"
 
 using namespace LAMMPS_NS;
 
@@ -63,11 +63,11 @@ enum{NONE,APPEND,VALUE,MERGE};
 
 // pair style suffixes to ignore
 // when matching Pair Coeffs comment to currently-defined pair style
-
-const char *suffixes[] = {"/cuda","/gpu","/opt","/omp","/kk",
-                          "/coul/cut","/coul/long","/coul/msm",
-                          "/coul/dsf","/coul/debye","/coul/charmm",
-                          NULL};
+//
+//const char *suffixes[] = {"/cuda","/gpu","/opt","/omp","/kk",
+//                          "/coul/cut","/coul/long","/coul/msm",
+//                          "/coul/dsf","/coul/debye","/coul/charmm",
+//                          NULL};
 
 /* ---------------------------------------------------------------------- */
 
@@ -2053,7 +2053,7 @@ void ReadDataBIO::parse_coeffs(char *line, const char *addstr,
     if (narg == maxarg) {
       maxarg += DELTA;
       arg = (char **)
-        memory->srealloc(arg,maxarg*sizeof(char *),"read_data:arg");
+        memory->srealloc(arg,maxarg*sizeof(char *),"read_data_bio:arg");
     }
     if (addstr && narg == 1 && !islower(word[0])) arg[narg++] = (char *) addstr;
     arg[narg++] = word;
@@ -2082,6 +2082,11 @@ void ReadDataBIO::parse_coeffs(char *line, const char *addstr,
 
 int ReadDataBIO::style_match(const char *one, const char *two)
 {
+  const char *suffixes[] = {"/cuda","/gpu","/opt","/omp","/kk",
+                            "/coul/cut","/coul/long","/coul/msm",
+                            "/coul/dsf","/coul/debye","/coul/charmm",
+                            NULL};
+
   int i,delta,len,len1,len2;
 
   if ((one == NULL) || (two == NULL)) return 1;
@@ -2118,7 +2123,8 @@ void ReadDataBIO::type_coeffs(){
   bio->growth = memory->create(bio->growth,ntypes+1,"bio:growth");
   bio->yield = memory->create(bio->yield,ntypes+1,"bio:yield");
   bio->dissipation = memory->create(bio->dissipation,ntypes+1,"bio:dissipation");
-  bio->typeGCoeff= memory->create(bio->typeGCoeff,ntypes+1, 5, "bio:typeGCoeff");
+  bio->typeGCoeff = memory->create(bio->typeGCoeff,ntypes+1,5,"bio:typeGCoeff");
+  bio->tgflag = memory->create(bio->tgflag,5,"bio:tgflag");
 }
 
 void ReadDataBIO::nutrient_coeffs(){
@@ -2138,7 +2144,7 @@ void ReadDataBIO::nutrient_coeffs(){
   bio->iniS = memory->create(bio->iniS,nnus+1,7,"bio:nuConc");
   bio->nuGCoeff= memory->create(bio->nuGCoeff,nnus+1, 5, "bio:nuG");
   bio->nuType = memory->create(bio->nuType, nnus+1, "bio::nuGCoeff");
-
+  bio->ngflag = memory->create(bio->ngflag,5,"bio:ngflag");
 }
 
 /* ----------------------------------------------------------------------
@@ -2164,7 +2170,7 @@ void ReadDataBIO::nutrients()
   for (i = 0; i < nnus; i++) {
     next = strchr(buf,'\n');
     *next = '\0';
-    parse_coeffs(buf,NULL,0,1,boffset);
+    parse_coeffs(buf,NULL,0,0,boffset);
     bio->data_nutrients(narg,arg);
     buf = next + 1;
   }
@@ -2292,7 +2298,7 @@ void ReadDataBIO::catCoeff()
   for (i = 0; i < atom->ntypes; i++) {
     next = strchr(buf,'\n');
     *next = '\0';
-    parse_coeffs(buf,NULL,0,1,boffset);
+    parse_coeffs(buf,NULL,0,0,boffset);
     bio->set_catCoeff(narg,arg);
     buf = next + 1;
   }
@@ -2314,7 +2320,7 @@ void ReadDataBIO::anabCoeff()
   for (i = 0; i < atom->ntypes; i++) {
     next = strchr(buf,'\n');
     *next = '\0';
-    parse_coeffs(buf,NULL,0,1,boffset);
+    parse_coeffs(buf,NULL,0,0,boffset);
     bio->set_anabCoeff(narg,arg);
     buf = next + 1;
   }
@@ -2336,7 +2342,7 @@ void ReadDataBIO::nuGCoeff()
   for (i = 0; i < bio->nnus; i++) {
     next = strchr(buf,'\n');
     *next = '\0';
-    parse_coeffs(buf,NULL,0,1,boffset);
+    parse_coeffs(buf,NULL,0,0,boffset);
     bio->set_nuGCoeff(narg,arg);
     buf = next + 1;
   }
@@ -2358,7 +2364,7 @@ void ReadDataBIO::typeGCoeff()
   for (i = 0; i < atom->ntypes; i++) {
     next = strchr(buf,'\n');
     *next = '\0';
-    parse_coeffs(buf,NULL,0,1,boffset);
+    parse_coeffs(buf,NULL,0,0,boffset);
     bio->set_typeGCoeff(narg,arg);
     buf = next + 1;
   }
