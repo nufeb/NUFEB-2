@@ -154,7 +154,8 @@ void FixDivide::pre_exchange()
 
   for (i = 0; i < nall; i++) {
     if (atom->mask[i] != avec->maskEPS) {
-      averageMass = 1e-16;
+      //averageMass = 1e-16;
+      averageMass = 2.77e-14;
     } else continue;
 
     if ((atom->mask[i] & groupbit) &&

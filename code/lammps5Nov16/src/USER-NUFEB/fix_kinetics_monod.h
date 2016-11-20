@@ -30,15 +30,16 @@ class FixKineticsMonod : public Fix {
   char **var;
   int *ivar;
 
-  int nnus;                     // # of nutrients
-  int ntypes;                   // # of species
-  int nx, ny, nz;               // number of grids in x y z axis
-  int ngrids;                   //# of grids
+  int nnus;                         // # of nutrients
+  int ntypes;                       // # of species
+  int nx, ny, nz;                   // number of grids in x y z axis
+  int ngrids;                       //# of grids
 
-  double stepx, stepy, stepz;   // grids size
-  double xlo,xhi,ylo,yhi,zlo,zhi;  //simulaton box size
-  double vol, gvol;                //grid volume and gas volume
-  double rg, temp;            //gas transfer constant and temperature
+  double stepx, stepy, stepz;       // grids size
+  double xlo,xhi,ylo,yhi,zlo,zhi;   // simulaton box size
+  double vol, gvol;                 // grid volume and gas volume
+  double rg, temp;                  // gas transfer constant and temperature
+  double EPSdens;                   // EPS density
 
   int **matConsume;                // endergonic components of metabolic matrix
   double **catCoeff;               // catabolism coefficients of species
@@ -46,8 +47,8 @@ class FixKineticsMonod : public Fix {
   double **metCoeff;               // metabolism coefficients of species
   double *yield;                   // yield coefficients
 
-  double **nuS;                    //nutrient concentration for all grids
-  double **nuR;                    //nutrient consumption for all grids
+  double **nuS;                    // nutrient concentration for all grids
+  double **nuR;                    // nutrient consumption for all grids
 
   class AtomVecBio *avec;
   class FixKinetics *kinetics;

@@ -47,6 +47,7 @@ class FixEPSExtract : public Fix {
   int seed;
   char **var;
   int *ivar;
+  int typeEPS;
   tagint maxtag_all;
   double xlo,xhi,ylo,yhi,zlo,zhi;
   void find_maxid();
