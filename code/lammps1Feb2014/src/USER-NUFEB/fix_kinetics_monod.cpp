@@ -272,9 +272,9 @@ void FixKineticsMonod::monod()
       double monod = minMonod[t][pos];
       if (monod < 0) {
         minMonod[t][pos] = minimal_monod(pos, t);
-        growthRate = avec->atom_growth[i] * minMonod[t][pos];
+        growthRate = avec->atom_mu[i] * minMonod[t][pos];
       } else {
-        growthRate = avec->atom_growth[i] * monod;
+        growthRate = avec->atom_mu[i] * monod;
       }
       //calculate amount of biomass formed
       growthBac = growthRate * atom->rmass[i];

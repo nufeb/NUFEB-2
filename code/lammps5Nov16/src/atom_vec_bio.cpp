@@ -43,7 +43,7 @@ AtomVecBio::AtomVecBio(LAMMPS *lmp) : AtomVecSphere(lmp)
   //atom
   outerMass = memory->create(outerMass,nmax,"atom:outerMass");
   outerRadius = memory->create(outerRadius,nmax,"atom:outerRadius");;
-  atom_growth = memory->create(atom_growth,nmax,"atom:atom_growth");
+  atom_mu = memory->create(atom_mu,nmax,"atom:atom_growth");
   typeEPS = 0;
   maskEPS = 0;
   maskHET = 0;
@@ -58,7 +58,7 @@ AtomVecBio::~AtomVecBio()
   delete bio;
   memory->destroy(outerMass);
   memory->destroy(outerRadius);
-  memory->destroy(atom_growth);
+  memory->destroy(atom_mu);
   //memory->destroy(atom->virtualMass);
 }
 
@@ -86,7 +86,7 @@ void AtomVecBio::grow(int n)
   AtomVecSphere::grow(n);
   outerMass = memory->grow(outerMass,nmax,"atom:outerMass");
   outerRadius = memory->grow(outerRadius,nmax,"atom:outerRadius");
-  atom_growth = memory->grow(atom_growth,nmax,"atom:atom_growth");
+  atom_mu = memory->grow(atom_mu,nmax,"atom:atom_growth");
 }
 
 void AtomVecBio::create_atom(int itype, double *coord)
@@ -96,7 +96,7 @@ void AtomVecBio::create_atom(int itype, double *coord)
 
   outerRadius[nlocal] = 0.0;
   outerMass[nlocal] = 0.0;
-  atom_growth[nlocal] = 0.0;
+  atom_mu[nlocal] = 0.0;
 }
 
 
@@ -161,7 +161,7 @@ void AtomVecBio::copy(int i, int j, int delflag)
 {
   outerMass[j] = outerMass[i];
   outerRadius[j] = outerRadius[i];
-  atom_growth[j] = atom_growth[i];
+  atom_mu[j] = atom_mu[i];
 
   AtomVecSphere::copy(i, j, delflag);
 
@@ -173,7 +173,7 @@ bigint AtomVecBio::memory_usage()
 
   if (atom->memcheck("outerMass")) bytes += memory->usage(outerMass,nmax);
   if (atom->memcheck("outerRadius")) bytes += memory->usage(outerRadius,nmax);
-  if (atom->memcheck("atom_growth")) bytes += memory->usage(atom_growth,nmax);
+  if (atom->memcheck("atom_growth")) bytes += memory->usage(atom_mu,nmax);
 
   return bytes;
 }

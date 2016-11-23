@@ -30,6 +30,17 @@ class FixKineticsMonod : public Fix {
   char **var;
   int *ivar;
 
+  double *radius;
+  double *rmass;
+  double *outerMass;
+  double *outerRadius;
+
+  int *mask;
+  int* type;
+  int nlocal;
+  int nall;
+  int diffevery;
+
   int nnus;                         // # of nutrients
   int ntypes;                       // # of species
   int nx, ny, nz;                   // number of grids in x y z axis
@@ -46,17 +57,23 @@ class FixKineticsMonod : public Fix {
   double **anabCoeff;              // anabolism  coefficients of species
   double **metCoeff;               // metabolism coefficients of species
   double *yield;                   // yield coefficients
+  double **minMonod;
 
   double **nuS;                    // nutrient concentration for all grids
   double **nuR;                    // nutrient consumption for all grids
 
+
   class AtomVecBio *avec;
   class FixKinetics *kinetics;
+  class FixDiffusion *diffusion;
   class BIO *bio;
 
   void create_metaMatrix();
   void monod();
   double minimal_monod(int, int);
+  void bio_update(double, int);
+  double growth_rate(int, int);
+  int position(int);
 
 };
 

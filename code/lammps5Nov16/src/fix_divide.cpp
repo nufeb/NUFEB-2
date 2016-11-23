@@ -154,8 +154,8 @@ void FixDivide::pre_exchange()
 
   for (i = 0; i < nall; i++) {
     if (atom->mask[i] != avec->maskEPS) {
-      //averageMass = 1e-16;
-      averageMass = 2.77e-14;
+      averageMass = 2e-16;
+      //averageMass = 2.77e-16;
     } else continue;
 
     if ((atom->mask[i] & groupbit) &&
@@ -289,7 +289,7 @@ void FixDivide::pre_exchange()
 
         atom->radius[n] = childRadius;
         avec->outerRadius[n] = childOuterRadius;
-        avec->atom_growth[n] = bio->growth[atom->type[i]];
+        avec->atom_mu[n] = bio->growth[atom->type[i]];
 
         atom->natoms++;
 
