@@ -34,6 +34,7 @@
 #include "domain.h"
 #include "error.h"
 #include "fix_kinetics.h"
+#include "fix_diffusion.h"
 #include "force.h"
 #include "input.h"
 #include "lammps.h"
@@ -59,21 +60,24 @@ FixKineticsMonod::FixKineticsMonod(LAMMPS *lmp, int narg, char **arg) : Fix(lmp,
   avec = (AtomVecBio *) atom->style_match("bio");
   if (!avec) error->all(FLERR,"Fix kinetics requires atom style bio");
 
-  if (narg != 7) error->all(FLERR,"Not enough arguments in fix kinetics/monod command");
+  if (narg != 8) error->all(FLERR,"Not enough arguments in fix kinetics/monod command");
 
   nevery = force->inumeric(FLERR,arg[3]);
+  if (nevery < 0) error->all(FLERR,"Illegal fix kinetics/monod command");
+  diffevery = force->inumeric(FLERR,arg[4]);
   if (nevery < 0) error->all(FLERR,"Illegal fix kinetics/monod command");
 
   var = new char*[3];
   ivar = new int[3];
 
   for (int i = 0; i < 3; i++) {
-    int n = strlen(&arg[4+i][2]) + 1;
+    int n = strlen(&arg[5+i][2]) + 1;
     var[i] = new char[n];
-    strcpy(var[i],&arg[4+i][2]);
+    strcpy(var[i],&arg[5+i][2]);
   }
 
   kinetics = NULL;
+  diffusion = NULL;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -86,6 +90,11 @@ FixKineticsMonod::~FixKineticsMonod()
   }
   delete [] var;
   delete [] ivar;
+
+  for (int i = 0; i <= ntypes; i++) {
+    delete [] minMonod[i];
+  }
+  delete [] minMonod;
 
   memory->destroy(matConsume);
 }
@@ -119,12 +128,16 @@ void FixKineticsMonod::init()
   for (int j = 0; j < nfix; j++) {
     if (strcmp(modify->fix[j]->style,"kinetics") == 0) {
       kinetics = static_cast<FixKinetics *>(lmp->modify->fix[j]);
-      break;
+    } else if (strcmp(modify->fix[j]->style,"diffusion") == 0) {
+      diffusion = static_cast<FixDiffusion *>(lmp->modify->fix[j]);
     }
   }
 
   if (kinetics == NULL)
     lmp->error->all(FLERR,"The fix kinetics command is required for running iBM simulation");
+
+  if (diffevery > 0 && diffusion == NULL)
+    lmp->error->all(FLERR,"The fix diffusion command is required");
 
   bio = kinetics->bio;
   ntypes = atom->ntypes;
@@ -144,6 +157,7 @@ void FixKineticsMonod::init()
   yield = bio->yield;
 
   metCoeff = kinetics->metCoeff;
+  minMonod = new double*[ntypes+1];
 
   create_metaMatrix();
 
@@ -217,25 +231,18 @@ void FixKineticsMonod::pre_force(int vflag)
 ------------------------------------------------------------------------- */
 void FixKineticsMonod::monod()
 {
-  int *mask = atom->mask;
-  int nlocal = atom->nlocal;
-  int nall = nlocal + atom->nghost;
-  int* type = atom->type;
+  mask = atom->mask;
+  nlocal = atom->nlocal;
+  nall = nlocal + atom->nghost;
+  type = atom->type;
+
+  radius = atom->radius;
+  rmass = atom->rmass;
+  outerMass = avec->outerMass;
+  outerRadius = avec->outerRadius;
 
   nuS = kinetics->nuS;
   nuR = kinetics->nuR;
-
-  double *radius = atom->radius;
-  double *rmass = atom->rmass;
-  double *outerMass = avec->outerMass;
-  double *outerRadius = avec->outerRadius;
-
-  double** minMonod = new double*[ntypes+1];
-
-  double density;
-  const double threeQuartersPI = (3.0/(4.0*MY_PI));
-  const double fourThirdsPI = 4.0*MY_PI/3.0;
-  const double third = 1.0/3.0;
 
   //initialization
   for (int i = 0; i <= ntypes; i++) {
@@ -245,89 +252,85 @@ void FixKineticsMonod::monod()
     }
   }
 
-  for (int i = 0; i <= nnus; i++) {
-    for (int j = 0; j < ngrids; j++) {
-      nuR[i][j] = 0;
+  if(diffevery != 0 && !(update->ntimestep % diffevery)) {
+    //initialize consumption
+    for (int i = 0; i <= nnus; i++) {
+      for (int j = 0; j < ngrids; j++) {
+        nuR[i][j] = 0;
+      }
     }
-  }
 
-  //Metabolism
-  for (int i = 0; i < nall; i++) {
-    if (mask[i] & groupbit) {
-      //cout << "mask" << mask[i] << endl;
-      double growthRate = 0.0;
-      double growthBac = 0.0;
-      // get index of grid containing i
-      int xpos = (atom->x[i][0] - xlo) / stepx + 1;
-      int ypos = (atom->x[i][1] - ylo) / stepy + 1;
-      int zpos = (atom->x[i][2] - zlo) / stepz + 1;
-      int pos = (xpos - 1) + (ypos - 1) * ny + (zpos - 1) * (nx * ny);
+    //get nutrient consumption
+    for (int i = 0; i < nall; i++) {
+      if (mask[i] & groupbit) {
+        int t = type[i];
+        int pos = position(i);
+        double growthRate = growth_rate(i, pos);
+        //update bacteria mass, radius etc
 
-      if (pos >= ngrids) {
-         printf("Too big! pos=%d   size = %i\n", pos, ngrids);
-      }
-
-      //calculate growth rate using minimum monod
-      int t = type[i];
-      double monod = minMonod[t][pos];
-      if (monod < 0) {
-        minMonod[t][pos] = minimal_monod(pos, t);
-        growthRate = avec->atom_growth[i] * minMonod[t][pos];
-      } else {
-        growthRate = avec->atom_growth[i] * monod;
-      }
-      //calculate amount of biomass formed
-      growthBac = growthRate * rmass[i];
-
-      for (int j = 1; j <= nnus; j++) {
-        double consume = metCoeff[t][j] * growthBac;
-        if(bio->nuType[j] == 0) {
-          //calculate liquid concentrations, cover m3 to mol
-          double uptake = consume / vol;
-         // cout << bio->nuName[i] << vol << endl;
-          //5.0000e-12
-          nuR[j][pos] += uptake;
+        for (int j = 1; j <= nnus; j++) {
+          double consume = metCoeff[t][j] * growthRate * rmass[i];
+          if(bio->nuType[j] == 0) {
+            //calculate liquid concentrations
+            double uptake = consume / vol;
+            nuR[j][pos] += uptake;
+          }
         }
- //       cout << j << " "<< pos << " "<< rmass[i] << endl;
-//          else if (atom->nuType[i] == 1) {
-//          // calculate gas partial pressures
-//          double pGas = consume * rg * temp / gvol;
-//          nuR[i][pos] += pGas;
-//        }
       }
+    }
 
-      density = rmass[i] / (fourThirdsPI * radius[i] * radius[i] * radius[i]);
-     // cout<<"before mass " <<rmass[i] << endl;
-      rmass[i] = rmass[i] * (1 + (growthRate * nevery));
-     // cout<<"after mass "<< std::setprecision(10) << growthRate << endl;
+    //solve diffusion
+    diffusion->diffusion();
 
-      //update mass and radius
-      if (mask[i] == avec->maskHET) {
-          outerMass[i] = fourThirdsPI * (outerRadius[i] * outerRadius[i] * outerRadius[i] - radius[i] * radius[i] * radius[i]) * EPSdens
-          + growthRate * nevery * rmass[i];
-
-          outerRadius[i] = pow(threeQuartersPI * (rmass[i] / density + outerMass[i] / EPSdens), third);
-          radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
-      }
-      else if (mask[i] != avec->maskEPS){
-          radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
-          outerMass[i] = 0.0;
-          outerRadius[i] = radius[i];
+    for (int i = 0; i < nall; i++) {
+      int pos = position(i);
+      //get new growth rate based on new nutrients
+      double growthRate = growth_rate(i, pos) * update->dt;
+      //update bacteria mass, radius etc
+      bio_update(growthRate, i);
+    }
+  } else {
+    for (int i = 0; i < nall; i++) {
+      if (mask[i] & groupbit) {
+        int pos = position(i);
+        double growthRate = growth_rate(i, pos) * update->dt;
+        //update bacteria mass, radius etc
+        bio_update(growthRate, i);
       }
     }
   }
-//  for (int i = 1; i <= nnus; i++) {
-//    cout << bio->nuName[i] << endl;
-//      for (int j = 0; j < ngrids; j++) {
-//          cout << nuR[i][j] << " ";
-//      }
-//    cout << endl;
-//  }
+}
 
-  for (int i = 0; i <= ntypes; i++) {
-    delete [] minMonod[i];
+int FixKineticsMonod::position(int i) {
+
+  // get index of grid containing i
+  int xpos = (atom->x[i][0] - xlo) / stepx + 1;
+  int ypos = (atom->x[i][1] - ylo) / stepy + 1;
+  int zpos = (atom->x[i][2] - zlo) / stepz + 1;
+  int pos = (xpos - 1) + (ypos - 1) * ny + (zpos - 1) * (nx * ny);
+
+  if (pos >= ngrids) {
+     printf("Too big! pos=%d   size = %i\n", pos, ngrids);
   }
-  delete [] minMonod;
+
+  return pos;
+}
+
+double FixKineticsMonod::growth_rate(int i, int pos) {
+
+  //calculate growth rate using minimum monod
+  int t = type[i];
+  double growthRate = 0.0;
+
+  double monod = minMonod[t][pos];
+  if (monod < 0) {
+    minMonod[t][pos] = minimal_monod(pos, t);
+    growthRate = avec->atom_mu[i] * minMonod[t][pos];
+  } else {
+    growthRate = avec->atom_mu[i] * monod;
+  }
+
+  return growthRate;
 }
 
 /* ----------------------------------------------------------------------
@@ -352,4 +355,30 @@ double FixKineticsMonod::minimal_monod(int pos, int type)
     min = *min_element(mon.begin(), mon.end());
 
   return min;
+}
+
+void FixKineticsMonod::bio_update(double growthRate, int i)
+{
+  double density;
+  const double threeQuartersPI = (3.0/(4.0*MY_PI));
+  const double fourThirdsPI = 4.0*MY_PI/3.0;
+  const double third = 1.0/3.0;
+
+  density = rmass[i] / (fourThirdsPI * radius[i] * radius[i] * radius[i]);
+  rmass[i] = rmass[i] * (1 + (growthRate * nevery));
+ // cout<<"before mass " <<growthRate << endl;
+
+  //update mass and radius
+  if (mask[i] == avec->maskHET) {
+      outerMass[i] = fourThirdsPI * (outerRadius[i] * outerRadius[i] * outerRadius[i] - radius[i] * radius[i] * radius[i]) * EPSdens
+      + growthRate * nevery * rmass[i];
+
+      outerRadius[i] = pow(threeQuartersPI * (rmass[i] / density + outerMass[i] / EPSdens), third);
+      radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
+  }
+  else if (mask[i] != avec->maskEPS){
+      radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
+      outerMass[i] = 0.0;
+      outerRadius[i] = radius[i];
+  }
 }

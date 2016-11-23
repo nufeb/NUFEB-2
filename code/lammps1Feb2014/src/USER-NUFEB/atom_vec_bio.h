@@ -30,7 +30,7 @@ class AtomVecBio : public AtomVecSphere {
   //atom
   double *outerRadius;     //atom outer radius
   double *outerMass;       //atom outer mass
-  double *atom_growth;     //atom maximum growth rate
+  double *atom_mu;     //atom maximum growth rate
   //double *virtualMass;
 
   class BIO *bio;

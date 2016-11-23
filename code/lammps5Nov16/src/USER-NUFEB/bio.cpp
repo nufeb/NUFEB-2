@@ -168,7 +168,7 @@ void BIO::set_growth(const char *str)
   //set growth rate for each atom
   for (int i = 0; i < atom->nlocal; i++) {
     if (atom->type[i] == itype)
-      avec->atom_growth[i] = growth[itype];
+      avec->atom_mu[i] = growth[itype];
   }
 }
 /* ----------------------------------------------------------------------

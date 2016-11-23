@@ -289,7 +289,7 @@ void FixDivide::pre_exchange()
 
         atom->radius[n] = childRadius;
         avec->outerRadius[n] = childOuterRadius;
-        avec->atom_growth[n] = bio->growth[atom->type[i]];
+        avec->atom_mu[n] = bio->growth[atom->type[i]];
 
         atom->natoms++;
 
