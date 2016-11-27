@@ -248,7 +248,7 @@ void FixKineticsThermo::output_data(){
   double stepz = (zhi - zlo) / nz;
 
   for (int j = 1; j <= ntypes; j++) {
-      fprintf(pFile, "%f\n", DRGCat[1][i]);
+      fprintf(pFile, "%f\n", DRGCat[1][j]);
   }
 
   fclose(pFile);
