@@ -248,6 +248,8 @@ void FixKineticsMonod::monod()
 
   nuS = kinetics->nuS;
   nuR = kinetics->nuR;
+//  double agr = 0;
+ // double ar = 0;
 
   //initialization
   for (int i = 0; i <= ntypes; i++) {
@@ -271,25 +273,26 @@ void FixKineticsMonod::monod()
         int pos = position(i);
         double growthRate = growth_rate(i, pos);
         //update bacteria mass, radius etc
-
         for (int j = 1; j <= nnus; j++) {
           double consume = metCoeff[t][j] * growthRate * rmass[i];
           if(bio->nuType[j] == 0) {
             //calculate liquid concentrations
             double uptake = consume / vol;
             nuR[j][pos] += uptake;
+           // ar += uptake;
           }
         }
       }
     }
-
+    //printf("Average R = %e \n", ar/ngrids);
     //solve diffusion
-    diffusion->diffusion(19000);
+    diffusion->diffusion(0);
 
     for (int i = 0; i < nall; i++) {
       int pos = position(i);
       //get new growth rate based on new nutrients
       double growthRate = growth_rate(i, pos) * update->dt;
+      //agr = agr + growthRate;
       //update bacteria mass, radius etc
       bio_update(growthRate, i);
     }
@@ -298,11 +301,14 @@ void FixKineticsMonod::monod()
       if (mask[i] & groupbit) {
         int pos = position(i);
         double growthRate = growth_rate(i, pos) * update->dt;
+       // agr = agr + growthRate;
         //update bacteria mass, radius etc
         bio_update(growthRate, i);
       }
     }
   }
+
+  //if(!(update->ntimestep % 1000)) printf("Average growth rate = %e \n", agr/nall);
 }
 
 int FixKineticsMonod::position(int i) {
