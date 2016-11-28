@@ -279,7 +279,7 @@ SparseMatrix<double> FixDiffusion::spdiags(MatrixXi& B, VectorXi& d, int m, int 
   solve diffusion equations and metabolism
 ------------------------------------------------------------------------- */
 
-void FixDiffusion::diffusion()
+void FixDiffusion::diffusion(int t)
 {
   bool convergence = false;
   int iteration = 0;
@@ -367,6 +367,7 @@ void FixDiffusion::diffusion()
     Map<MatrixXd>(nuS[i], vecS[i].rows(), vecS[i].cols()) =  vecS[i];
   }
 
+  output_data(t);
   //test();
   delete [] isConv;
   delete [] vecS;
@@ -391,7 +392,7 @@ VectorXd FixDiffusion::bc_vec(VectorXd& S, double h)
 
       i_m = k-1 ;
       i_p = k+nx-2;
-      //cout << i_m << " ip " << h << endl;
+      //cout << i_m << " ip " << i_p << endl;
       if (xbcflag == 0) {
         B(i_m) = B(i_m)+S(i_p); //BOTTOM, X_MINUS
         B(i_p) = B(i_p)+S(i_m); //TOP, X_PLUS
@@ -492,7 +493,10 @@ bool FixDiffusion::isEuqal(double a, double b, double c)
   output nutrient concentrations to data file
 ------------------------------------------------------------------------- */
 
-void FixDiffusion::output_data(){
+void FixDiffusion::output_data(int t){
+  if (t == 0 || update->ntimestep % t)
+    return;
+
   FILE* pFile;
   string str = "concentration";
   pFile = fopen (str.c_str(), "w");

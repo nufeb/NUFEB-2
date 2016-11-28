@@ -980,8 +980,11 @@ void Thermo::parse_fields(char *str)
       }
 
       delete [] id;
-
-    } else error->all(FLERR,"Unknown keyword in thermo_style custom command");
+      //nufeb package
+    } else if (strcmp(word,"biomass") == 0) {
+      addfield("biomass",&Thermo::compute_biomass,FLOAT);
+    }
+    else error->all(FLERR,"Unknown keyword in thermo_style custom command");
 
     word = strtok(NULL," \0");
   }
@@ -2179,3 +2182,17 @@ void Thermo::compute_cellgamma()
   }
 }
 
+/* ---------------------------------------------------------------------- */
+
+void Thermo::compute_biomass()
+{
+  double *rmass = atom->rmass;
+  int nlocal = atom->nlocal;
+
+  double dot = 0.0;
+  for (int i = 0; i < nlocal; i++)
+    dot += rmass[i];
+  double dotall;
+  MPI_Allreduce(&dot,&dotall,1,MPI_DOUBLE,MPI_SUM,world);
+  dvalue = dotall;
+}
