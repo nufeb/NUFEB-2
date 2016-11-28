@@ -159,6 +159,11 @@ void FixKineticsMonod::init()
   metCoeff = kinetics->metCoeff;
   minMonod = new double*[ntypes+1];
 
+  //initialization
+  for (int i = 0; i <= ntypes; i++) {
+    minMonod[i] = new double[ngrids];
+  }
+
   create_metaMatrix();
 
   //Get computational domain size
@@ -246,7 +251,6 @@ void FixKineticsMonod::monod()
 
   //initialization
   for (int i = 0; i <= ntypes; i++) {
-    minMonod[i] = new double[ngrids];
     for (int j = 0; j < ngrids; j++) {
       minMonod[i][j] = -1;
     }
@@ -280,7 +284,7 @@ void FixKineticsMonod::monod()
     }
 
     //solve diffusion
-    diffusion->diffusion();
+    diffusion->diffusion(19000);
 
     for (int i = 0; i < nall; i++) {
       int pos = position(i);
