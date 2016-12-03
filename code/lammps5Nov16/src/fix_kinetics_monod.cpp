@@ -286,7 +286,7 @@ void FixKineticsMonod::monod()
     }
     //printf("Average R = %e \n", ar/ngrids);
     //solve diffusion
-    diffusion->diffusion(0);
+    diffusion->diffusion(21600);
 
     for (int i = 0; i < nall; i++) {
       int pos = position(i);
