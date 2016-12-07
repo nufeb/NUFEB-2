@@ -286,7 +286,7 @@ void FixKineticsMonod::monod()
     }
     //printf("Average R = %e \n", ar/ngrids);
     //solve diffusion
-    diffusion->diffusion(21600);
+    diffusion->diffusion(0);
 
     for (int i = 0; i < nall; i++) {
       int pos = position(i);
@@ -307,7 +307,6 @@ void FixKineticsMonod::monod()
       }
     }
   }
-
   //if(!(update->ntimestep % 1000)) printf("Average growth rate = %e \n", agr/nall);
 }
 

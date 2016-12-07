@@ -2120,7 +2120,7 @@ void ReadDataBIO::type_coeffs(){
 
   //atom->virtualMass = memory->create(atom->virtualMass,ntypes+1,"atom:virtualMass");
   bio->ks = memory->create(bio->ks,ntypes+1,"atom:ks");
-  bio->growth = memory->create(bio->growth,ntypes+1,"bio:growth");
+  bio->mu = memory->create(bio->mu,ntypes+1,"bio:growth");
   bio->yield = memory->create(bio->yield,ntypes+1,"bio:yield");
   bio->dissipation = memory->create(bio->dissipation,ntypes+1,"bio:dissipation");
   bio->typeGCoeff = memory->create(bio->typeGCoeff,ntypes+1,5,"bio:typeGCoeff");

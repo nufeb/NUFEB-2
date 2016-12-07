@@ -24,7 +24,7 @@ BIO::BIO(LAMMPS *lmp) : Pointers(lmp)
 {
   //type
   yield = NULL;
-  growth = NULL;
+  mu = NULL;
   ks = NULL;
   typeName = NULL;
   anabCoeff = NULL;
@@ -48,7 +48,7 @@ BIO::BIO(LAMMPS *lmp) : Pointers(lmp)
 BIO::~BIO()
 {
   memory->destroy(yield);
-  memory->destroy(growth);
+  memory->destroy(mu);
   memory->destroy(ks);
   memory->destroy(anabCoeff);
   memory->destroy(catCoeff);
@@ -143,7 +143,7 @@ void BIO::data_nutrients(int narg, char **arg)
 
 void BIO::set_growth(const char *str)
 {
-  if (growth == NULL) error->all(FLERR,"Cannot set growth for this atom style");
+  if (mu == NULL) error->all(FLERR,"Cannot set growth for this atom style");
 
   char* typeName;
   double growth_one;
@@ -160,15 +160,15 @@ void BIO::set_growth(const char *str)
   if (itype < 1 || itype > atom->ntypes)
     error->all(FLERR,"Invalid type for growth set");
 
-  growth[itype] = growth_one;
+  mu[itype] = growth_one;
 
-  if (growth[itype] < 0.0) error->all(FLERR,"Invalid growth value");
+  if (mu[itype] < 0.0) error->all(FLERR,"Invalid growth value");
 
   AtomVecBio* avec = (AtomVecBio *) atom->style_match("bio");
   //set growth rate for each atom
   for (int i = 0; i < atom->nlocal; i++) {
     if (atom->type[i] == itype)
-      avec->atom_mu[i] = growth[itype];
+      avec->atom_mu[i] = mu[itype];
   }
 }
 /* ----------------------------------------------------------------------
