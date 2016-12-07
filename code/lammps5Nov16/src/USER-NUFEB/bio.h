@@ -18,7 +18,7 @@ class BIO : protected Pointers {
   char **typeName;            // type name
 
   double *ks;                 // half-saturation constant
-  double *growth;             // maximum species growth rate
+  double *mu;             // maximum species growth rate
   double *yield;              // growth yield coefficient
   double *dissipation;        // universal gas constant (thermodynamics)
 

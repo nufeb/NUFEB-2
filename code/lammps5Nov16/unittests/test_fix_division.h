@@ -11,16 +11,15 @@
 #include "atom_vec.h"
 #include "comm.h"
 #include "input.h"
-#include "integrate.h"
-#include "domain.h"
-#include "force.h"
-#include "update.h"
 #include "mpi.h"
+#include "atom_vec_bio.h"
+#include <string>
+#include <sstream>
 
-class FixDivisionTest{
+class FixEPSExtractTest{
 protected:
-  FixDivisionTest();
-  virtual ~FixDivisionTest();
+  FixEPSExtractTest();
+  virtual ~FixEPSExtractTest();
   virtual void SetUp();
   virtual void TearDown();
 };

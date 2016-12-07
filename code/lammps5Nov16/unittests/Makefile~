@@ -6,10 +6,10 @@ SHELL = /bin/sh
 # compiler/linker settings
 # specify flags and libraries needed for your compiler
 
-CC =		g++
+CC =		g++ -std=c++0x
 CCFLAGS =	-O 
 # ALl tests to be produced
-TESTS = 	test_fix_division
+TESTS = 	test_fix_division test_read_data test_fix_kinetics_monod test_fix_eps_extract test_fix_diffusion
 LAMMPS = 	../src
 USER_DIR = ..
 LINKFLAGS =	-o
@@ -17,7 +17,7 @@ LIB =           -llammps_serial_nufeb
 # Link to library and Stubs
 STUBS = 	../src/STUBS
 MPI = 		${STUBS}/libmpi_stubs.a
-
+EIGEN =		../lib/nufeb/includelink
 
 # ---------------------------------------------------------------------
 # LAMMPS-specific settings
@@ -57,7 +57,7 @@ JPG_LIB =	-ljpeg
 # GOOGLE TEST
 #----------------------------------------------------------------------
 # Google Test root dir
-GTEST_DIR = /GTest/googletest
+GTEST_DIR = ../unittests/GTest/googletest
 
 # Google Test preprocessor flags
 GTEST = $(GTEST_DIR)/include
@@ -74,6 +74,10 @@ GTEST_HEADERS = $(GTEST_DIR)/include/gtest/*.h \
 all: ${TESTS}
 
 test_fix_division: test_fix_division.o
+test_read_data: test_read_data.o
+test_fix_kinetics_monod: test_fix_kinetics_monod.o
+test_fix_eps_extract: test_fix_eps_extract.o
+test_fix_diffusion: test_fix_diffusion.o
 
 cleanAll:
 	rm -rf ${TESTS} gtest.a gtest_main.a *.o 
@@ -82,7 +86,7 @@ cleanAll:
 # gtest_main.a, depending on whether it defines its own main()
 # function.
 
-EXTRA_LIBS = -I${GTEST} -I${STUBS} -I${LAMMPS}
+EXTRA_LIBS = -I${GTEST} -I${STUBS} -I${LAMMPS} -I${EIGEN}
 
 # Create Object File
 
