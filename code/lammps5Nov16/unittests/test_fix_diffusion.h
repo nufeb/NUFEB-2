@@ -1,5 +1,5 @@
-#ifndef FIX_KINETICS_MONOD_TEST_H
-#define FIX_KINETICS_MONOD_TEST_H
+#ifndef FIX_DIFFUSION_TEST_H
+#define FIX_DIFFUSION_TEST_H
 
 #include "gtest/gtest.h"
 #include <iostream>
@@ -10,7 +10,6 @@
 #include "lammps.h"
 #include "atom_vec.h"
 #include "fix_kinetics.h"
-#include "fix_diffusion.h"
 #include "bio.h"
 #include "comm.h"
 #include "input.h"

@@ -6,6 +6,8 @@ sky z
 right 0.24*x*image_width/image_height
 up 0.24*y
 look_at <0, 0, 0>
+look_at 0
+rotate <0, 0, 56*10>
 }
 // Create simualtion box
 #declare b_x=0.05;

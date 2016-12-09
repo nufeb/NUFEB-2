@@ -48,7 +48,6 @@ namespace {
     AtomVecBio *avec;
   };
 
-  // Check for case with to high a value of bcoeff_narg
  TEST_F(ReadDataTest, Coeff_Atom) {
    EXPECT_DOUBLE_EQ(5e-7, avec->outerRadius[0]);
    EXPECT_NEAR(1.37e-17, avec->outerMass[0], 1e-18);
@@ -56,7 +55,6 @@ namespace {
    EXPECT_NEAR(9.81e-18, lmp->atom->rmass[0], 1e-19);
  }
 
- // Check for case with to high a value of bcoeff_narg
   TEST_F(ReadDataTest, Coeff_Type) {
     EXPECT_STREQ("het", avec->bio->typeName[1]);
     EXPECT_DOUBLE_EQ(0.000069444, avec->bio->mu[1]);
@@ -71,12 +69,15 @@ namespace {
     EXPECT_DOUBLE_EQ(1.5, avec->bio->anabCoeff[1][2]);
   }
 
-  // Check for case with to high a value of bcoeff_narg
    TEST_F(ReadDataTest, Coeff_Nutrient) {
+     EXPECT_TRUE(avec->bio->nnus == 2);
+
      EXPECT_STREQ("cod", avec->bio->nuName[1]);
      EXPECT_TRUE(avec->bio->nuType[1] == 0);
-     EXPECT_TRUE(avec->bio->nnus == 2);
      EXPECT_DOUBLE_EQ(1e-9, avec->bio->diffCoeff[1]);
+
+     EXPECT_STREQ("ac", avec->bio->nuName[2]);
+     EXPECT_TRUE(avec->bio->nuType[2] == 1);
    }
 }
 

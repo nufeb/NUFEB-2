@@ -2,7 +2,7 @@
 
        1 atoms 
        1 atom types 
-       1 nutrients
+       2 nutrients
 
    0.0   1e-04  xlo xhi 
    0.0   1e-04  ylo yhi 
@@ -15,10 +15,12 @@
  Nutrients
 
      1 cod l 0.02 0.03 0.03 0.03 0.03 0.03 0.03
+     2 ac g 0.02 0.03 0.03 0.03 0.03 0.03 0.03
 
  Diffusion Coeffs
      
      cod 1e-9
+     ac 0
 
  Ks
      
@@ -34,8 +36,8 @@
   
  Catabolism Coeffs
          
-    het -1
+    het -1 0
 
  Anabolism Coeffs
           
-    het 0 
+    het 0 1.5

@@ -35,7 +35,7 @@ namespace {
       lmp->input->one("atom_style bio");
       // Modify atom_style parameters
       lmp->input->one("atom_modify map array sort 1000 5.0e-7");
-      lmp->input->one("read_data_bio inputs/kinetics.in");
+      lmp->input->one("read_data_bio inputs/monod.in");
       // Create group
       lmp->input->one("group HET type 1");
       // Define variables
@@ -57,7 +57,9 @@ namespace {
     FixKinetics *kinetics;
   };
 
-
+  /*
+   *  Check for new mass/radius after non-diffusion growth
+   */
  TEST_F(FixKineticsMonodTest, No_Diffusion_1step) {
    lmp->input->one("timestep 36000");
    lmp->input->one("fix k1 all kinetics 1 1 1 v_temp");
@@ -76,7 +78,9 @@ namespace {
    EXPECT_NEAR(8.70e-07, avec->outerRadius[0], 1e-9);
  }
 
-
+ /*
+  *  Check for new mass/radius after diffusion growth
+  */
  TEST_F(FixKineticsMonodTest, Diffusion_1step_Consumption) {
    TearDown();
    SetUp();

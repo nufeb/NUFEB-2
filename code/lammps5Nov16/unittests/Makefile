@@ -9,7 +9,7 @@ SHELL = /bin/sh
 CC =		g++ -std=c++0x
 CCFLAGS =	-O -g
 # ALl tests to be produced
-TESTS = 	test_fix_division test_read_data test_fix_kinetics_monod test_fix_eps_extract test_fix_diffusion
+TESTS = 	test_fix_division test_read_data test_fix_kinetics_monod test_fix_eps_extract test_fix_diffusion test_fix_epsadh
 LAMMPS = 	../src
 USER_DIR = ..
 LINKFLAGS =	-o
@@ -17,7 +17,6 @@ LIB =           -llammps_serial_nufeb
 # Link to library and Stubs
 STUBS = 	../src/STUBS
 MPI = 		${STUBS}/libmpi_stubs.a
-EIGEN =		../lib/nufeb/includelink
 
 # ---------------------------------------------------------------------
 # LAMMPS-specific settings
@@ -78,6 +77,7 @@ test_read_data: test_read_data.o
 test_fix_kinetics_monod: test_fix_kinetics_monod.o
 test_fix_eps_extract: test_fix_eps_extract.o
 test_fix_diffusion: test_fix_diffusion.o
+test_fix_epsadh: test_fix_epsadh.o
 
 cleanAll:
 	rm -rf ${TESTS} gtest.a gtest_main.a *.o 
@@ -86,7 +86,7 @@ cleanAll:
 # gtest_main.a, depending on whether it defines its own main()
 # function.
 
-EXTRA_LIBS = -I${GTEST} -I${STUBS} -I${LAMMPS} -I${EIGEN}
+EXTRA_LIBS = -I${GTEST} -I${STUBS} -I${LAMMPS}
 
 # Create Object File
 

@@ -53,11 +53,17 @@ class FixKineticsThermo : public Fix {
   double **nuG;                    //nutrient energy for all grids
   double **dG0;
 
+  double **DRGCat;                // Gibbs free energy of catabolism [type][grid]
+  double **DRGAn;                 // Gibbs free energy of anabolism [type][grid]
+
+  FILE *pFile;
+
   class FixKinetics *kinetics;
   class BIO *bio;
 
   void thermo();
   void init_dG0();
+  void output_data();
 };
 
 }

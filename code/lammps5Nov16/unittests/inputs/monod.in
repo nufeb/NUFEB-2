@@ -1,0 +1,43 @@
+  Granular Flow Simulation 
+
+       1 atoms 
+       1 atom types 
+       2 nutrients
+
+   0.0   1e-04  xlo xhi 
+   0.0   1e-04  ylo yhi 
+   0.0   1e-04  zlo zhi 
+
+ Atoms
+
+     1 1 5e-7 150 5e-5 5e-5 5e-5 10e-7 het
+
+ Nutrients
+
+     1 cod l 0.02 0.03 0.03 0.03 0.03 0.03 0.03
+     2 o2 g 0.01 0.02 0.03 0.04 0.05 0.06 0.07
+
+ Diffusion Coeffs
+     
+     cod 1e-9
+     o2 0
+
+ Ks
+     
+     het 4e-3
+
+ Growth
+
+     het 0.000069444
+
+ Yield
+    
+     het 0.63
+  
+ Catabolism Coeffs
+         
+    het -1 0
+
+ Anabolism Coeffs
+          
+    het 0 1.5	
