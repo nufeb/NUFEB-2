@@ -1,0 +1,6 @@
+DEPENDENCIES = \
+lammpsFoam.dep\
+softParticle.dep\
+softParticleIO.dep\
+softParticleCloud.dep\
+enhancedCloud.dep

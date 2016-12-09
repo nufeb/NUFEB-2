@@ -1,6 +1,0 @@
-LOCAL_OBJECTS = \
-lammpsFoam.o\
-softParticle.o\
-softParticleIO.o\
-softParticleCloud.o\
-enhancedCloud.o

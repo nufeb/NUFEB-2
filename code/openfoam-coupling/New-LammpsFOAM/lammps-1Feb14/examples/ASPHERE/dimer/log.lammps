@@ -1,0 +1,73 @@
+LAMMPS (1 Feb 2014)
+# SRD diffusion demo - dimer particles
+
+units		lj
+atom_style	sphere
+atom_modify	map array first big
+dimension	2
+
+# read in clusters of rigid bodies
+
+fix             molprop all property/atom mol
+read_data	data.dimer fix molprop NULL Molecules
+  orthogonal box = (-9.34165 -9.34165 -0.5) to (9.34165 9.34165 0.5)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+  200 atoms
+
+set		type 1 mass 1.0
+  200 settings made for mass
+group		big type 1
+200 atoms in group big
+velocity	big create 1.44 87287 loop geom
+
+# equilibrate big particles
+
+pair_style	soft 1.12
+pair_coeff	1 1 0.0
+pair_coeff	2 2 0.0 0.0
+pair_coeff	1 2 0.0 0.0
+
+variable        prefactor equal ramp(0,60)
+fix             soft all adapt 1 pair soft a * * v_prefactor
+
+fix		1 big rigid molecule
+100 rigid bodies with 200 atoms
+fix		2 all enforce2d
+
+#dump		1 all atom 10 dump.dimer.equil
+
+thermo		100
+run		1000
+Memory usage per processor = 2.69489 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+       0    3.4028231            0            0   0.83369167  -0.55065517 
+     100    9.5167872     2.392105            0    4.7237178    2.8319556 
+     200    13.564465    3.0352634            0    6.3585572    3.6388732 
+     300    13.133051    4.3835112            0    7.6011086     4.060051 
+     400    14.584346    5.5141254            0    9.0872901    4.4231056 
+     500    15.331515    6.6554832            0    10.411704     4.847642 
+     600    16.953755    7.4794317            0    11.633102    5.2020696 
+     700    16.503256    8.8572339            0    12.900532    5.6694613 
+     800    17.006131     9.877343            0    14.043845    5.5483363 
+     900    17.305927    11.081594            0    15.321546    6.2908201 
+    1000     18.12249    12.126462            0    16.566472    5.7536056 
+Loop time of 0.0666709 on 1 procs for 1000 steps with 200 atoms
+
+Pair  time (%) = 0.0176787 (26.5164)
+Neigh time (%) = 0.00369525 (5.54252)
+Comm  time (%) = 0.00185156 (2.77716)
+Outpt time (%) = 0.000205755 (0.308613)
+Other time (%) = 0.0432396 (64.8553)
+
+Nlocal:    200 ave 200 max 200 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    67 ave 67 max 67 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    265 ave 265 max 265 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 265
+Ave neighs/atom = 1.325
+Neighbor list builds = 99
+Dangerous builds = 96

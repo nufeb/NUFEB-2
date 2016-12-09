@@ -1,0 +1,6 @@
+OBJECTS = \
+$(OBJECTS_DIR)/lammpsFoam.o\
+$(OBJECTS_DIR)/softParticle.o\
+$(OBJECTS_DIR)/softParticleIO.o\
+$(OBJECTS_DIR)/softParticleCloud.o\
+$(OBJECTS_DIR)/enhancedCloud.o

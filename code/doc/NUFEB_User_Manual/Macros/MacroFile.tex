@@ -1,0 +1,244 @@
+% This file contains macros that can be called up from connected TeX files
+% It helps to summarise repeated code, e.g. figure insertion (see below).
+
+% insert a centered figure with caption and description
+% parameters 1:filename, 2:title, 3:description and label
+\newcommand{\figuremacro}[3]{
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=1\textwidth]{#1}
+		\caption[#2]{\textbf{#2} - #3}
+		\label{#1}
+	\end{figure}
+}
+
+% insert a centered figure with caption and description AND WIDTH
+% parameters 1:filename, 2:title, 3:description and label, 4: textwidth
+% textwidth 1 means as text, 0.5 means half the width of the text
+\newcommand{\figuremacroW}[4]{
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=#4\textwidth]{#1}
+		\caption[#2]{\textbf{#2} - #3}
+		\label{#1}
+	\end{figure}
+}
+
+% insert a figure with sub figures caption and description
+% parameters 1:filename_1, 3:title and descriptionl_1,
+% 3:filename_2, 4:title and descriptionl_2,  
+% 5:title_main, 6:description and label_main,
+% Each subfigure has its own caption
+\newcommand{\figuremacroSubTwo}[6]{
+	\begin{figure}[H]
+	        \centering
+		\begin{minipage}[b]{0.475\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{#1}
+			\subcaption{#2}
+		\end{minipage}%
+		~
+		\begin{minipage}[b]{0.475\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{#3}
+			\subcaption{#4}
+		\end{minipage}%
+		\caption[#5]{\textbf{#5} - #6}
+		\label{#5}
+	\end{figure}
+}
+
+% insert a figure with sub figures caption and description
+% parameters 1:filename_1, 3:title and descriptionl_1,
+% 3:filename_2, 4:title and descriptionl_2,  
+% 5:title_main, 6:description and label_main,
+% Each subfigure has its own caption
+\newcommand{\figuremacroSubTwoBS}[6]{
+	\begin{figure}[H]
+	        \centering
+		\begin{minipage}[b]{0.3\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{#1}
+			\subcaption{#2}
+		\end{minipage}%
+		~
+		\begin{minipage}[b]{0.65\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{#3}
+			\subcaption{#4}
+		\end{minipage}%
+		\caption[#5]{\textbf{#5} - #6}
+		\label{#5}
+	\end{figure}
+}
+
+% insert a figure with sub figures caption and description
+% parameters 1:filename_1, 3:title and descriptionl_1,
+% 3:filename_2, 4:title and descriptionl_2,  
+% 5:title_main, 6:description and label_main,
+% Each subfigure has its own caption
+\newcommand{\figuremacroSubThree}[8]{
+	\begin{figure}[H]
+	        \centering
+		\begin{minipage}[b]{0.3\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{#1}
+			\subcaption{#2}
+		\end{minipage}%
+		~
+		\begin{minipage}[b]{0.3\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{#3}
+			\subcaption{#4}
+		\end{minipage}%
+		~
+		\begin{minipage}[b]{0.3\textwidth}
+					\centering
+					\includegraphics[width=\textwidth]{#5}
+					\subcaption{#6}
+		\end{minipage}%
+		\caption[#7]{\textbf{#7} - #8}
+		\label{#7}
+	\end{figure}
+}
+
+% insert a figure with sub figures caption and description
+% parameters 1:filename_1, 3:title and descriptionl_1,
+% 3:filename_2, 4:title and descriptionl_2,  
+% 5:title_main, 6:description and label_main,
+% Each subfigure has its own caption
+\newcommand{\figuremacroSubFour}[9]{
+	\begin{figure}[H]
+	        \centering
+	
+		\begin{minipage}[b]{0.235\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{#1}
+			\subcaption{#2}
+		\end{minipage}%
+		~
+		\begin{minipage}[b]{0.235\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{#3}
+			\subcaption{#4}
+		\end{minipage}%
+		~
+		\begin{minipage}[b]{0.235\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{#5}
+			\subcaption{#6}
+		\end{minipage}%
+		~
+		\begin{minipage}[b]{0.235\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{#7}
+			\subcaption{#8}
+		\end{minipage}%				
+		\caption[#9]{\textbf{#9}}
+		\label{#9}
+	\end{figure}
+}
+
+
+% insert 2 figures caption and description side by side
+% parameters 1:filename_1, 2:title_1, 3:description and label_1, 
+% 1:filename_2, 2:title_2, 3:description and label_2,
+% Each subfigure has
+\newcommand{\figuremacroSBSTwo}[6]{
+	\begin{figure}[H]
+	        \centering
+			\begin{minipage}{.44\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{#1}
+			\caption[#2]{\textbf{#2} - #3}
+			\label{#1}
+		\end{minipage}%
+		~
+		\begin{minipage}{.44\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{#4}
+			\caption[#5]{\textbf{#5} - #6}
+			\label{#4}
+		\end{minipage}%
+	\end{figure}
+}
+
+
+% insert 2 figures caption and description side by side
+% parameters 1:filename_1, 2:title_1, 3:description and label_1, 
+% 1:filename_2, 2:title_2, 3:description and label_2,
+% Each subfigure has
+\newcommand{\figuremacroSBSThree}[9]{
+	\begin{figure}[H]
+	        \centering
+			\begin{minipage}{.31\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{#1}
+			\caption[#2]{\textbf{#2} - #3}
+			\label{#1}
+		\end{minipage}%
+		~
+		\begin{minipage}{.31\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{#4}
+			\caption[#5]{\textbf{#5} - #6}
+			\label{#4}
+		\end{minipage}%
+			~
+		\begin{minipage}{.31\textwidth}
+					\centering
+					\includegraphics[width=\textwidth]{#7}
+					\caption[#5]{\textbf{#8} - #9}
+					\label{#7}
+		\end{minipage}%
+	\end{figure}
+}
+
+% inserts a figure with wrapped around text; only suitable for NARROW figs
+% o is for outside on a double paged document; others: l, r, i(inside)
+% text and figure will each be half of the document width
+% note: long captions often crash with adjacent content; take care
+% in general: above 2 macro produce more reliable layout
+\newcommand{\figuremacroN}[3]{
+	\begin{wrapfigure}{o}{0.5\textwidth}
+		\centering
+		\includegraphics[width=0.48\textwidth]{#1}
+		\caption[#2]{{\small\textbf{#2} - #3}}
+		\label{#1}
+	\end{wrapfigure}
+}
+
+
+
+% predefined commands by Harish
+\newcommand{\PdfPsText}[2]{
+  \ifpdf
+     #1
+  \else
+     #2
+  \fi
+}
+
+\newcommand{\IncludeGraphicsH}[3]{
+  \PdfPsText{\includegraphics[height=#2]{#1}}{\includegraphics[bb = #3, height=#2]{#1}}
+}
+
+\newcommand{\IncludeGraphicsW}[3]{
+  \PdfPsText{\includegraphics[width=#2]{#1}}{\includegraphics[bb = #3, width=#2]{#1}}
+}
+
+\newcommand{\InsertFig}[3]{
+  \begin{figure}[!htbp]
+    \begin{center}
+      \leavevmode
+      #1
+      \caption{#2}
+      \label{#3}
+    \end{center}
+  \end{figure}
+}
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% End: 
