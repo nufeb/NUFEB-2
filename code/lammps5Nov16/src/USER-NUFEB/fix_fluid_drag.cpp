@@ -12,16 +12,14 @@
 ------------------------------------------------------------------------- */
 
 #include "fix_fluid_drag.h"
-#include "math.h"
-#include "stdlib.h"
-#include "string.h"
+
+#include <string.h>
+
 #include "atom.h"
-#include "update.h"
-#include "respa.h"
-#include "domain.h"
 #include "error.h"
 #include "memory.h"
-#include "force.h"
+#include "pointers.h"
+#include "update.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;

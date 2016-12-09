@@ -28,7 +28,7 @@ class FixDiffusion : public Fix {
   ~FixDiffusion();
   int setmask();
   void init();
-  void pre_force(int);
+  void diffusion(int);
 
  private:
   char **var;
@@ -58,12 +58,11 @@ class FixDiffusion : public Fix {
   class BIO *bio;
 
   SparseMatrix<double> laplacian_matrix();
-  void diffusion();
   SparseMatrix<double> spdiags(MatrixXi&, VectorXi&, int, int, int);
   VectorXd bc_vec(VectorXd&, double);
   bool isEuqal(double, double, double);
 
-  void output_data();
+  void output_data(int);
   void test();
 };
 

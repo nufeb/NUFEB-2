@@ -115,7 +115,7 @@ void FixEPSAdh::post_force(int vflag)
   ilist = list->ilist;
   numneigh = list->numneigh;
   firstneigh = list->firstneigh;
-  
+
   // loop over neighbors of my atoms
   
   for (ii = 0; ii < nlocal; ii++){

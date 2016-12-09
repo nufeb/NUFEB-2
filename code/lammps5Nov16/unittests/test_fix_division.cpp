@@ -54,7 +54,9 @@ namespace {
     AtomVecBio *avec;
   };
 
-  // Check for atom input data
+  /*
+   *  Check for daughter cells after division
+   */
  TEST_F(FixDivisionTest, Daughter_Cell) {
    // Make sure initial mass is greater than divMass
    ASSERT_GT(lmp->atom->rmass[0], 2.77e-16);

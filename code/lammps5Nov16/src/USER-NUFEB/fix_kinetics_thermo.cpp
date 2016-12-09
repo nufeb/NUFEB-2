@@ -22,9 +22,12 @@
 
 #include <math.h>
 #include <string.h>
+#include <cstdio>
+#include <string>
 
 #include "atom.h"
 #include "bio.h"
+#include "domain.h"
 #include "error.h"
 #include "fix_kinetics.h"
 #include "force.h"
@@ -33,8 +36,8 @@
 #include "memory.h"
 #include "modify.h"
 #include "pointers.h"
-#include "update.h"
 #include "variable.h"
+#include "update.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -74,7 +77,8 @@ FixKineticsThermo::~FixKineticsThermo()
   delete [] ivar;
 
   memory->destroy(dG0);
-//  memory->destroy(dGrxn);
+  memory->destroy(DRGCat);
+  memory->destroy(DRGAn);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -131,7 +135,9 @@ void FixKineticsThermo::init()
   ngflag = bio->ngflag;
   tgflag = bio->tgflag;
 
-  //dGrxn = memory->create(dGrxn,ntypes+1,2,ngrids,"kinetics/thermo:dGrxn");
+  DRGCat = memory->create(DRGCat,ntypes+1,ngrids,"kinetics/thermo:DRGCat");
+  DRGAn = memory->create(DRGAn,ntypes+1,ngrids,"kinetics/thermo:DRGAn");
+
   init_dG0();
 }
 
@@ -168,6 +174,7 @@ void FixKineticsThermo::pre_force(int vflag)
   if (update->ntimestep % nevery) return;
 
   thermo();
+  output_data();
 }
 
 /* ----------------------------------------------------------------------
@@ -179,32 +186,70 @@ void FixKineticsThermo::thermo()
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
   int *type = atom->type;
-  iyield = kinetics->iyield;
 
+  iyield = kinetics->iyield;
   nuS = kinetics->nuS;
 
   for (int i = 0; i < ngrids; i++) {
     for (int j = 1; j <= ntypes; j++) {
       //Gibbs free energy of the reaction
-      double catG = dG0[j][0];  //catabolic energy values
-      double anaG = dG0[j][1];  //anabolic energy values
+      DRGCat[j][i] = dG0[j][0];  //catabolic energy values
+      DRGAn[j][i] = dG0[j][1];  //anabolic energy values
 
       for (int k = 1; k <= nnus; k++) {
         double x = temp * rth * log(nuS[k][i]);
         if (nuGCoeff[k][1] < 1e4) {
-          catG += catCoeff[j][k] * x;
-          anaG += anabCoeff[j][k] * x;
+          DRGCat[j][i] += catCoeff[j][k] * x;
+          DRGAn[j][i] += anabCoeff[j][k] * x;
         }
       }
 //      printf("dGrxn[%i][%i][0] = %e \n", i,j, catG);
 //      printf("dGrxn[%i][%i][1] = %e \n", i,j, anaG);
 
       //use catabolic and anabolic energy values to derive catabolic reaction equation
-      if (catG < 0)
-        iyield[j][i] = -(anaG + diss[j]) / catG;
+      if (DRGCat[j][i] < 0)
+        iyield[j][i] = -(DRGAn[j][i] + diss[j]) / DRGCat[j][i];
       else
         iyield[j][i] = 0;
     }
   }
 }
 
+/* ----------------------------------------------------------------------
+  output energy to data file
+------------------------------------------------------------------------- */
+
+void FixKineticsThermo::output_data(){
+  string str = "DGRAn";
+  pFile = fopen (str.c_str(), "a");
+
+  double xlo,xhi,ylo,yhi,zlo,zhi;
+
+  //Get computational domain size
+  if (domain->triclinic == 0) {
+    xlo = domain->boxlo[0];
+    xhi = domain->boxhi[0];
+    ylo = domain->boxlo[1];
+    yhi = domain->boxhi[1];
+    zlo = domain->boxlo[2];
+    zhi = domain->boxhi[2];
+  }
+  else {
+    xlo = domain->boxlo_bound[0];
+    xhi = domain->boxhi_bound[0];
+    ylo = domain->boxlo_bound[1];
+    yhi = domain->boxhi_bound[1];
+    zlo = domain->boxlo_bound[2];
+    zhi = domain->boxhi_bound[2];
+  }
+
+  double stepx = (xhi - xlo) / nx;
+  double stepy = (yhi - ylo) / ny;
+  double stepz = (zhi - zlo) / nz;
+
+  for (int j = 1; j <= ntypes; j++) {
+      fprintf(pFile, "%f\n", DRGCat[1][j]);
+  }
+
+  fclose(pFile);
+}

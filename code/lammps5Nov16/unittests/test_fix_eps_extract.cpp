@@ -57,7 +57,9 @@ namespace {
     AtomVecBio *avec;
   };
 
-  // Check for atom input data
+  /*
+   *  Check for mass, type etc after eps extraction
+   */
  TEST_F(FixEPSExtractTest, EPS_Cell) {
    // Make sure the actual eps radio is greater than 1.25
    // Parent cell outer mass = 1.001e-15

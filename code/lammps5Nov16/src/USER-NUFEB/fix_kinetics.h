@@ -22,24 +22,25 @@ class FixKinetics : public Fix {
   friend class FixKineticsMonod;
   friend class FixKineticsThermo;
   friend class FixDiffusion;
+
  public:
   FixKinetics(class LAMMPS *, int, char **);
   ~FixKinetics();
   int setmask();
   void init();
 
+  double **nuS;                    // nutrient concentration [nutrient][grid]
+  double **nuR;                    // nutrient consumption [nutrient][grid]
+  int ngrids;                      // # of grids
+  double **metCoeff;               // metabolism coefficients [type][nutrient]
+  double **iyield;                 // inverse yield [type][grid]
+
  private:
   char **var;
   int *ivar;
 
   int nx, ny, nz;                  // number of grids in x y z axis
-  int ngrids;                      // # of grids
   double temp;                     // temperature
-  double **metCoeff;               // metabolism coefficients [type][nutrient]
-  double **iyield;                 // inverse yield [type][grid]
-
-  double **nuS;                    // nutrient concentration [nutrient][grid]
-  double **nuR;                    // nutrient consumption [nutrient][grid]
 
   class AtomVecBio *avec;
   class BIO *bio;

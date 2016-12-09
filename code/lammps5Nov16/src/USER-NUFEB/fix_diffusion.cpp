@@ -55,45 +55,42 @@ using namespace Eigen;
 FixDiffusion::FixDiffusion(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
 
-  if (narg != 10) error->all(FLERR,"Not enough arguments in fix diffusion command");
-
-  nevery = force->inumeric(FLERR,arg[3]);
-  if (nevery < 0) error->all(FLERR,"Illegal fix diffusion command");
+  if (narg != 9) error->all(FLERR,"Not enough arguments in fix diffusion command");
 
   var = new char*[2];
   ivar = new int[2];
 
-  if(strcmp(arg[4], "exp") == 0) sflag = 0;
-  else if(strcmp(arg[4], "imp") == 0) sflag = 1;
+  if(strcmp(arg[3], "exp") == 0) sflag = 0;
+  else if(strcmp(arg[3], "imp") == 0) sflag = 1;
   else error->all(FLERR,"Illegal PDE method command");
 
   for (int i = 0; i < 2; i++) {
-    int n = strlen(&arg[5+i][2]) + 1;
+    int n = strlen(&arg[4+i][2]) + 1;
     var[i] = new char[n];
-    strcpy(var[i],&arg[5+i][2]);
+    strcpy(var[i],&arg[4+i][2]);
   }
 
   //set boundary condition flag:
   //0=PERIODIC-PERIODIC,  1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
-  if(strcmp(arg[7], "pp") == 0) xbcflag = 0;
-  else if(strcmp(arg[7], "dd") == 0) xbcflag = 1;
-  else if(strcmp(arg[7], "nd") == 0) xbcflag = 2;
-  else if(strcmp(arg[7], "nn") == 0) xbcflag = 3;
-  else if(strcmp(arg[7], "dn") == 0) xbcflag = 4;
+  if(strcmp(arg[6], "pp") == 0) xbcflag = 0;
+  else if(strcmp(arg[6], "dd") == 0) xbcflag = 1;
+  else if(strcmp(arg[6], "nd") == 0) xbcflag = 2;
+  else if(strcmp(arg[6], "nn") == 0) xbcflag = 3;
+  else if(strcmp(arg[6], "dn") == 0) xbcflag = 4;
   else error->all(FLERR,"Illegal x-axis boundary condition command");
 
-  if(strcmp(arg[8], "pp") == 0) ybcflag = 0;
-  else if(strcmp(arg[8], "dd") == 0) ybcflag = 1;
-  else if(strcmp(arg[8], "nd") == 0) ybcflag = 2;
-  else if(strcmp(arg[8], "nn") == 0) ybcflag = 3;
-  else if(strcmp(arg[8], "dn") == 0) ybcflag = 4;
+  if(strcmp(arg[7], "pp") == 0) ybcflag = 0;
+  else if(strcmp(arg[7], "dd") == 0) ybcflag = 1;
+  else if(strcmp(arg[7], "nd") == 0) ybcflag = 2;
+  else if(strcmp(arg[7], "nn") == 0) ybcflag = 3;
+  else if(strcmp(arg[7], "dn") == 0) ybcflag = 4;
   else error->all(FLERR,"Illegal y-axis boundary condition command");
 
-  if(strcmp(arg[9], "pp") == 0) zbcflag = 0;
-  else if(strcmp(arg[9], "dd") == 0) zbcflag = 1;
-  else if(strcmp(arg[9], "nd") == 0) zbcflag = 2;
-  else if(strcmp(arg[9], "nn") == 0) zbcflag = 3;
-  else if(strcmp(arg[9], "dn") == 0) zbcflag = 4;
+  if(strcmp(arg[8], "pp") == 0) zbcflag = 0;
+  else if(strcmp(arg[8], "dd") == 0) zbcflag = 1;
+  else if(strcmp(arg[8], "nd") == 0) zbcflag = 2;
+  else if(strcmp(arg[8], "nn") == 0) zbcflag = 3;
+  else if(strcmp(arg[8], "dn") == 0) zbcflag = 4;
   else error->all(FLERR,"Illegal z-axis boundary condition command");
 }
 
@@ -278,22 +275,11 @@ SparseMatrix<double> FixDiffusion::spdiags(MatrixXi& B, VectorXi& d, int m, int 
   return A;
 }
 
-/* ---------------------------------------------------------------------- */
-
-void FixDiffusion::pre_force(int vflag)
-{
-  if (nevery == 0) return;
-  if (update->ntimestep % nevery) return;
-
-  diffusion();
-  //output_data();
-}
-
 /* ----------------------------------------------------------------------
   solve diffusion equations and metabolism
 ------------------------------------------------------------------------- */
 
-void FixDiffusion::diffusion()
+void FixDiffusion::diffusion(int t)
 {
   bool convergence = false;
   int iteration = 0;
@@ -343,7 +329,7 @@ void FixDiffusion::diffusion()
             vecS[i] = RES + vecS[i];
 
             for (int j = 0; j < ngrids; j++) {
-              if (vecS[i][j] < 0) vecS[i][j] = 1e-16;
+              if (vecS[i][j] < 0) vecS[i][j] = 0;
             }
 
             max = RES.array().abs().maxCoeff();
@@ -358,7 +344,7 @@ void FixDiffusion::diffusion()
             vecS[i] = A.colPivHouseholderQr().solve(B);
 
             for (size_t j = 0; j < vecS[i].size(); j++) {
-              if (vecS[i][j] < 0) vecS[i][j] = 1e-16;
+              if (vecS[i][j] < 0) vecS[i][j] = 0;
             }
 
             VectorXd vecDiffS = vecS[i] - vecPrvS;
@@ -381,6 +367,7 @@ void FixDiffusion::diffusion()
     Map<MatrixXd>(nuS[i], vecS[i].rows(), vecS[i].cols()) =  vecS[i];
   }
 
+  output_data(t);
   //test();
   delete [] isConv;
   delete [] vecS;
@@ -405,7 +392,7 @@ VectorXd FixDiffusion::bc_vec(VectorXd& S, double h)
 
       i_m = k-1 ;
       i_p = k+nx-2;
-      //cout << i_m << " ip " << h << endl;
+      //cout << i_m << " ip " << i_p << endl;
       if (xbcflag == 0) {
         B(i_m) = B(i_m)+S(i_p); //BOTTOM, X_MINUS
         B(i_p) = B(i_p)+S(i_m); //TOP, X_PLUS
@@ -506,7 +493,10 @@ bool FixDiffusion::isEuqal(double a, double b, double c)
   output nutrient concentrations to data file
 ------------------------------------------------------------------------- */
 
-void FixDiffusion::output_data(){
+void FixDiffusion::output_data(int t){
+  if (t == 0 || update->ntimestep % t)
+    return;
+
   FILE* pFile;
   string str = "concentration";
   pFile = fopen (str.c_str(), "w");

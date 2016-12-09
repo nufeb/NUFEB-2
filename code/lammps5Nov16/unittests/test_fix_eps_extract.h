@@ -1,5 +1,5 @@
-#ifndef FIX_DIVISION_TEST_H
-#define FIX_DIVISION_TEST_H
+#ifndef FIX_EPS_EXTRACT_TEST_H
+#define FIX_EPS_EXTRACT_TEST_H
 
 #include "gtest/gtest.h"
 #include <iostream>
