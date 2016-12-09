@@ -1,0 +1,10 @@
+# 1 "files"
+# 1 "<built-in>"
+# 1 "<command-line>"
+# 1 "files"
+dragModel/dragModel.C
+dragModel/newDragModel.C
+SyamlalOBrien/SyamlalOBrien.C
+ErgunWenYu/ErgunWenYu.C
+
+LIB = $(FOAM_USER_LIBBIN)/libLagrangianInterfacialModels

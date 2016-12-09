@@ -1,0 +1,66 @@
+# 1 "files"
+# 1 "<command-line>"
+
+
+
+
+# 1 "/usr/include/stdc-predef.h" 1 3 4
+
+# 17 "/usr/include/stdc-predef.h" 3 4
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 4 "<command-line>" 2
+# 1 "files"
+dragModel/dragModel.C
+dragModel/newDragModel.C
+polyDragModel/polyDragModel.C
+polyDragModel/newPolyDragModel.C
+SyamlalOBrien/SyamlalOBrien.C
+ErgunWenYu/ErgunWenYu.C
+Stokes/Stokes.C
+DiFelice/DiFelice.C
+Beetstra2007/Beetstra2007.C
+SyamlalOBrienCorrectionFactor/SyamlalOBrienCorrectionFactor.C
+polyVBK/polyVBK.C
+
+LIB = $(FOAM_USER_LIBBIN)/libLagrangianInterfacialModels

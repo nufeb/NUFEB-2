@@ -7,8 +7,6 @@ mode=$1
 LC_ALL=C
 export LC_ALL
 
-DIR = src/
-
 # arg1 = file, arg2 = file it depends on
 
 action () {
@@ -30,7 +28,7 @@ action () {
 
 # all package files with no dependencies
 
-for file in $DIR*.cpp $DIR*.h; do
+for file in *.cpp *.h; do
   action $file
 done
 
