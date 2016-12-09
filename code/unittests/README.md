@@ -10,6 +10,7 @@ To compile the code, you can either do one of the two things:
 - Change to the lammps5Nov16/src directory, then build Lammps code (donot forget to install nufeb package):
 
    $ make serial_nufeb
+
    $ make serial_nufeb mode=lib
 
 - Change to the unittests/GTest directory, then build google test lib:
@@ -27,10 +28,10 @@ To compile the code, you can either do one of the two things:
 
 ### Running the unit tests
 
-You can either test each single function by running:
+- You can either test each single function by running:
 
    $ ./test_name
 
-Or run all tests:
+- Or run all tests:
 
    $ ./run.sh
