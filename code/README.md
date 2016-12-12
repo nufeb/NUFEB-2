@@ -2,11 +2,11 @@ This is NUFEF development repository.
 
 - doc: NUFEB user manuals and technical report for current and old NUFEB versions
 
-- gui: a graphical user interface for simulation (not compatible with the latest version)
+- gui: a graphical user interface for NUFEB simulation (not compatible with the latest version)
 
 - input: input scripts for NUFEB simulation
 
-- lammps5Nov16: LAMMPS and NUFEB package
+- lammps5Nov16: LAMMPS code and NUFEB package
 
 - openfoam-coupling: code for coupling LAMMPS with OpenFoam
 
