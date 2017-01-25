@@ -1,0 +1,77 @@
+# NUFEB simulation
+
+atom_style	bio
+atom_modify	map array sort 1000 5.0e-7
+boundary	ff ff ff
+newton		off
+#processors  2 1 1
+
+comm_modify	vel yes
+read_data_bio atom.in
+
+group HET type 1 2
+
+neighbor	5.0e-7 bin
+neigh_modify	delay 0 one 5000
+
+#pair_style none
+pair_style  gran/hooke/history 0.000200 NULL 0.000050 NULL 0.0 1
+
+pair_coeff  * *
+timestep 3600
+
+fix 1 all nve/limit 1e-8 
+
+#fix	 2 all gravity 1.47 vector 0 0 -1 # spherical 90.0 -180.0 
+#fix     3 all fdrag
+fix 10 all viscous 0.1 
+
+
+fix xw all wall/gran hooke/history 2000 NULL 500.0 NULL 1.5 0 xplane  0.0   2.0e-04
+fix yw all wall/gran hooke/history 2000 NULL 500.0 NULL 1.5 0 yplane  0.0   2.0e-04
+fix zw all wall/gran hooke/history 2000 NULL 500.0 NULL 1.5 0 zplane  0.0   2.0e-04
+
+variable kanc equal 50
+
+fix xwa all walladh v_kanc xplane  0.0   2.0e-04
+fix ywa all walladh v_kanc yplane  0.0   2.0e-04
+fix zwa all walladh v_kanc zplane  0.0   2.0e-04
+
+##############Ibm Variable Definitions##############
+
+#Defining EPS density and ratio variables
+variable EPSdens equal 30
+variable EPSratio equal 1.25
+
+variable ke equal 5e+10
+
+#Defining metobolism variables
+variable temp equal 298.15
+variable gasTran equal 0.08205746
+variable gvol equal 2e-11
+variable rth equal 0.0083144
+
+#Defining diffusion variables
+variable diffT equal 1e-3
+variable tol equal 1e-6
+
+##############Ibm functions##############
+
+fix k1 all kinetics 20 20 20 v_temp
+fix g1 all diffusion exp v_diffT v_tol pp pp nd
+fix ki1 all kinetics/monod 1 1 v_gasTran v_gvol v_EPSdens
+fix ki2 all kinetics/thermo 1 v_rth
+fix d1 all divide 1 v_EPSdens 1 3123
+
+#fix j1 all epsadh 1 v_ke 1
+#fix e1 HET eps_extract 16 v_EPSratio v_EPSdens 1242242
+
+##############Simulation outputs##############
+
+dump		id all custom 1 snapshot.bubblemd id type diameter x y z vx vy vz fx fy fz
+thermo_style    custom step cpu atoms biomass
+thermo		1	
+thermo_modify	lost ignore
+
+run  2
+

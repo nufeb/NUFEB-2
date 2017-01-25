@@ -46,3 +46,14 @@
     het 0
     eps 0
 
+ Nutrient Energy
+
+    o2 inf 1.64e1 inf inf inf 2
+
+ Type Energy
+
+    hety inf -67 inf inf inf 2
+
+ Dissipation
+
+    hety 115

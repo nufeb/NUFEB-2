@@ -155,13 +155,14 @@ void FixDivide::pre_exchange()
   for (i = 0; i < nall; i++) {
     if (atom->mask[i] != avec->maskEPS) {
       //averageMass = 2e-16;
-      averageMass = 2.77e-16;
+      averageMass = 7.21e-17;
     } else continue;
 
     if ((atom->mask[i] & groupbit) &&
       atom->x[i][0] >= sublo[0] && atom->x[i][0] < subhi[0] &&
       atom->x[i][1] >= sublo[1] && atom->x[i][1] < subhi[1] &&
       atom->x[i][2] >= sublo[2] && atom->x[i][2] < subhi[2]) {
+
       density = atom->rmass[i] / (4.0*MY_PI/3.0 *
                 atom->radius[i]*atom->radius[i]*atom->radius[i]);
 

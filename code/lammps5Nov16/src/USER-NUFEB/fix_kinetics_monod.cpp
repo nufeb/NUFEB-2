@@ -248,7 +248,7 @@ void FixKineticsMonod::monod()
 
   nuS = kinetics->nuS;
   nuR = kinetics->nuR;
-//  double agr = 0;
+ // double agr = 0;
  // double ar = 0;
 
   //initialization
@@ -276,8 +276,8 @@ void FixKineticsMonod::monod()
         for (int j = 1; j <= nnus; j++) {
           double consume = metCoeff[t][j] * growthRate * rmass[i];
           if(bio->nuType[j] == 0) {
-            //calculate liquid concentrations
-            double uptake = consume / vol;
+            //calculate liquid concentrations, convert from m3 to L, kg to mol
+            double uptake = consume / (vol * 1000 * 2.46e-2);
             nuR[j][pos] += uptake;
            // ar += uptake;
           }
