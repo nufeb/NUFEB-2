@@ -201,7 +201,7 @@ void FixDiffusion::init()
     maxBC[i] = *max_element(bc, bc+6);
   }
 
-  LAP = laplacian_matrix();
+  LAP = laplacian_matrix_3d();
   //create identity matrix
   SparseMatrix<double> In(ngrids, ngrids);
   In.setIdentity();
@@ -213,7 +213,7 @@ void FixDiffusion::init()
   build laplacian matrix
 ------------------------------------------------------------------------- */
 
-SparseMatrix<double> FixDiffusion::laplacian_matrix()
+SparseMatrix<double> FixDiffusion::laplacian_matrix_3d()
 {
   VectorXi ex1(nx);
   ex1.setOnes();

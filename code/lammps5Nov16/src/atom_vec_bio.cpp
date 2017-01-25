@@ -122,6 +122,10 @@ void AtomVecBio::data_atom(double *coord, imageint imagetmp, char **values)
   outerMass[nlocal] = (4.0*MY_PI/3.0)*((outerRadius[nlocal]*outerRadius[nlocal]*outerRadius[nlocal])
       -(radius[nlocal]*radius[nlocal]*radius[nlocal]))*30;
 
+  //convert kg to mol
+//  rmass[nlocal] = rmass[nlocal]/2.46e-2;
+ // outerMass[nlocal] = outerMass[nlocal]/2.46e-2;
+
   char *name;
   int type = atom->type[nlocal];
 

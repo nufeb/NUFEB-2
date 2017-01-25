@@ -56,7 +56,6 @@ FixDiffusion::FixDiffusion(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, a
 {
 
   if (narg != 9) error->all(FLERR,"Not enough arguments in fix diffusion command");
-
   var = new char*[2];
   ivar = new int[2];
 
@@ -186,7 +185,7 @@ void FixDiffusion::init()
   double gridy = (yhi-ylo)/ny;
   double gridz = (zhi-zlo)/nz;
 
-  if (!isEuqal(gridx, gridy, gridz)) error->all(FLERR,"Grid is not cubic");
+ // if (!isEuqal(gridx, gridy, gridz)) error->all(FLERR,"Grid is not cubic");
   grid = gridx;
 
   //inlet concentration, diffusion constant
@@ -201,7 +200,7 @@ void FixDiffusion::init()
     maxBC[i] = *max_element(bc, bc+6);
   }
 
-  LAP = laplacian_matrix();
+  LAP = laplacian_matrix_3d();
   //create identity matrix
   SparseMatrix<double> In(ngrids, ngrids);
   In.setIdentity();
@@ -210,10 +209,10 @@ void FixDiffusion::init()
 
 
 /* ----------------------------------------------------------------------
-  build laplacian matrix
+  build 3d laplacian matrix
 ------------------------------------------------------------------------- */
 
-SparseMatrix<double> FixDiffusion::laplacian_matrix()
+SparseMatrix<double> FixDiffusion::laplacian_matrix_3d()
 {
   VectorXi ex1(nx);
   ex1.setOnes();
@@ -251,6 +250,31 @@ SparseMatrix<double> FixDiffusion::laplacian_matrix()
   SparseMatrix<double> Aa = kroneckerProduct(Iz, L2);
 
   SparseMatrix<double> A = Aa + L;
+
+  return A;
+}
+
+/* ----------------------------------------------------------------------
+  build 2d laplacian matrix
+------------------------------------------------------------------------- */
+
+SparseMatrix<double> FixDiffusion::laplacian_matrix_2d()
+{
+  VectorXi e(nx);
+  e.setOnes();
+
+  MatrixXi  ex (nx, 3);
+  ex << e, -2*e, e;
+  VectorXi dx(3);
+  dx << -1, 0, 1;
+  SparseMatrix<double> spe = spdiags(ex, dx, nx, nx, 3);
+
+  SparseMatrix<double> Iz(nz, nz);
+  Iz.setIdentity();
+
+  SparseMatrix<double> sp1 = kroneckerProduct(Iz, spe);
+  SparseMatrix<double> sp2 = kroneckerProduct(spe, Iz);
+  SparseMatrix<double> A = sp1 + sp2;
 
   return A;
 }
@@ -311,7 +335,7 @@ void FixDiffusion::diffusion(int t)
     iteration ++;
 
     for (int i = 1; i <= nnus; i++) {
-      if (bio->nuType[i] == 0) {
+      if (bio->nuType[i] == 0 && diffCoeff[i] != 0) {
         if (!isConv[i]) {
           isConv[0] = false;
           xbcm = iniS[i][1];
@@ -328,9 +352,15 @@ void FixDiffusion::diffusion(int t)
             RES = (2 * r[i] * RES + vecR[i]) * diffT;
             vecS[i] = RES + vecS[i];
 
+            double min = 100;
+            double max1 = 0;
             for (int j = 0; j < ngrids; j++) {
-              if (vecS[i][j] < 0) vecS[i][j] = 0;
+              if (vecS[i][j] < min) min = vecS[i][j];
+              if (vecS[i][j] > max1) max1 = vecS[i][j];
+             // if (vecS[i][j] < 0) vecS[i][j] = 0;
             }
+//            printf("min = %e \n", min);
+//            printf("max = %e, \n", max1);
 
             max = RES.array().abs().maxCoeff();
           //Implicit method
@@ -343,9 +373,9 @@ void FixDiffusion::diffusion(int t)
             A = I - r[i] * LAP * diffT - r[i] * sdiagBC * diffT;
             vecS[i] = A.colPivHouseholderQr().solve(B);
 
-            for (size_t j = 0; j < vecS[i].size(); j++) {
-              if (vecS[i][j] < 0) vecS[i][j] = 0;
-            }
+//            for (size_t j = 0; j < vecS[i].size(); j++) {
+//              if (vecS[i][j] < 0) vecS[i][j] = 0;
+//            }
 
             VectorXd vecDiffS = vecS[i] - vecPrvS;
             max = vecDiffS.array().abs().maxCoeff();
@@ -364,6 +394,9 @@ void FixDiffusion::diffusion(int t)
 
   //convert concentration vector into normal data type
   for (int i = 1; i <= nnus; i++) {
+    for (int j = 0; j < ngrids; j++) {
+      if (vecS[i][j] < 0) vecS[i][j] = 1e-20;
+    }
     Map<MatrixXd>(nuS[i], vecS[i].rows(), vecS[i].cols()) =  vecS[i];
   }
 
@@ -482,7 +515,7 @@ VectorXd FixDiffusion::bc_vec(VectorXd& S, double h)
 
 bool FixDiffusion::isEuqal(double a, double b, double c)
 {
-  double epsilon = 0.00001;
+  double epsilon = 1e-10;
   if ((fabs(a - b) > epsilon)|| (fabs(a - b) > epsilon) || (fabs(a - b) > epsilon))
     return false;
 
@@ -498,8 +531,10 @@ void FixDiffusion::output_data(int t){
     return;
 
   FILE* pFile;
-  string str = "concentration";
-  pFile = fopen (str.c_str(), "w");
+  std::ostringstream stm;
+  stm << update->ntimestep;
+  string str = "./Diffusion/conc.csv."+ stm.str();
+  pFile = fopen (str.c_str(), "a");
   fprintf(pFile, ",x,y,z,scalar,1,1,1,0.5\n");
 
   double stepx = (xhi - xlo) / nx;

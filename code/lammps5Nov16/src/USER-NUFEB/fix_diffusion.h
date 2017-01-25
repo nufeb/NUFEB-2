@@ -57,7 +57,7 @@ class FixDiffusion : public Fix {
   class FixKinetics *kinetics;
   class BIO *bio;
 
-  SparseMatrix<double> laplacian_matrix();
+  SparseMatrix<double> laplacian_matrix_3d();
   SparseMatrix<double> spdiags(MatrixXi&, VectorXi&, int, int, int);
   VectorXd bc_vec(VectorXd&, double);
   bool isEuqal(double, double, double);

@@ -24,6 +24,7 @@
 #include <string.h>
 #include <cstdio>
 #include <string>
+#include <sstream>
 
 #include "atom.h"
 #include "bio.h"
@@ -161,8 +162,8 @@ void FixKineticsThermo::init_dG0()
 
     int flag = tgflag[i];
     dG0[i][1] += typeGCoeff[i][flag];
-   // printf("dG0[%i][0] = %e \n", i, dG0[i][0]);
-   // printf("dG0[%i][1] = %e \n", i, dG0[i][1]);
+//    printf("dG0[%i][0] = %e \n", i, dG0[i][0]);
+//    printf("dG0[%i][1] = %e \n", i, dG0[i][1]);
   }
 }
 
@@ -189,7 +190,6 @@ void FixKineticsThermo::thermo()
 
   iyield = kinetics->iyield;
   nuS = kinetics->nuS;
-
   for (int i = 0; i < ngrids; i++) {
     for (int j = 1; j <= ntypes; j++) {
       //Gibbs free energy of the reaction
@@ -197,14 +197,16 @@ void FixKineticsThermo::thermo()
       DRGAn[j][i] = dG0[j][1];  //anabolic energy values
 
       for (int k = 1; k <= nnus; k++) {
-        double x = temp * rth * log(nuS[k][i]);
-        if (nuGCoeff[k][1] < 1e4) {
-          DRGCat[j][i] += catCoeff[j][k] * x;
-          DRGAn[j][i] += anabCoeff[j][k] * x;
+        if (strcmp(bio->nuName[k], "h2o") != 0){
+          if (nuGCoeff[k][1] < 1e4) {
+            double x = temp * rth * log(nuS[k][i]);
+            DRGCat[j][i] += catCoeff[j][k] * x;
+            DRGAn[j][i] += anabCoeff[j][k] * x;
+          }
         }
       }
-//      printf("dGrxn[%i][%i][0] = %e \n", i,j, catG);
-//      printf("dGrxn[%i][%i][1] = %e \n", i,j, anaG);
+//      printf("dGrxn[%i][%i][0] = %e \n", i,j, DRGAn[j][i]);
+//      printf("dGrxn[%i][%i][1] = %e \n", i,j, DRGCat[j][i]);
 
       //use catabolic and anabolic energy values to derive catabolic reaction equation
       if (DRGCat[j][i] < 0)
@@ -220,8 +222,12 @@ void FixKineticsThermo::thermo()
 ------------------------------------------------------------------------- */
 
 void FixKineticsThermo::output_data(){
-  string str = "DGRAn";
+  std::ostringstream stm;
+  stm << update->ntimestep;
+  string str = "./DGRCat/DGRCat.csv."+ stm.str();
   pFile = fopen (str.c_str(), "a");
+  fprintf(pFile, ",x,y,z,scalar,1,1,1,0.5\n");
+  double average;
 
   double xlo,xhi,ylo,yhi,zlo,zhi;
 
@@ -247,9 +253,24 @@ void FixKineticsThermo::output_data(){
   double stepy = (yhi - ylo) / ny;
   double stepz = (zhi - zlo) / nz;
 
-  for (int j = 1; j <= ntypes; j++) {
-      fprintf(pFile, "%f\n", DRGCat[1][j]);
-  }
+  for(int i = 0; i < ngrids; i++){
+    int zpos = i/(nx * ny) + 1;
+    int ypos = (i - (zpos - 1) * (nx * ny)) / nx + 1;
+    int xpos = i - (zpos - 1) * (nx * ny) - (ypos - 1) * nx + 1;
 
+    double x = xpos * stepx - stepx/2;
+    double y = ypos * stepy - stepy/2;
+    double z = zpos * stepz - stepz/2;
+
+    average += DRGCat[2][i];
+
+    fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, x, y, z, DRGCat[2][i]);
+  }
   fclose(pFile);
+
+  average = average / ngrids;
+  string str2 = "./DGRCat/Average.csv";
+  pFile = fopen (str2.c_str(), "a");
+  fprintf(pFile, "%e\n", average);
+
 }
