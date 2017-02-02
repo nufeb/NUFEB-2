@@ -57,7 +57,7 @@ variable tol equal 1e-6
 
 ##############Ibm functions##############
 
-fix k1 all kinetics 20 20 20 v_temp
+fix k1 all kinetics 10 10 10 v_temp
 fix g1 all diffusion exp v_diffT v_tol pp pp nd
 fix ki1 all kinetics/monod 1 1 v_gasTran v_gvol v_EPSdens
 fix ki2 all kinetics/thermo 1 v_rth
@@ -73,5 +73,5 @@ thermo_style    custom step cpu atoms biomass
 thermo		1	
 thermo_modify	lost ignore
 
-run  2
+run  5
 

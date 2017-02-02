@@ -34,6 +34,7 @@
 #include "fix_inert.h"
 #include "fix_kinetics.h"
 #include "fix_kinetics_monod.h"
+#include "fix_kinetics_ph.h"
 #include "fix_kinetics_thermo.h"
 #include "fix_langevin.h"
 #include "fix_lineforce.h"

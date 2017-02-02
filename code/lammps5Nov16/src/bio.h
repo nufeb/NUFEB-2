@@ -26,16 +26,19 @@ class BIO : protected Pointers {
   double **anabCoeff;         // anabolism coefficient [type][nutrient]
   double **typeGCoeff;        // Gibbs free energy coefficient [type][5charges]
   int *tgflag;                // Gibbs free energy flag
+  int **typeChr;              // charge [type][5charges]
 
   //nutrient
   int nnus;                   // # of nutrients
   int *nuType;                // nutrient types 0 = liq, 1 = gas
   char **nuName;              // nutrient name
 
-  double *diffCoeff;          // diffusion coefficient
+  double *diffCoeff;          // diffusion coefficient [nutrient]
   double **iniS;              // inlet nutrient concentrations [nutrient][1grid + 5bc]
   double **nuGCoeff;          // Gibbs free energy coefficient [nutrient][5charges]
   int *ngflag;                // Gibbs free energy flag
+  int **nuChr;                // charge [nutrient][5charges]
+  double *kLa;                // mass Transfer Coefficient [nutrient]
 
   BIO(class LAMMPS *);
   ~BIO();
@@ -50,6 +53,9 @@ class BIO : protected Pointers {
   void set_nuGCoeff(int, char **);
   void set_typeGCoeff(int, char **);
   void set_dissipation(const char *);
+  void set_nuChr(int, char **);
+  void set_typeChr(int, char **);
+  void set_kLa(const char *);
   void set_group_mask();
 
   int find_typeID(char *name);

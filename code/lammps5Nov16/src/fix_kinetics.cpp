@@ -45,16 +45,16 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg
   avec = (AtomVecBio *) atom->style_match("bio");
   if (!avec) error->all(FLERR,"Fix kinetics requires atom style bio");
 
-  if (narg != 7) error->all(FLERR,"Not enough arguments in fix kinetics command");
+  if (narg != 8) error->all(FLERR,"Not enough arguments in fix kinetics command");
 
-  var = new char*[1];
-  ivar = new int[1];
+  var = new char*[2];
+  ivar = new int[2];
 
   nx = atoi(arg[3]);
   ny = atoi(arg[4]);
   nz = atoi(arg[5]);
 
-  for (int i = 0; i < 1; i++) {
+  for (int i = 0; i < 2; i++) {
     int n = strlen(&arg[6+i][2]) + 1;
     var[i] = new char[n];
     strcpy(var[i],&arg[6+i][2]);
@@ -66,7 +66,7 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg
 FixKinetics::~FixKinetics()
 {
   int i;
-  for (i = 0; i < 1; i++) {
+  for (i = 0; i < 2; i++) {
     delete [] var[i];
   }
   delete [] var;
@@ -74,6 +74,7 @@ FixKinetics::~FixKinetics()
 
   memory->destroy(metCoeff);
   memory->destroy(iyield);
+  memory->destroy(activity);
   memory->destroy(nuR);
   memory->destroy(nuS);
 }
@@ -91,7 +92,7 @@ int FixKinetics::setmask()
 
 void FixKinetics::init()
 {
-  for (int n = 0; n < 1; n++) {
+  for (int n = 0; n < 2; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
       error->all(FLERR,"Variable name for fix kinetics does not exist");
@@ -99,10 +100,12 @@ void FixKinetics::init()
       error->all(FLERR,"Variable for fix kinetics is invalid style");
   }
 
+  temp = input->variable->compute_equal(ivar[0]);
+  rth = input->variable->compute_equal(ivar[1]);
+
   bio = avec->bio;
 
   ngrids = nx * ny * nz;
-  temp = input->variable->compute_equal(ivar[0]);
 
   int nnus = bio->nnus;
   int ntypes = atom->ntypes;
@@ -111,6 +114,7 @@ void FixKinetics::init()
   nuR = memory->create(nuR,nnus+1, ngrids, "kinetics:nuR");
   metCoeff = memory->create(metCoeff,ntypes+1,nnus+1,"kinetic:metCoeff");
   iyield = memory->create(iyield,ntypes+1,ngrids,"kinetic:iyield");
+  activity = memory->create(activity,nnus+1,5,"kinetics/ph:activity");
 
   //initialize inlet concentration, consumption
   for (int i = 1; i <= nnus; i++) {

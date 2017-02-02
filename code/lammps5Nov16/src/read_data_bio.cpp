@@ -57,7 +57,7 @@ using namespace LAMMPS_NS;
 #define MAXBODY 32         // max # of lines in one body
 
                            // customize for new sections
-#define NSECTIONS 35       // change when add to header::section_keywords
+#define NSECTIONS 38       // change when add to header::section_keywords
 
 enum{NONE,APPEND,VALUE,MERGE};
 
@@ -572,6 +572,18 @@ void ReadDataBIO::command(int narg, char **arg)
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) typeGCoeff();
         else skip_lines(atom->ntypes);
+      } else if (strcmp(keyword,"Nutrient Charge") == 0) {
+        if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
+        if (firstpass) nuChr();
+        else skip_lines(bio->nnus);
+      } else if (strcmp(keyword,"Type Charge") == 0) {
+        if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
+        if (firstpass) typeChr();
+        else skip_lines(atom->ntypes);
+      } else if (strcmp(keyword,"KLa") == 0) {
+        if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
+        if (firstpass) kLa();
+        else skip_lines(bio->nnus);
       }
 
       else if (strcmp(keyword,"Pair Coeffs") == 0) {
@@ -935,7 +947,8 @@ void ReadDataBIO::header(int firstpass)
      "EndBondTorsion Coeffs","AngleTorsion Coeffs",
      "AngleAngleTorsion Coeffs","BondBond13 Coeffs","AngleAngle Coeffs",
      "Growth","Ks","Yield","Nutrients","Diffusion Coeffs","Catabolism Coeffs",
-     "Anabolism Coeffs","Nutrient Energy","Type Energy", "Dissipation"};
+     "Anabolism Coeffs","Nutrient Energy","Type Energy", "Dissipation", "Nutrient Charge",
+     "Type Charge", "KLa"};
 
   // skip 1st line of file
 
@@ -2125,6 +2138,7 @@ void ReadDataBIO::type_coeffs(){
   bio->dissipation = memory->create(bio->dissipation,ntypes+1,"bio:dissipation");
   bio->typeGCoeff = memory->create(bio->typeGCoeff,ntypes+1,5,"bio:typeGCoeff");
   bio->tgflag = memory->create(bio->tgflag,5,"bio:tgflag");
+  bio->typeChr = memory->create(bio->typeChr,ntypes+1,5,"bio:typeChr");
 }
 
 void ReadDataBIO::nutrient_coeffs(){
@@ -2142,9 +2156,11 @@ void ReadDataBIO::nutrient_coeffs(){
   bio->catCoeff = memory->create(bio->catCoeff,ntypes+1,nnus+1,"bio:catCoeff");
   bio->anabCoeff = memory->create(bio->anabCoeff,ntypes+1,nnus+1,"bio:anabCoeff");
   bio->iniS = memory->create(bio->iniS,nnus+1,7,"bio:nuConc");
-  bio->nuGCoeff= memory->create(bio->nuGCoeff,nnus+1, 5, "bio:nuG");
+  bio->nuGCoeff= memory->create(bio->nuGCoeff,nnus+1, 5, "bio:nuGCoeff");
   bio->nuType = memory->create(bio->nuType, nnus+1, "bio::nuGCoeff");
   bio->ngflag = memory->create(bio->ngflag,5,"bio:ngflag");
+  bio->nuChr = memory->create(bio->nuChr,nnus+1, 5, "bio:nuChr");
+  bio->kLa = memory->create(bio->kLa,nnus+1,"bio:kLa");
 }
 
 /* ----------------------------------------------------------------------
@@ -2371,5 +2387,69 @@ void ReadDataBIO::typeGCoeff()
   delete [] original;
 }
 
+/* ---------------------------------------------------------------------- */
 
+void ReadDataBIO::nuChr()
+{
+  int i,m;
+  char *next;
+  char *buf = new char[bio->nnus*MAXLINE];
+
+  int eof = comm->read_lines_from_file(fp,bio->nnus,MAXLINE,buf);
+  if (eof) error->all(FLERR,"Unexpected end of data file");
+
+  char *original = buf;
+  for (i = 0; i < bio->nnus; i++) {
+    next = strchr(buf,'\n');
+    *next = '\0';
+    parse_coeffs(buf,NULL,0,0,boffset);
+    bio->set_nuChr(narg,arg);
+    buf = next + 1;
+  }
+  delete [] original;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void ReadDataBIO::typeChr()
+{
+  int i,m;
+  char *next;
+  char *buf = new char[atom->ntypes*MAXLINE];
+
+  int eof = comm->read_lines_from_file(fp,atom->ntypes,MAXLINE,buf);
+  if (eof) error->all(FLERR,"Unexpected end of data file");
+
+  char *original = buf;
+  for (i = 0; i < atom->ntypes; i++) {
+    next = strchr(buf,'\n');
+    *next = '\0';
+    parse_coeffs(buf,NULL,0,0,boffset);
+    bio->set_typeChr(narg,arg);
+    buf = next + 1;
+  }
+  delete [] original;
+}
+
+
+/* ---------------------------------------------------------------------- */
+
+void ReadDataBIO::kLa()
+{
+  int i,m;
+  char *next;
+  char *buf = new char[bio->nnus*MAXLINE];
+
+  int eof = comm->read_lines_from_file(fp,bio->nnus,MAXLINE,buf);
+  if (eof) error->all(FLERR,"Unexpected end of data file");
+
+  char *original = buf;
+  for (i = 0; i < bio->nnus; i++) {
+    next = strchr(buf,'\n');
+    *next = '\0';
+    bio->set_kLa(buf);
+    buf = next + 1;
+  }
+  delete [] original;
+}
 
