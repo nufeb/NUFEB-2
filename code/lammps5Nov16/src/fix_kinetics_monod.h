@@ -12,7 +12,7 @@ FixStyle(kinetics/monod,FixKineticsMonod)
 #else
 
 #ifndef SRC_FIX_KINETICSMONOD_H
-#define SRC_FIX_KINETICSMONOD _H
+#define SRC_FIX_KINETICSMONOD_H
 
 #include "fix.h"
 

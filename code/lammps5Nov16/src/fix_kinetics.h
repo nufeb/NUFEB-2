@@ -22,6 +22,7 @@ class FixKinetics : public Fix {
   friend class FixKineticsMonod;
   friend class FixKineticsThermo;
   friend class FixDiffusion;
+  friend class FixKineticsPH;
 
  public:
   FixKinetics(class LAMMPS *, int, char **);
@@ -34,13 +35,14 @@ class FixKinetics : public Fix {
   int ngrids;                      // # of grids
   double **metCoeff;               // metabolism coefficients [type][nutrient]
   double **iyield;                 // inverse yield [type][grid]
+  double **activity;               // activities of chemical species [nutrient][5 charges]
 
  private:
   char **var;
   int *ivar;
 
   int nx, ny, nz;                  // number of grids in x y z axis
-  double temp;                     // temperature
+  double temp, rth;                //U uiversal gas constant (thermodynamics) and temperature
 
   class AtomVecBio *avec;
   class BIO *bio;

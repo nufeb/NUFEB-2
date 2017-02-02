@@ -50,36 +50,20 @@ using namespace std;
 
 FixKineticsThermo::FixKineticsThermo(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
-
-  if (narg != 5) error->all(FLERR,"Not enough arguments in fix kinetics/thermo command");
+  if (narg != 4) error->all(FLERR,"Not enough arguments in fix kinetics/thermo command");
 
   nevery = force->inumeric(FLERR,arg[3]);
   if (nevery < 0) error->all(FLERR,"Illegal fix kinetics/thermo command");
-
-  var = new char*[1];
-  ivar = new int[1];
-
-  for (int i = 0; i < 1; i++) {
-    int n = strlen(&arg[4+i][2]) + 1;
-    var[i] = new char[n];
-    strcpy(var[i],&arg[4+i][2]);
-  }
 }
 
 /* ---------------------------------------------------------------------- */
 
 FixKineticsThermo::~FixKineticsThermo()
 {
-  int i;
-  for (i = 0; i < 1; i++) {
-    delete [] var[i];
-  }
-  delete [] var;
-  delete [] ivar;
-
   memory->destroy(dG0);
   memory->destroy(DRGCat);
   memory->destroy(DRGAn);
+  memory->destroy(khV);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -95,14 +79,6 @@ int FixKineticsThermo::setmask()
 
 void FixKineticsThermo::init()
 {
-  for (int n = 0; n < 1; n++) {
-    ivar[n] = input->variable->find(var[n]);
-    if (ivar[n] < 0)
-      error->all(FLERR,"Variable name for fix kinetics does not exist");
-    if (!input->variable->equalstyle(ivar[n]))
-      error->all(FLERR,"Variable for fix kinetics is invalid style");
-  }
-
   // register fix kinetics with this class
   int nfix = modify->nfix;
   for (int j = 0; j < nfix; j++) {
@@ -112,10 +88,6 @@ void FixKineticsThermo::init()
     }
   }
 
-  if (kinetics == NULL)
-    lmp->error->all(FLERR,"The fix kinetics command is required for kinetics/monod styles");
-  rth = input->variable->compute_equal(ivar[0]);
-
   ntypes = atom->ntypes;
 
   bio = kinetics->bio;
@@ -124,6 +96,7 @@ void FixKineticsThermo::init()
   nz = kinetics->nz;
   ngrids = nx * ny * nz;
   temp = kinetics->temp;
+  rth = kinetics->rth;
   metCoeff = kinetics->metCoeff;
 
   nnus = bio->nnus;
@@ -138,13 +111,13 @@ void FixKineticsThermo::init()
 
   DRGCat = memory->create(DRGCat,ntypes+1,ngrids,"kinetics/thermo:DRGCat");
   DRGAn = memory->create(DRGAn,ntypes+1,ngrids,"kinetics/thermo:DRGAn");
+  khV = memory->create(khV,nnus+1,"kinetics/thermo:khV");
 
   init_dG0();
+  init_KhV();
 }
 
-/* ----------------------------------------------------------------------
-
-------------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------*/
 
 void FixKineticsThermo::init_dG0()
 {
@@ -165,6 +138,43 @@ void FixKineticsThermo::init_dG0()
 //    printf("dG0[%i][0] = %e \n", i, dG0[i][0]);
 //    printf("dG0[%i][1] = %e \n", i, dG0[i][1]);
   }
+}
+
+/* ----------------------------------------------------------------------*/
+
+void FixKineticsThermo::init_KhV()
+{
+  for (int i = 1; i < nnus + 1; i++) {
+    khV[i] = 0;
+  }
+
+  for (int i = 1; i < nnus + 1; i++) {
+    char *nName;     // nutrient name
+    nName = bio->nuName[i];
+
+    if (bio->nuType[i] == 1) {
+      char *lName = new char[strlen(nName)];     // corresponding liquid
+      strncpy(lName, nName+1, strlen(nName));
+
+      for (int j = 1; j < nnus + 1; j++) {
+        char *nName2;     // nutrient name
+        nName2 = bio->nuName[j];
+        if (strcmp(lName, nName2) == 0) {
+          if (nuGCoeff[j][0] > 10000) {
+            khV[j] = exp((nuGCoeff[j][1] - nuGCoeff[i][1]) / (-rth * temp));
+          } else {
+            khV[j] = exp((nuGCoeff[j][0] - nuGCoeff[i][1]) / (-rth * temp));
+          }
+          break;
+        }
+      }
+      memory->sfree(lName);
+    }
+  }
+  for (int i = 1; i < nnus + 1; i++) {
+    printf("khV = %e \n", khV[i]);
+  }
+
 }
 
 /* ---------------------------------------------------------------------- */
@@ -190,6 +200,7 @@ void FixKineticsThermo::thermo()
 
   iyield = kinetics->iyield;
   nuS = kinetics->nuS;
+
   for (int i = 0; i < ngrids; i++) {
     for (int j = 1; j <= ntypes; j++) {
       //Gibbs free energy of the reaction
@@ -225,9 +236,9 @@ void FixKineticsThermo::output_data(){
   std::ostringstream stm;
   stm << update->ntimestep;
   string str = "./DGRCat/DGRCat.csv."+ stm.str();
-  pFile = fopen (str.c_str(), "a");
+  FILE *pFile = fopen (str.c_str(), "a");
   fprintf(pFile, ",x,y,z,scalar,1,1,1,0.5\n");
-  double average;
+  double average = 0.0;
 
   double xlo,xhi,ylo,yhi,zlo,zhi;
 
@@ -240,6 +251,7 @@ void FixKineticsThermo::output_data(){
     zlo = domain->boxlo[2];
     zhi = domain->boxhi[2];
   }
+
   else {
     xlo = domain->boxlo_bound[0];
     xhi = domain->boxhi_bound[0];

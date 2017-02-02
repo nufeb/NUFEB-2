@@ -27,42 +27,38 @@ class FixKineticsThermo : public Fix {
   void pre_force(int);
 
  private:
-  char **var;
-  int *ivar;
-
-  int nnus;                     // # of nutrients
-  int ntypes;                   // # of species
-  int nx, ny, nz;               // number of grids in x y z axis
-  int ngrids;                   //# of grids
+  int nnus;                        // # of nutrients
+  int ntypes;                      // # of species
+  int nx, ny, nz;                  // number of grids in x y z axis
+  int ngrids;                      //# of grids
 
   double rth, temp;                //Universal gas constant (thermodynamics) and temperature
 
   double **catCoeff;               // catabolism coefficients of species
   double **anabCoeff;              // anabolism  coefficients of species
   double **metCoeff;               // metabolism coefficients of species
-  double **nuGCoeff;
-  double **typeGCoeff;
+  double **nuGCoeff;               // Gibbs free energy coefficient [nutrient][5charges]
+  double **typeGCoeff;             // Gibbs free energy coefficient [type][5charges]
   double *yield;                   // yield coefficients
-  double **typeG;                  // type energy for all grids
   double *diss;                    // Gibbs free energy of dissipation
-  double **iyield;
+  double **iyield;                 // dynamic yield coeff [type][grid]
+
   int *ngflag;
   int *tgflag;
 
   double **nuS;                    //nutrient concentration for all grids
-  double **nuG;                    //nutrient energy for all grids
   double **dG0;
+  double *khV;                     // Henry's constant
 
-  double **DRGCat;                // Gibbs free energy of catabolism [type][grid]
-  double **DRGAn;                 // Gibbs free energy of anabolism [type][grid]
-
-  FILE *pFile;
+  double **DRGCat;                 // Gibbs free energy of catabolism [type][grid]
+  double **DRGAn;                  // Gibbs free energy of anabolism [type][grid]
 
   class FixKinetics *kinetics;
   class BIO *bio;
 
   void thermo();
   void init_dG0();
+  void init_KhV();
   void output_data();
 };
 

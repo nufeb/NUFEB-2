@@ -129,6 +129,9 @@ class ReadDataBIO : protected Pointers {
   void nuGCoeff();
   void typeGCoeff();
   void dissipation();
+  void nuChr();
+  void typeChr();
+  void kLa();
 };
 
 }

@@ -32,6 +32,7 @@ BIO::BIO(LAMMPS *lmp) : Pointers(lmp)
   typeGCoeff = NULL;
   dissipation = NULL;
   tgflag = NULL;
+  typeChr = NULL;
 
   //nutrient
   nnus = 0;
@@ -41,6 +42,8 @@ BIO::BIO(LAMMPS *lmp) : Pointers(lmp)
   nuType = NULL;
   nuGCoeff = NULL;
   ngflag = NULL;
+  nuChr = NULL;
+  kLa = NULL;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -55,12 +58,15 @@ BIO::~BIO()
   memory->destroy(typeGCoeff);
   memory->destroy(dissipation);
   memory->destroy(tgflag);
+  memory->destroy(typeChr);
 
   memory->destroy(diffCoeff);
   memory->destroy(iniS);
   memory->destroy(nuType);
   memory->destroy(nuGCoeff);
   memory->destroy(ngflag);
+  memory->destroy(nuChr);
+  memory->destroy(kLa);
 
   for (int i = 0; i < atom->ntypes+1; i++) {
     delete [] typeName[i];
@@ -232,7 +238,7 @@ void BIO::set_yield(const char *str)
 }
 
 /* ----------------------------------------------------------------------
-   set diffusion values for all nutrients
+   set diffusion coeff for all nutrients
    called from reading of data file
 ------------------------------------------------------------------------- */
 
@@ -414,6 +420,97 @@ void BIO::set_typeGCoeff(int narg, char **arg)
   if ((flag > 0) && (flag < 6) && (typeGCoeff[itype][flag-1] < 1e4))
     tgflag[itype] = flag - 1;
   else error->all(FLERR,"Invalid type energy flag");
+}
+
+/* ----------------------------------------------------------------------
+   set charges for all nutrients
+   called from reading of data file
+------------------------------------------------------------------------- */
+
+void BIO::set_nuChr(int narg, char **arg)
+{
+  if (nuChr == NULL) error->all(FLERR,"Cannot set charge for this nutrient");
+  if (narg != 6) error->all(FLERR,"Invalid nutrient charge line in data file");
+
+  char* nuName;
+  int len = strlen(arg[0]) + 1;
+  nuName = new char[len];
+  strcpy(nuName,arg[0]);
+
+  int inu = find_nuID(nuName);
+  delete [] nuName;
+
+  if (inu < 1 || inu > nnus)
+    error->all(FLERR,"Invalid nutrient for nutrient charge set");
+
+  for(int i = 0; i < 5; i++) {
+    if (strcmp(arg[i+1], "na") == 0) {
+      nuChr[inu][i] = 0;
+    } else {
+      double value = force->numeric(FLERR,arg[i+1]);
+      nuChr[inu][i] = value;
+    }
+  }
+}
+
+/* ----------------------------------------------------------------------
+   set charges for all types
+   called from reading of data file
+------------------------------------------------------------------------- */
+
+void BIO::set_typeChr(int narg, char **arg)
+{
+  if (typeChr == NULL) error->all(FLERR,"Cannot set charge for this type");
+  if (narg != 6) error->all(FLERR,"Invalid type charge line in data file");
+
+  char* typeName;
+  int len = strlen(arg[0]) + 1;
+  typeName = new char[len];
+  strcpy(typeName,arg[0]);
+
+  int itype = find_typeID(typeName);
+  delete [] typeName;
+
+  if (itype < 1 || itype > atom->ntypes)
+    error->all(FLERR,"Invalid type for typeG coefficient set");
+
+  for(int i = 0; i < 5; i++) {
+    if (strcmp(arg[i+1], "na") == 0) {
+      typeChr[itype][i] = 0;
+    } else {
+      double value = force->numeric(FLERR,arg[i+1]);
+      typeChr[itype][i] = value;
+    }
+  }
+}
+
+/* ----------------------------------------------------------------------
+   set mass transfer coeff for all nutrients
+   called from reading of data file
+------------------------------------------------------------------------- */
+
+void BIO::set_kLa(const char *str)
+{
+  if (kLa == NULL) error->all(FLERR,"Cannot set KLa for this atom style");
+
+  char* nuName;
+  double kLa_one;
+  int len = strlen(str) + 1;
+  nuName = new char[len];
+
+  int n = sscanf(str,"%s %lg",nuName,&kLa_one);
+  if (n != 2) error->all(FLERR,"Invalid KLa line in data file");
+
+  int inu = find_nuID(nuName);
+  delete [] nuName;
+
+  if (inu < 1 || inu > nnus)
+    error->all(FLERR,"Invalid nutrient for KLa set");
+
+  kLa[inu] = kLa_one;
+  //mass_setflag[itype] = 1;
+
+  if (kLa[inu] < 0.0) error->all(FLERR,"Invalid KLa value");
 }
 
 int BIO::find_typeID(char *name) {
