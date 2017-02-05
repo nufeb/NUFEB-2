@@ -171,10 +171,6 @@ void FixKineticsThermo::init_KhV()
       memory->sfree(lName);
     }
   }
-  for (int i = 1; i < nnus + 1; i++) {
-    printf("khV = %e \n", khV[i]);
-  }
-
 }
 
 /* ---------------------------------------------------------------------- */
