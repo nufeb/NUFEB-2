@@ -36,19 +36,15 @@ class FixKineticsThermo : public Fix {
 
   double **catCoeff;               // catabolism coefficients of species
   double **anabCoeff;              // anabolism  coefficients of species
-  double **metCoeff;               // metabolism coefficients of species
   double **nuGCoeff;               // Gibbs free energy coefficient [nutrient][5charges]
   double **typeGCoeff;             // Gibbs free energy coefficient [type][5charges]
-  double *yield;                   // yield coefficients
   double *diss;                    // Gibbs free energy of dissipation
   double **iyield;                 // dynamic yield coeff [type][grid]
 
-  int *ngflag;
-  int *tgflag;
-
-  double **nuS;                    //nutrient concentration for all grids
+  double **nuS;                    // nutrient concentration for all grids
   double **dG0;
   double *khV;                     // Henry's constant
+  int *liq2Gas;                    // liquids convert to gas
 
   double **DRGCat;                 // Gibbs free energy of catabolism [type][grid]
   double **DRGAn;                  // Gibbs free energy of anabolism [type][grid]

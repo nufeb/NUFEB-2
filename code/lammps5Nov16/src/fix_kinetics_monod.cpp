@@ -60,17 +60,17 @@ FixKineticsMonod::FixKineticsMonod(LAMMPS *lmp, int narg, char **arg) : Fix(lmp,
   avec = (AtomVecBio *) atom->style_match("bio");
   if (!avec) error->all(FLERR,"Fix kinetics requires atom style bio");
 
-  if (narg != 8) error->all(FLERR,"Not enough arguments in fix kinetics/monod command");
+  if (narg != 6) error->all(FLERR,"Not enough arguments in fix kinetics/monod command");
 
   nevery = force->inumeric(FLERR,arg[3]);
   if (nevery < 0) error->all(FLERR,"Illegal fix kinetics/monod command");
   diffevery = force->inumeric(FLERR,arg[4]);
   if (nevery < 0) error->all(FLERR,"Illegal fix kinetics/monod command");
 
-  var = new char*[3];
-  ivar = new int[3];
+  var = new char*[1];
+  ivar = new int[1];
 
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 1; i++) {
     int n = strlen(&arg[5+i][2]) + 1;
     var[i] = new char[n];
     strcpy(var[i],&arg[5+i][2]);
@@ -85,7 +85,7 @@ FixKineticsMonod::FixKineticsMonod(LAMMPS *lmp, int narg, char **arg) : Fix(lmp,
 FixKineticsMonod::~FixKineticsMonod()
 {
   int i;
-  for (i = 0; i < 3; i++) {
+  for (i = 0; i < 1; i++) {
     delete [] var[i];
   }
   delete [] var;
@@ -115,7 +115,7 @@ void FixKineticsMonod::init()
   if (!atom->radius_flag)
     error->all(FLERR,"Fix requires atom attribute diameter");
 
-  for (int n = 0; n < 3; n++) {
+  for (int n = 0; n < 1; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
       error->all(FLERR,"Variable name for fix kinetics/monod does not exist");
@@ -142,9 +142,7 @@ void FixKineticsMonod::init()
   bio = kinetics->bio;
   ntypes = atom->ntypes;
 
-  rg = input->variable->compute_equal(ivar[0]);
-  gvol = input->variable->compute_equal(ivar[1]);
-  EPSdens = input->variable->compute_equal(ivar[2]);
+  EPSdens = input->variable->compute_equal(ivar[0]);
 
   nx = kinetics->nx;
   ny = kinetics->ny;

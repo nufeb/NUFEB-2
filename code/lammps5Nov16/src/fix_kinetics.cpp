@@ -45,16 +45,16 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg
   avec = (AtomVecBio *) atom->style_match("bio");
   if (!avec) error->all(FLERR,"Fix kinetics requires atom style bio");
 
-  if (narg != 8) error->all(FLERR,"Not enough arguments in fix kinetics command");
+  if (narg != 10) error->all(FLERR,"Not enough arguments in fix kinetics command");
 
-  var = new char*[2];
-  ivar = new int[2];
+  var = new char*[4];
+  ivar = new int[4];
 
   nx = atoi(arg[3]);
   ny = atoi(arg[4]);
   nz = atoi(arg[5]);
 
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 4; i++) {
     int n = strlen(&arg[6+i][2]) + 1;
     var[i] = new char[n];
     strcpy(var[i],&arg[6+i][2]);
@@ -66,7 +66,7 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg
 FixKinetics::~FixKinetics()
 {
   int i;
-  for (i = 0; i < 2; i++) {
+  for (i = 0; i < 4; i++) {
     delete [] var[i];
   }
   delete [] var;
@@ -77,6 +77,7 @@ FixKinetics::~FixKinetics()
   memory->destroy(activity);
   memory->destroy(nuR);
   memory->destroy(nuS);
+  memory->destroy(nuGas);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -92,7 +93,7 @@ int FixKinetics::setmask()
 
 void FixKinetics::init()
 {
-  for (int n = 0; n < 2; n++) {
+  for (int n = 0; n < 4; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
       error->all(FLERR,"Variable name for fix kinetics does not exist");
@@ -102,6 +103,8 @@ void FixKinetics::init()
 
   temp = input->variable->compute_equal(ivar[0]);
   rth = input->variable->compute_equal(ivar[1]);
+  gVol = input->variable->compute_equal(ivar[2]);
+  gasTrans = input->variable->compute_equal(ivar[3]);
 
   bio = avec->bio;
 
@@ -112,6 +115,7 @@ void FixKinetics::init()
 
   nuS = memory->create(nuS,nnus+1, ngrids, "kinetics:nuS");
   nuR = memory->create(nuR,nnus+1, ngrids, "kinetics:nuR");
+  nuGas = memory->create(nuGas,nnus+1, ngrids, "kinetics:nuGas");
   metCoeff = memory->create(metCoeff,ntypes+1,nnus+1,"kinetic:metCoeff");
   iyield = memory->create(iyield,ntypes+1,ngrids,"kinetic:iyield");
   activity = memory->create(activity,nnus+1,5,"kinetics/ph:activity");

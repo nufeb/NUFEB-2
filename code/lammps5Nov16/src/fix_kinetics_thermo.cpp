@@ -64,6 +64,7 @@ FixKineticsThermo::~FixKineticsThermo()
   memory->destroy(DRGCat);
   memory->destroy(DRGAn);
   memory->destroy(khV);
+  memory->destroy(liq2Gas);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -97,21 +98,18 @@ void FixKineticsThermo::init()
   ngrids = nx * ny * nz;
   temp = kinetics->temp;
   rth = kinetics->rth;
-  metCoeff = kinetics->metCoeff;
 
   nnus = bio->nnus;
   catCoeff = bio->catCoeff;
   anabCoeff = bio->anabCoeff;
   nuGCoeff = bio->nuGCoeff;
   typeGCoeff = bio->typeGCoeff;
-  yield = bio->yield;
   diss = bio->dissipation;
-  ngflag = bio->ngflag;
-  tgflag = bio->tgflag;
 
   DRGCat = memory->create(DRGCat,ntypes+1,ngrids,"kinetics/thermo:DRGCat");
   DRGAn = memory->create(DRGAn,ntypes+1,ngrids,"kinetics/thermo:DRGAn");
   khV = memory->create(khV,nnus+1,"kinetics/thermo:khV");
+  liq2Gas = memory->create(liq2Gas,nnus+1,"kinetics/thermo:liq2Gas");
 
   init_dG0();
   init_KhV();
@@ -121,6 +119,9 @@ void FixKineticsThermo::init()
 
 void FixKineticsThermo::init_dG0()
 {
+  int *ngflag = bio->ngflag;
+  int *tgflag = bio->tgflag;
+
   dG0 = memory->create(dG0,ntypes+1,2,"kinetics/thermo:dG0");
 
   for (int i = 1; i <= ntypes; i++) {
@@ -146,6 +147,7 @@ void FixKineticsThermo::init_KhV()
 {
   for (int i = 1; i < nnus + 1; i++) {
     khV[i] = 0;
+    liq2Gas[i] = 0;
   }
 
   for (int i = 1; i < nnus + 1; i++) {
@@ -160,6 +162,7 @@ void FixKineticsThermo::init_KhV()
         char *nName2;     // nutrient name
         nName2 = bio->nuName[j];
         if (strcmp(lName, nName2) == 0) {
+          liq2Gas[i] = j;
           if (nuGCoeff[j][0] > 10000) {
             khV[j] = exp((nuGCoeff[j][1] - nuGCoeff[i][1]) / (-rth * temp));
           } else {
@@ -193,11 +196,36 @@ void FixKineticsThermo::thermo()
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
   int *type = atom->type;
+  double **activity = kinetics->activity;
+  double *kLa = bio->kLa;
+  double **nuGas = kinetics->nuGas;
+  double **nuR = kinetics->nuR;
 
   iyield = kinetics->iyield;
   nuS = kinetics->nuS;
 
   for (int i = 0; i < ngrids; i++) {
+    for (int j = 1; j <= nnus; j++) {
+      if (bio->nuType[i] == 1) {
+        //get corresponding liquid ID
+        int liqID = liq2Gas[i];
+        double gasT = 0;
+        if (liqID != 0) {
+          double vRgT = kinetics->gVol * 1000 / kinetics->gasTrans * kinetics->temp;
+          if (nuGCoeff[liqID][0] > 10000) {
+            gasT = kLa[j] * (activity[liqID][1] / khV[j] - activity[j][0]);
+          } else {
+            gasT = kLa[j] * (activity[liqID][0] / khV[j] - activity[j][0]);
+          }
+          nuGas[j][i] = gasT;
+          nuGas[liqID][i] = -gasT * vRgT;
+          // update nutrient consumption
+          nuR[j][i] = nuR + nuGas[j][i];
+          nuR[liqID][i] = nuR + nuGas[liqID][i];
+        }
+      }
+    }
+
     for (int j = 1; j <= ntypes; j++) {
       //Gibbs free energy of the reaction
       DRGCat[j][i] = dG0[j][0];  //catabolic energy values
