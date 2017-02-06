@@ -55,7 +55,7 @@ variable ke equal 5e+10
 #Defining kinetics variables
 variable temp equal 298.15
 variable gasTran equal 0.08205746
-variable gvol equal 2e-11
+variable gvol equal 8e-14
 variable rth equal 0.0083144
 variable ph equal 7.0
 
@@ -65,11 +65,11 @@ variable tol equal 1e-6
 
 ##############Ibm functions##############
 
-fix k1 all kinetics 1 1 1 v_temp v_rth
+fix k1 all kinetics 1 1 1 v_temp v_rth v_gvol v_gasTran
 fix g1 all diffusion exp v_diffT v_tol pp pp nd
-fix ki1 all kinetics/monod 1 1 v_gasTran v_gvol v_EPSdens
-fix ki2 all kinetics/thermo 1
 fix ki3 all kinetics/ph 1 v_ph
+fix ki2 all kinetics/thermo 1
+fix ki1 all kinetics/monod 1 1 v_EPSdens
 fix d1 all divide 1 v_EPSdens 1 3123
 
 #fix j1 all epsadh 1 v_ke 1
@@ -93,35 +93,35 @@ Neighbor list info ...
 Memory usage per processor = 131.994 Mbytes
 Step CPU Atoms biomass 
        0            0       10 7.2057705e-16 
-       1  0.018035889       10 7.802498e-16 
-       2  0.036476851       20 8.4514342e-16 
-       3   0.05446291       20 9.157365e-16 
-       4   0.07246995       20 9.9255313e-16 
-       5  0.090854883       20 1.0761673e-15 
-Loop time of 0.090863 on 1 procs for 5 steps with 20 atoms
+       1  0.018204927       10 7.2057705e-16 
+       2  0.036359072       10 7.2057705e-16 
+       3  0.055733919       10 7.2057705e-16 
+       4  0.074390888       10 7.2057705e-16 
+       5  0.092739105       10 7.2057705e-16 
+Loop time of 0.0927639 on 1 procs for 5 steps with 10 atoms
 
-Performance: 17115879741.910 tau/day, 55.028 timesteps/s
-101.3% CPU use with 1 MPI tasks x no OpenMP threads
+Performance: 16765142337.823 tau/day, 53.900 timesteps/s
+94.9% CPU use with 1 MPI tasks x no OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
 ---------------------------------------------------------------
-Pair    | 1.3113e-05 | 1.3113e-05 | 1.3113e-05 |   0.0 |  0.01
-Neigh   | 0.089427   | 0.089427   | 0.089427   |   0.0 | 98.42
-Comm    | 1.812e-05  | 1.812e-05  | 1.812e-05  |   0.0 |  0.02
-Output  | 0.00046611 | 0.00046611 | 0.00046611 |   0.0 |  0.51
-Modify  | 0.00091982 | 0.00091982 | 0.00091982 |   0.0 |  1.01
-Other   |            | 1.884e-05  |            |       |  0.02
+Pair    | 5.2452e-06 | 5.2452e-06 | 5.2452e-06 |   0.0 |  0.01
+Neigh   | 0.090843   | 0.090843   | 0.090843   |   0.0 | 97.93
+Comm    | 1.0729e-05 | 1.0729e-05 | 1.0729e-05 |   0.0 |  0.01
+Output  | 0.00038409 | 0.00038409 | 0.00038409 |   0.0 |  0.41
+Modify  | 0.0014911  | 0.0014911  | 0.0014911  |   0.0 |  1.61
+Other   |            | 2.956e-05  |            |       |  0.03
 
-Nlocal:    20 ave 20 max 20 min
+Nlocal:    10 ave 10 max 10 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
 Nghost:    0 ave 0 max 0 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
-Neighs:    10 ave 10 max 10 min
+Neighs:    0 ave 0 max 0 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
 
-Total # of neighbors = 10
-Ave neighs/atom = 0.5
+Total # of neighbors = 0
+Ave neighs/atom = 0
 Neighbor list builds = 5
 Dangerous builds = 0
 

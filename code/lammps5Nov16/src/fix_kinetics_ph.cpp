@@ -205,22 +205,23 @@ void FixKineticsPH::solve_ph()
           lmp->error->all(FLERR,"denm returns a zero value");
         }
         // not hydrated form acitivity
-        activity[k][0] = nuChr[k][0] * (kEq[k][0]/w * nuS[k][i] * gSh * gSh * gSh / denm[k]);
+        activity[k][0] = kEq[k][0]/w * nuS[k][i] * gSh * gSh * gSh / denm[k];
         // fully protonated form activity
-        activity[k][1] = nuChr[k][1] * (nuS[k][i] * gSh * gSh * gSh / denm[k]);
+        activity[k][1] = nuS[k][i] * gSh * gSh * gSh / denm[k];
         // 1st deprotonated form activity
-        activity[k][2] = nuChr[k][2] * (nuS[k][i] * gSh * gSh * kEq[k][1] / denm[k]);
+        activity[k][2] = nuS[k][i] * gSh * gSh * kEq[k][1] / denm[k];
         // 2nd deprotonated form activity
-        activity[k][3] = nuChr[k][3] * (nuS[k][i] * gSh * kEq[k][1] * kEq[k][2] / denm[k]);
+        activity[k][3] = nuS[k][i] * gSh * kEq[k][1] * kEq[k][2] / denm[k];
         // 3rd deprotonated form activity
-        activity[k][4] = nuChr[k][4] * (nuS[k][i] * kEq[k][1] * kEq[k][2] * kEq[k][3] / denm[k]);
+        activity[k][4] = nuS[k][i] * kEq[k][1] * kEq[k][2] * kEq[k][3] / denm[k];
 
-        sumActivity += activity[k][0];
-        sumActivity += activity[k][1];
-        sumActivity += activity[k][2];
-        sumActivity += activity[k][3];
-        sumActivity += activity[k][4];
+        sumActivity += nuChr[k][0] * activity[k][0];
+        sumActivity += nuChr[k][1] * activity[k][1];
+        sumActivity += nuChr[k][2] * activity[k][2];
+        sumActivity += nuChr[k][3] * activity[k][3];
+        sumActivity += nuChr[k][4] * activity[k][4];
       }
+
       if (j == 0) fa = gSh + sumActivity;
       else fb = gSh + sumActivity;
     }
@@ -238,17 +239,17 @@ void FixKineticsPH::solve_ph()
       for (int k = 1; k < nnus+1; k++) {
         denm[k] = (1 + kEq[k][0]/w) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][1] * gSh + kEq[k][3] * kEq[k][2] * kEq[k][1] ;
 
-        activity[k][0] = nuChr[k][0] * (kEq[k][0]/w * nuS[k][i] * gSh * gSh * gSh / denm[k]);
-        activity[k][1] = nuChr[k][1] * (nuS[k][i] * gSh * gSh * gSh / denm[k]);
-        activity[k][2] = nuChr[k][2] * (nuS[k][i] * gSh * gSh * kEq[k][1] / denm[k]);
-        activity[k][3] =  nuChr[k][3] * (nuS[k][i] * gSh * kEq[k][1] * kEq[k][2] / denm[k]);
-        activity[k][4] = nuChr[k][4] * (nuS[k][i] * kEq[k][1] * kEq[k][2] * kEq[k][3] / denm[k]) ;
+        activity[k][0] = kEq[k][0]/w * nuS[k][i] * gSh * gSh * gSh / denm[k];
+        activity[k][1] = nuS[k][i] * gSh * gSh * gSh / denm[k];
+        activity[k][2] = nuS[k][i] * gSh * gSh * kEq[k][1] / denm[k];
+        activity[k][3] = nuS[k][i] * gSh * kEq[k][1] * kEq[k][2] / denm[k];
+        activity[k][4] = nuS[k][i] * kEq[k][1] * kEq[k][2] * kEq[k][3] / denm[k] ;
 
-        sumActivity += activity[k][0];
-        sumActivity += activity[k][1];
-        sumActivity += activity[k][2];
-        sumActivity += activity[k][3];
-        sumActivity += activity[k][4];
+        sumActivity += nuChr[k][0] * activity[k][0];
+        sumActivity += nuChr[k][1] * activity[k][1];
+        sumActivity += nuChr[k][2] * activity[k][2];
+        sumActivity += nuChr[k][3] * activity[k][3];
+        sumActivity += nuChr[k][4] * activity[k][4];
       }
       // evaluation of the charge balance for the current Sh value, F(Sh)
       fun = gSh + sumActivity;
@@ -285,17 +286,17 @@ void FixKineticsPH::solve_ph()
             for (int k = 1; k < nnus+1; k++) {
               denm[k] = (1 + kEq[k][0]/w) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][1] * gSh + kEq[k][3] * kEq[k][2] * kEq[k][1];
 
-              activity[k][0] = nuChr[k][0] * (kEq[k][0]/w * nuS[k][i] * gSh * gSh * gSh / denm[k]);
-              activity[k][1] = nuChr[k][1] * (nuS[k][i] * gSh * gSh * gSh / denm[k]);
-              activity[k][2] = nuChr[k][2] * (nuS[k][i] * gSh * gSh * kEq[k][1] / denm[k]);
-              activity[k][3] = nuChr[k][3] * (nuS[k][i] * gSh * kEq[k][1] * kEq[k][2] / denm[k]);
-              activity[k][4] = nuChr[k][4] * (nuS[k][i] * kEq[k][1] * kEq[k][2] * kEq[k][3] / denm[k]);
+              activity[k][0] = kEq[k][0]/w * nuS[k][i] * gSh * gSh * gSh / denm[k];
+              activity[k][1] = nuS[k][i] * gSh * gSh * gSh / denm[k];
+              activity[k][2] = nuS[k][i] * gSh * gSh * kEq[k][1] / denm[k];
+              activity[k][3] = nuS[k][i] * gSh * kEq[k][1] * kEq[k][2] / denm[k];
+              activity[k][4] = nuS[k][i] * kEq[k][1] * kEq[k][2] * kEq[k][3] / denm[k];
 
-              sumActivity += activity[k][0];
-              sumActivity += activity[k][1];
-              sumActivity += activity[k][2];
-              sumActivity += activity[k][3];
-              sumActivity += activity[k][4];
+              sumActivity += nuChr[k][0] * activity[k][0];
+              sumActivity += nuChr[k][1] * activity[k][1];
+              sumActivity += nuChr[k][2] * activity[k][2];
+              sumActivity += nuChr[k][3] * activity[k][3];
+              sumActivity += nuChr[k][4] * activity[k][4];
             }
             fc = gSh + sumActivity;
             if (fa * fc > 0) {

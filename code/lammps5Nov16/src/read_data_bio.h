@@ -120,6 +120,9 @@ class ReadDataBIO : protected Pointers {
   void growth();
   void ks();
   void yield();
+  void maintain();
+  void decay();
+
 
   void catCoeff();
   void anabCoeff();

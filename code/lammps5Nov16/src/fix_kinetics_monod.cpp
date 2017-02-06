@@ -95,8 +95,6 @@ FixKineticsMonod::~FixKineticsMonod()
     delete [] minMonod[i];
   }
   delete [] minMonod;
-
-  memory->destroy(matConsume);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -152,17 +150,14 @@ void FixKineticsMonod::init()
   nnus = bio->nnus;
   catCoeff = bio->catCoeff;
   anabCoeff = bio->anabCoeff;
-  yield = bio->yield;
+  gYield = kinetics->gYield;
 
-  metCoeff = kinetics->metCoeff;
   minMonod = new double*[ntypes+1];
 
   //initialization
   for (int i = 0; i <= ntypes; i++) {
     minMonod[i] = new double[ngrids];
   }
-
-  create_metaMatrix();
 
   //Get computational domain size
   if (domain->triclinic == 0) {
@@ -187,36 +182,6 @@ void FixKineticsMonod::init()
   stepz = (zhi - zlo) / nz;
 
   vol = stepx * stepy * stepz;
-}
-
-/* ----------------------------------------------------------------------
-  calculate metabolic coefficient for all microbial species
-------------------------------------------------------------------------- */
-
-void FixKineticsMonod::create_metaMatrix()
-{
-  matConsume = memory->create(matConsume,ntypes+1,nnus+1,"atom:matCons");
-
-  for (int i = 1; i <= ntypes; i++) {
-    for (int j = 1; j <= nnus; j++) {
-     // cout << "type = " << atom->nuType[j] << endl;
-      if (strcmp(bio->nuName[j], "h") == 0 || strcmp(bio->nuName[j], "h2o") == 0) {
-        metCoeff[i][j] = 0;
-        matConsume[i][j] = 0;
-        continue;
-      }
-
-      double pThY = 1/yield[i];
-      double coeff = catCoeff[i][j] * pThY + anabCoeff[i][j];
-
-      metCoeff[i][j] = coeff;
-      if (coeff < 0) {
-        matConsume[i][j] = 1;
-      } else {
-        matConsume[i][j] = 0;
-      }
-    }
-  }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -246,8 +211,6 @@ void FixKineticsMonod::monod()
 
   nuS = kinetics->nuS;
   nuR = kinetics->nuR;
-//  double agr = 0;
- // double ar = 0;
 
   //initialization
   for (int i = 0; i <= ntypes; i++) {
@@ -269,17 +232,23 @@ void FixKineticsMonod::monod()
       if (mask[i] & groupbit) {
         int t = type[i];
         int pos = position(i);
-        double growthRate = growth_rate(i, pos);
+        double muMet = growth_rate(i, pos, 1);
+        double muCat = growth_rate(i, pos, 2);
+
         //update bacteria mass, radius etc
         for (int j = 1; j <= nnus; j++) {
-          // convert kg to mol
-          double consume = metCoeff[t][j] * growthRate * rmass[i] / 2.46e-2;
-          if(bio->nuType[j] == 0) {
-            //calculate liquid concentrations, convert from m3 to L
-            double uptake = consume / (vol * 1000);
-          //  printf("uptake = %e \n", uptake);
-            nuR[j][pos] += uptake;
-            //ar += uptake;
+          if (strcmp(bio->nuName[j], "h") != 0 && strcmp(bio->nuName[j], "h2o") != 0) {
+            double invYield = 1/gYield[t][pos];
+            double metCoeff = catCoeff[t][j] * invYield + anabCoeff[t][j];
+            // convert kg to mol
+            double consume = metCoeff * growthRate * rmass[i] / 2.46e-2;
+            if(bio->nuType[j] == 0) {
+              //calculate liquid concentrations, convert from m3 to L
+              double uptake = consume / (vol * 1000);
+              // printf("uptake = %e \n", uptake);
+              nuR[j][pos] += uptake;
+              //ar += uptake;
+            }
           }
         }
       }
@@ -325,7 +294,7 @@ int FixKineticsMonod::position(int i) {
   return pos;
 }
 
-double FixKineticsMonod::growth_rate(int i, int pos) {
+double FixKineticsMonod::growth_rate(int i, int pos, int ind) {
 
   //calculate growth rate using minimum monod
   int t = type[i];
@@ -333,32 +302,41 @@ double FixKineticsMonod::growth_rate(int i, int pos) {
 
   double monod = minMonod[t][pos];
   if (monod < 0) {
-    minMonod[t][pos] = minimal_monod(pos, t);
+    minMonod[t][pos] = minimal_monod(pos, t, ind);
     growthRate = avec->atom_mu[i] * minMonod[t][pos];
   } else {
     growthRate = avec->atom_mu[i] * monod;
   }
 
-  return growthRate * yield[t];
+  return growthRate;
 }
 
 /* ----------------------------------------------------------------------
   get minimum monod term w.r.t all nutrients
 ------------------------------------------------------------------------- */
 
-double FixKineticsMonod::minimal_monod(int pos, int type)
+double FixKineticsMonod::minimal_monod(int pos, int type, int ind)
 {
   vector<double> mon;
   int size = 0;
   double min = 0;
+  double invYield = 1/gYield[type][pos];
 
   for (int i = 1; i <= nnus; i++ ) {
-    if (matConsume[type][i] != 0 && bio->nuType[i] == 0) {
-      double v = nuS[i][pos]/(bio->ks[type] + nuS[i][pos]);
-      mon.push_back(v);
-      size++;
-    }
-  }
+    if (strcmp(bio->nuName[i], "h") != 0 && strcmp(bio->nuName[i], "h2o") != 0) {
+      double coeff;
+      if (ind == 0) coeff = catCoeff[type][i] * invYield + anabCoeff[type][i];
+      else coeff = catCoeff[type][i];
+
+      if (coeff < 0) {
+        double v = nuS[i][pos]/(bio->ks[type] + nuS[i][pos]);
+        if (v != 0) {
+          mon.push_back(v);
+          size++;
+        }
+      }
+     }
+   }
 
   if (mon.size() > 0)
     min = *min_element(mon.begin(), mon.end());

@@ -24,6 +24,8 @@ BIO::BIO(LAMMPS *lmp) : Pointers(lmp)
 {
   //type
   yield = NULL;
+  maintain = NULL;
+  decay = NULL;
   mu = NULL;
   ks = NULL;
   typeName = NULL;
@@ -51,6 +53,8 @@ BIO::BIO(LAMMPS *lmp) : Pointers(lmp)
 BIO::~BIO()
 {
   memory->destroy(yield);
+  memory->destroy(maintain);
+  memory->destroy(decay);
   memory->destroy(mu);
   memory->destroy(ks);
   memory->destroy(anabCoeff);
@@ -235,6 +239,70 @@ void BIO::set_yield(const char *str)
   //mass_setflag[itype] = 1;
 
   if (yield[itype] < 0.0) error->all(FLERR,"Invalid set_yield value");
+}
+
+/* ----------------------------------------------------------------------
+   set maintenance values for all types
+   called from reading of data file
+------------------------------------------------------------------------- */
+
+void BIO::set_maintain(const char *str)
+{
+  if (maintain == NULL) error->all(FLERR,"Cannot set maintain for this atom style");
+
+  char* typeName;
+  double maintain_one;
+  int len = strlen(str) + 1;
+  typeName = new char[len];
+
+  int n = sscanf(str,"%s %lg",typeName,&maintain_one);
+  if (n != 2) error->all(FLERR,"Invalid set_maintain line in data file");
+
+  int itype = find_typeID(typeName);
+  delete [] typeName;
+
+  if (itype < 1 || itype > atom->ntypes)
+    error->all(FLERR,"Invalid type for set_maintain set");
+
+  if (maintain_one <= 0)
+    lmp->error->all(FLERR,"maintain cannot be zero or less than zero");
+
+  maintain[itype] = maintain_one;
+  //mass_setflag[itype] = 1;
+
+  if (maintain[itype] < 0.0) error->all(FLERR,"Invalid set_maintain value");
+}
+
+/* ----------------------------------------------------------------------
+   set decay values for all types
+   called from reading of data file
+------------------------------------------------------------------------- */
+
+void BIO::set_decay(const char *str)
+{
+  if (decay == NULL) error->all(FLERR,"Cannot set decay for this atom style");
+
+  char* typeName;
+  double decay_one;
+  int len = strlen(str) + 1;
+  typeName = new char[len];
+
+  int n = sscanf(str,"%s %lg",typeName,&decay_one);
+  if (n != 2) error->all(FLERR,"Invalid set_decay line in data file");
+
+  int itype = find_typeID(typeName);
+  delete [] typeName;
+
+  if (itype < 1 || itype > atom->ntypes)
+    error->all(FLERR,"Invalid type for set_decay set");
+
+  if (decay_one <= 0)
+    lmp->error->all(FLERR,"decay cannot be zero or less than zero");
+
+  decay[itype] = decay_one;
+  //mass_setflag[itype] = 1;
+
+  if (decay[itype] < 0.0) error->all(FLERR,"Invalid set_decay value");
 }
 
 /* ----------------------------------------------------------------------
