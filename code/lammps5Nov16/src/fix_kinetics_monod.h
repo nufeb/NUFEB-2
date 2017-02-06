@@ -48,8 +48,8 @@ class FixKineticsMonod : public Fix {
 
   double stepx, stepy, stepz;       // grids size
   double xlo,xhi,ylo,yhi,zlo,zhi;   // simulaton box size
-  double vol, gvol;                 // grid volume and gas volume
-  double rg, temp;                  // gas transfer constant and temperature
+  double vol;                 // grid volume and gas volume
+  double temp;                  // gas transfer constant and temperature
   double EPSdens;                   // EPS density
 
   int **matConsume;                // endergonic components of metabolic matrix
