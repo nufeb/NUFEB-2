@@ -21,6 +21,8 @@ class BIO : protected Pointers {
   double *mu;                 // maximum species growth rate
   double *yield;              // growth yield coefficient
   double *dissipation;        // universal gas constant (thermodynamics)
+  double *maintain;
+  double *decay;
 
   double **catCoeff;          // catabolism coefficient [type][nutrient]
   double **anabCoeff;         // anabolism coefficient [type][nutrient]
@@ -47,6 +49,8 @@ class BIO : protected Pointers {
   void set_growth(const char *);
   void set_ks(const char *);
   void set_yield(const char *);
+  void set_maintain(const char *);
+  void set_decay(const char *);
   void set_diffusion(const char *);
   void set_catCoeff(int, char **);
   void set_anabCoeff(int, char **);

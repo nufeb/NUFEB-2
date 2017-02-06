@@ -60,9 +60,9 @@ variable tol equal 1e-6
 
 fix k1 all kinetics 1 1 1 v_temp v_rth v_gvol v_gasTran
 fix g1 all diffusion exp v_diffT v_tol pp pp nd
-fix ki1 all kinetics/monod 1 1 v_EPSdens
 fix ki3 all kinetics/ph 1 v_ph
 fix ki2 all kinetics/thermo 1
+fix ki1 all kinetics/monod 1 1 v_EPSdens
 fix d1 all divide 1 v_EPSdens 1 3123
 
 #fix j1 all epsadh 1 v_ke 1

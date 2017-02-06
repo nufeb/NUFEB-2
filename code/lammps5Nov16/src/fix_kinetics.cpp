@@ -72,8 +72,7 @@ FixKinetics::~FixKinetics()
   delete [] var;
   delete [] ivar;
 
-  memory->destroy(metCoeff);
-  memory->destroy(iyield);
+  memory->destroy(gYield);
   memory->destroy(activity);
   memory->destroy(nuR);
   memory->destroy(nuS);
@@ -116,13 +115,15 @@ void FixKinetics::init()
   nuS = memory->create(nuS,nnus+1, ngrids, "kinetics:nuS");
   nuR = memory->create(nuR,nnus+1, ngrids, "kinetics:nuR");
   nuGas = memory->create(nuGas,nnus+1, ngrids, "kinetics:nuGas");
-  metCoeff = memory->create(metCoeff,ntypes+1,nnus+1,"kinetic:metCoeff");
-  iyield = memory->create(iyield,ntypes+1,ngrids,"kinetic:iyield");
+  gYield = memory->create(gYield,ntypes+1,ngrids,"kinetic:iyield");
   activity = memory->create(activity,nnus+1,5,"kinetics/ph:activity");
 
-  //initialize inlet concentration, consumption
-  for (int i = 1; i <= nnus; i++) {
-    for (int j = 0; j < ngrids; j++) {
+  //initialize grid yield, inlet concentration, consumption
+  for (int j = 0; j < ngrids; j++) {
+    for (int i = 1; i <= ntypes; i++) {
+      gYield[i][j] = bio->yield[i];
+    }
+    for (int i = 1; i <= nnus; i++) {
       nuS[i][j] = bio->iniS[i][0];
       nuR[i][j] = 0;
     }

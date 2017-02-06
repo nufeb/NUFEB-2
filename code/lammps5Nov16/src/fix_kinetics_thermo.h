@@ -39,7 +39,7 @@ class FixKineticsThermo : public Fix {
   double **nuGCoeff;               // Gibbs free energy coefficient [nutrient][5charges]
   double **typeGCoeff;             // Gibbs free energy coefficient [type][5charges]
   double *diss;                    // Gibbs free energy of dissipation
-  double **iyield;                 // dynamic yield coeff [type][grid]
+  double **gYield;                 // dynamic yield coeff [type][grid]
 
   double **nuS;                    // nutrient concentration for all grids
   double **dG0;

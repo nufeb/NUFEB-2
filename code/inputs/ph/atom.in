@@ -50,6 +50,16 @@
      hety 0.0598
      hetr 0.0299
   
+ Maintenance
+ 
+     hety 0
+     hetr 0
+
+ Decay
+
+     hety 0
+     hetr 0
+
  Catabolism Coeffs
          
     hety -1 0 1 0 
@@ -92,7 +102,7 @@
 
  KLa
  
-     o2 0
+     o2 0.003943333
      go2 0
      h2o 0
      h 0 

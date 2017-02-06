@@ -52,11 +52,9 @@ class FixKineticsMonod : public Fix {
   double temp;                  // gas transfer constant and temperature
   double EPSdens;                   // EPS density
 
-  int **matConsume;                // endergonic components of metabolic matrix
   double **catCoeff;               // catabolism coefficients of species
   double **anabCoeff;              // anabolism  coefficients of species
-  double **metCoeff;               // metabolism coefficients of species
-  double *yield;                   // yield coefficients
+  double **gYield;                   // yield coefficients
   double **minMonod;
 
   double **nuS;                    // nutrient concentration for all grids
@@ -68,11 +66,10 @@ class FixKineticsMonod : public Fix {
   class FixDiffusion *diffusion;
   class BIO *bio;
 
-  void create_metaMatrix();
   void monod();
-  double minimal_monod(int, int);
+  double minimal_monod(int, int, int);
   void bio_update(double, int);
-  double growth_rate(int, int);
+  double growth_rate(int, int, int);
   int position(int);
 
 };

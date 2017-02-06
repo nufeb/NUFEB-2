@@ -57,7 +57,7 @@ using namespace LAMMPS_NS;
 #define MAXBODY 32         // max # of lines in one body
 
                            // customize for new sections
-#define NSECTIONS 38       // change when add to header::section_keywords
+#define NSECTIONS 40       // change when add to header::section_keywords
 
 enum{NONE,APPEND,VALUE,MERGE};
 
@@ -545,7 +545,15 @@ void ReadDataBIO::command(int narg, char **arg)
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) yield();
         else skip_lines(atom->ntypes);
-      } else if (strcmp(keyword,"Dissipation") == 0) {
+      } else if (strcmp(keyword,"Maintenance") == 0) {
+        if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
+        if (firstpass) maintain();
+        else skip_lines(atom->ntypes);
+      } else if (strcmp(keyword,"Decay") == 0) {
+        if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
+        if (firstpass) decay();
+        else skip_lines(atom->ntypes);
+      }   else if (strcmp(keyword,"Dissipation") == 0) {
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) dissipation();
         else skip_lines(atom->ntypes);
@@ -948,7 +956,7 @@ void ReadDataBIO::header(int firstpass)
      "AngleAngleTorsion Coeffs","BondBond13 Coeffs","AngleAngle Coeffs",
      "Growth","Ks","Yield","Nutrients","Diffusion Coeffs","Catabolism Coeffs",
      "Anabolism Coeffs","Nutrient Energy","Type Energy", "Dissipation", "Nutrient Charge",
-     "Type Charge", "KLa"};
+     "Type Charge", "KLa", "Maintenance", "Decay"};
 
   // skip 1st line of file
 
@@ -2135,6 +2143,8 @@ void ReadDataBIO::type_coeffs(){
   bio->ks = memory->create(bio->ks,ntypes+1,"atom:ks");
   bio->mu = memory->create(bio->mu,ntypes+1,"bio:growth");
   bio->yield = memory->create(bio->yield,ntypes+1,"bio:yield");
+  bio->maintain = memory->create(bio->maintain,ntypes+1,"bio:maintain");
+  bio->decay = memory->create(bio->decay,ntypes+1,"bio:decay");
   bio->dissipation = memory->create(bio->dissipation,ntypes+1,"bio:dissipation");
   bio->typeGCoeff = memory->create(bio->typeGCoeff,ntypes+1,5,"bio:typeGCoeff");
   bio->tgflag = memory->create(bio->tgflag,5,"bio:tgflag");
@@ -2272,6 +2282,48 @@ void ReadDataBIO::yield()
     next = strchr(buf,'\n');
     *next = '\0';
     bio->set_yield(buf);
+    buf = next + 1;
+  }
+  delete [] original;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void ReadDataBIO::maintain()
+{
+  int i,m;
+  char *next;
+  char *buf = new char[atom->ntypes*MAXLINE];
+
+  int eof = comm->read_lines_from_file(fp,atom->ntypes,MAXLINE,buf);
+  if (eof) error->all(FLERR,"Unexpected end of data file");
+
+  char *original = buf;
+  for (i = 0; i < atom->ntypes; i++) {
+    next = strchr(buf,'\n');
+    *next = '\0';
+    bio->set_maintain(buf);
+    buf = next + 1;
+  }
+  delete [] original;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void ReadDataBIO::decay()
+{
+  int i,m;
+  char *next;
+  char *buf = new char[atom->ntypes*MAXLINE];
+
+  int eof = comm->read_lines_from_file(fp,atom->ntypes,MAXLINE,buf);
+  if (eof) error->all(FLERR,"Unexpected end of data file");
+
+  char *original = buf;
+  for (i = 0; i < atom->ntypes; i++) {
+    next = strchr(buf,'\n');
+    *next = '\0';
+    bio->set_decay(buf);
     buf = next + 1;
   }
   delete [] original;
