@@ -53,33 +53,17 @@ using namespace std;
 
 FixKineticsPH::FixKineticsPH(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
-  if (narg != 5) error->all(FLERR,"Not enough arguments in fix kinetics/ph command");
+  if (narg != 4) error->all(FLERR,"Not enough arguments in fix kinetics/ph command");
 
   nevery = force->inumeric(FLERR,arg[3]);
   if (nevery < 0) error->all(FLERR,"Illegal fix kinetics/ph command");
-
-  var = new char*[1];
-  ivar = new int[1];
-
-  for (int i = 0; i < 1; i++) {
-    int n = strlen(&arg[4+i][2]) + 1;
-    var[i] = new char[n];
-    strcpy(var[i],&arg[4+i][2]);
-  }
 }
 
 /* ---------------------------------------------------------------------- */
 
 FixKineticsPH::~FixKineticsPH()
 {
-  int i;
-  for (i = 0; i < 1; i++) {
-    delete [] var[i];
-  }
-  delete [] var;
-  delete [] ivar;
 
-  memory->destroy(kEq);
   memory->destroy(Sh);
 }
 
@@ -96,16 +80,6 @@ int FixKineticsPH::setmask()
 
 void FixKineticsPH::init()
 {
-  for (int n = 0; n < 1; n++) {
-    ivar[n] = input->variable->find(var[n]);
-    if (ivar[n] < 0)
-      error->all(FLERR,"Variable name for fix kinetics/ph does not exist");
-    if (!input->variable->equalstyle(ivar[n]))
-      error->all(FLERR,"Variable for fix kinetics/ph is invalid style");
-  }
-
-  ph = input->variable->compute_equal(ivar[0]);
-
   // register fix kinetics with this class
   int nfix = modify->nfix;
   for (int j = 0; j < nfix; j++) {
@@ -129,35 +103,10 @@ void FixKineticsPH::init()
   temp = kinetics->temp;
   rth = kinetics->rth;
   activity = kinetics->activity;
+  kEq = kinetics->kEq;
 
   Sh = memory->create(Sh,kinetics->ngrids,"kinetics/ph:Sh");
-  kEq = memory->create(kEq,nnus+1,4,"kinetics/ph:nuKeq");
-  init_keq();
 }
-
-/* ---------------------------------------------------------------------- */
-
-void FixKineticsPH::init_keq()
-{
-  // water Kj/mol
-  double dG0H2O = -237.18;
-
-  for (int i = 1; i < nnus+1; i++) {
-    kEq[i][0] = exp((dG0H2O + nuGCoeff[i][0] - nuGCoeff[i][1]) / (-rth * temp));
-    for (int j = 1; j < 4; j++) {
-      double coeff = 0.0;
-
-      if (nuGCoeff[i][j+1] > 10000) {
-        coeff = j * 10001;
-      } else {
-        coeff = 0;
-      }
-
-      kEq[i][j] = exp((nuGCoeff[i][j+1] + coeff - nuGCoeff[i][j]) / (-rth * temp));
-    }
-  }
-}
-
 
 /* ---------------------------------------------------------------------- */
 
@@ -232,7 +181,7 @@ void FixKineticsPH::solve_ph()
     }
 
     //Newton-Raphson method
-    gSh = pow(10, -ph);
+    gSh = pow(10, -kinetics->ph);
 
     while (ipH <= maxIter) {
       sumActivity = 0.0;
@@ -330,7 +279,14 @@ void FixKineticsPH::solve_ph()
     }
     Sh[i] = gSh;
   }
-
+//  for (int k = 1; k < nnus+1; k++) {
+//    printf("%e ", activity[k][0]);
+//    printf("%e ", activity[k][1]);
+//    printf("%e ", activity[k][2]);
+//    printf("%e ", activity[k][3]);
+//    printf("%e ", activity[k][4]);
+//    printf("\n");
+//  }
   memory->destroy(dDenm);
   memory->destroy(denm);
   memory->destroy(aux);

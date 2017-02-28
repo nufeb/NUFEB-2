@@ -36,6 +36,7 @@ class FixKinetics : public Fix {
 
   int nx, ny, nz;                  // number of grids in x y z axis
   int ngrids;                      // # of grids
+  double ph;                       // initial ph
 
   double **nuS;                    // nutrient concentration [nutrient][grid]
   double **nuR;                    // nutrient consumption [nutrient][grid]
@@ -44,9 +45,15 @@ class FixKinetics : public Fix {
   double **activity;               // activities of chemical species [nutrient][5 charges]
   double gVol, gasTrans;           // gas volume and gas transfer constant
   double temp, rth;                // uiversal gas constant (thermodynamics) and temperature
+  double **DRGCat;                 // Gibbs free energy of catabolism [type][grid]
+  double **DRGAn;                  // Gibbs free energy of anabolism [type][grid]
+  double **kEq;                    // equilibrium constants [nutrient][4]
 
   class AtomVecBio *avec;
   class BIO *bio;
+
+  void init_activity();
+  void init_keq();
 };
 
 }

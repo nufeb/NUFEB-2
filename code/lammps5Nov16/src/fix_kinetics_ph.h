@@ -27,13 +27,8 @@ class FixKineticsPH : public Fix {
   void pre_force(int);
 
  private:
-  char **var;
-  int *ivar;
-
   int nnus;                     // # of nutrients
   int ntypes;                   // # of species
-
-  double ph;                    // initial ph
   double rth, temp;             // universal gas constant (thermodynamics) and temperature
 
   double *Sh;

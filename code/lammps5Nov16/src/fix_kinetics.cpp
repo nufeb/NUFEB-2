@@ -22,6 +22,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "atom.h"
 #include "atom_vec_bio.h"
@@ -45,16 +46,16 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg
   avec = (AtomVecBio *) atom->style_match("bio");
   if (!avec) error->all(FLERR,"Fix kinetics requires atom style bio");
 
-  if (narg != 10) error->all(FLERR,"Not enough arguments in fix kinetics command");
+  if (narg != 11) error->all(FLERR,"Not enough arguments in fix kinetics command");
 
-  var = new char*[4];
-  ivar = new int[4];
+  var = new char*[5];
+  ivar = new int[5];
 
   nx = atoi(arg[3]);
   ny = atoi(arg[4]);
   nz = atoi(arg[5]);
 
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 5; i++) {
     int n = strlen(&arg[6+i][2]) + 1;
     var[i] = new char[n];
     strcpy(var[i],&arg[6+i][2]);
@@ -66,7 +67,7 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg
 FixKinetics::~FixKinetics()
 {
   int i;
-  for (i = 0; i < 4; i++) {
+  for (i = 0; i < 5; i++) {
     delete [] var[i];
   }
   delete [] var;
@@ -77,6 +78,9 @@ FixKinetics::~FixKinetics()
   memory->destroy(nuR);
   memory->destroy(nuS);
   memory->destroy(nuGas);
+  memory->destroy(DRGCat);
+  memory->destroy(DRGAn);
+  memory->destroy(kEq);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -92,7 +96,7 @@ int FixKinetics::setmask()
 
 void FixKinetics::init()
 {
-  for (int n = 0; n < 4; n++) {
+  for (int n = 0; n < 5; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
       error->all(FLERR,"Variable name for fix kinetics does not exist");
@@ -104,6 +108,7 @@ void FixKinetics::init()
   rth = input->variable->compute_equal(ivar[1]);
   gVol = input->variable->compute_equal(ivar[2]);
   gasTrans = input->variable->compute_equal(ivar[3]);
+  ph = input->variable->compute_equal(ivar[4]);
 
   bio = avec->bio;
 
@@ -115,8 +120,11 @@ void FixKinetics::init()
   nuS = memory->create(nuS,nnus+1, ngrids, "kinetics:nuS");
   nuR = memory->create(nuR,nnus+1, ngrids, "kinetics:nuR");
   nuGas = memory->create(nuGas,nnus+1, ngrids, "kinetics:nuGas");
-  gYield = memory->create(gYield,ntypes+1,ngrids,"kinetic:iyield");
-  activity = memory->create(activity,nnus+1,5,"kinetics/ph:activity");
+  gYield = memory->create(gYield,ntypes+1,ngrids,"kinetic:gYield");
+  activity = memory->create(activity,nnus+1,5,"kinetics:activity");
+  DRGCat = memory->create(DRGCat,ntypes+1,ngrids,"kinetics:DRGCat");
+  DRGAn = memory->create(DRGAn,ntypes+1,ngrids,"kinetics:DRGAn");
+  kEq = memory->create(kEq,nnus+1,4,"kinetics:kEq");
 
   //initialize grid yield, inlet concentration, consumption
   for (int j = 0; j < ngrids; j++) {
@@ -128,6 +136,59 @@ void FixKinetics::init()
       nuR[i][j] = 0;
     }
   }
+
+  init_keq();
+  init_activity();
 }
 
+/* ---------------------------------------------------------------------- */
+
+void FixKinetics::init_keq()
+{
+  // water Kj/mol
+  double dG0H2O = -237.18;
+  int nnus = bio->nnus;
+  double** nuGCoeff = bio->nuGCoeff;
+
+  for (int i = 1; i < nnus+1; i++) {
+    kEq[i][0] = exp((dG0H2O + nuGCoeff[i][0] - nuGCoeff[i][1]) / (-rth * temp));
+    for (int j = 1; j < 4; j++) {
+      double coeff = 0.0;
+
+      if (nuGCoeff[i][j+1] > 10000) {
+        coeff = j * 10001;
+      } else {
+        coeff = 0;
+      }
+
+      kEq[i][j] = exp((nuGCoeff[i][j+1] + coeff - nuGCoeff[i][j]) / (-rth * temp));
+    }
+  }
+}
+
+void FixKinetics::init_activity() {
+  int nnus = bio->nnus;
+  double *denm = memory->create(denm,nnus+1,"kinetics:denm");
+  double gSh = pow(10, -ph);
+
+  for (int k = 1; k < nnus+1; k++) {
+    double iniNuS = bio->iniS[k][0];
+
+    denm[k] = (1 + kEq[k][0]) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][3] * gSh + kEq[k][3] * kEq[k][2] * kEq[k][1];
+    if (denm[k] == 0) {
+      lmp->error->all(FLERR,"denm returns a zero value");
+    }
+    // not hydrated form acitivity
+    activity[k][0] = kEq[k][0] * iniNuS * gSh * gSh * gSh / denm[k];
+    // fully protonated form activity
+    activity[k][1] = iniNuS * gSh * gSh * gSh / denm[k];
+    // 1st deprotonated form activity
+    activity[k][2] = iniNuS * gSh * gSh * kEq[k][1] / denm[k];
+    // 2nd deprotonated form activity
+    activity[k][3] = iniNuS * gSh * kEq[k][1] * kEq[k][2] / denm[k];
+    // 3rd deprotonated form activity
+    activity[k][4] = iniNuS * kEq[k][1] * kEq[k][2] * kEq[k][3] / denm[k];
+  }
+  memory->destroy(denm);
+}
 
