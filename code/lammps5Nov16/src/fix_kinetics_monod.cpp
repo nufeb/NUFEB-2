@@ -78,6 +78,7 @@ FixKineticsMonod::FixKineticsMonod(LAMMPS *lmp, int narg, char **arg) : Fix(lmp,
 
   kinetics = NULL;
   diffusion = NULL;
+
 }
 
 /* ---------------------------------------------------------------------- */
@@ -92,9 +93,12 @@ FixKineticsMonod::~FixKineticsMonod()
   delete [] ivar;
 
   for (int i = 0; i <= ntypes; i++) {
-    delete [] minMonod[i];
+    delete [] gMonod[i];
+    delete [] minCatMonod[i];
   }
-  delete [] minMonod;
+
+  delete [] gMonod;
+  delete [] minCatMonod;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -152,11 +156,13 @@ void FixKineticsMonod::init()
   anabCoeff = bio->anabCoeff;
   gYield = kinetics->gYield;
 
-  minMonod = new double*[ntypes+1];
+  gMonod = new double*[ntypes+1];
+  minCatMonod = new double*[ntypes+1];
 
   //initialization
   for (int i = 0; i <= ntypes; i++) {
-    minMonod[i] = new double[ngrids];
+    gMonod[i] = new double[ngrids];
+    minCatMonod[i] = new double[ngrids];
   }
 
   //Get computational domain size
@@ -211,11 +217,20 @@ void FixKineticsMonod::monod()
 
   nuS = kinetics->nuS;
   nuR = kinetics->nuR;
-
+  maintain = bio->maintain;
+  decay = bio->decay;
+  DGRCat = kinetics->DRGCat;
+//  printf ("old mass[1] = %e \n", rmass[1]);
+//
+//  for (int i = 0; i < atom->nlocal; i++) {
+//    printf("mass = %e \n", atom->rmass[i]);
+//  }
+//  printf("\n");
   //initialization
   for (int i = 0; i <= ntypes; i++) {
     for (int j = 0; j < ngrids; j++) {
-      minMonod[i][j] = -1;
+      gMonod[i][j] = -1;
+      minCatMonod[i][j] = -1;
     }
   }
 
@@ -229,38 +244,20 @@ void FixKineticsMonod::monod()
 
     //get nutrient consumption
     for (int i = 0; i < nall; i++) {
+      //printf("mass = %e \n", rmass[i]);
       if (mask[i] & groupbit) {
-        int t = type[i];
-        int pos = position(i);
-        double muMet = growth_rate(i, pos, 1);
-        double muCat = growth_rate(i, pos, 2);
-
-        //update bacteria mass, radius etc
-        for (int j = 1; j <= nnus; j++) {
-          if (strcmp(bio->nuName[j], "h") != 0 && strcmp(bio->nuName[j], "h2o") != 0) {
-            double invYield = 1/gYield[t][pos];
-            double metCoeff = catCoeff[t][j] * invYield + anabCoeff[t][j];
-            // convert kg to mol
-            double consume = metCoeff * growthRate * rmass[i] / 2.46e-2;
-            if(bio->nuType[j] == 0) {
-              //calculate liquid concentrations, convert from m3 to L
-              double uptake = consume / (vol * 1000);
-              // printf("uptake = %e \n", uptake);
-              nuR[j][pos] += uptake;
-              //ar += uptake;
-            }
-          }
-        }
+        growth_rate(i);
       }
     }
     //printf("Average R = %e \n", ar/ngrids);
     //solve diffusion
-    diffusion->diffusion(1);
+    diffusion->diffusion(0);
 
     for (int i = 0; i < nall; i++) {
       int pos = position(i);
       //get new growth rate based on new nutrients
-      double growthRate = growth_rate(i, pos) * update->dt;
+      double growthRate = growth_rate(i) * update->dt;
+      //printf("growthRate = %e \n", growthRate);
       //agr = agr + growthRate;
       //update bacteria mass, radius etc
       bio_update(growthRate, i);
@@ -268,8 +265,7 @@ void FixKineticsMonod::monod()
   } else {
     for (int i = 0; i < nall; i++) {
       if (mask[i] & groupbit) {
-        int pos = position(i);
-        double growthRate = growth_rate(i, pos) * update->dt;
+        double growthRate = growth_rate(i) * update->dt;
        // agr = agr + growthRate;
         //update bacteria mass, radius etc
         bio_update(growthRate, i);
@@ -277,6 +273,7 @@ void FixKineticsMonod::monod()
     }
   }
   //if(!(update->ntimestep % 1000)) printf("Average growth rate = %e \n", agr/nall);
+ // printf ("new mass[1] = %e \n", rmass[1]);
 }
 
 int FixKineticsMonod::position(int i) {
@@ -294,54 +291,130 @@ int FixKineticsMonod::position(int i) {
   return pos;
 }
 
-double FixKineticsMonod::growth_rate(int i, int pos, int ind) {
+double FixKineticsMonod::growth_rate(int i) {
 
   //calculate growth rate using minimum monod
   int t = type[i];
-  double growthRate = 0.0;
+  int pos = position(i);
+  double muMet;
+  double muCat;
 
-  double monod = minMonod[t][pos];
-  if (monod < 0) {
-    minMonod[t][pos] = minimal_monod(pos, t, ind);
-    growthRate = avec->atom_mu[i] * minMonod[t][pos];
+  double qmet = 0.0;
+  double bacMaint;
+  double mu;
+  double rg;
+
+  double m = gMonod[t][pos];
+  if (m < 0) {
+    gMonod[t][pos] = grid_monod(pos, t, 1);
+    qmet = avec->atom_mu[i] * gMonod[t][pos];
   } else {
-    growthRate = avec->atom_mu[i] * monod;
+    qmet = avec->atom_mu[i] * m;
   }
 
-  return growthRate;
+  muMet = qmet;
+// printf ("qmet = %e \n",qmet * 3600);
+//
+//  m = minCatMonod[t][pos];
+//  if (m < 0) {
+//    minCatMonod[t][pos] = grid_monod(pos, t, 2);
+//    qmet = avec->atom_mu[i] * minCatMonod[t][pos];
+//  } else {
+//    qmet = avec->atom_mu[i] * m;
+//  }
+
+  muCat = qmet;
+//  printf("muMet = %e \n", muCat * 3600);
+
+  bacMaint = maintain[t] / -DGRCat[t][pos];
+  //printf ("bacMaint = %e \n", bacMaint * 3600);
+  mu = gYield[t][pos] * (muMet - bacMaint);
+ // printf ("mu = %e \n", mu);
+  //printf ("muCat = %e ,  bacMaint = %e \n", muCat, 1.2 * bacMaint);
+
+  //printf ("muMet = %e \n", bacMaint);
+  for (int j = 1; j <= nnus; j++) {
+    if (strcmp(bio->nuName[j], "h") != 0 && strcmp(bio->nuName[j], "h2o") != 0) {
+      double consume;
+      if (1.2 * bacMaint < muCat) {
+        double invYield = 1/gYield[t][pos];
+        double metCoeff = catCoeff[t][j] * invYield + anabCoeff[t][j];
+        //printf ("metCoeff %i = %e \n",j, metCoeff);
+        rg = mu * rmass[i];
+        consume = rg * metCoeff;
+      } else if (muCat < 1.2 * bacMaint && bacMaint <= muCat) {
+        rg = 0;
+        consume = catCoeff[t][j] * gYield[t][pos] * bacMaint * rmass[i];
+      } else {
+        double f = (bacMaint - muCat) / bacMaint;
+        rg = -decay[t] * f * rmass[i];
+        //printf ("f = %e \n", -decay[t]);
+        // matrix decay?
+        consume = -(rg) * bio->decayCoeff[t][j] + catCoeff[t][j] * gYield[t][pos] * muCat * rmass[i];
+      }
+      //calculate liquid concentrations, convert from m3 to L
+      double uptake = consume / (vol * 1000);
+      nuR[j][pos] += uptake;
+    }
+  }
+  //printf ("rg = %e \n", rg*3600);
+  return rg;
 }
+//
+///* ----------------------------------------------------------------------
+//  get minimum monod term w.r.t all nutrients
+//------------------------------------------------------------------------- */
+//
+//double FixKineticsMonod::minimal_monod(int pos, int type, int ind)
+//{
+//  vector<double> mon;
+//  int size = 0;
+//  double min = 0;
+//  double invYield = 1/gYield[type][pos];
+//  //printf ("invYield = %e \n", invYield );
+//  for (int i = 1; i <= nnus; i++ ) {
+//    if (strcmp(bio->nuName[i], "h") != 0 && strcmp(bio->nuName[i], "h2o") != 0) {
+//      double coeff;
+//      if (ind == 1) coeff = catCoeff[type][i] * invYield + anabCoeff[type][i];
+//      else coeff = catCoeff[type][i];
+//      //printf ("coeff = %e,ind = %i \n", coeff, ind);
+//      if (coeff < 0) {
+//        double v = nuS[i][pos]/(bio->ks[type][i] + nuS[i][pos]);
+//        if (v != 0) {
+//          mon.push_back(v);
+//          size++;
+//        }
+//      }
+//     }
+//   }
+//
+//  if (mon.size() > 0)
+//    min = *min_element(mon.begin(), mon.end());
+//
+//  //printf ("min = %e \n",nuS[1][pos]);
+//  return min;
+//}
 
 /* ----------------------------------------------------------------------
-  get minimum monod term w.r.t all nutrients
+  get monod term w.r.t all nutrients
 ------------------------------------------------------------------------- */
 
-double FixKineticsMonod::minimal_monod(int pos, int type, int ind)
+double FixKineticsMonod::grid_monod(int pos, int type, int ind)
 {
-  vector<double> mon;
-  int size = 0;
-  double min = 0;
+  double monod = 1;
   double invYield = 1/gYield[type][pos];
-
+  //printf ("invYield = %e \n", invYield );
   for (int i = 1; i <= nnus; i++ ) {
-    if (strcmp(bio->nuName[i], "h") != 0 && strcmp(bio->nuName[i], "h2o") != 0) {
-      double coeff;
-      if (ind == 0) coeff = catCoeff[type][i] * invYield + anabCoeff[type][i];
-      else coeff = catCoeff[type][i];
+    double ks = bio->ks[type][i];
+    double s = nuS[i][pos];
 
-      if (coeff < 0) {
-        double v = nuS[i][pos]/(bio->ks[type] + nuS[i][pos]);
-        if (v != 0) {
-          mon.push_back(v);
-          size++;
-        }
-      }
-     }
-   }
+    if (ks != 0) {
+      if (s == 1e-20) return 0;
+      monod *= s/(ks + s);
+    }
+  }
 
-  if (mon.size() > 0)
-    min = *min_element(mon.begin(), mon.end());
-
-  return min;
+  return monod;
 }
 
 void FixKineticsMonod::bio_update(double growthRate, int i)
@@ -350,15 +423,17 @@ void FixKineticsMonod::bio_update(double growthRate, int i)
   const double threeQuartersPI = (3.0/(4.0*MY_PI));
   const double fourThirdsPI = 4.0*MY_PI/3.0;
   const double third = 1.0/3.0;
+  //printf ("growthRate = %e \n", growthRate);
+  //printf ("old mass[i] = %e \n", rmass[i]);
 
   density = rmass[i] / (fourThirdsPI * radius[i] * radius[i] * radius[i]);
-  rmass[i] = rmass[i] * (1 + (growthRate * nevery));
+  rmass[i] = (rmass[i] + growthRate) * nevery;
  // cout<<"before mass " <<growthRate << endl;
-
+  //printf ("new mass[i] = %e \n", rmass[i]);
   //update mass and radius
   if (mask[i] == avec->maskHET) {
       outerMass[i] = fourThirdsPI * (outerRadius[i] * outerRadius[i] * outerRadius[i] - radius[i] * radius[i] * radius[i]) * EPSdens
-      + growthRate * nevery * rmass[i];
+      + growthRate * nevery;
 
       outerRadius[i] = pow(threeQuartersPI * (rmass[i] / density + outerMass[i] / EPSdens), third);
       radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);

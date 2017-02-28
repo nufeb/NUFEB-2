@@ -27,10 +27,14 @@ class FixKineticsThermo : public Fix {
   void pre_force(int);
 
  private:
+//  char **var;
+//  int *ivar;
+
   int nnus;                        // # of nutrients
   int ntypes;                      // # of species
   int nx, ny, nz;                  // number of grids in x y z axis
-  int ngrids;                      //# of grids
+  int ngrids;                      // # of grids
+  int fixY;                        // 0 = fixed yield 1 = dynamic yield
 
   double rth, temp;                //Universal gas constant (thermodynamics) and temperature
 
@@ -55,7 +59,7 @@ class FixKineticsThermo : public Fix {
   void thermo();
   void init_dG0();
   void init_KhV();
-  void output_data();
+  //void output_data();
 };
 
 }

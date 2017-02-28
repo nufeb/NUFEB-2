@@ -17,15 +17,17 @@ class BIO : protected Pointers {
   //type (species)
   char **typeName;            // type name
 
-  double *ks;                 // half-saturation constant
+  double **ks;                // half-saturation constant [type][nutrient]
   double *mu;                 // maximum species growth rate
   double *yield;              // growth yield coefficient
   double *dissipation;        // universal gas constant (thermodynamics)
-  double *maintain;
-  double *decay;
+  double *maintain;           // maintenance [type]
+  double *decay;              // decay rate
+  double *eD;
 
   double **catCoeff;          // catabolism coefficient [type][nutrient]
   double **anabCoeff;         // anabolism coefficient [type][nutrient]
+  double **decayCoeff;        // decay coefficient [type][nutrient]
   double **typeGCoeff;        // Gibbs free energy coefficient [type][5charges]
   int *tgflag;                // Gibbs free energy flag
   int **typeChr;              // charge [type][5charges]
@@ -47,12 +49,14 @@ class BIO : protected Pointers {
 
   void data_nutrients(int, char **);
   void set_growth(const char *);
-  void set_ks(const char *);
+  void set_ks(int, char **);
   void set_yield(const char *);
+  void set_eD(const char *);
   void set_maintain(const char *);
   void set_decay(const char *);
   void set_diffusion(const char *);
   void set_catCoeff(int, char **);
+  void set_decayCoeff(int, char **);
   void set_anabCoeff(int, char **);
   void set_nuGCoeff(int, char **);
   void set_typeGCoeff(int, char **);

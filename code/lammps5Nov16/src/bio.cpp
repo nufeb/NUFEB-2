@@ -28,9 +28,11 @@ BIO::BIO(LAMMPS *lmp) : Pointers(lmp)
   decay = NULL;
   mu = NULL;
   ks = NULL;
+  eD = NULL;
   typeName = NULL;
   anabCoeff = NULL;
   catCoeff = NULL;
+  decayCoeff = NULL;
   typeGCoeff = NULL;
   dissipation = NULL;
   tgflag = NULL;
@@ -55,10 +57,12 @@ BIO::~BIO()
   memory->destroy(yield);
   memory->destroy(maintain);
   memory->destroy(decay);
+  memory->destroy(eD);
   memory->destroy(mu);
   memory->destroy(ks);
   memory->destroy(anabCoeff);
   memory->destroy(catCoeff);
+  memory->destroy(decayCoeff);
   memory->destroy(typeGCoeff);
   memory->destroy(dissipation);
   memory->destroy(tgflag);
@@ -186,27 +190,26 @@ void BIO::set_growth(const char *str)
    called from reading of data file
 ------------------------------------------------------------------------- */
 
-void BIO::set_ks(const char *str)
+void BIO::set_ks(int narg, char **arg)
 {
-  if (ks == NULL) error->all(FLERR,"Cannot set ks value for this atom style");
+  if (ks == NULL) error->all(FLERR,"Cannot set Ks for this atom style");
+  if (narg != nnus+1) error->all(FLERR,"Invalid Ks line in data file");
 
   char* typeName;
-  double ks_one;
-  int len = strlen(str) + 1;
+  int len = strlen(arg[0]) + 1;
   typeName = new char[len];
-
-  int n = sscanf(str,"%s %lg",typeName,&ks_one);
-  if (n != 2) error->all(FLERR,"Invalid ks line in data file");
+  strcpy(typeName,arg[0]);
 
   int itype = find_typeID(typeName);
   delete [] typeName;
+
   if (itype < 1 || itype > atom->ntypes)
-    error->all(FLERR,"Invalid type for ks set");
+    error->all(FLERR,"Invalid type for Ks set");
 
-  ks[itype] = ks_one;
-  //mass_setflag[itype] = 1;
-
-  if (ks[itype] < 0.0) error->all(FLERR,"Invalid ks value");
+  for(int i = 1; i < nnus+1; i++) {
+    double value = force->numeric(FLERR,arg[i]);
+    ks[itype][i] = value;
+  }
 }
 
 /* ----------------------------------------------------------------------
@@ -241,6 +244,34 @@ void BIO::set_yield(const char *str)
   if (yield[itype] < 0.0) error->all(FLERR,"Invalid set_yield value");
 }
 
+
+/* ----------------------------------------------------------------------
+   set yield values for all types
+   called from reading of data file
+------------------------------------------------------------------------- */
+
+void BIO::set_eD(const char *str)
+{
+  if (eD == NULL) error->all(FLERR,"Cannot set eD for this atom style");
+
+  char* typeName;
+  double eD_one;
+  int len = strlen(str) + 1;
+  typeName = new char[len];
+
+  int n = sscanf(str,"%s %lg",typeName,&eD_one);
+  if (n != 2) error->all(FLERR,"Invalid set_eD line in data file");
+
+  int itype = find_typeID(typeName);
+  delete [] typeName;
+
+  if (itype < 1 || itype > atom->ntypes)
+    error->all(FLERR,"Invalid type for set_eD set");
+
+  eD[itype] = eD_one;
+  //mass_setflag[itype] = 1;
+}
+
 /* ----------------------------------------------------------------------
    set maintenance values for all types
    called from reading of data file
@@ -264,13 +295,8 @@ void BIO::set_maintain(const char *str)
   if (itype < 1 || itype > atom->ntypes)
     error->all(FLERR,"Invalid type for set_maintain set");
 
-  if (maintain_one <= 0)
-    lmp->error->all(FLERR,"maintain cannot be zero or less than zero");
-
   maintain[itype] = maintain_one;
   //mass_setflag[itype] = 1;
-
-  if (maintain[itype] < 0.0) error->all(FLERR,"Invalid set_maintain value");
 }
 
 /* ----------------------------------------------------------------------
@@ -296,13 +322,8 @@ void BIO::set_decay(const char *str)
   if (itype < 1 || itype > atom->ntypes)
     error->all(FLERR,"Invalid type for set_decay set");
 
-  if (decay_one <= 0)
-    lmp->error->all(FLERR,"decay cannot be zero or less than zero");
-
   decay[itype] = decay_one;
   //mass_setflag[itype] = 1;
-
-  if (decay[itype] < 0.0) error->all(FLERR,"Invalid set_decay value");
 }
 
 /* ----------------------------------------------------------------------
@@ -419,6 +440,33 @@ void BIO::set_anabCoeff(int narg, char **arg)
 }
 
 /* ----------------------------------------------------------------------
+   set decay coefficient for all types
+   called from reading of data file
+------------------------------------------------------------------------- */
+
+void BIO::set_decayCoeff(int narg, char **arg)
+{
+  if (decayCoeff == NULL) error->all(FLERR,"Cannot set decayCoeff for this atom style");
+  if (narg != nnus+1) error->all(FLERR,"Invalid decayCoeff line in data file");
+
+  char* typeName;
+  int len = strlen(arg[0]) + 1;
+  typeName = new char[len];
+  strcpy(typeName,arg[0]);
+
+  int itype = find_typeID(typeName);
+  delete [] typeName;
+
+  if (itype < 1 || itype > atom->ntypes)
+    error->all(FLERR,"Invalid type for decay coefficient set");
+
+  for(int i = 1; i < nnus+1; i++) {
+    double value = force->numeric(FLERR,arg[i]);
+    decayCoeff[itype][i] = value;
+  }
+}
+
+/* ----------------------------------------------------------------------
    set energy coefficient for all nutrients
    called from reading of data file
 ------------------------------------------------------------------------- */
@@ -449,6 +497,7 @@ void BIO::set_nuGCoeff(int narg, char **arg)
   }
 
   int flag = atoi(arg[6]);
+
   if ((flag > 0) && (flag < 6) && (nuGCoeff[inu][flag-1] < 1e4))
     ngflag[inu] = flag - 1;
   else error->all(FLERR,"Invalid nutrient energy flag");

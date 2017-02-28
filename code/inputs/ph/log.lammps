@@ -65,10 +65,10 @@ variable tol equal 1e-6
 
 ##############Ibm functions##############
 
-fix k1 all kinetics 1 1 1 v_temp v_rth v_gvol v_gasTran
+fix k1 all kinetics 1 1 1 v_temp v_rth v_gvol v_gasTran v_ph
 fix g1 all diffusion exp v_diffT v_tol pp pp nd
-fix ki3 all kinetics/ph 1 v_ph
-fix ki2 all kinetics/thermo 1
+#fix ki3 all kinetics/ph 1
+fix ki2 all kinetics/thermo 1 unfix
 fix ki1 all kinetics/monod 1 1 v_EPSdens
 fix d1 all divide 1 v_EPSdens 1 3123
 
@@ -82,7 +82,7 @@ thermo_style    custom step cpu atoms biomass
 thermo		1
 thermo_modify	lost ignore
 
-run  5
+run  10
 Neighbor list info ...
   2 neighbor list requests
   update every 1 steps, delay 0 steps, check yes
@@ -93,25 +93,30 @@ Neighbor list info ...
 Memory usage per processor = 131.994 Mbytes
 Step CPU Atoms biomass 
        0            0       10 7.2057705e-16 
-       1  0.018204927       10 7.2057705e-16 
-       2  0.036359072       10 7.2057705e-16 
-       3  0.055733919       10 7.2057705e-16 
-       4  0.074390888       10 7.2057705e-16 
-       5  0.092739105       10 7.2057705e-16 
-Loop time of 0.0927639 on 1 procs for 5 steps with 10 atoms
+       1  0.021709919       10 7.2057705e-16 
+       2  0.042857885       10 7.2057705e-16 
+       3  0.062256813       10 7.2057705e-16 
+       4   0.08115983       10 7.2057705e-16 
+       5  0.099301815       10 7.2057705e-16 
+       6   0.11750793       10 7.2057705e-16 
+       7   0.13522601       10 7.2057705e-16 
+       8   0.15289688       10 7.2057705e-16 
+       9   0.17041492       10 7.2057705e-16 
+      10   0.18793488       10 7.2057705e-16 
+Loop time of 0.187951 on 1 procs for 10 steps with 10 atoms
 
-Performance: 16765142337.823 tau/day, 53.900 timesteps/s
-94.9% CPU use with 1 MPI tasks x no OpenMP threads
+Performance: 16549007401.281 tau/day, 53.205 timesteps/s
+100.0% CPU use with 1 MPI tasks x no OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
 ---------------------------------------------------------------
-Pair    | 5.2452e-06 | 5.2452e-06 | 5.2452e-06 |   0.0 |  0.01
-Neigh   | 0.090843   | 0.090843   | 0.090843   |   0.0 | 97.93
-Comm    | 1.0729e-05 | 1.0729e-05 | 1.0729e-05 |   0.0 |  0.01
-Output  | 0.00038409 | 0.00038409 | 0.00038409 |   0.0 |  0.41
-Modify  | 0.0014911  | 0.0014911  | 0.0014911  |   0.0 |  1.61
-Other   |            | 2.956e-05  |            |       |  0.03
+Pair    | 9.2983e-06 | 9.2983e-06 | 9.2983e-06 |   0.0 |  0.00
+Neigh   | 0.18555    | 0.18555    | 0.18555    |   0.0 | 98.72
+Comm    | 1.8597e-05 | 1.8597e-05 | 1.8597e-05 |   0.0 |  0.01
+Output  | 0.00061321 | 0.00061321 | 0.00061321 |   0.0 |  0.33
+Modify  | 0.0017195  | 0.0017195  | 0.0017195  |   0.0 |  0.91
+Other   |            | 4.315e-05  |            |       |  0.02
 
 Nlocal:    10 ave 10 max 10 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
@@ -122,7 +127,8 @@ Histogram: 1 0 0 0 0 0 0 0 0 0
 
 Total # of neighbors = 0
 Ave neighs/atom = 0
-Neighbor list builds = 5
+Neighbor list builds = 10
 Dangerous builds = 0
+
 
 Total wall time: 0:00:00
