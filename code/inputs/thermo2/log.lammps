@@ -29,7 +29,7 @@ neigh_modify	delay 0 one 5000
 pair_style  gran/hooke/history 0.000200 NULL 0.000050 NULL 0.0 1
 
 pair_coeff  * *
-timestep 3600
+timestep 36
 
 fix 1 all nve/limit 1e-8
 
@@ -71,11 +71,11 @@ variable tol equal 1e-6
 
 ##############Ibm functions##############
 
-fix k1 all kinetics 1 1 1 v_temp v_rth v_gvol v_gasTran v_ph
-fix g1 all diffusion exp v_diffT v_tol pp pp nd
+fix k1 all kinetics 10 10 10 v_temp v_rth v_gvol v_gasTran v_ph
+fix g1 all diffusion exp v_diffT v_tol pp pp pp
 fix ki3 all kinetics/ph 1
 fix ki2 all kinetics/thermo 1 unfix
-fix ki1 all kinetics/monod 1 1 v_EPSdens
+fix ki1 all kinetics/monod 0 v_EPSdens
 fix d1 all divide 1 v_EPSdens 1 3123
 
 #fix j1 all epsadh 1 v_ke 1
@@ -83,13 +83,13 @@ fix d1 all divide 1 v_EPSdens 1 3123
 
 ##############Simulation outputs##############
 
-dump		id all custom 1 snapshot.bubblemd id type diameter x y z vx vy vz fx fy fz
-#dump            d0 all bio 1 DGRCat DGRAn
+#dump		id all custom 1 snapshot.bubblemd id type diameter x y z vx vy vz fx fy fz
+dump            d0 all bio 1 Conc DGRAn DGRCat
 thermo_style    custom step cpu atoms biomass
-thermo		1
+thermo		10
 thermo_modify	lost ignore
 
-run  100
+run  5
 Neighbor list info ...
   2 neighbor list requests
   update every 1 steps, delay 0 steps, check yes
@@ -97,38 +97,36 @@ Neighbor list info ...
   master list distance cutoff = 1.466e-06
   ghost atom cutoff = 1.466e-06
   binsize = 7.33e-07 -> bins = 273 273 273
-Memory usage per processor = 91.2819 Mbytes
+Memory usage per processor = 90.0308 Mbytes
 Step CPU Atoms biomass 
        0            0       12 1.6425146e-15 
-       1  0.014870882       12 1.7379531e-15 
-       2   0.02940011       12 1.8340658e-15 
-       3  0.043633938       20 1.9384172e-15 
-       4  0.056932926       20 2.0518235e-15 
-       5  0.070071936       20 2.1750851e-15 
-       6   0.08541894       20 2.3090435e-15 
-       7   0.10263205       20 2.454599e-15 
-       8    0.1151309       20 2.6127207e-15 
-       9   0.12712502       23 2.784455e-15 
-      10   0.13929391       26 2.9709326e-15 
-      11   0.15166211       29 3.1733766e-15 
-      12    0.1642189       29 3.3931101e-15 
-      13   0.17599297       35 3.6315651e-15 
-      14   0.18816304       36 3.8902914e-15 
-      15   0.20032096       37 4.1709666e-15 
-      16   0.21278811       38 4.4754063e-15 
-      17   0.22499704       40 4.8055762e-15 
-      18   0.23747396       45 5.1636038e-15 
-      19   0.24960995       48 5.551792e-15 
-      20    0.2619679       53 5.9726339e-15 
-      21   0.27420807       59 6.4288278e-15 
-      22   0.28636098       61 6.9232944e-15 
-      23   0.29872203       64 7.4591953e-15 
-      24   0.31076097       71 8.0399524e-15 
-      25   0.32339001       78 8.6692692e-15 
-      26   0.33551502       83 9.3511546e-15 
-      27   0.34786201       90 1.0089947e-14 
-      28   0.36067295       94 1.0890342e-14 
-      29   0.37285995      103 1.1757421e-14 
-      30   0.38582206      117 1.2696685e-14 
-      31    0.3984139      122 1.3714084e-14 
-      32   0.4112
+       5   0.18964386       12 1.6468502e-15 
+Loop time of 0.189665 on 1 procs for 5 steps with 12 atoms
+
+Performance: 81997274.470 tau/day, 26.362 timesteps/s
+97.0% CPU use with 1 MPI tasks x no OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 2.0266e-05 | 2.0266e-05 | 2.0266e-05 |   0.0 |  0.01
+Neigh   | 0.10135    | 0.10135    | 0.10135    |   0.0 | 53.44
+Comm    | 2.0504e-05 | 2.0504e-05 | 2.0504e-05 |   0.0 |  0.01
+Output  | 0.07756    | 0.07756    | 0.07756    |   0.0 | 40.89
+Modify  | 0.010681   | 0.010681   | 0.010681   |   0.0 |  5.63
+Other   |            | 3.505e-05  |            |       |  0.02
+
+Nlocal:    12 ave 12 max 12 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    0 ave 0 max 0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 0
+Ave neighs/atom = 0
+Neighbor list builds = 5
+Dangerous builds = 0
+
+
+Total wall time: 0:00:00

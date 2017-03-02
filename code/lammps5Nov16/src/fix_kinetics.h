@@ -23,6 +23,7 @@ class FixKinetics : public Fix {
   friend class FixKineticsThermo;
   friend class FixDiffusion;
   friend class FixKineticsPH;
+  friend class DumpBio;
 
  public:
   FixKinetics(class LAMMPS *, int, char **);

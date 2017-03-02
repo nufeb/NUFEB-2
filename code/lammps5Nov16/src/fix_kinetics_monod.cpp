@@ -60,20 +60,18 @@ FixKineticsMonod::FixKineticsMonod(LAMMPS *lmp, int narg, char **arg) : Fix(lmp,
   avec = (AtomVecBio *) atom->style_match("bio");
   if (!avec) error->all(FLERR,"Fix kinetics requires atom style bio");
 
-  if (narg != 6) error->all(FLERR,"Not enough arguments in fix kinetics/monod command");
+  if (narg != 5) error->all(FLERR,"Not enough arguments in fix kinetics/monod command");
 
-  nevery = force->inumeric(FLERR,arg[3]);
-  if (nevery < 0) error->all(FLERR,"Illegal fix kinetics/monod command");
-  diffevery = force->inumeric(FLERR,arg[4]);
-  if (nevery < 0) error->all(FLERR,"Illegal fix kinetics/monod command");
+  diffevery = force->inumeric(FLERR,arg[3]);
+  if (diffevery < 0) error->all(FLERR,"Illegal fix kinetics/monod command");
 
   var = new char*[1];
   ivar = new int[1];
 
   for (int i = 0; i < 1; i++) {
-    int n = strlen(&arg[5+i][2]) + 1;
+    int n = strlen(&arg[4+i][2]) + 1;
     var[i] = new char[n];
-    strcpy(var[i],&arg[5+i][2]);
+    strcpy(var[i],&arg[4+i][2]);
   }
 
   kinetics = NULL;
@@ -330,9 +328,7 @@ double FixKineticsMonod::growth_rate(int i) {
   //printf ("bacMaint = %e \n", bacMaint * 3600);
   mu = gYield[t][pos] * (muMet - bacMaint);
  // printf ("mu = %e \n", mu);
-  //printf ("muCat = %e ,  bacMaint = %e \n", muCat, 1.2 * bacMaint);
 
-  //printf ("muMet = %e \n", bacMaint);
   for (int j = 1; j <= nnus; j++) {
     if (strcmp(bio->nuName[j], "h") != 0 && strcmp(bio->nuName[j], "h2o") != 0) {
       double consume;
@@ -348,12 +344,12 @@ double FixKineticsMonod::growth_rate(int i) {
       } else {
         double f = (bacMaint - muCat) / bacMaint;
         rg = -decay[t] * f * rmass[i];
-        //printf ("f = %e \n", -decay[t]);
-        // matrix decay?
         consume = -(rg) * bio->decayCoeff[t][j] + catCoeff[t][j] * gYield[t][pos] * muCat * rmass[i];
       }
-      //calculate liquid concentrations, convert from m3 to L
-      double uptake = consume / (vol * 1000);
+      //printf ("consume = %e \n", 3600 * consume/24.6e-3);
+      //calculate liquid concentrations, convert from m3 to L, g to mol
+      double uptake = consume / (vol * 1000 * 24.6e-3);
+      //printf("uptake[%i] = %e vol = %e \n" , j, uptake, vol);
       nuR[j][pos] += uptake;
     }
   }
@@ -427,7 +423,7 @@ void FixKineticsMonod::bio_update(double growthRate, int i)
   //printf ("old mass[i] = %e \n", rmass[i]);
 
   density = rmass[i] / (fourThirdsPI * radius[i] * radius[i] * radius[i]);
-  rmass[i] = (rmass[i] + growthRate) * nevery;
+  rmass[i] = rmass[i] + growthRate;
  // cout<<"before mass " <<growthRate << endl;
   //printf ("new mass[i] = %e \n", rmass[i]);
   //update mass and radius

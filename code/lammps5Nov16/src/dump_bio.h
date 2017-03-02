@@ -30,26 +30,40 @@ class DumpBio : public Dump {
   DumpBio(LAMMPS *, int, char**);
   virtual ~DumpBio();
 
-  virtual void write();
-  virtual void init_style();
-
  protected:
   int nevery;                // dump frequency for output
   //gzFile gzFp;  // file pointer for the compressed output stream
 
   FILE *fp;                  // file to write dump to
   char *filename;            // user-specified file
+  int nkeywords;
 
   int nfix;                  // # of Fix objects used by dump
   char **id_fix;             // their IDs
   class Fix **fix;           // list of ptrs to the Fix objects
 
-  char **selected_outputs;
+  int anFlag, concFlag, catFlag, phFlag;
 
+  double xlo,xhi,ylo,yhi,zlo,zhi;
+  double stepx, stepy, stepz;
+  int nx, ny, nz;               // # of grids in x, y and z
+
+  char **keywords;
+  class FixKinetics *kinetics;
+  class BIO *ptr;
+//
   void openfile();
-  virtual void write_header(bigint);
-  virtual void write_data(int, double *);
-  virtual void pack(tagint *);
+  void write();
+  void init_style();
+  void write_header(bigint);
+  void pack(tagint *);
+  void write_data(int, double *);
+
+  void write_diffsuion_data(int);
+  void write_DGRCat_data(int);
+  void write_DGRAn_data(int);
+
+  bigint memory_usage();
 };
 
 }
