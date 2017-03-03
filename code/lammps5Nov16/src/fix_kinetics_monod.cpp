@@ -218,12 +218,7 @@ void FixKineticsMonod::monod()
   maintain = bio->maintain;
   decay = bio->decay;
   DGRCat = kinetics->DRGCat;
-//  printf ("old mass[1] = %e \n", rmass[1]);
-//
-//  for (int i = 0; i < atom->nlocal; i++) {
-//    printf("mass = %e \n", atom->rmass[i]);
-//  }
-//  printf("\n");
+
   //initialization
   for (int i = 0; i <= ntypes; i++) {
     for (int j = 0; j < ngrids; j++) {
@@ -233,13 +228,6 @@ void FixKineticsMonod::monod()
   }
 
   if(diffevery != 0 && !(update->ntimestep % diffevery)) {
-    //initialize consumption
-    for (int i = 0; i <= nnus; i++) {
-      for (int j = 0; j < ngrids; j++) {
-        nuR[i][j] = 0;
-      }
-    }
-
     //get nutrient consumption
     for (int i = 0; i < nall; i++) {
       //printf("mass = %e \n", rmass[i]);
@@ -250,13 +238,18 @@ void FixKineticsMonod::monod()
     //printf("Average R = %e \n", ar/ngrids);
     //solve diffusion
     diffusion->diffusion(0);
+    //printf("R = %e \n", nuR[1][0]);
+    //reset consumption
+    for (int i = 0; i <= nnus; i++) {
+      for (int j = 0; j < ngrids; j++) {
+        nuR[i][j] = 0;
+      }
+    }
 
     for (int i = 0; i < nall; i++) {
       int pos = position(i);
       //get new growth rate based on new nutrients
       double growthRate = growth_rate(i) * update->dt;
-      //printf("growthRate = %e \n", growthRate);
-      //agr = agr + growthRate;
       //update bacteria mass, radius etc
       bio_update(growthRate, i);
     }

@@ -38,7 +38,7 @@ class FixKineticsPH : public Fix {
   double **typeGCoeff;
   double **kEq;                // equilibrium constants [nutrient][4]
   int **nuChr;                 // charge [nutrient][5charges]
-  double **activity;
+  double ***activity;          // [nutrient][5 charges][grids]
 
   class FixKinetics *kinetics;
   class BIO *bio;

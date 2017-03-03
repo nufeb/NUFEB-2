@@ -121,7 +121,7 @@ void FixKinetics::init()
   nuR = memory->create(nuR,nnus+1, ngrids, "kinetics:nuR");
   nuGas = memory->create(nuGas,nnus+1, ngrids, "kinetics:nuGas");
   gYield = memory->create(gYield,ntypes+1,ngrids,"kinetic:gYield");
-  activity = memory->create(activity,nnus+1,5,"kinetics:activity");
+  activity = memory->create(activity,nnus+1,5, ngrids,"kinetics:activity");
   DRGCat = memory->create(DRGCat,ntypes+1,ngrids,"kinetics:DRGCat");
   DRGAn = memory->create(DRGAn,ntypes+1,ngrids,"kinetics:DRGAn");
   kEq = memory->create(kEq,nnus+1,4,"kinetics:kEq");
@@ -172,22 +172,24 @@ void FixKinetics::init_activity() {
   double gSh = pow(10, -ph);
 
   for (int k = 1; k < nnus+1; k++) {
-    double iniNuS = bio->iniS[k][0];
+    for (int j = 0; j < ngrids; j++) {
+      double iniNuS = bio->iniS[k][0];
 
-    denm[k] = (1 + kEq[k][0]) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][3] * gSh + kEq[k][3] * kEq[k][2] * kEq[k][1];
-    if (denm[k] == 0) {
-      lmp->error->all(FLERR,"denm returns a zero value");
+      denm[k] = (1 + kEq[k][0]) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][3] * gSh + kEq[k][3] * kEq[k][2] * kEq[k][1];
+      if (denm[k] == 0) {
+        lmp->error->all(FLERR,"denm returns a zero value");
+      }
+      // not hydrated form acitivity
+      activity[k][0][j] = kEq[k][0] * iniNuS * gSh * gSh * gSh / denm[k];
+      // fully protonated form activity
+      activity[k][1][j] = iniNuS * gSh * gSh * gSh / denm[k];
+      // 1st deprotonated form activity
+      activity[k][2][j] = iniNuS * gSh * gSh * kEq[k][1] / denm[k];
+      // 2nd deprotonated form activity
+      activity[k][3][j] = iniNuS * gSh * kEq[k][1] * kEq[k][2] / denm[k];
+      // 3rd deprotonated form activity
+      activity[k][4][j] = iniNuS * kEq[k][1] * kEq[k][2] * kEq[k][3] / denm[k];
     }
-    // not hydrated form acitivity
-    activity[k][0] = kEq[k][0] * iniNuS * gSh * gSh * gSh / denm[k];
-    // fully protonated form activity
-    activity[k][1] = iniNuS * gSh * gSh * gSh / denm[k];
-    // 1st deprotonated form activity
-    activity[k][2] = iniNuS * gSh * gSh * kEq[k][1] / denm[k];
-    // 2nd deprotonated form activity
-    activity[k][3] = iniNuS * gSh * kEq[k][1] * kEq[k][2] / denm[k];
-    // 3rd deprotonated form activity
-    activity[k][4] = iniNuS * kEq[k][1] * kEq[k][2] * kEq[k][3] / denm[k];
   }
   memory->destroy(denm);
 }

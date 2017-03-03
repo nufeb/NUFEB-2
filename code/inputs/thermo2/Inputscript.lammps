@@ -58,15 +58,15 @@ variable kLaCO2 equal 0.0
 
 #Defining diffusion variables
 variable diffT equal 1e-3
-variable tol equal 1e-6
+variable tol equal 1e-8
 
 ##############Ibm functions##############
 
-fix k1 all kinetics 10 10 10 v_temp v_rth v_gvol v_gasTran v_ph
-fix g1 all diffusion exp v_diffT v_tol pp pp pp
+fix k1 all kinetics 25 25 25 v_temp v_rth v_gvol v_gasTran v_ph
+fix g1 all diffusion exp v_diffT v_tol pp pp nd
 fix ki3 all kinetics/ph 1
 fix ki2 all kinetics/thermo 1 unfix
-fix ki1 all kinetics/monod 0 v_EPSdens	
+fix ki1 all kinetics/monod 1 v_EPSdens	
 fix d1 all divide 1 v_EPSdens 1 3123
 
 #fix j1 all epsadh 1 v_ke 1
@@ -75,11 +75,11 @@ fix d1 all divide 1 v_EPSdens 1 3123
 ##############Simulation outputs##############
 
 #dump		id all custom 1 snapshot.bubblemd id type diameter x y z vx vy vz fx fy fz
-dump            d0 all bio 1 Conc DGRAn DGRCat
+dump            d0 all bio 1000 Conc DGRAn DGRCat
 thermo_style    custom step cpu atoms biomass
 thermo		10	
 thermo_modify	lost ignore
 
-run  5
+run  10000
 
 

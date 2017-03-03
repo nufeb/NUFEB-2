@@ -213,7 +213,7 @@ void FixKineticsThermo::thermo()
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
   int *type = atom->type;
-  double **activity = kinetics->activity;
+  double ***activity = kinetics->activity;
   double *kLa = bio->kLa;
   double **nuGas = kinetics->nuGas;
   double **nuR = kinetics->nuR;
@@ -226,15 +226,16 @@ void FixKineticsThermo::thermo()
   for (int i = 0; i < ngrids; i++) {
     // gas transfer
     for (int j = 1; j <= nnus; j++) {
+      nuR[j][i] = 0;
       if (bio->nuType[j] == 1) {
         //get corresponding liquid ID
         int liqID = liq2Gas[j];
         double gasT = 0;
         if (liqID != 0) {
           if (nuGCoeff[liqID][0] > 10000) {
-            gasT = kLa[liqID] * (activity[liqID][1] / khV[liqID] - activity[j][0]);
+            gasT = kLa[liqID] * (activity[liqID][1][i] / khV[liqID] - activity[j][0][i]);
           } else {
-            gasT = kLa[liqID] * (activity[liqID][0] / khV[liqID] - activity[j][0]);
+            gasT = kLa[liqID] * (activity[liqID][0][i] / khV[liqID] - activity[j][0][i]);
           }
           nuGas[j][i] = gasT;
           nuGas[liqID][i] = -gasT * vRgT;
@@ -256,8 +257,8 @@ void FixKineticsThermo::thermo()
         if (nuGCoeff[k][1] < 1e4) {
           double value = 0;
           int flag = bio->ngflag[k];
-          if (activity[k][flag] == 0) value = 1e-20;
-          else value = activity[k][flag];
+          if (activity[k][flag][i] == 0) value = 1e-20;
+          else value = activity[k][flag][i];
 
           double dgr = rthT * log(value);
          // printf ("%e ",  value);
@@ -284,62 +285,3 @@ void FixKineticsThermo::thermo()
     }
   }
 }
-
-/* ----------------------------------------------------------------------
-  output energy to data file
-------------------------------------------------------------------------- */
-
-//void FixKineticsThermo::output_data(){
-//  std::ostringstream stm;
-//  stm << update->ntimestep;
-//  string str = "./DGRCat/DGRCat.csv."+ stm.str();
-//  FILE *pFile = fopen (str.c_str(), "a");
-//  fprintf(pFile, ",x,y,z,scalar,1,1,1,0.5\n");
-//  double average = 0.0;
-//
-//  double xlo,xhi,ylo,yhi,zlo,zhi;
-//
-//  //Get computational domain size
-//  if (domain->triclinic == 0) {
-//    xlo = domain->boxlo[0];
-//    xhi = domain->boxhi[0];
-//    ylo = domain->boxlo[1];
-//    yhi = domain->boxhi[1];
-//    zlo = domain->boxlo[2];
-//    zhi = domain->boxhi[2];
-//  }
-//
-//  else {
-//    xlo = domain->boxlo_bound[0];
-//    xhi = domain->boxhi_bound[0];
-//    ylo = domain->boxlo_bound[1];
-//    yhi = domain->boxhi_bound[1];
-//    zlo = domain->boxlo_bound[2];
-//    zhi = domain->boxhi_bound[2];
-//  }
-//
-//  double stepx = (xhi - xlo) / nx;
-//  double stepy = (yhi - ylo) / ny;
-//  double stepz = (zhi - zlo) / nz;
-//
-//  for(int i = 0; i < ngrids; i++){
-//    int zpos = i/(nx * ny) + 1;
-//    int ypos = (i - (zpos - 1) * (nx * ny)) / nx + 1;
-//    int xpos = i - (zpos - 1) * (nx * ny) - (ypos - 1) * nx + 1;
-//
-//    double x = xpos * stepx - stepx/2;
-//    double y = ypos * stepy - stepy/2;
-//    double z = zpos * stepz - stepz/2;
-//
-//    average += DRGCat[2][i];
-//
-//    fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, x, y, z, DRGCat[2][i]);
-//  }
-//  fclose(pFile);
-//
-//  average = average / ngrids;
-//  string str2 = "./DGRCat/Average.csv";
-//  pFile = fopen (str2.c_str(), "a");
-//  fprintf(pFile, "%e\n", average);
-//
-//}

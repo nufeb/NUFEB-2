@@ -203,59 +203,60 @@ void DumpBio::init_style()
 
 void DumpBio::write()
 {
-  int i = 0;
+  if (update-> ntimestep == 0) return;
+
   int nnus = kinetics->bio->nnus;
   int ntypes = atom->ntypes;
 
   if (concFlag == 1) {
-    for (int j = 1; j < nnus+1; j++) {
-      if (ptr->nuType[j] == 0 && strcmp(ptr->nuName[j], "h") != 0 && strcmp(ptr->nuName[j], "h2o") != 0) {
-        char *name = ptr->nuName[j];
+    for (int i = 1; i < nnus+1; i++) {
+      if (ptr->nuType[i] == 0 && strcmp(ptr->nuName[i], "h") != 0 && strcmp(ptr->nuName[i], "h2o") != 0) {
+        char *name = ptr->nuName[i];
         int len = 30;
         len += strlen(name);
         char path[len];
         strcpy(path, "./Results/S/");
         strcat(path, name);
-        strcat(path, "/*.csv");
+        strcat(path, "/r*.csv");
 
         filename = path;
         openfile();
-        write_diffsuion_data(j);
+        write_diffsuion_data(i);
         fclose(fp);
       }
     }
   }
 
   if (anFlag == 1) {
-    for (int j = 1; j < ntypes+1; j++) {
-      char *name = ptr->typeName[j];
+    for (int i = 1; i < ntypes+1; i++) {
+      char *name = ptr->typeName[i];
       int len = 50;
       len += strlen(name);
       char path[len];
       strcpy(path, "./Results/DGRAn/");
       strcat(path, name);
-      strcat(path, "/*.csv");
+      strcat(path, "/r*.csv");
 
       filename = path;
       openfile();
-      write_DGRAn_data(j);
+      write_DGRAn_data(i);
       fclose(fp);
     }
   }
 
   if (catFlag == 1) {
-    for (int j = 1; j < ntypes+1; j++) {
-      char *name = ptr->typeName[j];
+    for (int i = 1; i < ntypes+1; i++) {
+      char *name = ptr->typeName[i];
       int len = 50;
       len += strlen(name);
       char path[len];
       strcpy(path, "./Results/DGRCat/");
       strcat(path, name);
-      strcat(path, "/*.csv");
+      strcat(path, "/r*.csv");
 
       filename = path;
       openfile();
-      write_DGRCat_data(j);
+      write_DGRCat_data(i);
       fclose(fp);
     }
   }
@@ -285,7 +286,6 @@ void DumpBio::openfile()
           filestar,update->ntimestep,ptr+1);
   *ptr = '*';
   fp = fopen(filecurrent,"w");
-  printf("%s, \n", filecurrent);
   delete [] filecurrent;
 }
 
@@ -299,7 +299,7 @@ void DumpBio::pack(tagint *ids)
 
 void DumpBio::write_diffsuion_data(int nuID)
 {
-  fprintf(fp, "x,y,z,scalar,1,1,1,0.5\n");
+  fprintf(fp, ",x,y,z,scalar,1,1,1,0.5\n");
 
   for(int i = 0; i < kinetics->ngrids; i++){
     int zpos = i/(nx * ny) + 1;
@@ -318,7 +318,7 @@ void DumpBio::write_diffsuion_data(int nuID)
 
 void DumpBio::write_DGRCat_data(int typeID)
 {
-  fprintf(fp, "x,y,z,scalar,1,1,1,0.5\n");
+  fprintf(fp, ",x,y,z,scalar,1,1,1,0.5\n");
 
   for(int i = 0; i < kinetics->ngrids; i++){
     int zpos = i/(nx * ny) + 1;
@@ -339,7 +339,7 @@ void DumpBio::write_DGRCat_data(int typeID)
 
 void DumpBio::write_DGRAn_data(int typeID)
 {
-  fprintf(fp, "x,y,z,scalar,1,1,1,0.5\n");
+  fprintf(fp, ",x,y,z,scalar,1,1,1,0.5\n");
 
   for(int i = 0; i < kinetics->ngrids; i++){
     int zpos = i/(nx * ny) + 1;
