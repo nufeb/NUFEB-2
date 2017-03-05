@@ -81,6 +81,7 @@ FixKinetics::~FixKinetics()
   memory->destroy(DRGCat);
   memory->destroy(DRGAn);
   memory->destroy(kEq);
+  memory->destroy(Sh);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -125,6 +126,7 @@ void FixKinetics::init()
   DRGCat = memory->create(DRGCat,ntypes+1,ngrids,"kinetics:DRGCat");
   DRGAn = memory->create(DRGAn,ntypes+1,ngrids,"kinetics:DRGAn");
   kEq = memory->create(kEq,nnus+1,4,"kinetics:kEq");
+  Sh = memory->create(Sh,ngrids,"kinetics:Sh");
 
   //initialize grid yield, inlet concentration, consumption
   for (int j = 0; j < ngrids; j++) {

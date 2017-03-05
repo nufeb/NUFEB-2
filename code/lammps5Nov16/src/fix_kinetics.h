@@ -49,6 +49,7 @@ class FixKinetics : public Fix {
   double **DRGCat;                 // Gibbs free energy of catabolism [type][grid]
   double **DRGAn;                  // Gibbs free energy of anabolism [type][grid]
   double **kEq;                    // equilibrium constants [nutrient][4]
+  double *Sh;
 
   class AtomVecBio *avec;
   class BIO *bio;
