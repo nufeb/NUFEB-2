@@ -31,8 +31,6 @@ class FixKineticsPH : public Fix {
   int ntypes;                   // # of species
   double rth, temp;             // universal gas constant (thermodynamics) and temperature
 
-  double *Sh;
-
   double **nuS;                 // nutrient concentration [nutrient][grid]
   double **nuGCoeff;
   double **typeGCoeff;

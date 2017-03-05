@@ -74,8 +74,8 @@ fix d1 all divide 1 v_EPSdens 1 3123
 
 ##############Simulation outputs##############
 
-#dump		id all custom 1 snapshot.bubblemd id type diameter x y z vx vy vz fx fy fz
-dump            d0 all bio 1000 Conc DGRAn DGRCat
+dump		id all custom 250 snapshot.bubblemd id type diameter x y z vx vy vz fx fy fz
+dump            d0 all bio 500 Conc DGRAn DGRCat ph biomass
 thermo_style    custom step cpu atoms biomass
 thermo		10	
 thermo_modify	lost ignore

@@ -63,8 +63,6 @@ FixKineticsPH::FixKineticsPH(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg,
 
 FixKineticsPH::~FixKineticsPH()
 {
-
-  memory->destroy(Sh);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -104,8 +102,6 @@ void FixKineticsPH::init()
   rth = kinetics->rth;
   activity = kinetics->activity;
   kEq = kinetics->kEq;
-
-  Sh = memory->create(Sh,kinetics->ngrids,"kinetics/ph:Sh");
 }
 
 /* ---------------------------------------------------------------------- */
@@ -123,18 +119,10 @@ void FixKineticsPH::pre_force(int vflag)
 ------------------------------------------------------------------------- */
 void FixKineticsPH::solve_ph()
 {
-  int w = 1; // why divide by w???
-  double a = 1e-14;
-  int b = 1;
+  int w = 1;
 
-  int ipH = 1;
   double tol = 5e-15;
   int maxIter = 20;
-  double fun;
-  double dF;
-  double fa, fb, fc;
-  double err, err1, err2;
-  double sumActivity;
 
   double *denm = memory->create(denm,nnus+1,"kinetics/ph:denm");
   double *dDenm = memory->create(dDenm,nnus+1,"kinetics/ph:denm");
@@ -143,7 +131,17 @@ void FixKineticsPH::solve_ph()
   nuS = kinetics->nuS;
 
   for (int i = 0; i < kinetics->ngrids; i++) {
+    double a = 1e-14;
+    int b = 1;
+    int ipH = 1;
+
+    double fun;
+    double dF;
+    double fa, fb, fc;
+    double err, err1, err2;
+    double sumActivity;
     double gSh; // grid Sh
+
     for (int j = 0; j < 2; j++) {
       sumActivity = 0.0;
       if (j == 0) gSh = a;
@@ -277,7 +275,7 @@ void FixKineticsPH::solve_ph()
       }
       ipH += ipH;
     }
-    Sh[i] = gSh;
+    kinetics->Sh[i] = gSh;
   }
 //  for (int k = 1; k < nnus+1; k++) {
 //    printf("%e ", activity[k][0]);

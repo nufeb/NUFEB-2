@@ -239,12 +239,6 @@ void FixKineticsMonod::monod()
     //solve diffusion
     diffusion->diffusion(0);
     //printf("R = %e \n", nuR[1][0]);
-    //reset consumption
-    for (int i = 0; i <= nnus; i++) {
-      for (int j = 0; j < ngrids; j++) {
-        nuR[i][j] = 0;
-      }
-    }
 
     for (int i = 0; i < nall; i++) {
       int pos = position(i);
@@ -252,6 +246,13 @@ void FixKineticsMonod::monod()
       double growthRate = growth_rate(i) * update->dt;
       //update bacteria mass, radius etc
       bio_update(growthRate, i);
+    }
+
+    //reset consumption
+    for (int i = 0; i <= nnus; i++) {
+      for (int j = 0; j < ngrids; j++) {
+        nuR[i][j] = 0;
+      }
     }
   } else {
     for (int i = 0; i < nall; i++) {

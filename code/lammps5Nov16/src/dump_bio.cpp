@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <math.h>
 
 #include "dump_bio.h"
 #include "comm.h"
@@ -63,6 +64,8 @@ DumpBio::DumpBio(LAMMPS *lmp, int narg, char **arg) :
   concFlag = 0;
   catFlag = 0;
   phFlag = 0;
+  massFlag = 0;
+  massHeader = 0;
 
   // customize for new sections
   keywords = (char **) memory->srealloc(keywords, nkeywords*sizeof(char *), "keywords");
@@ -193,6 +196,16 @@ void DumpBio::init_style()
           }
         }
       }
+    } else if (strcmp(keywords[i],"ph") == 0) {
+      phFlag = 1;
+      if (stat("./Results/pH", &st) == -1) {
+          mkdir("./Results/pH", 0700);
+      }
+    } else if (strcmp(keywords[i],"biomass") == 0) {
+      massFlag = 1;
+      if (stat("./Results/BioMass", &st) == -1) {
+          mkdir("./Results/BioMass", 0700);
+      }
     }
 
     i++;
@@ -259,6 +272,28 @@ void DumpBio::write()
       write_DGRCat_data(i);
       fclose(fp);
     }
+  }
+
+  if (phFlag == 1) {
+    int len = 30;
+    char path[len];
+    strcpy(path, "./Results/pH/r*.csv");
+
+    filename = path;
+    openfile();
+    write_pH_data();
+    fclose(fp);
+  }
+
+  if (massFlag == 1) {
+    int len = 35;
+    char path[len];
+    strcpy(path, "./Results/BioMass/biomass.csv");
+
+    filename = path;
+    fp = fopen(filename,"a");
+    write_biomass_data();
+    fclose(fp);
   }
 }
 
@@ -355,6 +390,58 @@ void DumpBio::write_DGRAn_data(int typeID)
     fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%f\n",i, x, y, z, kinetics->DRGAn[typeID][i]);
   }
 }
+
+/* ---------------------------------------------------------------------- */
+
+void DumpBio::write_pH_data()
+{
+  fprintf(fp, ",x,y,z,scalar,1,1,1,0.5\n");
+
+  for(int i = 0; i < kinetics->ngrids; i++){
+    int zpos = i/(nx * ny) + 1;
+    int ypos = (i - (zpos - 1) * (nx * ny)) / nx + 1;
+    int xpos = i - (zpos - 1) * (nx * ny) - (ypos - 1) * nx + 1;
+
+    double x = xpos * stepx - stepx/2;
+    double y = ypos * stepy - stepy/2;
+    double z = zpos * stepz - stepz/2;
+
+    //average += kinetics->DRGCat[2][i];
+
+    fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%f\n",i, x, y, z, -log10(kinetics->Sh[i]));
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpBio::write_biomass_data()
+{
+  if (!massHeader) {
+    for(int i = 1; i < atom->ntypes+1; i++){
+      fprintf(fp, "%s\t", kinetics->bio->typeName[i]);
+    }
+    fprintf(fp, "\n");
+    massHeader = 1;
+  }
+
+  int local = atom->nlocal;
+  int ghost = atom->nghost;
+  int all = local + ghost;
+  double *mass = new double[atom->ntypes+1]();
+
+  for(int i = 0; i < all; i++){
+    int type = atom->type[i];
+    mass[type] += atom->rmass[i];
+  }
+
+  for(int i = 1; i < atom->ntypes+1; i++){
+    fprintf(fp, "%e\t", mass[i]);
+  }
+  fprintf(fp, "\n");
+
+  delete mass;
+}
+
 
 bigint DumpBio::memory_usage() {
   return 0;
