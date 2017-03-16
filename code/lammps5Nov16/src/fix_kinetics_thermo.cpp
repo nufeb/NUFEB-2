@@ -50,39 +50,40 @@ using namespace std;
 
 FixKineticsThermo::FixKineticsThermo(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
-  if (narg != 5) error->all(FLERR,"Not enough arguments in fix kinetics/thermo command");
+  if (narg != 7) error->all(FLERR,"Not enough arguments in fix kinetics/thermo command");
 
   nevery = force->inumeric(FLERR,arg[3]);
   if (nevery < 0) error->all(FLERR,"Illegal fix kinetics/thermo command");
 
-
   fixY = 0;
-  if (strcmp(arg[4], "unfix") == 0) fixY = 1;
+  closeR = 0;
 
-//  var = new char*[1];
-//  ivar = new int[1];
-//
-//  for (int i = 0; i < 1; i++) {
-//    int n = strlen(&arg[4+i][2]) + 1;
-//    var[i] = new char[n];
-//    strcpy(var[i],&arg[4+i][2]);
-//  }
+  if (strcmp(arg[4], "unfix") == 0) fixY = 1;
+  if (strcmp(arg[5], "close") == 0) closeR = 1;
+
+  var = new char*[1];
+  ivar = new int[1];
+
+  for (int i = 0; i < 1; i++) {
+    int n = strlen(&arg[6+i][2]) + 1;
+    var[i] = new char[n];
+    strcpy(var[i],&arg[6+i][2]);
+  }
 }
 
 /* ---------------------------------------------------------------------- */
 
 FixKineticsThermo::~FixKineticsThermo()
 {
-//  int i;
-//  for (i = 0; i < 1; i++) {
-//    delete [] var[i];
-//  }
-//  delete [] var;
-//  delete [] ivar;
-
   memory->destroy(dG0);
   memory->destroy(khV);
   memory->destroy(liq2Gas);
+
+  for (int i = 0; i < 1; i++) {
+    delete [] var[i];
+  }
+  delete [] var;
+  delete [] ivar;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -99,6 +100,7 @@ int FixKineticsThermo::setmask()
 void FixKineticsThermo::init()
 {
   // register fix kinetics with this class
+  kinetics = NULL;
   int nfix = modify->nfix;
   for (int j = 0; j < nfix; j++) {
     if (strcmp(modify->fix[j]->style,"kinetics") == 0) {
@@ -107,9 +109,37 @@ void FixKineticsThermo::init()
     }
   }
 
-  ntypes = atom->ntypes;
+  if (kinetics == NULL)
+    lmp->error->all(FLERR,"The fix kinetics command is required for kinetics/thermo styles");
+
+  for (int n = 0; n < 1; n++) {
+    ivar[n] = input->variable->find(var[n]);
+    if (ivar[n] < 0)
+      error->all(FLERR,"Variable name for fix kinetics/thermo does not exist");
+    if (!input->variable->equalstyle(ivar[n]))
+      error->all(FLERR,"Variable for fix kinetics/thermo is invalid style");
+  }
+
+  pressure = input->variable->compute_equal(ivar[0]);
 
   bio = kinetics->bio;
+
+  if (bio->catCoeff == NULL)
+    error->all(FLERR,"fix_kinetics requires Catabolism Coeffs input");
+  else if (bio->anabCoeff == NULL)
+    error->all(FLERR,"fix_kinetics requires Anabolism Coeffs input");
+  else if (bio->nuGCoeff == NULL)
+    error->all(FLERR,"fix_kinetics requires Nutrient Energy input");
+  else if (bio->typeGCoeff == NULL)
+    error->all(FLERR,"fix_kinetics requires Type Energy input");
+  else if (bio->dissipation == NULL)
+    error->all(FLERR,"fix_kinetics requires Dissipation inputs");
+  else if (bio->kLa == NULL)
+    error->all(FLERR,"fix_kinetics requires KLa input");
+  else if (bio->eD == NULL)
+    error->all(FLERR,"fix_kinetics requires eD input");
+
+  ntypes = atom->ntypes;
   nx = kinetics->nx;
   ny = kinetics->ny;
   nz = kinetics->nz;
@@ -118,6 +148,11 @@ void FixKineticsThermo::init()
   rth = kinetics->rth;
   DRGCat = kinetics->DRGCat;
   DRGAn = kinetics->DRGAn;
+  nuR = kinetics->nuR;
+  nuS = kinetics->nuS;
+  qGas = kinetics->qGas;
+  gYield = kinetics->gYield;
+  activity = kinetics->activity;
 
   nnus = bio->nnus;
   catCoeff = bio->catCoeff;
@@ -125,6 +160,7 @@ void FixKineticsThermo::init()
   nuGCoeff = bio->nuGCoeff;
   typeGCoeff = bio->typeGCoeff;
   diss = bio->dissipation;
+  kLa = bio->kLa;
 
   khV = memory->create(khV,nnus+1,"kinetics/thermo:khV");
   liq2Gas = memory->create(liq2Gas,nnus+1,"kinetics/thermo:liq2Gas");
@@ -132,6 +168,30 @@ void FixKineticsThermo::init()
 
   init_dG0();
   init_KhV();
+
+  //Get computational domain size
+  if (domain->triclinic == 0) {
+    xlo = domain->boxlo[0];
+    xhi = domain->boxhi[0];
+    ylo = domain->boxlo[1];
+    yhi = domain->boxhi[1];
+    zlo = domain->boxlo[2];
+    zhi = domain->boxhi[2];
+  }
+  else {
+    xlo = domain->boxlo_bound[0];
+    xhi = domain->boxhi_bound[0];
+    ylo = domain->boxlo_bound[1];
+    yhi = domain->boxhi_bound[1];
+    zlo = domain->boxlo_bound[2];
+    zhi = domain->boxhi_bound[2];
+  }
+
+  stepx = (xhi - xlo) / nx;
+  stepy = (yhi - ylo) / ny;
+  stepz = (zhi - zlo) / nz;
+
+  vol = stepx * stepy * stepz;
 }
 
 /* ----------------------------------------------------------------------*/
@@ -213,35 +273,39 @@ void FixKineticsThermo::thermo()
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
   int *type = atom->type;
-  double ***activity = kinetics->activity;
-  double *kLa = bio->kLa;
-  double **nuGas = kinetics->nuGas;
-  double **nuR = kinetics->nuR;
 
   double vRgT = kinetics->gVol * 1000 / (kinetics->gasTrans * kinetics->temp);
-
-  gYield = kinetics->gYield;
-  nuS = kinetics->nuS;
+  double vg = vol * 1000;
+  double rGas, rLiq;
 
   for (int i = 0; i < ngrids; i++) {
     // gas transfer
-    for (int j = 1; j <= nnus; j++) {
-      nuR[j][i] = 0;
-      if (bio->nuType[j] == 1) {
-        //get corresponding liquid ID
-        int liqID = liq2Gas[j];
-        double gasT = 0;
-        if (liqID != 0) {
-          if (nuGCoeff[liqID][0] > 10000) {
-            gasT = kLa[liqID] * (activity[liqID][1][i] / khV[liqID] - activity[j][0][i]);
-          } else {
-            gasT = kLa[liqID] * (activity[liqID][0][i] / khV[liqID] - activity[j][0][i]);
+    if (closeR == 1){
+      for (int j = 1; j <= nnus; j++) {
+        nuR[j][i] = 0;
+        qGas[j][i] = 0;
+        if (bio->nuType[j] == 1) {
+          //get corresponding liquid ID
+          int liqID = liq2Gas[j];
+          double gasT = 0;
+          if (liqID != 0) {
+            if (nuGCoeff[liqID][0] > 10000) {
+              gasT = kLa[liqID] * (activity[liqID][1][i] / khV[liqID] - activity[j][0][i]);
+            } else {
+              gasT = kLa[liqID] * (activity[liqID][0][i] / khV[liqID] - activity[j][0][i]);
+            }
+            rGas = gasT;
+            rLiq = -gasT * vRgT;
+            // update nutrient consumption
+            nuR[j][i] += rGas;
+            nuR[liqID][i] += rLiq;
+            //gas correction
+            nuR[j][i] = nuR[j][i] * (nuS[j][i] * kinetics->gasTrans * temp / pressure + vg);
+            //update gas concentration
+            nuS[j][i] += nuR[j][i];
+            qGas[j][i] = nuR[j][i] * kinetics->gasTrans * temp / pressure;
+            if (nuS[j][i] < 0) nuS[j][i] = 0;
           }
-          nuGas[j][i] = gasT;
-          nuGas[liqID][i] = -gasT * vRgT;
-          // update nutrient consumption
-          nuR[j][i] += nuGas[j][i];
-          nuR[liqID][i] += nuGas[liqID][i];
         }
       }
     }
@@ -276,7 +340,8 @@ void FixKineticsThermo::thermo()
       if (fixY == 1){
         if (DRGCat[j][i] < 0) {
           gYield[j][i] = -(DRGAn[j][i] + diss[j]) / DRGCat[j][i] + bio->eD[j];
-          gYield[j][i] = 1 / gYield[j][i];
+          if (gYield[j][i] != 0)
+            gYield[j][i] = 1 / gYield[j][i];
         } else {
           gYield[j][i] = 0;
         }

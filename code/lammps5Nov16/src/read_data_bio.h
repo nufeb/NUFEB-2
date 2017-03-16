@@ -112,8 +112,8 @@ class ReadDataBIO : protected Pointers {
 
   void fix(int, char *);
 
-  void type_coeffs();
-  void nutrient_coeffs();
+  void type_memory();
+  void nutrient_memory();
 
   void nutrients();
 

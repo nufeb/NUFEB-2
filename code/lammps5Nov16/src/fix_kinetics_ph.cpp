@@ -79,6 +79,7 @@ int FixKineticsPH::setmask()
 void FixKineticsPH::init()
 {
   // register fix kinetics with this class
+  kinetics = NULL;
   int nfix = modify->nfix;
   for (int j = 0; j < nfix; j++) {
     if (strcmp(modify->fix[j]->style,"kinetics") == 0) {
@@ -88,11 +89,20 @@ void FixKineticsPH::init()
   }
 
   if (kinetics == NULL)
-    lmp->error->all(FLERR,"The fix kinetics command is required for kinetics/monod styles");
-
-  ntypes = atom->ntypes;
+    lmp->error->all(FLERR,"The fix kinetics command is required for kinetics/ph styles");
 
   bio = kinetics->bio;
+
+  if (bio->nnus == 0)
+    error->all(FLERR,"fix_kinetics requires # of Nutrients inputs");
+  else if (bio->nuGCoeff == NULL)
+    error->all(FLERR,"fix_kinetics requires Nutrient Energy inputs");
+  else if (bio->typeGCoeff == NULL)
+    error->all(FLERR,"fix_kinetics requires Type Energy inputs");
+  else if (bio->nuChr == NULL)
+    error->all(FLERR,"fix_kinetics requires Nutrient Charge inputs");
+
+  ntypes = atom->ntypes;
   nnus = bio->nnus;
   nuGCoeff = bio->nuGCoeff;
   typeGCoeff = bio->typeGCoeff;
@@ -102,6 +112,7 @@ void FixKineticsPH::init()
   rth = kinetics->rth;
   activity = kinetics->activity;
   kEq = kinetics->kEq;
+  nuS = kinetics->nuS;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -127,8 +138,6 @@ void FixKineticsPH::solve_ph()
   double *denm = memory->create(denm,nnus+1,"kinetics/ph:denm");
   double *dDenm = memory->create(dDenm,nnus+1,"kinetics/ph:denm");
   double *aux = memory->create(aux,nnus+1,"kinetics/ph:aux");
-
-  nuS = kinetics->nuS;
 
   for (int i = 0; i < kinetics->ngrids; i++) {
     double a = 1e-14;

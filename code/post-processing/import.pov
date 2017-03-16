@@ -7,7 +7,7 @@ right 0.24*x*image_width/image_height
 up 0.24*y
 look_at <0, 0, 0>
 look_at 0
-rotate <0, 0, 41*10>
+rotate <0, 0, 4*10>
 }
 // Create simualtion domain
 #declare b_x=0.05;
