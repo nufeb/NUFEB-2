@@ -41,7 +41,7 @@ class FixKinetics : public Fix {
 
   double **nuS;                    // nutrient concentration [nutrient][grid]
   double **nuR;                    // nutrient consumption [nutrient][grid]
-  double **nuGas;                  // gas correction [nutrient][grid]
+  double **qGas;                   // gas chemicals [nutrient][grid]
   double **gYield;                 // inverse yield [type][grid]
   double ***activity;              // activities of chemical species [nutrient][5 charges][grid]
   double gVol, gasTrans;           // gas volume and gas transfer constant

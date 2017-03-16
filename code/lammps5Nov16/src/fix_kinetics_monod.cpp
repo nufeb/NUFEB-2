@@ -90,7 +90,7 @@ FixKineticsMonod::~FixKineticsMonod()
   delete [] var;
   delete [] ivar;
 
-  for (int i = 0; i <= ntypes; i++) {
+  for (int i = 0; i < ntypes + 1; i++) {
     delete [] gMonod[i];
     delete [] minCatMonod[i];
   }
@@ -124,6 +124,8 @@ void FixKineticsMonod::init()
   }
 
   // register fix kinetics with this class
+  kinetics = NULL;
+  diffusion = NULL;
   int nfix = modify->nfix;
   for (int j = 0; j < nfix; j++) {
     if (strcmp(modify->fix[j]->style,"kinetics") == 0) {
@@ -139,20 +141,39 @@ void FixKineticsMonod::init()
   if (diffevery > 0 && diffusion == NULL)
     lmp->error->all(FLERR,"The fix diffusion command is required");
 
-  bio = kinetics->bio;
-  ntypes = atom->ntypes;
-
   EPSdens = input->variable->compute_equal(ivar[0]);
 
+  bio = kinetics->bio;
+
+  if (bio->nnus == 0)
+    error->all(FLERR,"fix_kinetics requires # of Nutrients input");
+  else if (bio->catCoeff == NULL)
+    error->all(FLERR,"fix_kinetics requires Catabolism Coeffs input");
+  else if (bio->anabCoeff == NULL)
+    error->all(FLERR,"fix_kinetics requires Anabolism Coeffs input");
+  else if (bio->nuChr == NULL)
+    error->all(FLERR,"fix_kinetics requires Nutrient Charge input");
+  else if (bio->maintain == NULL)
+    error->all(FLERR,"fix_kinetics requires Maintenance input");
+  else if (bio->decay == NULL)
+    error->all(FLERR,"fix_kinetics requires Decay input");
+  else if (bio->ks == NULL)
+    error->all(FLERR,"fix_kinetics requires Ks input");
+  else if (bio->decayCoeff == NULL)
+    error->all(FLERR,"fix_kinetics requires Decay Coeffs input");
+
+  ntypes = atom->ntypes;
   nx = kinetics->nx;
   ny = kinetics->ny;
   nz = kinetics->nz;
+  gYield = kinetics->gYield;
 
   ngrids = nx * ny * nz;
   nnus = bio->nnus;
   catCoeff = bio->catCoeff;
   anabCoeff = bio->anabCoeff;
-  gYield = kinetics->gYield;
+  maintain = bio->maintain;
+  decay = bio->decay;
 
   gMonod = new double*[ntypes+1];
   minCatMonod = new double*[ntypes+1];
@@ -215,8 +236,6 @@ void FixKineticsMonod::monod()
 
   nuS = kinetics->nuS;
   nuR = kinetics->nuR;
-  maintain = bio->maintain;
-  decay = bio->decay;
   DGRCat = kinetics->DRGCat;
 
   //initialization
@@ -232,7 +251,7 @@ void FixKineticsMonod::monod()
     for (int i = 0; i < nall; i++) {
       //printf("mass = %e \n", rmass[i]);
       if (mask[i] & groupbit) {
-        growth_rate(i);
+        growth(i);
       }
     }
     //printf("Average R = %e \n", ar/ngrids);
@@ -243,9 +262,9 @@ void FixKineticsMonod::monod()
     for (int i = 0; i < nall; i++) {
       int pos = position(i);
       //get new growth rate based on new nutrients
-      double growthRate = growth_rate(i) * update->dt;
+      double biomass = growth(i) * update->dt;
       //update bacteria mass, radius etc
-      bio_update(growthRate, i);
+      bio_update(biomass, i);
     }
 
     //reset consumption
@@ -257,10 +276,10 @@ void FixKineticsMonod::monod()
   } else {
     for (int i = 0; i < nall; i++) {
       if (mask[i] & groupbit) {
-        double growthRate = growth_rate(i) * update->dt;
+        double biomass = growth(i) * update->dt;
        // agr = agr + growthRate;
         //update bacteria mass, radius etc
-        bio_update(growthRate, i);
+        bio_update(biomass, i);
       }
     }
   }
@@ -283,7 +302,7 @@ int FixKineticsMonod::position(int i) {
   return pos;
 }
 
-double FixKineticsMonod::growth_rate(int i) {
+double FixKineticsMonod::growth(int i) {
 
   //calculate growth rate using minimum monod
   int t = type[i];
@@ -327,12 +346,17 @@ double FixKineticsMonod::growth_rate(int i) {
     if (strcmp(bio->nuName[j], "h") != 0 && strcmp(bio->nuName[j], "h2o") != 0) {
       double consume;
       if (1.2 * bacMaint < muCat) {
-        double invYield = 1/gYield[t][pos];
+        double invYield;
+        if (gYield[t][pos] != 0)
+          invYield = 1/gYield[t][pos];
+        else
+          invYield = 0;
+
         double metCoeff = catCoeff[t][j] * invYield + anabCoeff[t][j];
         //printf ("metCoeff %i = %e \n",j, metCoeff);
         rg = mu * rmass[i];
         consume = rg * metCoeff;
-      } else if (muCat < 1.2 * bacMaint && bacMaint <= muCat) {
+      } else if (muCat <= 1.2 * bacMaint && bacMaint <= muCat) {
         rg = 0;
         consume = catCoeff[t][j] * gYield[t][pos] * bacMaint * rmass[i];
       } else {
@@ -341,8 +365,8 @@ double FixKineticsMonod::growth_rate(int i) {
         consume = -(rg) * bio->decayCoeff[t][j] + catCoeff[t][j] * gYield[t][pos] * muCat * rmass[i];
       }
       //printf ("consume = %e \n", 3600 * consume/24.6e-3);
-      //calculate liquid concentrations, convert from m3 to L, g to mol
-      double uptake = consume / (vol * 1000 * 24.6e-3);
+      //calculate liquid consumption, convert from m3 to L, g to mol
+      double uptake = consume / (vol * 24.6);
       //printf("uptake[%i] = %e vol = %e \n" , j, uptake, vol);
       nuR[j][pos] += uptake;
     }
@@ -392,7 +416,7 @@ double FixKineticsMonod::growth_rate(int i) {
 double FixKineticsMonod::grid_monod(int pos, int type, int ind)
 {
   double monod = 1;
-  double invYield = 1/gYield[type][pos];
+
   //printf ("invYield = %e \n", invYield );
   for (int i = 1; i <= nnus; i++ ) {
     double ks = bio->ks[type][i];
@@ -407,7 +431,7 @@ double FixKineticsMonod::grid_monod(int pos, int type, int ind)
   return monod;
 }
 
-void FixKineticsMonod::bio_update(double growthRate, int i)
+void FixKineticsMonod::bio_update(double biomass, int i)
 {
   double density;
   const double threeQuartersPI = (3.0/(4.0*MY_PI));
@@ -417,18 +441,17 @@ void FixKineticsMonod::bio_update(double growthRate, int i)
   //printf ("old mass[i] = %e \n", rmass[i]);
 
   density = rmass[i] / (fourThirdsPI * radius[i] * radius[i] * radius[i]);
-  rmass[i] = rmass[i] + growthRate;
+  rmass[i] = rmass[i] + biomass;
  // cout<<"before mass " <<growthRate << endl;
   //printf ("new mass[i] = %e \n", rmass[i]);
   //update mass and radius
   if (mask[i] == avec->maskHET) {
       outerMass[i] = fourThirdsPI * (outerRadius[i] * outerRadius[i] * outerRadius[i] - radius[i] * radius[i] * radius[i]) * EPSdens
-      + growthRate * nevery;
+      + biomass * nevery;
 
       outerRadius[i] = pow(threeQuartersPI * (rmass[i] / density + outerMass[i] / EPSdens), third);
       radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
-  }
-  else if (mask[i] != avec->maskEPS){
+  } else if (mask[i] != avec->maskEPS){
       radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
       outerMass[i] = 0.0;
       outerRadius[i] = radius[i];

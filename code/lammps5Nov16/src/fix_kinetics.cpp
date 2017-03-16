@@ -77,7 +77,7 @@ FixKinetics::~FixKinetics()
   memory->destroy(activity);
   memory->destroy(nuR);
   memory->destroy(nuS);
-  memory->destroy(nuGas);
+  memory->destroy(qGas);
   memory->destroy(DRGCat);
   memory->destroy(DRGAn);
   memory->destroy(kEq);
@@ -104,14 +104,20 @@ void FixKinetics::init()
     if (!input->variable->equalstyle(ivar[n]))
       error->all(FLERR,"Variable for fix kinetics is invalid style");
   }
+  bio = avec->bio;
+
+  if (bio->nnus == 0)
+    error->all(FLERR,"fix_kinetics requires # of Nutrients inputs");
+  else if (bio->nuGCoeff == NULL)
+    error->all(FLERR,"fix_kinetics requires Nutrient Energy inputs");
+  else if (bio->iniS == NULL)
+    error->all(FLERR,"fix_kinetics requires Nutrients inputs");
 
   temp = input->variable->compute_equal(ivar[0]);
   rth = input->variable->compute_equal(ivar[1]);
   gVol = input->variable->compute_equal(ivar[2]);
   gasTrans = input->variable->compute_equal(ivar[3]);
   ph = input->variable->compute_equal(ivar[4]);
-
-  bio = avec->bio;
 
   ngrids = nx * ny * nz;
 
@@ -120,7 +126,7 @@ void FixKinetics::init()
 
   nuS = memory->create(nuS,nnus+1, ngrids, "kinetics:nuS");
   nuR = memory->create(nuR,nnus+1, ngrids, "kinetics:nuR");
-  nuGas = memory->create(nuGas,nnus+1, ngrids, "kinetics:nuGas");
+  qGas = memory->create(qGas,nnus+1, ngrids, "kinetics:nuGas");
   gYield = memory->create(gYield,ntypes+1,ngrids,"kinetic:gYield");
   activity = memory->create(activity,nnus+1,5, ngrids,"kinetics:activity");
   DRGCat = memory->create(DRGCat,ntypes+1,ngrids,"kinetics:DRGCat");
@@ -136,6 +142,7 @@ void FixKinetics::init()
     for (int i = 1; i <= nnus; i++) {
       nuS[i][j] = bio->iniS[i][0];
       nuR[i][j] = 0;
+      qGas[i][j] = 0;
     }
   }
 
@@ -150,7 +157,7 @@ void FixKinetics::init_keq()
   // water Kj/mol
   double dG0H2O = -237.18;
   int nnus = bio->nnus;
-  double** nuGCoeff = bio->nuGCoeff;
+  double **nuGCoeff = bio->nuGCoeff;
 
   for (int i = 1; i < nnus+1; i++) {
     kEq[i][0] = exp((dG0H2O + nuGCoeff[i][0] - nuGCoeff[i][1]) / (-rth * temp));
@@ -176,7 +183,7 @@ void FixKinetics::init_activity() {
   for (int k = 1; k < nnus+1; k++) {
     for (int j = 0; j < ngrids; j++) {
       double iniNuS = bio->iniS[k][0];
-
+      Sh[j] = gSh;
       denm[k] = (1 + kEq[k][0]) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][3] * gSh + kEq[k][3] * kEq[k][2] * kEq[k][1];
       if (denm[k] == 0) {
         lmp->error->all(FLERR,"denm returns a zero value");

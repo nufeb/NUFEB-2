@@ -16,10 +16,10 @@ while feof(dump) == 0
             y_bound(i,:) = str2num(fgetl(dump));
             z_bound(i,:) = str2num(fgetl(dump));
         %case 'ITEM: ATOMS id x y z vx vy vz omegax omegay omegaz c_2_0[4] c_2_1[4] c_2_2[4] c_2_3[4] '
-         case 'ITEM: ATOMS id type diameter x y z vx vy vz fx fy fz '
+         case 'ITEM: ATOMS id type diameter x y z '
         
            
-           C = textscan(dump,'%f %f %f %f %f %f %f %f %f %f %f %f',Natoms(i));
+           C = textscan(dump,'%f %f %f %f %f %f',Natoms(i));
            
 
 Tp = C{2};

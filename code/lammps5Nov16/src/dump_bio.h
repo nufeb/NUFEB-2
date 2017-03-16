@@ -42,7 +42,7 @@ class DumpBio : public Dump {
   char **id_fix;             // their IDs
   class Fix **fix;           // list of ptrs to the Fix objects
 
-  int anFlag, concFlag, catFlag, phFlag, massFlag;
+  int anFlag, concFlag, catFlag, phFlag, massFlag, gasFlag;
   int massHeader;
 
   double xlo,xhi,ylo,yhi,zlo,zhi;
@@ -51,7 +51,7 @@ class DumpBio : public Dump {
 
   char **keywords;
   class FixKinetics *kinetics;
-  class BIO *ptr;
+  class BIO *bio;
 //
   void openfile();
   void write();
@@ -61,6 +61,7 @@ class DumpBio : public Dump {
   void write_data(int, double *);
 
   void write_diffsuion_data(int);
+  void write_gas_data(int);
   void write_DGRCat_data(int);
   void write_DGRAn_data(int);
   void write_pH_data();

@@ -66,6 +66,7 @@ DumpBio::DumpBio(LAMMPS *lmp, int narg, char **arg) :
   phFlag = 0;
   massFlag = 0;
   massHeader = 0;
+  gasFlag = 0;
 
   // customize for new sections
   keywords = (char **) memory->srealloc(keywords, nkeywords*sizeof(char *), "keywords");
@@ -93,6 +94,7 @@ DumpBio::~DumpBio()
 void DumpBio::init_style()
 {
   // register fix kinetics with this class
+  kinetics = NULL;
   nfix = modify->nfix;
   for (int j = 0; j < nfix; j++) {
     if (strcmp(modify->fix[j]->style,"kinetics") == 0) {
@@ -100,8 +102,10 @@ void DumpBio::init_style()
       break;
     }
   }
+  if (kinetics == NULL)
+    lmp->error->all(FLERR,"The fix kinetics command is required");
 
-  ptr = kinetics->bio;
+  bio = kinetics->bio;
 
   nx = kinetics->nx;
   ny = kinetics->ny;
@@ -145,8 +149,8 @@ void DumpBio::init_style()
           mkdir("./Results/S", 0700);
       }
       for (int j = 1; j < nnus + 1; j++) {
-        if (ptr->nuType[j] == 0 && strcmp(ptr->nuName[j], "h") != 0 && strcmp(ptr->nuName[j], "h2o") != 0) {
-          char *name = ptr->nuName[j];
+        if (bio->nuType[j] == 0 && strcmp(bio->nuName[j], "h") != 0 && strcmp(bio->nuName[j], "h2o") != 0) {
+          char *name = bio->nuName[j];
           int len = 13;
           len += strlen(name);
           char path[len];
@@ -164,8 +168,8 @@ void DumpBio::init_style()
           mkdir("./Results/DGRAn", 0700);
       }
       for (int j = 1; j < ntypes + 1; j++) {
-        if (ptr->nuType[j] == 0) {
-          char *name = ptr->typeName[j];
+        if (bio->nuType[j] == 0) {
+          char *name = bio->typeName[j];
           int len = 17;
           len += strlen(name);
           char path[len];
@@ -183,8 +187,8 @@ void DumpBio::init_style()
           mkdir("./Results/DGRCat", 0700);
       }
       for (int j = 1; j < ntypes + 1; j++) {
-        if (ptr->nuType[j] == 0) {
-          char *name = ptr->typeName[j];
+        if (bio->nuType[j] == 0) {
+          char *name = bio->typeName[j];
           int len = 18;
           len += strlen(name);
           char path[len];
@@ -206,8 +210,26 @@ void DumpBio::init_style()
       if (stat("./Results/BioMass", &st) == -1) {
           mkdir("./Results/BioMass", 0700);
       }
-    }
+    } else if (strcmp(keywords[i],"gas") == 0) {
+      gasFlag = 1;
+      if (stat("./Results/Gas", &st) == -1) {
+          mkdir("./Results/Gas", 0700);
+      }
+      for (int j = 1; j < nnus + 1; j++) {
+        if (bio->nuType[j] == 1) {
+          char *name = bio->nuName[j];
+          int len = 16;
+          len += strlen(name);
+          char path[len];
+          strcpy(path, "./Results/Gas/");
+          strcat(path, name);
 
+          if (stat(path, &st) == -1) {
+              mkdir(path, 0700);
+          }
+        }
+      }
+    }
     i++;
   }
 }
@@ -223,8 +245,8 @@ void DumpBio::write()
 
   if (concFlag == 1) {
     for (int i = 1; i < nnus+1; i++) {
-      if (ptr->nuType[i] == 0 && strcmp(ptr->nuName[i], "h") != 0 && strcmp(ptr->nuName[i], "h2o") != 0) {
-        char *name = ptr->nuName[i];
+      if (bio->nuType[i] == 0 && strcmp(bio->nuName[i], "h") != 0 && strcmp(bio->nuName[i], "h2o") != 0) {
+        char *name = bio->nuName[i];
         int len = 30;
         len += strlen(name);
         char path[len];
@@ -242,7 +264,7 @@ void DumpBio::write()
 
   if (anFlag == 1) {
     for (int i = 1; i < ntypes+1; i++) {
-      char *name = ptr->typeName[i];
+      char *name = bio->typeName[i];
       int len = 50;
       len += strlen(name);
       char path[len];
@@ -259,7 +281,7 @@ void DumpBio::write()
 
   if (catFlag == 1) {
     for (int i = 1; i < ntypes+1; i++) {
-      char *name = ptr->typeName[i];
+      char *name = bio->typeName[i];
       int len = 50;
       len += strlen(name);
       char path[len];
@@ -294,6 +316,25 @@ void DumpBio::write()
     fp = fopen(filename,"a");
     write_biomass_data();
     fclose(fp);
+  }
+
+  if (gasFlag == 1) {
+    for (int i = 1; i < nnus+1; i++) {
+      if (bio->nuType[i] == 1) {
+        char *name = bio->nuName[i];
+        int len = 30;
+        len += strlen(name);
+        char path[len];
+        strcpy(path, "./Results/Gas/");
+        strcat(path, name);
+        strcat(path, "/r*.csv");
+
+        filename = path;
+        openfile();
+        write_gas_data(i);
+        fclose(fp);
+      }
+    }
   }
 }
 
@@ -439,7 +480,26 @@ void DumpBio::write_biomass_data()
   }
   fprintf(fp, "\n");
 
-  delete mass;
+  delete[] mass;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpBio::write_gas_data(int nuID)
+{
+  fprintf(fp, ",x,y,z,scalar,1,1,1,0.5\n");
+
+  for(int i = 0; i < kinetics->ngrids; i++){
+    int zpos = i/(nx * ny) + 1;
+    int ypos = (i - (zpos - 1) * (nx * ny)) / nx + 1;
+    int xpos = i - (zpos - 1) * (nx * ny) - (ypos - 1) * nx + 1;
+
+    double x = xpos * stepx - stepx/2;
+    double y = ypos * stepy - stepy/2;
+    double z = zpos * stepz - stepz/2;
+
+    fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%f\n",i, x, y, z, kinetics->qGas[nuID][i]);
+  }
 }
 
 

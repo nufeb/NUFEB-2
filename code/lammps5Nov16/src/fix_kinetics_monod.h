@@ -47,9 +47,9 @@ class FixKineticsMonod : public Fix {
   int ngrids;                       //# of grids
 
   double stepx, stepy, stepz;       // grids size
-  double xlo,xhi,ylo,yhi,zlo,zhi;   // simulaton box size
-  double vol;                 // grid volume and gas volume
-  double temp;                  // gas transfer constant and temperature
+  double xlo,xhi,ylo,yhi,zlo,zhi;   // computational domain size
+  double vol;                       // grid volume and gas volume
+  double temp;                      // gas transfer constant and temperature
   double EPSdens;                   // EPS density
   double *maintain;
   double *decay;
@@ -74,7 +74,7 @@ class FixKineticsMonod : public Fix {
  // double minimal_monod(int, int, int);
   double grid_monod(int, int, int);
   void bio_update(double, int);
-  double growth_rate(int);
+  double growth(int);
   int position(int);
 
 };
