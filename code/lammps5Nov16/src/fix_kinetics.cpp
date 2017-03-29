@@ -200,6 +200,16 @@ void FixKinetics::init_activity() {
       activity[k][4][j] = iniNuS * kEq[k][1] * kEq[k][2] * kEq[k][3] / denm[k];
     }
   }
+
+//  for (int k = 1; k < nnus+1; k++) {
+//    printf("%e ", activity[k][0][0]);
+//    printf("%e ", activity[k][1][0]);
+//    printf("%e ", activity[k][2][0]);
+//    printf("%e ", activity[k][3][0]);
+//    printf("%e ", activity[k][4][0]);
+//    printf("\n");
+//  }
+
   memory->destroy(denm);
 }
 

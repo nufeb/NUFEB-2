@@ -346,7 +346,7 @@ void FixKineticsThermo::thermo()
           gYield[j][i] = 0;
         }
       }
-      //printf("gYield = %e \n", gYield[j][i]);
+     // printf("gYield = %e \n", gYield[j][i]);
     }
   }
 }

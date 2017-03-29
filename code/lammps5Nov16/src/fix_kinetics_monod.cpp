@@ -92,11 +92,11 @@ FixKineticsMonod::~FixKineticsMonod()
 
   for (int i = 0; i < ntypes + 1; i++) {
     delete [] gMonod[i];
-    delete [] minCatMonod[i];
+    //delete [] minCatMonod[i];
   }
 
   delete [] gMonod;
-  delete [] minCatMonod;
+  //delete [] minCatMonod;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -176,12 +176,12 @@ void FixKineticsMonod::init()
   decay = bio->decay;
 
   gMonod = new double*[ntypes+1];
-  minCatMonod = new double*[ntypes+1];
+  //minCatMonod = new double*[ntypes+1];
 
   //initialization
   for (int i = 0; i <= ntypes; i++) {
     gMonod[i] = new double[ngrids];
-    minCatMonod[i] = new double[ngrids];
+    //minCatMonod[i] = new double[ngrids];
   }
 
   //Get computational domain size
@@ -242,7 +242,7 @@ void FixKineticsMonod::monod()
   for (int i = 0; i <= ntypes; i++) {
     for (int j = 0; j < ngrids; j++) {
       gMonod[i][j] = -1;
-      minCatMonod[i][j] = -1;
+      //minCatMonod[i][j] = -1;
     }
   }
 
@@ -307,23 +307,20 @@ double FixKineticsMonod::growth(int i) {
   //calculate growth rate using minimum monod
   int t = type[i];
   int pos = position(i);
-  double muMet;
-  double muCat;
+  double qMet;       // specific substrate uptake rate for growth metabolism
+  double qCat;       // specific substrate uptake rate for catabolism
 
-  double qmet = 0.0;
-  double bacMaint;
-  double mu;
-  double rg;
+  double bacMaint;    // specific substrate consumption required for maintenance
+  double mu;          // specific biomass growth
+  double biomass;
 
   double m = gMonod[t][pos];
   if (m < 0) {
     gMonod[t][pos] = grid_monod(pos, t, 1);
-    qmet = avec->atom_mu[i] * gMonod[t][pos];
+    qMet = avec->atom_mu[i] * gMonod[t][pos];
   } else {
-    qmet = avec->atom_mu[i] * m;
+    qMet = avec->atom_mu[i] * m;
   }
-
-  muMet = qmet;
 // printf ("qmet = %e \n",qmet * 3600);
 //
 //  m = minCatMonod[t][pos];
@@ -334,18 +331,17 @@ double FixKineticsMonod::growth(int i) {
 //    qmet = avec->atom_mu[i] * m;
 //  }
 
-  muCat = qmet;
+  qCat = qMet;
 //  printf("muMet = %e \n", muCat * 3600);
 
   bacMaint = maintain[t] / -DGRCat[t][pos];
   //printf ("bacMaint = %e \n", bacMaint * 3600);
-  mu = gYield[t][pos] * (muMet - bacMaint);
- // printf ("mu = %e \n", mu);
 
   for (int j = 1; j <= nnus; j++) {
     if (strcmp(bio->nuName[j], "h") != 0 && strcmp(bio->nuName[j], "h2o") != 0) {
       double consume;
-      if (1.2 * bacMaint < muCat) {
+
+      if (1.2 * bacMaint < qCat) {
         double invYield;
         if (gYield[t][pos] != 0)
           invYield = 1/gYield[t][pos];
@@ -354,25 +350,26 @@ double FixKineticsMonod::growth(int i) {
 
         double metCoeff = catCoeff[t][j] * invYield + anabCoeff[t][j];
         //printf ("metCoeff %i = %e \n",j, metCoeff);
-        rg = mu * rmass[i];
-        consume = rg * metCoeff;
-      } else if (muCat <= 1.2 * bacMaint && bacMaint <= muCat) {
-        rg = 0;
+        mu = gYield[t][pos] * (qMet - bacMaint);
+        biomass = mu * rmass[i];
+        consume = biomass * metCoeff;
+      } else if (qCat <= 1.2 * bacMaint && bacMaint <= qCat) {
+        biomass = 0;
         consume = catCoeff[t][j] * gYield[t][pos] * bacMaint * rmass[i];
       } else {
-        double f = (bacMaint - muCat) / bacMaint;
-        rg = -decay[t] * f * rmass[i];
-        consume = -(rg) * bio->decayCoeff[t][j] + catCoeff[t][j] * gYield[t][pos] * muCat * rmass[i];
+        double f = (bacMaint - qCat) / bacMaint;
+        biomass = -decay[t] * f * rmass[i];
+        consume = -(biomass) * bio->decayCoeff[t][j] + catCoeff[t][j] * gYield[t][pos] * qCat * rmass[i];
       }
       //printf ("consume = %e \n", 3600 * consume/24.6e-3);
       //calculate liquid consumption, convert from m3 to L, g to mol
-      double uptake = consume / (vol * 24.6);
+      consume = consume / (vol * 24.6);
       //printf("uptake[%i] = %e vol = %e \n" , j, uptake, vol);
-      nuR[j][pos] += uptake;
+      nuR[j][pos] += consume;
     }
   }
   //printf ("rg = %e \n", rg*3600);
-  return rg;
+  return biomass;
 }
 //
 ///* ----------------------------------------------------------------------

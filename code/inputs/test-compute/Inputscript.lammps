@@ -67,7 +67,7 @@ variable cutoff equal 9.66e-6
 fix k1 all kinetics 1 1 1 v_temp v_rth v_gvol v_gasTran v_ph
 fix g1 all diffusion exp v_diffT v_tol pp pp nd
 fix ki3 all kinetics/ph 1
-fix ki2 all kinetics/thermo 1 fix open v_pressure
+fix ki2 all kinetics/thermo 1 unfix open v_pressure
 fix ki1 all kinetics/monod 1 v_EPSdens	
 fix d1 all divide 1 v_EPSdens 1 3123
 
@@ -82,17 +82,19 @@ compute cHeight all height 10 10
 compute cRough all roughness 10 10
 compute cSeg all segregation v_cutoff
 compute cDiv all diversity
+compute cDia all diameter
+compute cDim all dimension
 
 ##############Simulation outputs##############
 
 #dump		id all custom 250 snapshot.bubblemd id type diameter x y z vx vy vz fx fy fz
-#dump            d0 all bio 500 Conc DGRAn DGRCat ph biomass gas
+dump            d0 all bio 1 Conc DGRAn DGRCat ph biomass gas
 
 #dump		id all custom 1 111.bubblemd c_myMass[1]
-thermo_style    custom step cpu atoms c_cDiv[*]
+thermo_style    custom step cpu atoms
 thermo		1	
 thermo_modify	lost ignore
 
-run  1000
+run  1
 
 
