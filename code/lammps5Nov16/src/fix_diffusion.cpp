@@ -305,8 +305,8 @@ SparseMatrix<double> FixDiffusion::spdiags(MatrixXi& B, VectorXi& d, int m, int 
 
 void FixDiffusion::diffusion(int t)
 {
-  bool convergence = false;
   int iteration = 0;
+  int notConv = -1;
   bool* isConv = new bool[nnus+1]();
   VectorXd* vecS = new VectorXd[nnus+1];
   VectorXd* vecR = new VectorXd[nnus+1];
@@ -331,13 +331,13 @@ void FixDiffusion::diffusion(int t)
   MatrixXd diagBC;
   VectorXd vecPrvS;
 
-  while (!convergence) {
+  while (notConv != 0) {
     iteration ++;
+    notConv = 0;
 
     for (int i = 1; i <= nnus; i++) {
       if (bio->nuType[i] == 0 && diffCoeff[i] != 0) {
         if (!isConv[i]) {
-          isConv[0] = false;
           xbcm = iniS[i][1];
           xbcp = iniS[i][2];
           ybcm = iniS[i][3];
@@ -352,16 +352,6 @@ void FixDiffusion::diffusion(int t)
             RES = (2 * r[i] * RES + vecR[i]) * diffT;
             vecS[i] = RES + vecS[i];
 
-            double min = 100;
-            double max1 = 0;
-            for (int j = 0; j < ngrids; j++) {
-              if (vecS[i][j] < min) min = vecS[i][j];
-              if (vecS[i][j] > max1) max1 = vecS[i][j];
-             // if (vecS[i][j] < 0) vecS[i][j] = 0;
-            }
-//            printf("min = %e \n", min);
-//            printf("max = %e, \n", max1);
-
             max = RES.array().abs().maxCoeff();
           //Implicit method
           } else {
@@ -373,21 +363,19 @@ void FixDiffusion::diffusion(int t)
             A = I - r[i] * LAP * diffT - r[i] * sdiagBC * diffT;
             vecS[i] = A.colPivHouseholderQr().solve(B);
 
-//            for (size_t j = 0; j < vecS[i].size(); j++) {
-//              if (vecS[i][j] < 0) vecS[i][j] = 0;
-//            }
-
             VectorXd vecDiffS = vecS[i] - vecPrvS;
             max = vecDiffS.array().abs().maxCoeff();
           }
 
-          double ratio = max/maxBC[i];
+          double ratio;
+          if (maxBC[i] == 0) ratio = 0;
+          else ratio = max/maxBC[i];
+
           if (ratio < tol) isConv[i] = true;
+          else notConv++;
         }
-        else isConv[0] = true;
       }
     }
-    if (isConv[0]) break;
   }
 
   cout << "number of iteration: " << iteration << endl;

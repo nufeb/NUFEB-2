@@ -103,22 +103,22 @@ Neighbor list info ...
   binsize = 7.33e-07 -> bins = 137 137 137
 Memory usage per processor = 20.2453 Mbytes
 Step CPU Atoms biomass c_myNtypes[1] c_myNtypes[2] c_myNtypes[3] 
-       0            0       12 1.6425146e-15   0.33333333   0.33333333   0.33333333 
-       1 0.0051150322       12 1.643469e-15   0.33333333   0.33333333   0.33333333 
-Loop time of 0.00512409 on 1 procs for 1 steps with 12 atoms
+       0            0       12 1.6425146e-15            4            4            4 
+       1 0.0059530735       12 1.643469e-15            4            4            4 
+Loop time of 0.00596905 on 1 procs for 1 steps with 12 atoms
 
-Performance: 607014850.251 tau/day, 195.157 timesteps/s
-78.1% CPU use with 1 MPI tasks x no OpenMP threads
+Performance: 521088159.514 tau/day, 167.531 timesteps/s
+67.0% CPU use with 1 MPI tasks x no OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
 ---------------------------------------------------------------
-Pair    | 1.1921e-06 | 1.1921e-06 | 1.1921e-06 |   0.0 |  0.02
-Neigh   | 0.0016239  | 0.0016239  | 0.0016239  |   0.0 | 31.69
-Comm    | 2.1458e-06 | 2.1458e-06 | 2.1458e-06 |   0.0 |  0.04
-Output  | 0.00057793 | 0.00057793 | 0.00057793 |   0.0 | 11.28
-Modify  | 0.0029128  | 0.0029128  | 0.0029128  |   0.0 | 56.84
-Other   |            | 6.199e-06  |            |       |  0.12
+Pair    | 9.5367e-07 | 9.5367e-07 | 9.5367e-07 |   0.0 |  0.02
+Neigh   | 0.0021601  | 0.0021601  | 0.0021601  |   0.0 | 36.19
+Comm    | 1.2875e-05 | 1.2875e-05 | 1.2875e-05 |   0.0 |  0.22
+Output  | 0.000808   | 0.000808   | 0.000808   |   0.0 | 13.54
+Modify  | 0.0029788  | 0.0029788  | 0.0029788  |   0.0 | 49.90
+Other   |            | 8.345e-06  |            |       |  0.14
 
 Nlocal:    12 ave 12 max 12 min
 Histogram: 1 0 0 0 0 0 0 0 0 0

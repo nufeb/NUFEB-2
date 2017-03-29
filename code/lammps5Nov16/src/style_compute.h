@@ -30,6 +30,8 @@
 #include "compute_msd.h"
 #include "compute_msd_chunk.h"
 #include "compute_nufeb_biomass.h"
+#include "compute_nufeb_diameter.h"
+#include "compute_nufeb_dimension.h"
 #include "compute_nufeb_diversity.h"
 #include "compute_nufeb_height.h"
 #include "compute_nufeb_ntypes.h"
