@@ -57,7 +57,7 @@ variable ph equal 7.0
 
 #Defining diffusion variables
 variable diffT equal 1e-6
-variable tol equal 1e-8
+variable tol equal 1e-7
 
 ##############Ibm functions##############
 
@@ -79,11 +79,11 @@ compute myNtypes all ntypes
 ##############Simulation outputs##############
 
 #dump		id all custom 250 snapshot.bubblemd id type diameter x y z
-dump            d0 all bio 500 biomass
+dump            d0 all bio 500 biomass Conc
 thermo_style    custom step cpu atoms biomass c_myNtypes[*] c_myMass[2]
 thermo		5	
 thermo_modify	lost ignore
 
-run  5000
+run  50
 
 
