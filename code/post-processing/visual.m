@@ -41,10 +41,10 @@ fid=fopen('data_p.pov','w');
         end 
         
          if (Tp(l)==2)
-        RED = 0.8;
-        GREEN = 0.2;
-        BLUE = 0.2;
-            end 
+        RED = 0.17;
+        GREEN = 0.345;
+        BLUE = 0.5653;
+        end 
         
         if (Tp(l)==3)
         RED = 0.2;
@@ -100,7 +100,7 @@ fprintf(fid,['sphere{<' num2str(X(l)) ',' num2str(Y(l)) ',' num2str(Z(l)) '>,' n
     j=i+1000000;   
 POV_RAY=PvrRotate(image, i)
 
-generate=['povray +H3000 +W3000 +FJ Display=-D +O0_images/image' num2str(j) '.jpg import.pov'];
+generate=['povray +H5000 +W5000 +FJ Display=-D +O0_images/image' num2str(j) '.jpg import.pov'];
 system(generate);
     
     i=i+1;
