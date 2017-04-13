@@ -1,9 +1,0 @@
-# multiple simulations
-
-variable d universe r1 r2 r3 r4
-shell cd $d
-shell lmp_serial < Inputscript.lammps	
-shell cd ..
-clear
-next d
-jump parallel.lammps
