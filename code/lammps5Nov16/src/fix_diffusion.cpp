@@ -366,6 +366,7 @@ void FixDiffusion::diffusion(int t)
                 nRES[i] = nRES[i] + RES;
               } else{
                 max = nRES[i].array().abs().maxCoeff();
+                nRES[i].setZero();
               }
             } else {
               max = RES.array().abs().maxCoeff();
@@ -415,12 +416,11 @@ void FixDiffusion::diffusion(int t)
           }
         }
       }
-      if (iteration % rstep == 0 && rflag == 1) nRES[i].setZero();
     }
   }
 
   cout << "number of iteration: " << iteration << endl;
- // cout << "max NO2: " << testMax << endl;
+  //cout << "max NO2: " << testMax << endl;
 //  cout << "min NH3: " << testMax2 << endl;
 
   //convert concentration vector into normal data type
