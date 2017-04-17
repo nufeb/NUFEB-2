@@ -386,7 +386,7 @@ void DumpBio::write_diffsuion_data(int nuID)
     double y = ypos * stepy - stepy/2;
     double z = zpos * stepz - stepz/2;
 
-    fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%f\n",i, x, y, z, kinetics->nuS[nuID][i]);
+    fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%e\n",i, x, y, z, kinetics->nuS[nuID][i]);
   }
 }
 
@@ -407,7 +407,7 @@ void DumpBio::write_DGRCat_data(int typeID)
 
     //average += kinetics->DRGCat[2][i];
 
-    fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%f\n",i, x, y, z, kinetics->DRGCat[typeID][i]);
+    fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%e\n",i, x, y, z, kinetics->DRGCat[typeID][i]);
   }
 }
 
@@ -428,7 +428,7 @@ void DumpBio::write_DGRAn_data(int typeID)
 
     //average += kinetics->DRGCat[2][i];
 
-    fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%f\n",i, x, y, z, kinetics->DRGAn[typeID][i]);
+    fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%e\n",i, x, y, z, kinetics->DRGAn[typeID][i]);
   }
 }
 
@@ -449,7 +449,7 @@ void DumpBio::write_pH_data()
 
     //average += kinetics->DRGCat[2][i];
 
-    fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%f\n",i, x, y, z, -log10(kinetics->Sh[i]));
+    fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%e\n",i, x, y, z, -log10(kinetics->Sh[i]));
   }
 }
 
@@ -498,7 +498,7 @@ void DumpBio::write_gas_data(int nuID)
     double y = ypos * stepy - stepy/2;
     double z = zpos * stepz - stepz/2;
 
-    fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%f\n",i, x, y, z, kinetics->qGas[nuID][i]);
+    fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%e\n",i, x, y, z, kinetics->qGas[nuID][i]);
   }
 }
 

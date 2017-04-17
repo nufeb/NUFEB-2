@@ -328,6 +328,7 @@ void FixDiffusion::diffusion(int t)
     vecS[i] = Map<VectorXd> (nuS[i], ngrids, 1);
     vecR[i] = Map<VectorXd> (nuR[i], ngrids, 1);
     nRES[i] = VectorXd(ngrids);
+    nRES[i].setZero();
     conv [i] = false;
   }
 
@@ -354,7 +355,7 @@ void FixDiffusion::diffusion(int t)
           zbcm = iniS[i][5];
           zbcp = iniS[i][6];
           BC = bc_vec(vecS[i], grid);
-          double max;
+          double max = 0.0;
           //Explicit method
           if (sflag == 0) {
             RES = LAP * vecS[i] + BC;
@@ -393,7 +394,7 @@ void FixDiffusion::diffusion(int t)
 //          }
 
           if (iteration % rstep == 0) {
-            double maxS;
+            double maxS = 0.0;
             maxS =  vecS[i].array().abs().maxCoeff();
 
             //test code

@@ -412,8 +412,8 @@ double FixKineticsMonod::grid_monod(int pos, int type, int ind)
 {
   double monod = 1;
 
-  //printf ("invYield = %e \n", invYield );
   for (int i = 1; i <= nnus; i++ ) {
+   // printf ("nuS = % \n", nuS[i][pos] );
     double ks = bio->ks[type][i];
     double s = nuS[i][pos];
 
