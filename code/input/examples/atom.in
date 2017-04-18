@@ -73,25 +73,6 @@
      nob 0.00125
      comm 0.00125
 
- eD
-    
-     aob 0.9
-     nob 2.9
-     comm 0.725
-
- KLa
-          
-     nh3 0
-     no2 0
-     no3 0
-     o2 0
-     co2 0
-     go2 0 
-     gco2 0
-     gn2 0
-     h2o 0
-     h 0 
-
  Decay
 
      aob 2.78e-6
@@ -134,29 +115,4 @@
     aob inf -67 inf inf inf 2
     nob inf -67 inf inf inf 2
     comm inf -67 inf inf inf 2
-
- Dissipation
-
-    aob 3500
-    nob 3500
-    comm 3500
-
- Nutrient Charge
-  
-    nh3 na 1 0 na na
-    no2 na 0 -1 na na
-    no3 na 0 -1 na na
-    o2 na 0 na na na
-    co2 0 0 -1 -2 na
-    go2 na 0 na na na
-    gco2 na 0 na na na
-    gn2 na 0 na na na
-    h2o na 0 -1 na na
-    h na 1 na na na
-
- Type Charge
-  
-    aob na 0 na na na
-    nob na 0 na na na
-    comm na 0 na na na
 
