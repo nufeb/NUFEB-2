@@ -1,12 +1,13 @@
 #include "shapes.inc"
 // Right-handed coordinate system in which the z-axis points upwards
 camera {
-location <0, 0.1, 0>
+location <0, 60e-2, 0>
 sky z
 right 0.24*x*image_width/image_height
 up 0.24*y
 look_at <0, 0, 0>
 look_at 0
+rotate <0, 0, 14*10>
 }
 // Create simualtion domain
 #declare b_x=0.05;
