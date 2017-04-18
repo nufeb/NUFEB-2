@@ -47,6 +47,7 @@ AtomVecBio::AtomVecBio(LAMMPS *lmp) : AtomVecSphere(lmp)
   typeEPS = 0;
   maskEPS = 0;
   maskHET = 0;
+  maskDEAD = 0;
   //virtualMass = NULL;
 
   //instantiate BIO class
@@ -120,7 +121,7 @@ void AtomVecBio::data_atom(double *coord, imageint imagetmp, char **values)
   }
 
   outerMass[nlocal] = (4.0*MY_PI/3.0)*((outerRadius[nlocal]*outerRadius[nlocal]*outerRadius[nlocal])
-      -(radius[nlocal]*radius[nlocal]*radius[nlocal]))*30;
+      -(radius[nlocal]*radius[nlocal]*radius[nlocal])) * 30;
 //
 //  double aa = 0.1367e-15;
 //  printf("diameter = %e, \n", cbrt((aa*3)/(290*4*MY_PI)) * 2);
@@ -156,6 +157,8 @@ void AtomVecBio::data_atom(double *coord, imageint imagetmp, char **values)
 
   if (strcmp(name,"eps") == 0) {
     typeEPS = type;
+  } else if (strcmp(name,"dead") == 0) {
+    typeDEAD = type;
   }
 
   strcpy(typeName[type],name);
@@ -180,7 +183,7 @@ bigint AtomVecBio::memory_usage()
 
   if (atom->memcheck("outerMass")) bytes += memory->usage(outerMass,nmax);
   if (atom->memcheck("outerRadius")) bytes += memory->usage(outerRadius,nmax);
-  if (atom->memcheck("atom_growth")) bytes += memory->usage(atom_mu,nmax);
+  if (atom->memcheck("atom_mu")) bytes += memory->usage(atom_mu,nmax);
 
   return bytes;
 }
@@ -192,6 +195,8 @@ void AtomVecBio::set_group_mask() {
       maskEPS = pow(2, i) + 1;
     } else if (strcmp(group->names[i],"HET") == 0) {
       maskHET = pow(2, i) + 1;
+    } else if (strcmp(group->names[i],"DEAD") == 0) {
+      maskDEAD = pow(2, i) + 1;
     }
 }
 

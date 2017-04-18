@@ -54,11 +54,14 @@ FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
   nevery = force->inumeric(FLERR,arg[3]);
   if (nevery < 0) error->all(FLERR,"Illegal fix divide command: calling steps should be positive integer");
 
-  int n = strlen(&arg[4][2]) + 1;
-  var = new char[n];
-  strcpy(var,&arg[4][2]);
+  var = new char*[2];
+  ivar = new int[2];
 
-  growthFactor = atof(arg[5]);
+  for (int i = 0; i < 2; i++) {
+    int n = strlen(&arg[4+i][2]) + 1;
+    var[i] = new char[n];
+    strcpy(var[i],&arg[4+i][2]);
+  }
 
   seed = atoi(arg[6]);
 
@@ -99,7 +102,13 @@ FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 FixDivide::~FixDivide()
 {
   delete random;
+
+  int i;
+  for (i = 0; i < 2; i++) {
+    delete [] var[i];
+  }
   delete [] var;
+  delete [] ivar;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -122,11 +131,13 @@ void FixDivide::init()
   if (!atom->radius_flag)
     error->all(FLERR,"Fix divide requires atom attribute diameter");
 
-  ivar = input->variable->find(var);
-  if (ivar < 0)
-    error->all(FLERR,"Variable name for fix divide does not exist");
-  if (!input->variable->equalstyle(ivar))
-    error->all(FLERR,"Variable for fix divide is invalid style");
+  for (int n = 0; n < 2; n++) {
+    ivar[n] = input->variable->find(var[n]);
+    if (ivar[n] < 0)
+      error->all(FLERR,"Variable name for fix divide does not exist");
+    if (!input->variable->equalstyle(ivar[n]))
+      error->all(FLERR,"Variable for fix divide is invalid style");
+  }
 
 }
 
@@ -134,14 +145,12 @@ void FixDivide::pre_exchange()
 {
   if (next_reneighbor != update->ntimestep) return;
 
-  double EPSdens = input->variable->compute_equal(ivar);
+  double EPSdens = input->variable->compute_equal(ivar[0]);
+  double divMass = input->variable->compute_equal(ivar[1]);
   double density;
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
   int i;
-
-  double averageMass;// = getAverageMass();
-  // int nnew = countNewAtoms(averageMass);
 
   double *sublo,*subhi;
   if (domain->triclinic == 0) {
@@ -153,10 +162,7 @@ void FixDivide::pre_exchange()
   }
 
   for (i = 0; i < nall; i++) {
-    if (atom->mask[i] != avec->maskEPS) {
-      //averageMass = 2e-16;
-      averageMass = 1.52e-16;
-    } else continue;
+    if (atom->mask[i] == avec->maskEPS || atom->mask[i] == avec->maskDEAD) continue;
 
     if ((atom->mask[i] & groupbit) &&
       atom->x[i][0] >= sublo[0] && atom->x[i][0] < subhi[0] &&
@@ -166,7 +172,7 @@ void FixDivide::pre_exchange()
       density = atom->rmass[i] / (4.0*MY_PI/3.0 *
                 atom->radius[i]*atom->radius[i]*atom->radius[i]);
 
-      if (atom->rmass[i] >= growthFactor * averageMass) {
+      if (atom->rmass[i] >= divMass) {
         double newX, newY, newZ;
 
         double splitF = 0.4 + (random->uniform()*0.2);

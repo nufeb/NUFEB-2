@@ -33,7 +33,9 @@ class AtomVecBio : public AtomVecSphere {
   double *atom_mu;         //atom maximum growth rate
   int maskEPS;               // mask of EPS group
   int maskHET;               // mask of HET group
+  int maskDEAD;               // mask of HET group
   int typeEPS;                // itype of EPS
+  int typeDEAD;                // itype of DEAD
   //double *virtualMass;
 
   class BIO *bio;
