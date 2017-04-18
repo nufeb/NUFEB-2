@@ -33,8 +33,13 @@ class FixDeath : public Fix {
   void pre_exchange();
 
  private:
+  class AtomVecBio *avec;
+
   char *var;
   int ivar;
+
+  double deadMass;
+
   void death();
 };
 

@@ -23,6 +23,7 @@
 #include "pointers.h"
 #include "update.h"
 #include "variable.h"
+#include "atom_vec_bio.h"
 
 
 using namespace LAMMPS_NS;
@@ -32,6 +33,9 @@ using namespace FixConst;
 
 FixDeath::FixDeath(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
+  avec = (AtomVecBio *) atom->style_match("bio");
+  if (!avec) error->all(FLERR,"Fix death requires atom style bio");
+
   if (narg != 5) error->all(FLERR,"Illegal fix death command");
 
   nevery = force->inumeric(FLERR,arg[3]);
@@ -41,8 +45,8 @@ FixDeath::FixDeath(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
   var = new char[n];
   strcpy(var,&arg[4][2]);
 
-  force_reneighbor = 1;
-  next_reneighbor = update->ntimestep + 1;
+  //force_reneighbor = 1;
+  //next_reneighbor = update->ntimestep + 1;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -68,13 +72,19 @@ void FixDeath::init(){
     error->all(FLERR,"Variable name for fix death does not exist");
   if (!input->variable->equalstyle(ivar))
     error->all(FLERR,"Variable for fix death is invalid style");
+
+  deadMass= input->variable->compute_equal(ivar);
+
+  if (avec->typeDEAD == 0) {
+    error->all(FLERR,"Cannot find DEAD type");
+  }
 }
 
 /* ---------------------------------------------------------------------- */
 
 void FixDeath::pre_exchange()
 {
-  if (next_reneighbor != update->ntimestep) return;
+  //if (next_reneighbor != update->ntimestep) return;
   death();
 }
 
@@ -82,9 +92,7 @@ void FixDeath::pre_exchange()
 
 void FixDeath::death()
 {
-  double criticalDia= input->variable->compute_equal(ivar);
-  double criticalMass = 1e-20;
-  double *radius = atom->radius;
+  //double criticalMass = 1e-20;
   int *type = atom->type;
   int *mask = atom->mask;
   double *rmass = atom->rmass;
@@ -94,28 +102,27 @@ void FixDeath::death()
 
 //(rmass[i] < criticalMass)
   for (i = nall-1; i >= 0; i--) {
-  	//delete atom
-  	if((mask[i] & groupbit) && (rmass[i] < criticalMass)) {
-			atom->avec->copy(nall-1,i,1);
-			atom->nlocal--;
-			atom->natoms--;
-			continue;
-  	}
+//  	//delete atom
+//  	if((mask[i] & groupbit) && (rmass[i] < criticalMass)) {
+//			atom->avec->copy(nall-1,i,1);
+//			atom->nlocal--;
+//			atom->natoms--;
+//			continue;
+//  	}
 
-    if ((mask[i] & groupbit) &&
-    		(type[i] == 1 || type[i] == 2 || type[i] == 3)) {
-    	if(radius[i] * 2 < criticalDia) {
-    		type[i] = 6;
-    		mask[i] = 65;
+    if ((mask[i] & groupbit) && (mask[i] != avec->maskDEAD) && (mask[i] != avec->maskEPS)) {
+    	if(rmass[i] < deadMass) {
+    		type[i] = avec->typeDEAD;
+    		mask[i] = avec->maskDEAD;
     	}
     }
   }
 
-  if (atom->map_style) {
-    atom->nghost = 0;
-    atom->map_init();
-    atom->map_set();
-  }
+//  if (atom->map_style) {
+//    atom->nghost = 0;
+//    atom->map_init();
+//    atom->map_set();
+//  }
  // printf("nlocal=%i, all=%i \n", nlocal, atom->natoms );
-  next_reneighbor += nevery;
+  //next_reneighbor += nevery;
 }

@@ -446,7 +446,7 @@ void FixKineticsMonod::bio_update(double biomass, int i)
 
       outerRadius[i] = pow(threeQuartersPI * (rmass[i] / density + outerMass[i] / EPSdens), third);
       radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
-  } else if (mask[i] != avec->maskEPS){
+  } else if (mask[i] != avec->maskEPS && mask[i] != avec->maskDEAD){
       radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
       outerMass[i] = 0.0;
       outerRadius[i] = radius[i];

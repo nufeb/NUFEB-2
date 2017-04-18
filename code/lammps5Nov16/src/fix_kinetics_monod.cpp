@@ -254,7 +254,7 @@ void FixKineticsMonod::monod()
     }
     //printf("Average R = %e \n", ar/ngrids);
     //solve diffusion
-    diffusion->diffusion(0);
+    diffusion->diffusion();
     //printf("R = %e \n", nuR[1][0]);
 
     for (int i = 0; i < nall; i++) {
@@ -302,9 +302,12 @@ int FixKineticsMonod::position(int i) {
 
 double FixKineticsMonod::growth(int i) {
 
-  //calculate growth rate using minimum monod
   int t = type[i];
   int pos = position(i);
+
+  if (avec->atom_mu[i] == 0 || DGRCat[t][pos] == 0)
+    return 0;
+
   double qMet;       // specific substrate uptake rate for growth metabolism
   double qCat;       // specific substrate uptake rate for catabolism
 
@@ -330,10 +333,7 @@ double FixKineticsMonod::growth(int i) {
 //  }
 
   qCat = qMet;
-//  printf("muMet = %e \n", muCat * 3600);
-
   bacMaint = maintain[t] / -DGRCat[t][pos];
-  //printf ("bacMaint = %e \n", bacMaint * 3600);
 
   for (int j = 1; j <= nnus; j++) {
     if (strcmp(bio->nuName[j], "h") != 0 && strcmp(bio->nuName[j], "h2o") != 0) {
@@ -412,8 +412,8 @@ double FixKineticsMonod::grid_monod(int pos, int type, int ind)
 {
   double monod = 1;
 
+  //printf ("invYield = %e \n", invYield );
   for (int i = 1; i <= nnus; i++ ) {
-   // printf ("nuS = % \n", nuS[i][pos] );
     double ks = bio->ks[type][i];
     double s = nuS[i][pos];
 
@@ -437,18 +437,19 @@ void FixKineticsMonod::bio_update(double biomass, int i)
 
   density = rmass[i] / (fourThirdsPI * radius[i] * radius[i] * radius[i]);
   rmass[i] = rmass[i] + biomass;
- // cout<<"before mass " <<growthRate << endl;
+  // cout<<"before mass " <<growthRate << endl;
   //printf ("new mass[i] = %e \n", rmass[i]);
   //update mass and radius
   if (mask[i] == avec->maskHET) {
-      outerMass[i] = fourThirdsPI * (outerRadius[i] * outerRadius[i] * outerRadius[i] - radius[i] * radius[i] * radius[i]) * EPSdens
-      + biomass * nevery;
 
-      outerRadius[i] = pow(threeQuartersPI * (rmass[i] / density + outerMass[i] / EPSdens), third);
-      radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
-  } else if (mask[i] != avec->maskEPS){
-      radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
-      outerMass[i] = 0.0;
-      outerRadius[i] = radius[i];
+    outerMass[i] = fourThirdsPI * (outerRadius[i] * outerRadius[i] * outerRadius[i] - radius[i] * radius[i] * radius[i]) * EPSdens
+    + biomass * nevery;
+
+    outerRadius[i] = pow(threeQuartersPI * (rmass[i] / density + outerMass[i] / EPSdens), third);
+    radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
+  } else if (mask[i] != avec->maskEPS && mask[i] != avec->maskDEAD){
+    radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
+    outerMass[i] = 0.0;
+    outerRadius[i] = radius[i];
   }
 }

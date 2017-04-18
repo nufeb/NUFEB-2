@@ -30,6 +30,7 @@
 #include "STUBS/mpi.h"
 #include "update.h"
 #include "variable.h"
+#include "group.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -146,11 +147,21 @@ void FixEPSExtract::init()
     if (!input->variable->equalstyle(ivar[i]))
       error->all(FLERR,"Variable for fix eps extract is invalid style");
   }
-  if (groupbit != 2) {
+
+  int id = 0;
+  for (int i = 1; i < group->ngroup; i++) {
+    if (strcmp(group->names[i],"HET") == 0) {
+      id = i;
+      break;
+    }
+  }
+
+  if (groupbit != pow(2, id)) {
     error->all(FLERR,"Fix eps extract is only valid for particles of type HET");
   }
 
   typeEPS = avec->typeEPS;
+
   if (typeEPS == 0) {
     error->all(FLERR,"Cannot find EPS type");
   }

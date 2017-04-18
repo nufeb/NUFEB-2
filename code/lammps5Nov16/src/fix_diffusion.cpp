@@ -308,7 +308,7 @@ SparseMatrix<double> FixDiffusion::spdiags(MatrixXi& B, VectorXi& d, int m, int 
   solve diffusion equations and metabolism
 ------------------------------------------------------------------------- */
 
-void FixDiffusion::diffusion(int t)
+void FixDiffusion::diffusion()
 {
   int iteration = 0;
   bool isConv = false;
@@ -395,16 +395,16 @@ void FixDiffusion::diffusion(int t)
 //          }
 
           if (iteration % rstep == 0) {
-            double maxS = 0.0;
-            maxS =  vecS[i].array().abs().maxCoeff();
-
+           // double maxS = 0.0;
+            //maxS =  vecS[i].array().abs().maxCoeff();
             //test code
 //            if ((maxS > testMax) && strcmp("no2", bio->nuName[i]) == 0) {
 //              testMax = maxS;
 //            }
 
-            if (maxS == 0) maxS = 1;
-            double ratio = max/maxS;
+            //if (maxS == 0) maxS = 1;
+            double ratio = max;
+            //printf("ratio = %e nu = %s \n", ratio,  bio->nuName[i]);
             if (ratio < tol)  {
               conv[i] = true;
               //printf("concerged! %s \n", bio->nuName[i]);
@@ -431,7 +431,6 @@ void FixDiffusion::diffusion(int t)
     Map<MatrixXd>(nuS[i], vecS[i].rows(), vecS[i].cols()) =  vecS[i];
   }
 
-  //output_data(t);
   //test();
   delete [] conv;
   delete [] vecS;
@@ -552,39 +551,6 @@ bool FixDiffusion::isEuqal(double a, double b, double c)
     return false;
 
   return true;
-}
-
-/* ----------------------------------------------------------------------
-  output nutrient concentrations to data file
-------------------------------------------------------------------------- */
-
-void FixDiffusion::output_data(int t){
-  if (t == 0 || update->ntimestep % t)
-    return;
-
-  FILE* pFile;
-  std::ostringstream stm;
-  stm << update->ntimestep;
-  string str = "./Diffusion/conc.csv."+ stm.str();
-  pFile = fopen (str.c_str(), "a");
-  fprintf(pFile, ",x,y,z,scalar,1,1,1,0.5\n");
-
-  double stepx = (xhi - xlo) / nx;
-  double stepy = (yhi - ylo) / ny;
-  double stepz = (zhi - zlo) / nz;
-
-  for(int i = 0; i < ngrids; i++){
-    int zpos = i/(nx * ny) + 1;
-    int ypos = (i - (zpos - 1) * (nx * ny)) / nx + 1;
-    int xpos = i - (zpos - 1) * (nx * ny) - (ypos - 1) * nx + 1;
-
-    double x = xpos * stepx - stepx/2;
-    double y = ypos * stepy - stepy/2;
-    double z = zpos * stepz - stepz/2;
-
-    fprintf(pFile, "%i,\t%f,\t%f,\t%f,\t%f\n",i, x, y, z, nuS[1][i]);
-  }
-  fclose(pFile);
 }
 
 void FixDiffusion::test(){

@@ -28,7 +28,7 @@ class FixDiffusion : public Fix {
   ~FixDiffusion();
   int setmask();
   void init();
-  void diffusion(int);
+  void diffusion();
 
  private:
   char **var;
@@ -65,7 +65,6 @@ class FixDiffusion : public Fix {
   VectorXd bc_vec(VectorXd&, double);
   bool isEuqal(double, double, double);
 
-  void output_data(int);
   void test();
 };
 

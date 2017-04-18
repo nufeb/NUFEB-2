@@ -11,7 +11,9 @@ read_data_bio atom.in
 
 group AOB type 1
 group NOB type 2
-group COMM type 3
+group HET type 3
+group EPS type 4
+group DEAD type 5
 
 neighbor	5.0e-7 bin
 neigh_modify	delay 0 one 5000
@@ -38,11 +40,13 @@ fix xwa all walladh v_kanc xplane  0.0   1.0e-04
 fix ywa all walladh v_kanc yplane  0.0   1.0e-04
 fix zwa all walladh v_kanc zplane  0.0   1.0e-04
 
-##############Ibm Variable Definitions##############
+##############Ibm variable definitions##############
 
 #Defining EPS density and ratio variables
 variable EPSdens equal 30
 variable EPSratio equal 1.25
+variable divMass equal 1.52e-16
+variable deadMass equal 1e-17
 
 variable ke equal 5e+10
 
@@ -58,17 +62,19 @@ variable ph equal 7.0
 variable diffT equal 1e-4
 variable tol equal 1e-5
 
-##############Ibm functions##############
+##############Ibm fix##############
 
 fix k1 all kinetics 25 25 25 v_temp v_rth v_gvol v_gasTran v_ph
 fix g1 all diffusion exp v_diffT v_tol pp pp nd 1
 #fix ki3 all kinetics/ph 1
 fix ki2 all kinetics/thermo 1 fix open v_pressure
 fix ki1 all kinetics/monod 1 v_EPSdens	
-fix d1 all divide 1 v_EPSdens 1 31231
+
+fix d1 all divide 1 v_EPSdens v_divMass 66666
+fix d5 all death 1 v_deadMass
 
 fix j1 all epsadh 1 v_ke 1
-fix e1 HET eps_extract 16 v_EPSratio v_EPSdens 1242242
+fix e1 HET eps_extract 1 v_EPSratio v_EPSdens 66666
 
 ##############Ibm compute##############
 

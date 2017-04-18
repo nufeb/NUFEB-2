@@ -34,17 +34,17 @@ class FixDivide : public Fix {
   void pre_exchange();
 
  private:
+  char **var;
+  int *ivar;
 
-  double growthFactor;
   int seed;
-  char *var;
-  int ivar;
-  class RanPark *random;
   tagint maxtag_all;
   double xlo,xhi,ylo,yhi,zlo,zhi;
+
   void find_maxid();
   int overlap();
 
+  class RanPark *random;
   class AtomVecBio *avec;
   class BIO *bio;
 };
