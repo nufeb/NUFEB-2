@@ -316,8 +316,7 @@ void FixDiffusion::diffusion()
   VectorXd* vecS = new VectorXd[nnus+1];
   VectorXd* vecR = new VectorXd[nnus+1];
   VectorXd* nRES = new VectorXd[nnus+1];
-//  double testMax = 0;
-//  double testMax2 = 100;
+  //double testMax = 0;
 
   nuS = kinetics->nuS;
   nuR = kinetics->nuR;
@@ -387,17 +386,11 @@ void FixDiffusion::diffusion()
             max = vecDiffS.array().abs().maxCoeff();
           }
 
-//
-//          double minS;
-//          minS =  vecS[i].array().abs().minCoeff();
-//          if ((minS < testMax2) && strcmp("nh3", bio->nuName[i]) == 0) {
-//            testMax2 = minS;
-//          }
-
           if (iteration % rstep == 0) {
-           // double maxS = 0.0;
-            //maxS =  vecS[i].array().abs().maxCoeff();
             //test code
+//            double maxS = 0.0;
+//            maxS =  vecS[i].array().abs().maxCoeff();
+//
 //            if ((maxS > testMax) && strcmp("no2", bio->nuName[i]) == 0) {
 //              testMax = maxS;
 //            }
@@ -407,7 +400,7 @@ void FixDiffusion::diffusion()
             //printf("ratio = %e nu = %s \n", ratio,  bio->nuName[i]);
             if (ratio < tol)  {
               conv[i] = true;
-              //printf("concerged! %s \n", bio->nuName[i]);
+              //printf("converge: %s, %i \n", bio->nuName[i], iteration);
             } else {
               isConv = false;
             }
@@ -421,7 +414,6 @@ void FixDiffusion::diffusion()
 
   cout << "number of iteration: " << iteration << endl;
   //cout << "max NO2: " << testMax << endl;
-//  cout << "min NH3: " << testMax2 << endl;
 
   //convert concentration vector into normal data type
   for (int i = 1; i <= nnus; i++) {
