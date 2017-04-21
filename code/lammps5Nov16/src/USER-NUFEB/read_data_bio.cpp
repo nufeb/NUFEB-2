@@ -15,16 +15,15 @@
 // due to OpenMPI bug which sets INT64_MAX via its mpi.h
 //   before lmptype.h can set flags to insure it is done correctly
 
+#include "read_data_bio.h"
+
 #include "lmptype.h"
 #include <mpi.h>
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include "read_data_bio.h"
-#include "atom_vec_bio.h"
 #include "atom.h"
-#include "bio.h"
 #include "atom_vec.h"
 #include "atom_vec_ellipsoid.h"
 #include "atom_vec_line.h"
@@ -47,6 +46,9 @@
 #include "irregular.h"
 #include "error.h"
 #include "memory.h"
+
+#include "bio.h"
+#include "atom_vec_bio.h"
 
 using namespace LAMMPS_NS;
 

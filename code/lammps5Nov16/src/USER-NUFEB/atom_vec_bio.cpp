@@ -19,12 +19,13 @@
 #include <math.h>
 
 #include "atom.h"
-#include "bio.h"
 #include "error.h"
 #include "fix_adapt.h"
 #include "lmptype.h"
 #include "math_const.h"
 #include "memory.h"
+
+#include "bio.h"
 #include "modify.h"
 #include "pointers.h"
 #include "group.h"
@@ -190,7 +191,7 @@ bigint AtomVecBio::memory_usage()
 
 void AtomVecBio::set_group_mask() {
 
-  for (int i = 1; i < group->ngroup; i++)
+  for (int i = 1; i < group->ngroup; i++) {
     if (strcmp(group->names[i],"EPS") == 0) {
       maskEPS = pow(2, i) + 1;
     } else if (strcmp(group->names[i],"HET") == 0) {
@@ -198,5 +199,6 @@ void AtomVecBio::set_group_mask() {
     } else if (strcmp(group->names[i],"DEAD") == 0) {
       maskDEAD = pow(2, i) + 1;
     }
+  }
 }
 
