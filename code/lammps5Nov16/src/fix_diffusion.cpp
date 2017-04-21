@@ -110,6 +110,7 @@ FixDiffusion::~FixDiffusion()
   delete [] ivar;
   delete [] r;
   delete [] maxBC;
+  delete [] prevS;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -167,6 +168,7 @@ void FixDiffusion::init()
 
   r = new double[nnus+1]();
   maxBC = new double[nnus+1]();
+  prevS = new double[nnus+1]();
 
   //Get computational domain size
   if (domain->triclinic == 0) {
@@ -316,7 +318,7 @@ void FixDiffusion::diffusion()
   VectorXd* vecS = new VectorXd[nnus+1];
   VectorXd* vecR = new VectorXd[nnus+1];
   VectorXd* nRES = new VectorXd[nnus+1];
-  //double testMax = 0;
+//  double testMax = 0;
 
   nuS = kinetics->nuS;
   nuR = kinetics->nuR;
@@ -395,12 +397,17 @@ void FixDiffusion::diffusion()
 //              testMax = maxS;
 //            }
 
-            //if (maxS == 0) maxS = 1;
-            double ratio = max;
-            //printf("ratio = %e nu = %s \n", ratio,  bio->nuName[i]);
+            // if prevS is zero, use maxS in current step
+            if (prevS[i] == 0) {
+              double max = vecS[i].array().abs().maxCoeff();
+              if (max != 0) prevS[i] = max;
+              else prevS[i] = 1;
+            }
+
+            double ratio = max / prevS[i];
+
             if (ratio < tol)  {
               conv[i] = true;
-              //printf("converge: %s, %i \n", bio->nuName[i], iteration);
             } else {
               isConv = false;
             }
@@ -410,13 +417,18 @@ void FixDiffusion::diffusion()
         }
       }
     }
+    if (iteration > 500,000) {
+      lmp->error->warning(FLERR,"# of iterations exceed 500,000, force to converge.");
+    }
   }
 
   cout << "number of iteration: " << iteration << endl;
-  //cout << "max NO2: " << testMax << endl;
+//  cout << "max NO2: " << testMax << endl;
 
   //convert concentration vector into normal data type
   for (int i = 1; i <= nnus; i++) {
+    //take the maximum S
+    prevS[i] = vecS[i].array().abs().maxCoeff();
     for (int j = 0; j < ngrids; j++) {
       if (vecS[i][j] < 0) vecS[i][j] = 1e-20;
     }

@@ -76,7 +76,7 @@ void FixDeath::init(){
   deadMass= input->variable->compute_equal(ivar);
 
   if (avec->typeDEAD == 0) {
-    error->all(FLERR,"Cannot find DEAD type");
+    error->all(FLERR,"At least one initial DEAD bactera is required.");
   }
 }
 

@@ -45,6 +45,7 @@ class FixKineticsMonod : public Fix {
   int ntypes;                       // # of species
   int nx, ny, nz;                   // number of grids in x y z axis
   int ngrids;                       //# of grids
+  int epsflag;
 
   double stepx, stepy, stepz;       // grids size
   double xlo,xhi,ylo,yhi,zlo,zhi;   // computational domain size
