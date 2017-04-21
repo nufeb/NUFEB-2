@@ -46,6 +46,7 @@ class FixDiffusion : public Fix {
   double ** nuS;
   double *r;
   double* maxBC;
+  double *prevS;                 // maximum concentration in previous step
 
   int nx, ny, nz;               // # of grids in x, y and z
   int ngrids;                   // total # of grids

@@ -41,9 +41,9 @@ fid=fopen('data_p.pov','w');
         end 
         
          if (Tp(l)==2)
-        RED = 0.17;
-        GREEN = 0.345;
-        BLUE = 0.5653;
+        RED = 0.8;
+        GREEN = 0.2;
+        BLUE = 0.2;
         end 
         
         if (Tp(l)==3)
@@ -53,7 +53,7 @@ fid=fopen('data_p.pov','w');
         end 
         
           if (Tp(l)==4)
-        RED = 0.2;
+        RED = 0.9;
         GREEN = 0.5;
         BLUE = 0.9;
         end 

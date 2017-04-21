@@ -76,6 +76,7 @@ FixKineticsMonod::FixKineticsMonod(LAMMPS *lmp, int narg, char **arg) : Fix(lmp,
 
   kinetics = NULL;
   diffusion = NULL;
+  epsflag = 0;
 
 }
 
@@ -132,6 +133,8 @@ void FixKineticsMonod::init()
       kinetics = static_cast<FixKinetics *>(lmp->modify->fix[j]);
     } else if (strcmp(modify->fix[j]->style,"diffusion") == 0) {
       diffusion = static_cast<FixDiffusion *>(lmp->modify->fix[j]);
+    } else if (strcmp(modify->fix[j]->style,"eps_extract") == 0) {
+      epsflag = 1;
     }
   }
 
@@ -252,10 +255,9 @@ void FixKineticsMonod::monod()
         growth(i);
       }
     }
-    //printf("Average R = %e \n", ar/ngrids);
+
     //solve diffusion
     diffusion->diffusion();
-    //printf("R = %e \n", nuR[1][0]);
 
     for (int i = 0; i < nall; i++) {
       int pos = position(i);
@@ -281,8 +283,6 @@ void FixKineticsMonod::monod()
       }
     }
   }
-  //if(!(update->ntimestep % 1000)) printf("Average growth rate = %e \n", agr/nall);
- // printf ("new mass[1] = %e \n", rmass[1]);
 }
 
 int FixKineticsMonod::position(int i) {
@@ -347,7 +347,7 @@ double FixKineticsMonod::growth(int i) {
           invYield = 0;
 
         double metCoeff = catCoeff[t][j] * invYield + anabCoeff[t][j];
-        //printf ("metCoeff %i = %e \n",j, metCoeff);
+
         mu = gYield[t][pos] * (qMet - bacMaint);
         biomass = mu * rmass[i];
         consume = biomass * metCoeff;
@@ -359,10 +359,10 @@ double FixKineticsMonod::growth(int i) {
         biomass = -decay[t] * f * rmass[i];
         consume = -(biomass) * bio->decayCoeff[t][j] + catCoeff[t][j] * gYield[t][pos] * qCat * rmass[i];
       }
-      //printf ("consume = %e \n", 3600 * consume/24.6e-3);
+
       //calculate liquid consumption, convert from m3 to L, g to mol
       consume = consume / (vol * 24.6);
-      //printf("uptake[%i] = %e vol = %e \n" , j, uptake, vol);
+
       nuR[j][pos] += consume;
     }
   }
@@ -432,21 +432,20 @@ void FixKineticsMonod::bio_update(double biomass, int i)
   const double threeQuartersPI = (3.0/(4.0*MY_PI));
   const double fourThirdsPI = 4.0*MY_PI/3.0;
   const double third = 1.0/3.0;
-  //printf ("growthRate = %e \n", growthRate);
-  //printf ("old mass[i] = %e \n", rmass[i]);
 
   density = rmass[i] / (fourThirdsPI * radius[i] * radius[i] * radius[i]);
   rmass[i] = rmass[i] + biomass;
-  // cout<<"before mass " <<growthRate << endl;
-  //printf ("new mass[i] = %e \n", rmass[i]);
+
   //update mass and radius
   if (mask[i] == avec->maskHET) {
-
-    outerMass[i] = fourThirdsPI * (outerRadius[i] * outerRadius[i] * outerRadius[i] - radius[i] * radius[i] * radius[i]) * EPSdens
-    + biomass * nevery;
-
-    outerRadius[i] = pow(threeQuartersPI * (rmass[i] / density + outerMass[i] / EPSdens), third);
+    //update HET radius
     radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
+    //update mass and radius for EPS shell if PES production is on
+    if (epsflag == 1) {
+      outerMass[i] = fourThirdsPI * (outerRadius[i] * outerRadius[i] * outerRadius[i] - radius[i] * radius[i] * radius[i]) * EPSdens
+      + biomass * nevery;
+      outerRadius[i] = pow(threeQuartersPI * (rmass[i] / density + outerMass[i] / EPSdens), third);
+    }
   } else if (mask[i] != avec->maskEPS && mask[i] != avec->maskDEAD){
     radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
     outerMass[i] = 0.0;
