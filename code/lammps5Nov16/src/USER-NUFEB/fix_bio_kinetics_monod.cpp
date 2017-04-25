@@ -435,7 +435,7 @@ void FixKineticsMonod::bio_update(double biomass, int i)
   const double third = 1.0/3.0;
 
   density = rmass[i] / (fourThirdsPI * radius[i] * radius[i] * radius[i]);
-  rmass[i] = rmass[i] + biomass;
+  rmass[i] = rmass[i] + biomass * nevery;
 
   //update mass and radius
   if (mask[i] == avec->maskHET) {
