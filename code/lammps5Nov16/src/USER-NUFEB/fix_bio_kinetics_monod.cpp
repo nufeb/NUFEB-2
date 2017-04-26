@@ -63,8 +63,8 @@ FixKineticsMonod::FixKineticsMonod(LAMMPS *lmp, int narg, char **arg) : Fix(lmp,
 
   if (narg != 5) error->all(FLERR,"Not enough arguments in fix kinetics/monod command");
 
-  diffevery = force->inumeric(FLERR,arg[3]);
-  if (diffevery < 0) error->all(FLERR,"Illegal fix kinetics/monod command");
+  nevery = force->inumeric(FLERR,arg[3]);
+  if (nevery < 0) error->all(FLERR,"Illegal fix kinetics/monod command");
 
   var = new char*[1];
   ivar = new int[1];
@@ -142,7 +142,7 @@ void FixKineticsMonod::init()
   if (kinetics == NULL)
     lmp->error->all(FLERR,"The fix kinetics command is required for running iBM simulation");
 
-  if (diffevery > 0 && diffusion == NULL)
+  if (nevery > 0 && diffusion == NULL)
     lmp->error->all(FLERR,"The fix diffusion command is required");
 
   EPSdens = input->variable->compute_equal(ivar[0]);
@@ -248,7 +248,7 @@ void FixKineticsMonod::monod()
     }
   }
 
-  if(diffevery != 0 && !(update->ntimestep % diffevery)) {
+  if(nevery != 0 && !(update->ntimestep % nevery)) {
     //get nutrient consumption
     for (int i = 0; i < nall; i++) {
       //printf("mass = %e \n", rmass[i]);

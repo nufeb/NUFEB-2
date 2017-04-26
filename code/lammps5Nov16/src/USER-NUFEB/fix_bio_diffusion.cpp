@@ -419,8 +419,9 @@ void FixDiffusion::diffusion()
         }
       }
     }
-    if (iteration >100000) {
-      lmp->error->warning(FLERR,"# of iterations exceed 100,000, force to converge.");
+    if (iteration > 50000) {
+      isConv = true;
+      lmp->error->warning(FLERR,"# of iterations exceed 50000, force to converge.");
     }
   }
 
