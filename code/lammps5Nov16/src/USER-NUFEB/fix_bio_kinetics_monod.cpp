@@ -351,18 +351,19 @@ double FixKineticsMonod::growth(int i) {
 
         mu = gYield[t][pos] * (qMet - bacMaint);
         biomass = mu * rmass[i];
-        consume = biomass * metCoeff;
+        consume = biomass  * metCoeff;
       } else if (qCat <= 1.2 * bacMaint && bacMaint <= qCat) {
         biomass = 0;
         consume = catCoeff[t][j] * gYield[t][pos] * bacMaint * rmass[i];
       } else {
         double f = (bacMaint - qCat) / bacMaint;
         biomass = -decay[t] * f * rmass[i];
-        consume = -(biomass) * bio->decayCoeff[t][j] + catCoeff[t][j] * gYield[t][pos] * qCat * rmass[i];
+        consume = -biomass * bio->decayCoeff[t][j] + catCoeff[t][j] * gYield[t][pos] * qCat * rmass[i];
       }
-
-      //calculate liquid consumption, convert from m3 to L, g to mol
-      consume = consume / (vol * 24.6);
+      // convert biomass unit from kg to mol
+      consume = consume * 1000 / 24.6;
+      //calculate liquid consumption, mol/m3
+      consume = consume / vol;
 
       nuR[j][pos] += consume;
     }

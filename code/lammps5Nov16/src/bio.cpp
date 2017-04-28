@@ -48,6 +48,7 @@ BIO::BIO(LAMMPS *lmp) : Pointers(lmp)
   ngflag = NULL;
   nuChr = NULL;
   kLa = NULL;
+  mw = NULL;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -69,6 +70,7 @@ BIO::~BIO()
   memory->destroy(typeChr);
 
   memory->destroy(diffCoeff);
+  memory->destroy(mw);
   memory->destroy(iniS);
   memory->destroy(nuType);
   memory->destroy(nuGCoeff);
@@ -333,7 +335,7 @@ void BIO::set_decay(const char *str)
 
 void BIO::set_diffusion(const char *str)
 {
-  if (diffCoeff == NULL) error->all(FLERR,"Cannot set diffCoeff for this atom style");
+  if (diffCoeff == NULL) error->all(FLERR,"Cannot set diffCoeff for this nutrient style");
 
   char* nuName;
   double diffu_one;
@@ -353,6 +355,35 @@ void BIO::set_diffusion(const char *str)
   //mass_setflag[itype] = 1;
 
   if (diffCoeff[inu] < 0.0) error->all(FLERR,"Invalid diffCoeff value");
+}
+
+/* ----------------------------------------------------------------------
+   set molecular weights for all nutrients
+   called from reading of data file
+------------------------------------------------------------------------- */
+
+void BIO::set_mw(const char *str)
+{
+  if (mw == NULL) error->all(FLERR,"Cannot set molecular weights for this nutrient style");
+
+  char* nuName;
+  double mw_one;
+  int len = strlen(str) + 1;
+  nuName = new char[len];
+
+  int n = sscanf(str,"%s %lg",nuName,&mw_one);
+  if (n != 2) error->all(FLERR,"Invalid molecular weights line in data file");
+
+  int inu = find_nuID(nuName);
+  delete [] nuName;
+
+  if (inu < 1 || inu > nnus)
+    error->all(FLERR,"Invalid nutrient for molecular weights set");
+
+  mw[inu] = mw_one;
+  //mass_setflag[itype] = 1;
+
+  if (mw[inu] < 0.0) error->all(FLERR,"Invalid molecular weights value");
 }
 
 

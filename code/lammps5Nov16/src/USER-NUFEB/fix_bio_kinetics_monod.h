@@ -39,7 +39,6 @@ class FixKineticsMonod : public Fix {
   int* type;
   int nlocal;
   int nall;
-  int diffevery;
 
   int nnus;                         // # of nutrients
   int ntypes;                       // # of species

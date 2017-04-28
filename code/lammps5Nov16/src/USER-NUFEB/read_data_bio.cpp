@@ -603,6 +603,11 @@ void ReadDataBIO::command(int narg, char **arg)
         if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
         if (firstpass) kLa();
         else skip_lines(bio->nnus);
+      } else if (strcmp(keyword,"Molecular Weights") == 0) {
+        if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
+        if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
+        if (firstpass) mw();
+        else skip_lines(bio->nnus);
       }
 
       else if (strcmp(keyword,"Pair Coeffs") == 0) {
@@ -2263,6 +2268,29 @@ void ReadDataBIO::diffCoeff()
     next = strchr(buf,'\n');
     *next = '\0';
     bio->set_diffusion(buf);
+    buf = next + 1;
+  }
+  delete [] original;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void ReadDataBIO::mw()
+{
+  int i,m;
+  char *next;
+  char *buf = new char[bio->nnus*MAXLINE];
+
+  int eof = comm->read_lines_from_file(fp,bio->nnus,MAXLINE,buf);
+  if (eof) error->all(FLERR,"Unexpected end of data file");
+
+  bio->mw = memory->create(bio->mw,bio->nnus+1,"bio:mw");
+
+  char *original = buf;
+  for (i = 0; i < bio->nnus; i++) {
+    next = strchr(buf,'\n');
+    *next = '\0';
+    bio->set_mw(buf);
     buf = next + 1;
   }
   delete [] original;

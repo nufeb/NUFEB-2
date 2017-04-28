@@ -166,6 +166,7 @@ void FixDiffusion::init()
 
   nnus = bio->nnus;
   iniS = bio->iniS;
+  mw = bio->mw;
   diffCoeff = bio->diffCoeff;
 
   r = new double[nnus+1]();
@@ -320,19 +321,24 @@ void FixDiffusion::diffusion()
   VectorXd* vecS = new VectorXd[nnus+1];
   VectorXd* vecR = new VectorXd[nnus+1];
   VectorXd* nRES = new VectorXd[nnus+1];
-//  double testMax = 0;
+  //double testMax = 0;
 
   nuS = kinetics->nuS;
   nuR = kinetics->nuR;
 
   //initialization
   for (int i = 1; i <= nnus; i++) {
-    //convert concentration and consumption data types to Eigen vector type
-    vecS[i] = Map<VectorXd> (nuS[i], ngrids, 1);
-    vecR[i] = Map<VectorXd> (nuR[i], ngrids, 1);
-    nRES[i] = VectorXd(ngrids);
-    nRES[i].setZero();
-    conv [i] = false;
+    if (bio->nuType[i] == 0 && diffCoeff[i] != 0) {
+      //convert concentration and consumption data types to Eigen vector type
+      vecS[i] = Map<VectorXd> (nuS[i], ngrids, 1);
+      vecR[i] = Map<VectorXd> (nuR[i], ngrids, 1);
+      // convert from mol/l to mol/m3
+      vecS[i] = vecS[i] * 1000;
+
+      nRES[i] = VectorXd(ngrids);
+      nRES[i].setZero();
+      conv [i] = false;
+    }
   }
 
   VectorXd BC(ngrids);
@@ -351,12 +357,12 @@ void FixDiffusion::diffusion()
     for (int i = 1; i <= nnus; i++) {
       if (bio->nuType[i] == 0 && diffCoeff[i] != 0) {
         if (!conv[i]) {
-          xbcm = iniS[i][1];
-          xbcp = iniS[i][2];
-          ybcm = iniS[i][3];
-          ybcp = iniS[i][4];
-          zbcm = iniS[i][5];
-          zbcp = iniS[i][6];
+          xbcm = iniS[i][1] * 1000;
+          xbcp = iniS[i][2] * 1000;
+          ybcm = iniS[i][3] * 1000;
+          ybcp = iniS[i][4] * 1000 ;
+          zbcm = iniS[i][5] * 1000;
+          zbcp = iniS[i][6] * 1000;
           BC = bc_vec(vecS[i], grid);
           double max = 0.0;
           //Explicit method
@@ -395,7 +401,7 @@ void FixDiffusion::diffusion()
 //            double maxS = 0.0;
 //            maxS =  vecS[i].array().abs().maxCoeff();
 //
-//            if ((maxS > testMax) && strcmp("no2", bio->nuName[i]) == 0) {
+//            if ((maxS > testMax) && strcmp("nh3", bio->nuName[i]) == 0) {
 //              testMax = maxS;
 //            }
 
@@ -419,6 +425,7 @@ void FixDiffusion::diffusion()
         }
       }
     }
+
     if (iteration > 50000) {
       isConv = true;
       lmp->error->warning(FLERR,"# of iterations exceed 50000, force to converge.");
@@ -426,16 +433,20 @@ void FixDiffusion::diffusion()
   }
 
   cout << "number of iteration: " << iteration << endl;
-//  cout << "max NO2: " << testMax << endl;
+  //cout << "max nh3: " << testMax << endl;
 
   //convert concentration vector into normal data type
   for (int i = 1; i <= nnus; i++) {
-    //take the maximum S
-    prevS[i] = vecS[i].array().abs().maxCoeff();
-    for (int j = 0; j < ngrids; j++) {
-      if (vecS[i][j] < 0) vecS[i][j] = 1e-20;
+    if (bio->nuType[i] == 0 && diffCoeff[i] != 0) {
+      //take the maximum S
+      prevS[i] = vecS[i].array().abs().maxCoeff();
+      //convert from kg/m3 to mol/l
+      vecS[i] = vecS[i] / 1000;
+      for (int j = 0; j < ngrids; j++) {
+        if (vecS[i][j] < 0) vecS[i][j] = 1e-20;
+      }
+      Map<MatrixXd>(nuS[i], vecS[i].rows(), vecS[i].cols()) =  vecS[i];
     }
-    Map<MatrixXd>(nuS[i], vecS[i].rows(), vecS[i].cols()) =  vecS[i];
   }
 
   //test();
