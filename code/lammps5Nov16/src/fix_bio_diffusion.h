@@ -36,8 +36,9 @@ class FixDiffusion : public Fix {
   int nnus;                     // # of nutrients
 
   int sflag;
-  double **iniS;              // inlet concentrations of nutrients
+  double **iniS;                // inlet concentrations of nutrients
   double *diffCoeff;            // diffusion coefficients of nutrients
+  double *mw;                   // molecular weights of nutrients
   double diffT;                 // diffusion timestamp
   double tol;                   // tolerance for convergence criteria for nutrient balance equation
   int rstep;                    // steps leave between Si+n-Si

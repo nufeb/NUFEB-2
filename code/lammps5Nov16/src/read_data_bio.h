@@ -129,6 +129,7 @@ class ReadDataBIO : protected Pointers {
   void decayCoeff();
   void nuConcCoeff();
   void diffCoeff();
+  void mw();
 
   void nuGCoeff();
   void typeGCoeff();

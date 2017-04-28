@@ -38,6 +38,7 @@ class BIO : protected Pointers {
   char **nuName;              // nutrient name
 
   double *diffCoeff;          // diffusion coefficient [nutrient]
+  double *mw;                 // molecular Weights [nutrient]
   double **iniS;              // inlet nutrient concentrations [nutrient][1grid + 5bc]
   double **nuGCoeff;          // Gibbs free energy coefficient [nutrient][5charges]
   int *ngflag;                // Gibbs free energy flag
@@ -49,6 +50,7 @@ class BIO : protected Pointers {
 
   void data_nutrients(int, char **);
   void set_growth(const char *);
+  void set_mw(const char *);
   void set_ks(int, char **);
   void set_yield(const char *);
   void set_eD(const char *);
