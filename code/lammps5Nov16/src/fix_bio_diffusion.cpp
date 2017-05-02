@@ -238,9 +238,6 @@ void FixDiffusion::init()
 
   for (int i = 0; i <= ntypes; i++) {
     gMonod[i] = new double[ngrids];
-    for (int j = 0; j < ngrids; j++) {
-      gMonod[i][j] = -1;
-    }
   }
 }
 
@@ -344,10 +341,10 @@ void FixDiffusion::diffusion()
 {
   int iteration = 0;
   bool isConv = false;
-  bool* conv = new bool[nnus+1]();
-  VectorXd* vecS = new VectorXd[nnus+1];
-  VectorXd* vecR = new VectorXd[nnus+1];
-  VectorXd* nRES = new VectorXd[nnus+1];
+  bool *conv = new bool[nnus+1]();
+  VectorXd *vecS = new VectorXd[nnus+1];
+  VectorXd *vecR = new VectorXd[nnus+1];
+  VectorXd *nRES = new VectorXd[nnus+1];
   //double testMax = 0;
 
   nuS = kinetics->nuS;
@@ -364,17 +361,15 @@ void FixDiffusion::diffusion()
 
   //initialization
   for (int i = 1; i <= nnus; i++) {
-    if (bio->nuType[i] == 0 && diffCoeff[i] != 0) {
-      //convert concentration and consumption data types to Eigen vector type
-      vecS[i] = Map<VectorXd> (nuS[i], ngrids, 1);
-      vecR[i] = Map<VectorXd> (nuR[i], ngrids, 1);
-      // convert from mol/l to mol/m3
-      vecS[i] = vecS[i] * 1000;
+    //convert concentration and consumption data types to Eigen vector type
+    vecS[i] = Map<VectorXd> (nuS[i], ngrids, 1);
+    vecR[i] = Map<VectorXd> (nuR[i], ngrids, 1);
+    // convert from mol/l to mol/m3
+    vecS[i] = vecS[i] * 1000;
 
-      nRES[i] = VectorXd(ngrids);
-      nRES[i].setZero();
-      conv [i] = false;
-    }
+    nRES[i] = VectorXd(ngrids);
+    nRES[i].setZero();
+    conv [i] = false;
   }
 
   VectorXd BC(ngrids);
@@ -390,6 +385,15 @@ void FixDiffusion::diffusion()
     iteration ++;
     isConv = true;
 
+    //initialization
+    for (int i = 0; i <= ntypes; i++) {
+      for (int j = 0; j < ngrids; j++) {
+        gMonod[i][j] = -1;
+      }
+    }
+
+    consumption(vecS, vecR, conv);
+
     for (int i = 1; i <= nnus; i++) {
       if (bio->nuType[i] == 0 && diffCoeff[i] != 0) {
         if (!conv[i]) {
@@ -403,7 +407,6 @@ void FixDiffusion::diffusion()
           double max = 0.0;
           //Explicit method
           if (sflag == 0) {
-            consumption(vecS[i], vecR[i], i);
 
             RES = LAP * vecS[i] + BC;
             RES = (2 * r[i] * RES + vecR[i]) * diffT;
@@ -426,7 +429,6 @@ void FixDiffusion::diffusion()
             vecPrvS = vecS[i].replicate(1, 1);
             diagBC = BC.asDiagonal();
             sdiagBC = diagBC.sparseView();
-            consumption(vecS[i], vecR[i], i);
 
             B = ((r[i] * LAP + I) * vecS[i] + r[i] * BC +  vecR[i]) * diffT;
             A = I - r[i] * LAP * diffT - r[i] * sdiagBC * diffT;
@@ -435,6 +437,8 @@ void FixDiffusion::diffusion()
             VectorXd vecDiffS = vecS[i] - vecPrvS;
             max = vecDiffS.array().abs().maxCoeff();
           }
+
+          vecR[i].setZero();
 
           if (iteration % rstep == 0) {
             //test code
@@ -561,7 +565,7 @@ VectorXd FixDiffusion::bc_vec(VectorXd& S, double h)
       }
       else if (ybcflag == 4) {
         B(i_m)=B(i_m)+2*ybcm-S(i_m); //BOTTOM, Y_MINUS
-        B(i_p)=B(i_p)+h*ybcp+S(i_p); //TOP,Y_PLUS
+        B(i_p)=B(i_p)+h*ybcp+S(i_p); //TOP,Y_PLUSvecR
       }
       i_p++;
     }
@@ -615,9 +619,8 @@ bool FixDiffusion::isEuqal(double a, double b, double c)
   compute consumption for nutrient nu
 ------------------------------------------------------------------------- */
 
-void FixDiffusion::consumption(VectorXd& vecS, VectorXd& vecR, int nu){
+void FixDiffusion::consumption(VectorXd*& vecS, VectorXd*& vecR, bool *conv){
   double vol = stepx * stepy * stepz;
-  vecR.setZero();
 
   for (int i = 0; i < nall; i++) {
     if (mask[i] & groupbit) {
@@ -634,7 +637,7 @@ void FixDiffusion::consumption(VectorXd& vecS, VectorXd& vecR, int nu){
       double m = gMonod[t][pos];
 
       if (m < 0) {
-        gMonod[t][pos] = grid_monod(pos, t, 1, nu, vecS);
+        gMonod[t][pos] = grid_monod(pos, t, vecS);
         qMet = avec->atom_mu[i] * gMonod[t][pos];
       } else {
         qMet = avec->atom_mu[i] * m;
@@ -643,35 +646,37 @@ void FixDiffusion::consumption(VectorXd& vecS, VectorXd& vecR, int nu){
       qCat = qMet;
       bacMaint = maintain[t] / -DGRCat[t][pos];
 
-      if (strcmp(bio->nuName[nu], "h") != 0 && strcmp(bio->nuName[nu], "h2o") != 0) {
-        double consume;
+      for (int nu = 1; nu <= nnus; nu++) {
+        if (diffCoeff[nu] != 0 && !conv[nu]) {
+          double consume;
 
-        if (1.2 * bacMaint < qCat) {
-          double invYield;
-          if (gYield[t][pos] != 0)
-            invYield = 1/gYield[t][pos];
-          else
-            invYield = 0;
+          if (1.2 * bacMaint < qCat) {
+            double invYield;
+            if (gYield[t][pos] != 0)
+              invYield = 1/gYield[t][pos];
+            else
+              invYield = 0;
 
-          double metCoeff = catCoeff[t][nu] * invYield + anabCoeff[t][nu];
+            double metCoeff = catCoeff[t][nu] * invYield + anabCoeff[t][nu];
 
-          mu = gYield[t][pos] * (qMet - bacMaint);
-          biomass = mu * rmass[i];
-          consume = biomass  * metCoeff;
-        } else if (qCat <= 1.2 * bacMaint && bacMaint <= qCat) {
-          biomass = 0;
-          consume = catCoeff[t][nu] * gYield[t][pos] * bacMaint * rmass[i];
-        } else {
-          double f = (bacMaint - qCat) / bacMaint;
-          biomass = -decay[t] * f * rmass[i];
-          consume = -biomass * bio->decayCoeff[t][nu] + catCoeff[t][nu] * gYield[t][pos] * qCat * rmass[i];
+            mu = gYield[t][pos] * (qMet - bacMaint);
+            biomass = mu * rmass[i];
+            consume = biomass  * metCoeff;
+          } else if (qCat <= 1.2 * bacMaint && bacMaint <= qCat) {
+            biomass = 0;
+            consume = catCoeff[t][nu] * gYield[t][pos] * bacMaint * rmass[i];
+          } else {
+            double f = (bacMaint - qCat) / bacMaint;
+            biomass = -decay[t] * f * rmass[i];
+            consume = -biomass * bio->decayCoeff[t][nu] + catCoeff[t][nu] * gYield[t][pos] * qCat * rmass[i];
+          }
+          // convert biomass unit from kg to mol
+          consume = consume * 1000 / 24.6;
+          //calculate liquid consumption, mol/m3grid_monod
+          consume = consume / vol;
+
+          vecR[nu][pos] += consume;
         }
-        // convert biomass unit from kg to mol
-        consume = consume * 1000 / 24.6;
-        //calculate liquid consumption, mol/m3
-        consume = consume / vol;
-
-        vecR[pos] += consume;
       }
     }
   }
@@ -700,17 +705,19 @@ int FixDiffusion::position(int i) {
   get monod term w.r.t all nutrients
 ------------------------------------------------------------------------- */
 
-double FixDiffusion::grid_monod(int pos, int type, int ind, int nu, VectorXd& vecS)
+double FixDiffusion::grid_monod(int pos, int type, VectorXd*& vecS)
 {
   double monod = 1;
 
-  //printf ("invYield = %e \n", invYield );
-  double ks = bio->ks[type][nu];
-  double s = vecS[pos];
+  for (int i = 1; i <= nnus; i++ ) {
+    //printf ("invYield = %e \n", invYield );
+    double ks = bio->ks[type][i];
+    double s = vecS[i][pos];
 
-  if (ks != 0) {
-    if (s == 1e-20) return 0;
-    monod *= s/(ks + s);
+    if (ks != 0) {
+      if (s == 1e-20) return 0;
+      monod *= s/(ks + s);
+    }
   }
 
   return monod;

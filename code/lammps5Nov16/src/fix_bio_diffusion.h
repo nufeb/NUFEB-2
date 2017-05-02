@@ -29,7 +29,6 @@ class FixDiffusion : public Fix {
   int setmask();
   void init();
   void diffusion();
-  void consumption(VectorXd&, VectorXd&, int);
 
  private:
   char **var;
@@ -85,8 +84,9 @@ class FixDiffusion : public Fix {
   VectorXd bc_vec(VectorXd&, double);
   bool isEuqal(double, double, double);
 
+  void consumption(VectorXd*&, VectorXd*&, bool*);
   int position(int);
-  double grid_monod(int, int, int, int, VectorXd&);
+  double grid_monod(int, int, VectorXd*&);
 
   void test();
 };
