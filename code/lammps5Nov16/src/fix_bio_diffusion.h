@@ -29,11 +29,20 @@ class FixDiffusion : public Fix {
   int setmask();
   void init();
   void diffusion();
+  void consumption(VectorXd&, VectorXd&, int);
 
  private:
   char **var;
   int *ivar;
   int nnus;                     // # of nutrients
+  double stepx, stepy, stepz;
+
+  int nlocal;
+  int nall;
+  double *rmass;
+  int ntypes;                       // # of species
+  int *mask;
+  int *type;
 
   int sflag;
   double **iniS;                // inlet concentrations of nutrients
@@ -48,6 +57,14 @@ class FixDiffusion : public Fix {
   double *r;
   double* maxBC;
   double *prevS;                 // maximum concentration in previous step
+  double **gMonod;
+  double **DGRCat;
+
+  double *maintain;
+  double *decay;
+  double **catCoeff;               // catabolism coefficients of species
+  double **anabCoeff;              // anabolism  coefficients of species
+  double **gYield;                   // yield coefficients
 
   int nx, ny, nz;               // # of grids in x, y and z
   int ngrids;                   // total # of grids
@@ -60,12 +77,16 @@ class FixDiffusion : public Fix {
 
   class FixKinetics *kinetics;
   class BIO *bio;
+  class AtomVecBio *avec;
 
   SparseMatrix<double> laplacian_matrix_3d();
   SparseMatrix<double> laplacian_matrix_2d();
   SparseMatrix<double> spdiags(MatrixXi&, VectorXi&, int, int, int);
   VectorXd bc_vec(VectorXd&, double);
   bool isEuqal(double, double, double);
+
+  int position(int);
+  double grid_monod(int, int, int, int, VectorXd&);
 
   void test();
 };

@@ -172,8 +172,6 @@ void FixKineticsMonod::init()
 
   ngrids = nx * ny * nz;
   nnus = bio->nnus;
-  catCoeff = bio->catCoeff;
-  anabCoeff = bio->anabCoeff;
   maintain = bio->maintain;
   decay = bio->decay;
 
@@ -237,7 +235,6 @@ void FixKineticsMonod::monod()
   outerRadius = avec->outerRadius;
 
   nuS = kinetics->nuS;
-  nuR = kinetics->nuR;
   DGRCat = kinetics->DRGCat;
 
   //initialization
@@ -249,35 +246,20 @@ void FixKineticsMonod::monod()
   }
 
   if(nevery != 0 && !(update->ntimestep % nevery)) {
-    //get nutrient consumption
-    for (int i = 0; i < nall; i++) {
-      //printf("mass = %e \n", rmass[i]);
-      if (mask[i] & groupbit) {
-        growth(i);
-      }
-    }
-
     //solve diffusion
     diffusion->diffusion();
 
     for (int i = 0; i < nall; i++) {
       int pos = position(i);
       //get new growth rate based on new nutrients
-      double biomass = growth(i) * update->dt;
+      double biomass = grow(i) * update->dt;
       //update bacteria mass, radius etc
       bio_update(biomass, i);
-    }
-
-    //reset consumption
-    for (int i = 0; i <= nnus; i++) {
-      for (int j = 0; j < ngrids; j++) {
-        nuR[i][j] = 0;
-      }
     }
   } else {
     for (int i = 0; i < nall; i++) {
       if (mask[i] & groupbit) {
-        double biomass = growth(i) * update->dt;
+        double biomass = grow(i) * update->dt;
        // agr = agr + growthRate;
         //update bacteria mass, radius etc
         bio_update(biomass, i);
@@ -301,7 +283,7 @@ int FixKineticsMonod::position(int i) {
   return pos;
 }
 
-double FixKineticsMonod::growth(int i) {
+double FixKineticsMonod::grow(int i) {
 
   int t = type[i];
   int pos = position(i);
@@ -323,15 +305,6 @@ double FixKineticsMonod::growth(int i) {
   } else {
     qMet = avec->atom_mu[i] * m;
   }
-// printf ("qmet = %e \n",qmet * 3600);
-//
-//  m = minCatMonod[t][pos];
-//  if (m < 0) {
-//    minCatMonod[t][pos] = grid_monod(pos, t, 2);
-//    qmet = avec->atom_mu[i] * minCatMonod[t][pos];
-//  } else {
-//    qmet = avec->atom_mu[i] * m;
-//  }
 
   qCat = qMet;
   bacMaint = maintain[t] / -DGRCat[t][pos];
@@ -347,64 +320,19 @@ double FixKineticsMonod::growth(int i) {
         else
           invYield = 0;
 
-        double metCoeff = catCoeff[t][j] * invYield + anabCoeff[t][j];
-
         mu = gYield[t][pos] * (qMet - bacMaint);
         biomass = mu * rmass[i];
-        consume = biomass  * metCoeff;
       } else if (qCat <= 1.2 * bacMaint && bacMaint <= qCat) {
         biomass = 0;
-        consume = catCoeff[t][j] * gYield[t][pos] * bacMaint * rmass[i];
       } else {
         double f = (bacMaint - qCat) / bacMaint;
         biomass = -decay[t] * f * rmass[i];
-        consume = -biomass * bio->decayCoeff[t][j] + catCoeff[t][j] * gYield[t][pos] * qCat * rmass[i];
       }
-      // convert biomass unit from kg to mol
-      consume = consume * 1000 / 24.6;
-      //calculate liquid consumption, mol/m3
-      consume = consume / vol;
-
-      nuR[j][pos] += consume;
     }
   }
   //printf ("rg = %e \n", rg*3600);
   return biomass;
 }
-//
-///* ----------------------------------------------------------------------
-//  get minimum monod term w.r.t all nutrients
-//------------------------------------------------------------------------- */
-//
-//double FixKineticsMonod::minimal_monod(int pos, int type, int ind)
-//{
-//  vector<double> mon;
-//  int size = 0;
-//  double min = 0;
-//  double invYield = 1/gYield[type][pos];
-//  //printf ("invYield = %e \n", invYield );
-//  for (int i = 1; i <= nnus; i++ ) {
-//    if (strcmp(bio->nuName[i], "h") != 0 && strcmp(bio->nuName[i], "h2o") != 0) {
-//      double coeff;
-//      if (ind == 1) coeff = catCoeff[type][i] * invYield + anabCoeff[type][i];
-//      else coeff = catCoeff[type][i];
-//      //printf ("coeff = %e,ind = %i \n", coeff, ind);
-//      if (coeff < 0) {
-//        double v = nuS[i][pos]/(bio->ks[type][i] + nuS[i][pos]);
-//        if (v != 0) {
-//          mon.push_back(v);
-//          size++;
-//        }
-//      }
-//     }
-//   }
-//
-//  if (mon.size() > 0)
-//    min = *min_element(mon.begin(), mon.end());
-//
-//  //printf ("min = %e \n",nuS[1][pos]);
-//  return min;
-//}
 
 /* ----------------------------------------------------------------------
   get monod term w.r.t all nutrients

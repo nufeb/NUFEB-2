@@ -169,17 +169,15 @@ void DumpBio::init_style()
           mkdir("./Results/DGRAn", 0700);
       }
       for (int j = 1; j < ntypes + 1; j++) {
-        if (bio->nuType[j] == 0) {
-          char *name = bio->typeName[j];
-          int len = 17;
-          len += strlen(name);
-          char path[len];
-          strcpy(path, "./Results/DGRAn/");
-          strcat(path, name);
+        char *name = bio->typeName[j];
+        int len = 17;
+        len += strlen(name);
+        char path[len];
+        strcpy(path, "./Results/DGRAn/");
+        strcat(path, name);
 
-          if (stat(path, &st) == -1) {
-              mkdir(path, 0700);
-          }
+        if (stat(path, &st) == -1) {
+            mkdir(path, 0700);
         }
       }
     } else if (strcmp(keywords[i],"DGRCat") == 0) {
@@ -188,17 +186,32 @@ void DumpBio::init_style()
           mkdir("./Results/DGRCat", 0700);
       }
       for (int j = 1; j < ntypes + 1; j++) {
-        if (bio->nuType[j] == 0) {
-          char *name = bio->typeName[j];
-          int len = 18;
-          len += strlen(name);
-          char path[len];
-          strcpy(path, "./Results/DGRCat/");
-          strcat(path, name);
+        char *name = bio->typeName[j];
+        int len = 18;
+        len += strlen(name);
+        char path[len];
+        strcpy(path, "./Results/DGRCat/");
+        strcat(path, name);
 
-          if (stat(path, &st) == -1) {
-              mkdir(path, 0700);
-          }
+        if (stat(path, &st) == -1) {
+            mkdir(path, 0700);
+        }
+      }
+    } else if (strcmp(keywords[i],"yield") == 0) {
+      yieldFlag = 1;
+      if (stat("./Results/yield", &st) == -1) {
+          mkdir("./Results/yield", 0700);
+      }
+      for (int j = 1; j < ntypes + 1; j++) {
+        char *name = bio->typeName[j];
+        int len = 17;
+        len += strlen(name);
+        char path[len];
+        strcpy(path, "./Results/yield/");
+        strcat(path, name);
+
+        if (stat(path, &st) == -1) {
+            mkdir(path, 0700);
         }
       }
     } else if (strcmp(keywords[i],"ph") == 0) {
@@ -293,6 +306,23 @@ void DumpBio::write()
       filename = path;
       openfile();
       write_DGRCat_data(i);
+      fclose(fp);
+    }
+  }
+
+  if (yieldFlag == 1) {
+    for (int i = 1; i < ntypes+1; i++) {
+      char *name = bio->typeName[i];
+      int len = 50;
+      len += strlen(name);
+      char path[len];
+      strcpy(path, "./Results/yield/");
+      strcat(path, name);
+      strcat(path, "/r*.csv");
+
+      filename = path;
+      openfile();
+      write_yield_data(i);
       fclose(fp);
     }
   }
@@ -409,6 +439,27 @@ void DumpBio::write_DGRCat_data(int typeID)
     //average += kinetics->DRGCat[2][i];
 
     fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%e\n",i, x, y, z, kinetics->DRGCat[typeID][i]);
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpBio::write_yield_data(int typeID)
+{
+  fprintf(fp, ",x,y,z,scalar,1,1,1,0.5\n");
+
+  for(int i = 0; i < kinetics->ngrids; i++){
+    int zpos = i/(nx * ny) + 1;
+    int ypos = (i - (zpos - 1) * (nx * ny)) / nx + 1;
+    int xpos = i - (zpos - 1) * (nx * ny) - (ypos - 1) * nx + 1;
+
+    double x = xpos * stepx - stepx/2;
+    double y = ypos * stepy - stepy/2;
+    double z = zpos * stepz - stepz/2;
+
+    //average += kinetics->DRGCat[2][i];
+
+    fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%e\n",i, x, y, z, kinetics->gYield[typeID][i]);
   }
 }
 

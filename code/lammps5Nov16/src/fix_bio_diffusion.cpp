@@ -37,6 +37,7 @@
 #include "bio.h"
 #include "fix_bio_kinetics.h"
 #include "fix_bio_kinetics.h"
+#include "atom_vec_bio.h"
 #include "force.h"
 #include "input.h"
 #include "lammps.h"
@@ -44,6 +45,7 @@
 #include "pointers.h"
 #include "update.h"
 #include "variable.h"
+#include "group.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -108,6 +110,12 @@ FixDiffusion::~FixDiffusion()
   for (i = 0; i < 2; i++) {
     delete [] var[i];
   }
+
+  for (int i = 0; i < ntypes + 1; i++) {
+    delete [] gMonod[i];
+  }
+
+  delete [] gMonod;
   delete [] var;
   delete [] ivar;
   delete [] r;
@@ -128,6 +136,9 @@ int FixDiffusion::setmask()
 
 void FixDiffusion::init()
 {
+  avec = (AtomVecBio *) atom->style_match("bio");
+  if (!avec) error->all(FLERR,"Fix kinetics requires atom style bio");
+
   if (!atom->radius_flag)
     error->all(FLERR,"Fix requires atom attribute diameter");
 
@@ -166,7 +177,6 @@ void FixDiffusion::init()
 
   nnus = bio->nnus;
   iniS = bio->iniS;
-  mw = bio->mw;
   diffCoeff = bio->diffCoeff;
 
   r = new double[nnus+1]();
@@ -191,17 +201,17 @@ void FixDiffusion::init()
     zhi = domain->boxhi_bound[2];
   }
 
-  double gridx = (xhi-xlo)/nx;
-  double gridy = (yhi-ylo)/ny;
-  double gridz = (zhi-zlo)/nz;
+  stepx = (xhi-xlo)/nx;
+  stepy = (yhi-ylo)/ny;
+  stepz = (zhi-zlo)/nz;
 
  // if (!isEuqal(gridx, gridy, gridz)) error->all(FLERR,"Grid is not cubic");
-  grid = gridx;
+  grid = stepx;
 
   //inlet concentration, diffusion constant
   //and maximum boundary condition conc value
   for (int i = 1; i <= nnus; i++) {
-    r[i] = diffCoeff[i]/(2 * gridx * gridx);
+    r[i] = diffCoeff[i]/(2 * stepx * stepx);
 
     double bc[6];
     for (int j = 0; j < 6; j++ ) {
@@ -215,6 +225,23 @@ void FixDiffusion::init()
   SparseMatrix<double> In(ngrids, ngrids);
   In.setIdentity();
   I = In;
+
+  //initialize consumption
+  ntypes = atom->ntypes;
+
+  catCoeff = bio->catCoeff;
+  anabCoeff = bio->anabCoeff;
+  maintain = bio->maintain;
+  decay = bio->decay;
+
+  gMonod = new double*[ntypes+1];
+
+  for (int i = 0; i <= ntypes; i++) {
+    gMonod[i] = new double[ngrids];
+    for (int j = 0; j < ngrids; j++) {
+      gMonod[i][j] = -1;
+    }
+  }
 }
 
 
@@ -326,6 +353,15 @@ void FixDiffusion::diffusion()
   nuS = kinetics->nuS;
   nuR = kinetics->nuR;
 
+  mask = atom->mask;
+  nlocal = atom->nlocal;
+  nall = nlocal + atom->nghost;
+  type = atom->type;
+  rmass = atom->rmass;
+
+  DGRCat = kinetics->DRGCat;
+  gYield = kinetics->gYield;
+
   //initialization
   for (int i = 1; i <= nnus; i++) {
     if (bio->nuType[i] == 0 && diffCoeff[i] != 0) {
@@ -367,8 +403,11 @@ void FixDiffusion::diffusion()
           double max = 0.0;
           //Explicit method
           if (sflag == 0) {
+            consumption(vecS[i], vecR[i], i);
+
             RES = LAP * vecS[i] + BC;
             RES = (2 * r[i] * RES + vecR[i]) * diffT;
+
             //decide
             if (rflag == 1) {
               if (iteration % rstep != 0) {
@@ -387,6 +426,7 @@ void FixDiffusion::diffusion()
             vecPrvS = vecS[i].replicate(1, 1);
             diagBC = BC.asDiagonal();
             sdiagBC = diagBC.sparseView();
+            consumption(vecS[i], vecR[i], i);
 
             B = ((r[i] * LAP + I) * vecS[i] + r[i] * BC +  vecR[i]) * diffT;
             A = I - r[i] * LAP * diffT - r[i] * sdiagBC * diffT;
@@ -571,12 +611,107 @@ bool FixDiffusion::isEuqal(double a, double b, double c)
   return true;
 }
 
-void FixDiffusion::test(){
+/* ----------------------------------------------------------------------
+  compute consumption for nutrient nu
+------------------------------------------------------------------------- */
 
-  cout << nnus << endl;
-  for (int i = 1; i <= nnus; i++) {
-    cout << bio->nuName[i] << endl;
-    for (int j = 0; j < ngrids; j++)
-      cout << nuS[i][j] << endl;
+void FixDiffusion::consumption(VectorXd& vecS, VectorXd& vecR, int nu){
+  double vol = stepx * stepy * stepz;
+  vecR.setZero();
+
+  for (int i = 0; i < nall; i++) {
+    if (mask[i] & groupbit) {
+      int t = type[i];
+      int pos = position(i);
+
+      double qMet;       // specific substrate uptake rate for growth metabolism
+      double qCat;       // specific substrate uptake rate for catabolism
+
+      double bacMaint;    // specific substrate consumption required for maintenance
+      double mu;          // specific biomass growth
+      double biomass;
+
+      double m = gMonod[t][pos];
+
+      if (m < 0) {
+        gMonod[t][pos] = grid_monod(pos, t, 1, nu, vecS);
+        qMet = avec->atom_mu[i] * gMonod[t][pos];
+      } else {
+        qMet = avec->atom_mu[i] * m;
+      }
+
+      qCat = qMet;
+      bacMaint = maintain[t] / -DGRCat[t][pos];
+
+      if (strcmp(bio->nuName[nu], "h") != 0 && strcmp(bio->nuName[nu], "h2o") != 0) {
+        double consume;
+
+        if (1.2 * bacMaint < qCat) {
+          double invYield;
+          if (gYield[t][pos] != 0)
+            invYield = 1/gYield[t][pos];
+          else
+            invYield = 0;
+
+          double metCoeff = catCoeff[t][nu] * invYield + anabCoeff[t][nu];
+
+          mu = gYield[t][pos] * (qMet - bacMaint);
+          biomass = mu * rmass[i];
+          consume = biomass  * metCoeff;
+        } else if (qCat <= 1.2 * bacMaint && bacMaint <= qCat) {
+          biomass = 0;
+          consume = catCoeff[t][nu] * gYield[t][pos] * bacMaint * rmass[i];
+        } else {
+          double f = (bacMaint - qCat) / bacMaint;
+          biomass = -decay[t] * f * rmass[i];
+          consume = -biomass * bio->decayCoeff[t][nu] + catCoeff[t][nu] * gYield[t][pos] * qCat * rmass[i];
+        }
+        // convert biomass unit from kg to mol
+        consume = consume * 1000 / 24.6;
+        //calculate liquid consumption, mol/m3
+        consume = consume / vol;
+
+        vecR[pos] += consume;
+      }
+    }
   }
+}
+
+/* ----------------------------------------------------------------------
+  get bacteria position w.r.t grid cells
+------------------------------------------------------------------------- */
+
+int FixDiffusion::position(int i) {
+
+  // get index of grid containing i
+  int xpos = (atom->x[i][0] - xlo) / stepx + 1;
+  int ypos = (atom->x[i][1] - ylo) / stepy + 1;
+  int zpos = (atom->x[i][2] - zlo) / stepz + 1;
+  int pos = (xpos - 1) + (ypos - 1) * ny + (zpos - 1) * (nx * ny);
+
+  if (pos >= ngrids) {
+     printf("Too big! pos=%d   size = %i\n", pos, ngrids);
+  }
+
+  return pos;
+}
+
+/* ----------------------------------------------------------------------
+  get monod term w.r.t all nutrients
+------------------------------------------------------------------------- */
+
+double FixDiffusion::grid_monod(int pos, int type, int ind, int nu, VectorXd& vecS)
+{
+  double monod = 1;
+
+  //printf ("invYield = %e \n", invYield );
+  double ks = bio->ks[type][nu];
+  double s = vecS[pos];
+
+  if (ks != 0) {
+    if (s == 1e-20) return 0;
+    monod *= s/(ks + s);
+  }
+
+  return monod;
 }

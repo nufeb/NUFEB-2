@@ -74,7 +74,7 @@ class FixKineticsMonod : public Fix {
  // double minimal_monod(int, int, int);
   double grid_monod(int, int, int);
   void bio_update(double, int);
-  double growth(int);
+  double grow(int);
   int position(int);
 
 };
