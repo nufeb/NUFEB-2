@@ -245,27 +245,17 @@ void FixKineticsMonod::monod()
     }
   }
 
-  if(nevery != 0 && !(update->ntimestep % nevery)) {
-    //solve diffusion
-    diffusion->diffusion();
+  //solve diffusion
+  diffusion->diffusion();
 
-    for (int i = 0; i < nall; i++) {
-      int pos = position(i);
-      //get new growth rate based on new nutrients
-      double biomass = grow(i) * update->dt;
-      //update bacteria mass, radius etc
-      bio_update(biomass, i);
-    }
-  } else {
-    for (int i = 0; i < nall; i++) {
-      if (mask[i] & groupbit) {
-        double biomass = grow(i) * update->dt;
-       // agr = agr + growthRate;
-        //update bacteria mass, radius etc
-        bio_update(biomass, i);
-      }
-    }
+  for (int i = 0; i < nall; i++) {
+    int pos = position(i);
+    //get new growth rate based on new nutrients
+    double biomass = grow(i) * update->dt;
+    //update bacteria mass, radius etc
+    bio_update(biomass, i);
   }
+
 }
 
 int FixKineticsMonod::position(int i) {
@@ -309,26 +299,19 @@ double FixKineticsMonod::grow(int i) {
   qCat = qMet;
   bacMaint = maintain[t] / -DGRCat[t][pos];
 
-  for (int j = 1; j <= nnus; j++) {
-    if (strcmp(bio->nuName[j], "h") != 0 && strcmp(bio->nuName[j], "h2o") != 0) {
-      double consume;
+  if (1.2 * bacMaint < qCat) {
+    double invYield;
 
-      if (1.2 * bacMaint < qCat) {
-        double invYield;
-        if (gYield[t][pos] != 0)
-          invYield = 1/gYield[t][pos];
-        else
-          invYield = 0;
+    if (gYield[t][pos] != 0) invYield = 1/gYield[t][pos];
+    else invYield = 0;
 
-        mu = gYield[t][pos] * (qMet - bacMaint);
-        biomass = mu * rmass[i];
-      } else if (qCat <= 1.2 * bacMaint && bacMaint <= qCat) {
-        biomass = 0;
-      } else {
-        double f = (bacMaint - qCat) / bacMaint;
-        biomass = -decay[t] * f * rmass[i];
-      }
-    }
+    mu = gYield[t][pos] * (qMet - bacMaint);
+    biomass = mu * rmass[i];
+  } else if (qCat <= 1.2 * bacMaint && bacMaint <= qCat) {
+    biomass = 0;
+  } else {
+    double f = (bacMaint - qCat) / bacMaint;
+    biomass = -decay[t] * f * rmass[i];
   }
   //printf ("rg = %e \n", rg*3600);
   return biomass;
