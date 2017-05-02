@@ -75,7 +75,7 @@ compute myNtypes all ntypes
 ##############Simulation outputs##############
 
 dump		id all custom 200 snapshot.bubblemd id type diameter x y z
-dump            d0 all bio 200 biomass Conc DGRAn DGRCat ph gas
+dump            d0 all bio 10 biomass Conc DGRAn DGRCat ph gas yield
 thermo_style    custom step cpu atoms biomass c_myNtypes[*]
 thermo		10
 thermo_modify	lost ignore

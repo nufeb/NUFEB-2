@@ -253,7 +253,7 @@ void FixKineticsMonod::monod()
     for (int i = 0; i < nall; i++) {
       //printf("mass = %e \n", rmass[i]);
       if (mask[i] & groupbit) {
-        growth(i);
+        grow(i);
       }
     }
 
@@ -263,7 +263,7 @@ void FixKineticsMonod::monod()
     for (int i = 0; i < nall; i++) {
       int pos = position(i);
       //get new growth rate based on new nutrients
-      double biomass = growth(i) * update->dt;
+      double biomass = grow(i) * update->dt;
       //update bacteria mass, radius etc
       bio_update(biomass, i);
     }
@@ -277,7 +277,7 @@ void FixKineticsMonod::monod()
   } else {
     for (int i = 0; i < nall; i++) {
       if (mask[i] & groupbit) {
-        double biomass = growth(i) * update->dt;
+        double biomass = grow(i) * update->dt;
        // agr = agr + growthRate;
         //update bacteria mass, radius etc
         bio_update(biomass, i);
@@ -301,7 +301,7 @@ int FixKineticsMonod::position(int i) {
   return pos;
 }
 
-double FixKineticsMonod::growth(int i) {
+double FixKineticsMonod::grow(int i) {
 
   int t = type[i];
   int pos = position(i);
