@@ -218,6 +218,7 @@ void FixDiffusion::init()
       bc[j] = iniS[i][j+1];
     }
     maxBC[i] = *max_element(bc, bc+6);
+    prevS[i] = -10;
   }
 
   LAP = laplacian_matrix_3d();
@@ -385,13 +386,6 @@ void FixDiffusion::diffusion()
     iteration ++;
     isConv = true;
 
-    //initialization
-    for (int i = 0; i <= ntypes; i++) {
-      for (int j = 0; j < ngrids; j++) {
-        gMonod[i][j] = -1;
-      }
-    }
-
     consumption(vecS, vecR, conv);
 
     for (int i = 1; i <= nnus; i++) {
@@ -403,7 +397,9 @@ void FixDiffusion::diffusion()
           ybcp = iniS[i][4] * 1000 ;
           zbcm = iniS[i][5] * 1000;
           zbcp = iniS[i][6] * 1000;
+
           BC = bc_vec(vecS[i], grid);
+
           double max = 0.0;
           //Explicit method
           if (sflag == 0) {
@@ -448,15 +444,18 @@ void FixDiffusion::diffusion()
 //            if ((maxS > testMax) && strcmp("nh3", bio->nuName[i]) == 0) {
 //              testMax = maxS;
 //            }
-
-            // if prevS is zero, use maxS in current step
-            if (prevS[i] == 0) {
+            // if prevS is initial value, use maxS in current step
+            if (prevS[i] == -10) {
               double max = vecS[i].array().abs().maxCoeff();
               if (max != 0) prevS[i] = max;
               else prevS[i] = 1;
             }
 
-            double ratio = max / prevS[i];
+            double ratio = max / vecS[i].array().abs().maxCoeff();
+
+            for (int j = 0; j < ngrids; j++) {
+              if (vecS[i][j] < 0) vecS[i][j] = 0;
+            }
 
             if (ratio < tol)  {
               conv[i] = true;
@@ -484,11 +483,14 @@ void FixDiffusion::diffusion()
     if (bio->nuType[i] == 0 && diffCoeff[i] != 0) {
       //take the maximum S
       prevS[i] = vecS[i].array().abs().maxCoeff();
+      if (prevS[i] == 0) prevS[i] = 1;
+
+      for (int j = 0; j < ngrids; j++) {
+        if (vecS[i][j] < 0) vecS[i][j] = 0;
+      }
+
       //convert from kg/m3 to mol/l
       vecS[i] = vecS[i] / 1000;
-      for (int j = 0; j < ngrids; j++) {
-        if (vecS[i][j] < 0) vecS[i][j] = 1e-20;
-      }
       Map<MatrixXd>(nuS[i], vecS[i].rows(), vecS[i].cols()) =  vecS[i];
     }
   }
@@ -620,12 +622,22 @@ bool FixDiffusion::isEuqal(double a, double b, double c)
 ------------------------------------------------------------------------- */
 
 void FixDiffusion::consumption(VectorXd*& vecS, VectorXd*& vecR, bool *conv){
+
   double vol = stepx * stepy * stepz;
+
+  //initialization
+  for (int i = 0; i <= ntypes; i++) {
+    for (int j = 0; j < ngrids; j++) {
+      gMonod[i][j] = -1;
+    }
+  }
 
   for (int i = 0; i < nall; i++) {
     if (mask[i] & groupbit) {
       int t = type[i];
       int pos = position(i);
+
+      if (DGRCat[t][pos] == 0) continue;
 
       double qMet;       // specific substrate uptake rate for growth metabolism
       double qCat;       // specific substrate uptake rate for catabolism
@@ -644,6 +656,7 @@ void FixDiffusion::consumption(VectorXd*& vecS, VectorXd*& vecR, bool *conv){
       }
 
       qCat = qMet;
+      if (qCat < 0) printf("%e \n", qCat);
       bacMaint = maintain[t] / -DGRCat[t][pos];
 
       for (int nu = 1; nu <= nnus; nu++) {
@@ -663,7 +676,6 @@ void FixDiffusion::consumption(VectorXd*& vecS, VectorXd*& vecR, bool *conv){
             biomass = mu * rmass[i];
             consume = biomass  * metCoeff;
           } else if (qCat <= 1.2 * bacMaint && bacMaint <= qCat) {
-            biomass = 0;
             consume = catCoeff[t][nu] * gYield[t][pos] * bacMaint * rmass[i];
           } else {
             double f = (bacMaint - qCat) / bacMaint;
@@ -672,7 +684,7 @@ void FixDiffusion::consumption(VectorXd*& vecS, VectorXd*& vecR, bool *conv){
           }
           // convert biomass unit from kg to mol
           consume = consume * 1000 / 24.6;
-          //calculate liquid consumption, mol/m3grid_monod
+          //calculate liquid consumption, mol/m3
           consume = consume / vol;
 
           vecR[nu][pos] += consume;
@@ -714,8 +726,9 @@ double FixDiffusion::grid_monod(int pos, int type, VectorXd*& vecS)
     double ks = bio->ks[type][i];
     double s = vecS[i][pos];
 
+    if (s < 0) s = 0;
+
     if (ks != 0) {
-      if (s == 1e-20) return 0;
       monod *= s/(ks + s);
     }
   }
