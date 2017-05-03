@@ -69,9 +69,9 @@
   
  Maintenance
  
-     aob 0.00125
-     nob 0.00125
-     comm 0.00125
+     aob 0
+     nob 0
+     comm 0
 
  eD
     
@@ -92,24 +92,11 @@
      h2o 0
      h 0 
 
- Molecular Weights
-
-     nh3 17
-     no2 46
-     no3 62
-     o2 32
-     co2 44
-     go2 32
-     gco2 44
-     gn2 28
-     h2o 0
-     h 0 	
-
  Decay
 
-     aob 2.78e-6
-     nob 2.78e-6
-     comm 2.78e-6
+     aob 0
+     nob 0
+     comm 0
 
  Catabolism Coeffs
          

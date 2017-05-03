@@ -331,11 +331,10 @@ double FixKineticsMonod::grid_monod(int pos, int type, int ind)
     double s = nuS[i][pos];
 
     if (ks != 0) {
-      if (s == 1e-20) return 0;
+      //if (s == 1e-20) return 0;
       monod *= s/(ks + s);
     }
   }
-
   return monod;
 }
 
