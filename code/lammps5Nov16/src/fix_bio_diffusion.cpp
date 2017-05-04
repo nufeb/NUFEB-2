@@ -9,12 +9,10 @@
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
    http://lammps.sandia.gov, Sandia National Laboratories
    Steve Plimpton, sjplimp@sandia.gov
-
    Copyright (2003) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
    certain rights in this software.  This software is distributed under
    the GNU General Public License.
-
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
@@ -218,7 +216,6 @@ void FixDiffusion::init()
       bc[j] = iniS[i][j+1];
     }
     maxBC[i] = *max_element(bc, bc+6);
-    prevS[i] = -10;
   }
 
   LAP = laplacian_matrix_3d();
@@ -445,17 +442,17 @@ void FixDiffusion::diffusion()
 //              testMax = maxS;
 //            }
             // if prevS is initial value, use maxS in current step
-            if (prevS[i] == -10) {
+            if (prevS[i] == 0 && iteration == 1) {
               double max = vecS[i].array().abs().maxCoeff();
               if (max != 0) prevS[i] = max;
               else prevS[i] = 1;
             }
 
-            double ratio = max / vecS[i].array().abs().maxCoeff();
+            double ratio = max / prevS[i];
 
-            for (int j = 0; j < ngrids; j++) {
-              if (vecS[i][j] < 0) vecS[i][j] = 0;
-            }
+//            for (int j = 0; j < ngrids; j++) {
+//              if (vecS[i][j] < 0) vecS[i][j] = 0;
+//            }
 
             if (ratio < tol)  {
               conv[i] = true;
@@ -469,9 +466,8 @@ void FixDiffusion::diffusion()
       }
     }
 
-    if (iteration > 50000) {
+    if (iteration > 10000) {
       isConv = true;
-      lmp->error->warning(FLERR,"# of iterations exceed 50000, force to converge.");
     }
   }
 
@@ -656,7 +652,8 @@ void FixDiffusion::consumption(VectorXd*& vecS, VectorXd*& vecR, bool *conv){
       }
 
       qCat = qMet;
-      if (qCat < 0) printf("%e \n", qCat);
+      if (qMet == 0)
+      //if (qCat < 0) printf("%e \n", qCat);
       bacMaint = maintain[t] / -DGRCat[t][pos];
 
       for (int nu = 1; nu <= nnus; nu++) {
@@ -678,7 +675,11 @@ void FixDiffusion::consumption(VectorXd*& vecS, VectorXd*& vecR, bool *conv){
           } else if (qCat <= 1.2 * bacMaint && bacMaint <= qCat) {
             consume = catCoeff[t][nu] * gYield[t][pos] * bacMaint * rmass[i];
           } else {
-            double f = (bacMaint - qCat) / bacMaint;
+            double f;
+
+            if (bacMaint == 0) f = 0;
+            else f = (bacMaint - qCat) / bacMaint;
+
             biomass = -decay[t] * f * rmass[i];
             consume = -biomass * bio->decayCoeff[t][nu] + catCoeff[t][nu] * gYield[t][pos] * qCat * rmass[i];
           }
@@ -726,10 +727,9 @@ double FixDiffusion::grid_monod(int pos, int type, VectorXd*& vecS)
     double ks = bio->ks[type][i];
     double s = vecS[i][pos];
 
-    if (s < 0) s = 0;
-
     if (ks != 0) {
-      monod *= s/(ks + s);
+     // if (s < 0) return 0;
+       monod *= s/(ks + s);
     }
   }
 

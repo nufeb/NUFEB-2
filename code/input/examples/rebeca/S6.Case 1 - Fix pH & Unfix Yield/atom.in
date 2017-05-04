@@ -69,10 +69,9 @@
   
  Maintenance
  
-     aob 0
-     nob 0
-     comm 0
-
+     aob 0.00125
+     nob 0.00125
+     comm 0.00125
  eD
     
      aob 0.9
@@ -94,9 +93,9 @@
 
  Decay
 
-     aob 0
-     nob 0
-     comm 0
+     aob 2.78e-6
+     nob 2.78e-6
+     comm 2.78e-6
 
  Catabolism Coeffs
          
