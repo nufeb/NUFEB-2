@@ -17,6 +17,7 @@
 #include "fix_bio_kinetics_monod.h"
 #include "fix_bio_kinetics_ph.h"
 #include "fix_bio_kinetics_thermo.h"
+#include "fix_bio_nve.h"
 #include "fix_bio_shear.h"
 #include "fix_bio_utilities.h"
 #include "fix_bio_walladh.h"

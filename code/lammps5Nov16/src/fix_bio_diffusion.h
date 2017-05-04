@@ -51,13 +51,13 @@ class FixDiffusion : public Fix {
   double tol;                   // tolerance for convergence criteria for nutrient balance equation
   int rstep;                    // steps leave between Si+n-Si
   int rflag;
-  double ** nuR;
-  double ** nuS;
+  double **nuR;
+  double **nuS;
   double *r;
   double* maxBC;
-  double *prevS;                 // maximum concentration in previous step
   double **gMonod;
   double **DGRCat;
+  double *prevS;
 
   double *maintain;
   double *decay;
