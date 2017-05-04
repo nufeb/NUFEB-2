@@ -216,6 +216,7 @@ void FixDiffusion::init()
       bc[j] = iniS[i][j+1];
     }
     maxBC[i] = *max_element(bc, bc+6);
+    prevS[i] = -1;
   }
 
   LAP = laplacian_matrix_3d();
@@ -433,6 +434,10 @@ void FixDiffusion::diffusion()
 
           vecR[i].setZero();
 
+          for (int j = 0; j < ngrids; j++) {
+            if (vecS[i][j] < 0) vecS[i][j] = 0;
+          }
+
           if (iteration % rstep == 0) {
             //test code
 //            double maxS = 0.0;
@@ -442,17 +447,14 @@ void FixDiffusion::diffusion()
 //              testMax = maxS;
 //            }
             // if prevS is initial value, use maxS in current step
-            if (prevS[i] == 0 && iteration == 1) {
-              double max = vecS[i].array().abs().maxCoeff();
-              if (max != 0) prevS[i] = max;
-              else prevS[i] = 1;
-            }
+           // if (prevS[i] == -1) {
+            double maxS = vecS[i].array().abs().maxCoeff();
+            if (maxS == 0) maxS = 1;
+              //else max = 1;
+           // }
 
-            double ratio = max / prevS[i];
-
-//            for (int j = 0; j < ngrids; j++) {
-//              if (vecS[i][j] < 0) vecS[i][j] = 0;
-//            }
+            double ratio = max / maxS;
+            //if (i == 2) printf("nu = %i, RES = %e, max = %e, maxS = %e \n", i, ratio, max, maxS);
 
             if (ratio < tol)  {
               conv[i] = true;
@@ -647,13 +649,12 @@ void FixDiffusion::consumption(VectorXd*& vecS, VectorXd*& vecR, bool *conv){
       if (m < 0) {
         gMonod[t][pos] = grid_monod(pos, t, vecS);
         qMet = avec->atom_mu[i] * gMonod[t][pos];
+        //if(i==2) printf("%e \n", gMonod[t][pos]);
       } else {
         qMet = avec->atom_mu[i] * m;
       }
 
       qCat = qMet;
-      if (qMet == 0)
-      //if (qCat < 0) printf("%e \n", qCat);
       bacMaint = maintain[t] / -DGRCat[t][pos];
 
       for (int nu = 1; nu <= nnus; nu++) {
@@ -676,7 +677,6 @@ void FixDiffusion::consumption(VectorXd*& vecS, VectorXd*& vecR, bool *conv){
             consume = catCoeff[t][nu] * gYield[t][pos] * bacMaint * rmass[i];
           } else {
             double f;
-
             if (bacMaint == 0) f = 0;
             else f = (bacMaint - qCat) / bacMaint;
 
@@ -725,11 +725,11 @@ double FixDiffusion::grid_monod(int pos, int type, VectorXd*& vecS)
   for (int i = 1; i <= nnus; i++ ) {
     //printf ("invYield = %e \n", invYield );
     double ks = bio->ks[type][i];
-    double s = vecS[i][pos];
+    double s = vecS[i][pos] / 1000;
 
     if (ks != 0) {
-     // if (s < 0) return 0;
-       monod *= s/(ks + s);
+      if (s <= 0) return 0;
+      monod *= s/(ks + s);
     }
   }
 
