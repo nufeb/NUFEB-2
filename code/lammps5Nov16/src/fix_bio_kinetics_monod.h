@@ -22,9 +22,7 @@ class FixKineticsMonod : public Fix {
  public:
   FixKineticsMonod(class LAMMPS *, int, char **);
   ~FixKineticsMonod();
-  int setmask();
   void init();
-  void pre_force(int);
 
  private:
   char **var;
@@ -57,6 +55,7 @@ class FixKineticsMonod : public Fix {
 
   double **gYield;                   // yield coefficients
   double **gMonod;
+  bool *nuConv;
   //double **minCatMonod;
 
   double **nuS;                    // nutrient concentration for all grids
@@ -66,11 +65,11 @@ class FixKineticsMonod : public Fix {
   class FixDiffusion *diffusion;
   class BIO *bio;
 
-  void monod();
+  void growth(double);
  // double minimal_monod(int, int, int);
   double grid_monod(int, int, int);
   void bio_update(double, int);
-  double grow(int);
+  double consumption();
   int position(int);
 
 };

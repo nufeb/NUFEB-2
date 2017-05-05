@@ -37,7 +37,7 @@ class FixKinetics : public Fix {
 
   int nx, ny, nz;                  // number of grids in x y z axis
   int ngrids;                      // # of grids
-  double ph;                       // initial ph
+  double iph;                       // initial ph
 
   double **nuS;                    // nutrient concentration [nutrient][grid]
   double **nuR;                    // nutrient consumption [nutrient][grid]

@@ -54,25 +54,13 @@ using namespace std;
 
 FixKineticsPH::FixKineticsPH(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
-  if (narg != 4) error->all(FLERR,"Not enough arguments in fix kinetics/ph command");
-
-  nevery = force->inumeric(FLERR,arg[3]);
-  if (nevery < 0) error->all(FLERR,"Illegal fix kinetics/ph command");
+  if (narg != 3) error->all(FLERR,"Not enough arguments in fix kinetics/ph command");
 }
 
 /* ---------------------------------------------------------------------- */
 
 FixKineticsPH::~FixKineticsPH()
 {
-}
-
-/* ---------------------------------------------------------------------- */
-
-int FixKineticsPH::setmask()
-{
-  int mask = 0;
-  mask |= PRE_FORCE;
-  return mask;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -114,16 +102,6 @@ void FixKineticsPH::init()
   activity = kinetics->activity;
   kEq = kinetics->kEq;
   nuS = kinetics->nuS;
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixKineticsPH::pre_force(int vflag)
-{
-  if (nevery == 0) return;
-  if (update->ntimestep % nevery) return;
-
-  solve_ph();
 }
 
 /* ----------------------------------------------------------------------
@@ -189,7 +167,7 @@ void FixKineticsPH::solve_ph()
     }
 
     //Newton-Raphson method
-    gSh = pow(10, -kinetics->ph);
+    gSh = pow(10, -kinetics->iph);
 
     while (ipH <= maxIter) {
       sumActivity = 0.0;

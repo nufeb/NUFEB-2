@@ -51,24 +51,21 @@ using namespace std;
 
 FixKineticsThermo::FixKineticsThermo(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
-  if (narg != 7) error->all(FLERR,"Not enough arguments in fix kinetics/thermo command");
-
-  nevery = force->inumeric(FLERR,arg[3]);
-  if (nevery < 0) error->all(FLERR,"Illegal fix kinetics/thermo command");
+  if (narg != 6) error->all(FLERR,"Not enough arguments in fix kinetics/thermo command");
 
   fixY = 0;
   closeR = 0;
 
-  if (strcmp(arg[4], "unfix") == 0) fixY = 1;
-  if (strcmp(arg[5], "close") == 0) closeR = 1;
+  if (strcmp(arg[3], "unfixY") == 0) fixY = 1;
+  if (strcmp(arg[4], "close") == 0) closeR = 1;
 
   var = new char*[1];
   ivar = new int[1];
 
   for (int i = 0; i < 1; i++) {
-    int n = strlen(&arg[6+i][2]) + 1;
+    int n = strlen(&arg[5+i][2]) + 1;
     var[i] = new char[n];
-    strcpy(var[i],&arg[6+i][2]);
+    strcpy(var[i],&arg[5+i][2]);
   }
 }
 
@@ -85,15 +82,6 @@ FixKineticsThermo::~FixKineticsThermo()
   }
   delete [] var;
   delete [] ivar;
-}
-
-/* ---------------------------------------------------------------------- */
-
-int FixKineticsThermo::setmask()
-{
-  int mask = 0;
-  mask |= PRE_FORCE;
-  return mask;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -252,17 +240,6 @@ void FixKineticsThermo::init_KhV()
       delete [] lName;
     }
   }
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixKineticsThermo::pre_force(int vflag)
-{
-  if (nevery == 0) return;
-  if (update->ntimestep % nevery) return;
-
-  thermo();
- // output_data();
 }
 
 /* ----------------------------------------------------------------------
