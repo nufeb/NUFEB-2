@@ -22,9 +22,7 @@ class FixKineticsThermo : public Fix {
  public:
   FixKineticsThermo(class LAMMPS *, int, char **);
   ~FixKineticsThermo();
-  int setmask();
   void init();
-  void pre_force(int);
 
  private:
   char **var;

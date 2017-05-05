@@ -189,7 +189,7 @@ void FixKineticsPH::solve_ph()
     }
 
     //Newton-Raphson method
-    gSh = pow(10, -kinetics->ph);
+    gSh = pow(10, -kinetics->iph);
 
     while (ipH <= maxIter) {
       sumActivity = 0.0;

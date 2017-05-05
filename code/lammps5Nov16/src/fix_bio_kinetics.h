@@ -29,6 +29,7 @@ class FixKinetics : public Fix {
   FixKinetics(class LAMMPS *, int, char **);
   ~FixKinetics();
   int setmask();
+  void pre_exchange();
   void init();
 
  private:
@@ -37,7 +38,8 @@ class FixKinetics : public Fix {
 
   int nx, ny, nz;                  // number of grids in x y z axis
   int ngrids;                      // # of grids
-  double ph;                       // initial ph
+  double iph;                       // initial ph
+  int nnus;                        // # of nutrients
 
   double **nuS;                    // nutrient concentration [nutrient][grid]
   double **nuR;                    // nutrient consumption [nutrient][grid]
@@ -50,12 +52,19 @@ class FixKinetics : public Fix {
   double **DRGAn;                  // Gibbs free energy of anabolism [type][grid]
   double **kEq;                    // equilibrium constants [nutrient][4]
   double *Sh;
+  bool *nuConv;
+  double diffT;                    // diffsuion timestep
 
   class AtomVecBio *avec;
   class BIO *bio;
+  class FixDiffusion *diffusion;
+  class FixKineticsMonod *monod;
+  class FixKineticsPH *ph;
+  class FixKineticsThermo *thermo;
 
   void init_activity();
   void init_keq();
+  void integration();
 };
 
 }

@@ -25,12 +25,17 @@
 #include <math.h>
 
 #include "atom.h"
-#include "atom_vec_bio.h"
 #include "error.h"
 #include "input.h"
 #include "memory.h"
 
+#include "atom_vec_bio.h"
+#include "fix_bio_kinetics_ph.h"
+#include "fix_bio_kinetics_thermo.h"
+#include "fix_bio_kinetics_monod.h"
+#include "fix_bio_diffusion.h"
 #include "bio.h"
+
 #include "pointers.h"
 #include "variable.h"
 
@@ -49,17 +54,20 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg
 
   if (narg != 11) error->all(FLERR,"Not enough arguments in fix kinetics command");
 
-  var = new char*[5];
-  ivar = new int[5];
+  nevery = force->inumeric(FLERR,arg[3]);
+  if (nevery < 0) error->all(FLERR,"Illegal fix kinetics command: calling steps should be positive integer");
 
-  nx = atoi(arg[3]);
-  ny = atoi(arg[4]);
-  nz = atoi(arg[5]);
+  var = new char*[6];
+  ivar = new int[6];
 
-  for (int i = 0; i < 5; i++) {
-    int n = strlen(&arg[6+i][2]) + 1;
+  nx = atoi(arg[4]);
+  ny = atoi(arg[5]);
+  nz = atoi(arg[6]);
+
+  for (int i = 0; i < 6; i++) {
+    int n = strlen(&arg[7+i][2]) + 1;
     var[i] = new char[n];
-    strcpy(var[i],&arg[6+i][2]);
+    strcpy(var[i],&arg[7+i][2]);
   }
 }
 
@@ -68,7 +76,7 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg
 FixKinetics::~FixKinetics()
 {
   int i;
-  for (i = 0; i < 5; i++) {
+  for (i = 0; i < 6; i++) {
     delete [] var[i];
   }
   delete [] var;
@@ -83,6 +91,7 @@ FixKinetics::~FixKinetics()
   memory->destroy(DRGAn);
   memory->destroy(kEq);
   memory->destroy(Sh);
+  memory->destroy(nuConv);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -98,7 +107,7 @@ int FixKinetics::setmask()
 
 void FixKinetics::init()
 {
-  for (int n = 0; n < 5; n++) {
+  for (int n = 0; n < 6; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
       error->all(FLERR,"Variable name for fix kinetics does not exist");
@@ -114,15 +123,35 @@ void FixKinetics::init()
   else if (bio->iniS == NULL)
     error->all(FLERR,"fix_kinetics requires Nutrients inputs");
 
+  // register fix kinetics with this class
+  diffusion = NULL;
+  monod = NULL;
+  ph = NULL;
+  thermo = NULL;
+
+  int nfix = modify->nfix;
+  for (int j = 0; j < nfix; j++) {
+    if (strcmp(modify->fix[j]->style,"kinetics/monod") == 0) {
+      monod = static_cast<FixKineticsMonod *>(lmp->modify->fix[j]);
+    } else if (strcmp(modify->fix[j]->style,"diffusion") == 0) {
+      diffusion = static_cast<FixDiffusion *>(lmp->modify->fix[j]);
+    } else if (strcmp(modify->fix[j]->style,"kinetics/ph") == 0) {
+      ph = static_cast<FixKineticsPH *>(lmp->modify->fix[j]);
+    } else if (strcmp(modify->fix[j]->style,"kinetics/thermo") == 0) {
+      thermo = static_cast<FixKineticsThermo *>(lmp->modify->fix[j]);
+    }
+  }
+
   temp = input->variable->compute_equal(ivar[0]);
   rth = input->variable->compute_equal(ivar[1]);
   gVol = input->variable->compute_equal(ivar[2]);
   gasTrans = input->variable->compute_equal(ivar[3]);
-  ph = input->variable->compute_equal(ivar[4]);
+  iph = input->variable->compute_equal(ivar[4]);
+  diffT = input->variable->compute_equal(ivar[5]);
 
   ngrids = nx * ny * nz;
 
-  int nnus = bio->nnus;
+  nnus = bio->nnus;
   int ntypes = atom->ntypes;
 
   nuS = memory->create(nuS,nnus+1, ngrids, "kinetics:nuS");
@@ -134,6 +163,7 @@ void FixKinetics::init()
   DRGAn = memory->create(DRGAn,ntypes+1,ngrids,"kinetics:DRGAn");
   kEq = memory->create(kEq,nnus+1,4,"kinetics:kEq");
   Sh = memory->create(Sh,ngrids,"kinetics:Sh");
+  nuConv = memory->create(nuConv,nnus,"kinetics:nuConv");
 
   //initialize grid yield, inlet concentration, consumption
   for (int j = 0; j < ngrids; j++) {
@@ -179,7 +209,7 @@ void FixKinetics::init_keq()
 void FixKinetics::init_activity() {
   int nnus = bio->nnus;
   double *denm = memory->create(denm,nnus+1,"kinetics:denm");
-  double gSh = pow(10, -ph);
+  double gSh = pow(10, -iph);
 
   for (int k = 1; k < nnus+1; k++) {
     for (int j = 0; j < ngrids; j++) {
@@ -202,15 +232,49 @@ void FixKinetics::init_activity() {
     }
   }
 
-//  for (int k = 1; k < nnus+1; k++) {
-//    printf("%e ", activity[k][0][0]);
-//    printf("%e ", activity[k][1][0]);
-//    printf("%e ", activity[k][2][0]);
-//    printf("%e ", activity[k][3][0]);
-//    printf("%e ", activity[k][4][0]);
-//    printf("\n");
-//  }
-
   memory->destroy(denm);
+}
+
+void FixKinetics::pre_exchange()
+{
+  if (nevery == 0) return;
+  if (update->ntimestep % nevery) return;
+
+  integration();
+}
+
+void FixKinetics::integration() {
+
+  int iteration = 0;
+  bool isConv = false;
+
+  //initialization
+  for (int i = 1; i <= nnus; i++) {
+    nuConv[i] = false;
+  }
+
+  while (!isConv) {
+    iteration++;
+    isConv = true;
+
+    if (ph != NULL) ph->solve_ph();
+    if (thermo != NULL) thermo->thermo();
+    if (monod != NULL) monod->growth(diffT);
+    if (diffusion != NULL) nuConv = diffusion->diffusion(nuConv, iteration, diffT);
+
+    for (int i = 1; i <= nnus; i++){
+      if (!nuConv[i]) {
+        isConv = false;
+        break;
+      }
+    }
+
+    if (iteration > 10000) {
+      isConv = true;
+    }
+  }
+
+  cout << "number of iteration: " << iteration << endl;
+
 }
 

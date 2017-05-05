@@ -216,13 +216,15 @@ void FixKineticsMonod::pre_force(int vflag)
   if (nevery == 0) return;
   if (update->ntimestep % nevery) return;
 
-  monod();
+  growth(nevery * update->dt);
+
+  delete []nuConv;
 }
 
 /* ----------------------------------------------------------------------
   metabolism and atom update
 ------------------------------------------------------------------------- */
-void FixKineticsMonod::monod()
+void FixKineticsMonod::growth(double dt)
 {
   mask = atom->mask;
   nlocal = atom->nlocal;
@@ -235,7 +237,10 @@ void FixKineticsMonod::monod()
   outerRadius = avec->outerRadius;
 
   nuS = kinetics->nuS;
+  nuR = kinetics->nuR;
   DGRCat = kinetics->DRGCat;
+  nuConv = kinetics->nuConv;
+
 
   //initialization
   for (int i = 0; i <= ntypes; i++) {
@@ -245,35 +250,16 @@ void FixKineticsMonod::monod()
     }
   }
 
-  //solve diffusion
-  diffusion->diffusion();
-
   for (int i = 0; i < nall; i++) {
-    int pos = position(i);
     //get new growth rate based on new nutrients
-    double biomass = grow(i) * update->dt;
+    double biomass = consumption(nuConv) * dt;
     //update bacteria mass, radius etc
     bio_update(biomass, i);
   }
 
 }
 
-int FixKineticsMonod::position(int i) {
-
-  // get index of grid containing i
-  int xpos = (atom->x[i][0] - xlo) / stepx + 1;
-  int ypos = (atom->x[i][1] - ylo) / stepy + 1;
-  int zpos = (atom->x[i][2] - zlo) / stepz + 1;
-  int pos = (xpos - 1) + (ypos - 1) * ny + (zpos - 1) * (nx * ny);
-
-  if (pos >= ngrids) {
-     printf("Too big! pos=%d   size = %i\n", pos, ngrids);
-  }
-
-  return pos;
-}
-
-double FixKineticsMonod::grow(int i) {
+double FixKineticsMonod::consumption() {
 
   int t = type[i];
   int pos = position(i);
@@ -299,21 +285,41 @@ double FixKineticsMonod::grow(int i) {
   qCat = qMet;
   bacMaint = maintain[t] / -DGRCat[t][pos];
 
-  if (1.2 * bacMaint < qCat) {
-    double invYield;
+  for (int nu = 1; nu <= nnus; nu++) {
+    if (!nuConv[nu]) {
+      double consume;
 
-    if (gYield[t][pos] != 0) invYield = 1/gYield[t][pos];
-    else invYield = 0;
+      if (1.2 * bacMaint < qCat) {
+        double invYield;
+        if (gYield[t][pos] != 0)
+          invYield = 1/gYield[t][pos];
+        else
+          invYield = 0;
 
-    mu = gYield[t][pos] * (qMet - bacMaint);
-    biomass = mu * rmass[i];
-  } else if (qCat <= 1.2 * bacMaint && bacMaint <= qCat) {
-    biomass = 0;
-  } else {
-    double f = (bacMaint - qCat) / bacMaint;
-    biomass = -decay[t] * f * rmass[i];
+        double metCoeff = catCoeff[t][nu] * invYield + anabCoeff[t][nu];
+
+        mu = gYield[t][pos] * (qMet - bacMaint);
+        biomass = mu * rmass[i];
+        consume = biomass  * metCoeff;
+      } else if (qCat <= 1.2 * bacMaint && bacMaint <= qCat) {
+        consume = catCoeff[t][nu] * gYield[t][pos] * bacMaint * rmass[i];
+      } else {
+        double f;
+        if (bacMaint == 0) f = 0;
+        else f = (bacMaint - qCat) / bacMaint;
+
+        biomass = -decay[t] * f * rmass[i];
+        consume = -biomass * bio->decayCoeff[t][nu] + catCoeff[t][nu] * gYield[t][pos] * qCat * rmass[i];
+      }
+      // convert biomass unit from kg to mol
+      consume = consume * 1000 / 24.6;
+      //calculate liquid consumption, mol/m3
+      consume = consume / vol;
+
+      nuR[nu][pos] += consume;
+    }
   }
-  //printf ("rg = %e \n", rg*3600);
+
   return biomass;
 }
 
@@ -327,14 +333,15 @@ double FixKineticsMonod::grid_monod(int pos, int type, int ind)
 
   //printf ("invYield = %e \n", invYield );
   for (int i = 1; i <= nnus; i++ ) {
-    double ks = bio->ks[type][i];
     double s = nuS[i][pos];
+    double ks = bio->ks[type][i];
 
     if (ks != 0) {
       if (s <= 0) return 0;
       monod *= s/(ks + s);
     }
   }
+
   return monod;
 }
 
@@ -346,7 +353,7 @@ void FixKineticsMonod::bio_update(double biomass, int i)
   const double third = 1.0/3.0;
 
   density = rmass[i] / (fourThirdsPI * radius[i] * radius[i] * radius[i]);
-  rmass[i] = rmass[i] + biomass * nevery;
+  rmass[i] = rmass[i] + biomass;
 
   //update mass and radius
   if (mask[i] == avec->maskHET) {
@@ -355,7 +362,7 @@ void FixKineticsMonod::bio_update(double biomass, int i)
     //update mass and radius for EPS shell if PES production is on
     if (epsflag == 1) {
       outerMass[i] = fourThirdsPI * (outerRadius[i] * outerRadius[i] * outerRadius[i] - radius[i] * radius[i] * radius[i]) * EPSdens
-      + biomass * nevery;
+      + biomass;
       outerRadius[i] = pow(threeQuartersPI * (rmass[i] / density + outerMass[i] / EPSdens), third);
     }
   } else if (mask[i] != avec->maskEPS && mask[i] != avec->maskDEAD){
@@ -363,4 +370,20 @@ void FixKineticsMonod::bio_update(double biomass, int i)
     outerMass[i] = 0.0;
     outerRadius[i] = radius[i];
   }
+}
+
+
+int FixKineticsMonod::position(int i) {
+
+  // get index of grid containing i
+  int xpos = (atom->x[i][0] - xlo) / stepx + 1;
+  int ypos = (atom->x[i][1] - ylo) / stepy + 1;
+  int zpos = (atom->x[i][2] - zlo) / stepz + 1;
+  int pos = (xpos - 1) + (ypos - 1) * ny + (zpos - 1) * (nx * ny);
+
+  if (pos >= ngrids) {
+     printf("Too big! pos=%d   size = %i\n", pos, ngrids);
+  }
+
+  return pos;
 }

@@ -118,7 +118,7 @@ void FixKinetics::init()
   rth = input->variable->compute_equal(ivar[1]);
   gVol = input->variable->compute_equal(ivar[2]);
   gasTrans = input->variable->compute_equal(ivar[3]);
-  ph = input->variable->compute_equal(ivar[4]);
+  iph = input->variable->compute_equal(ivar[4]);
 
   ngrids = nx * ny * nz;
 
@@ -179,7 +179,7 @@ void FixKinetics::init_keq()
 void FixKinetics::init_activity() {
   int nnus = bio->nnus;
   double *denm = memory->create(denm,nnus+1,"kinetics:denm");
-  double gSh = pow(10, -ph);
+  double gSh = pow(10, -iph);
 
   for (int k = 1; k < nnus+1; k++) {
     for (int j = 0; j < ngrids; j++) {

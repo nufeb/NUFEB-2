@@ -22,9 +22,7 @@ class FixKineticsPH : public Fix {
  public:
   FixKineticsPH(class LAMMPS *, int, char **);
   ~FixKineticsPH();
-  int setmask();
   void init();
-  void pre_force(int);
 
  private:
   int nnus;                     // # of nutrients

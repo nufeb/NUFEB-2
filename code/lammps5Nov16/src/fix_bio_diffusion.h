@@ -28,7 +28,7 @@ class FixDiffusion : public Fix {
   ~FixDiffusion();
   int setmask();
   void init();
-  void diffusion();
+  bool* diffusion(bool*, int, double);
 
  private:
   char **var;
@@ -47,7 +47,6 @@ class FixDiffusion : public Fix {
   double **iniS;                // inlet concentrations of nutrients
   double *diffCoeff;            // diffusion coefficients of nutrients
   double *mw;                   // molecular weights of nutrients
-  double diffT;                 // diffusion timestamp
   double tol;                   // tolerance for convergence criteria for nutrient balance equation
   int rstep;                    // steps leave between Si+n-Si
   int rflag;
@@ -83,10 +82,6 @@ class FixDiffusion : public Fix {
   SparseMatrix<double> spdiags(MatrixXi&, VectorXi&, int, int, int);
   VectorXd bc_vec(VectorXd&, double);
   bool isEuqal(double, double, double);
-
-  void consumption(VectorXd*&, VectorXd*&, bool*);
-  int position(int);
-  double grid_monod(int, int, VectorXd*&);
 
   void test();
 };
