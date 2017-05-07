@@ -395,10 +395,6 @@ bool* FixDiffusion::diffusion(bool *nuConv, int iter, double diffT)
         max = vecDiffS.array().abs().maxCoeff();
       }
 
-      for (int j = 0; j < ngrids; j++) {
-        if (vecS[i][j] < 0) vecS[i][j] = 0;
-      }
-
       if (iter % rstep == 0) {
 
         double maxS = vecS[i].array().abs().maxCoeff();
@@ -409,6 +405,10 @@ bool* FixDiffusion::diffusion(bool *nuConv, int iter, double diffT)
         if (ratio < tol)  {
           nuConv[i] = true;
         }
+      }
+
+      for (int j = 0; j < ngrids; j++) {
+        if (vecS[i][j] < 0) vecS[i][j] = 0;
       }
 
       //convert from kg/m3 to mol/l
