@@ -23,6 +23,8 @@ class FixKineticsThermo : public Fix {
   FixKineticsThermo(class LAMMPS *, int, char **);
   ~FixKineticsThermo();
   void init();
+  int setmask();
+  void thermo();
 
  private:
   char **var;
@@ -65,7 +67,6 @@ class FixKineticsThermo : public Fix {
   class FixKinetics *kinetics;
   class BIO *bio;
 
-  void thermo();
   void init_dG0();
   void init_KhV();
   //void output_data();

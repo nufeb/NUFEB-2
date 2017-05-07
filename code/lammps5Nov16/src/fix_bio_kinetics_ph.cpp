@@ -104,6 +104,16 @@ void FixKineticsPH::init()
   nuS = kinetics->nuS;
 }
 
+
+/* ---------------------------------------------------------------------- */
+
+int FixKineticsPH::setmask()
+{
+  int mask = 0;
+  mask |= PRE_FORCE;
+  return mask;
+}
+
 /* ----------------------------------------------------------------------
   ph calculation
 ------------------------------------------------------------------------- */
@@ -162,6 +172,7 @@ void FixKineticsPH::solve_ph()
     }
 
     double ff = fa * fb;
+
     if (ff > 0) {
       lmp->error->all(FLERR,"The sum of charges returns a wrong value");
     }

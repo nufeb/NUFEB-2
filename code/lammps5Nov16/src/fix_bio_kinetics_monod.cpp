@@ -39,7 +39,6 @@
 #include "memory.h"
 
 #include "bio.h"
-#include "fix_bio_diffusion.h"
 #include "fix_bio_kinetics.h"
 #include "modify.h"
 #include "pointers.h"
@@ -61,22 +60,18 @@ FixKineticsMonod::FixKineticsMonod(LAMMPS *lmp, int narg, char **arg) : Fix(lmp,
   avec = (AtomVecBio *) atom->style_match("bio");
   if (!avec) error->all(FLERR,"Fix kinetics requires atom style bio");
 
-  if (narg != 5) error->all(FLERR,"Not enough arguments in fix kinetics/monod command");
-
-  nevery = force->inumeric(FLERR,arg[3]);
-  if (nevery < 0) error->all(FLERR,"Illegal fix kinetics/monod command");
+  if (narg != 4) error->all(FLERR,"Not enough arguments in fix kinetics/monod command");
 
   var = new char*[1];
   ivar = new int[1];
 
   for (int i = 0; i < 1; i++) {
-    int n = strlen(&arg[4+i][2]) + 1;
+    int n = strlen(&arg[3+i][2]) + 1;
     var[i] = new char[n];
-    strcpy(var[i],&arg[4+i][2]);
+    strcpy(var[i],&arg[3+i][2]);
   }
 
   kinetics = NULL;
-  diffusion = NULL;
   epsflag = 0;
 
 }
@@ -127,13 +122,11 @@ void FixKineticsMonod::init()
 
   // register fix kinetics with this class
   kinetics = NULL;
-  diffusion = NULL;
+
   int nfix = modify->nfix;
   for (int j = 0; j < nfix; j++) {
     if (strcmp(modify->fix[j]->style,"kinetics") == 0) {
       kinetics = static_cast<FixKinetics *>(lmp->modify->fix[j]);
-    } else if (strcmp(modify->fix[j]->style,"diffusion") == 0) {
-      diffusion = static_cast<FixDiffusion *>(lmp->modify->fix[j]);
     } else if (strcmp(modify->fix[j]->style,"eps_extract") == 0) {
       epsflag = 1;
     }
@@ -141,9 +134,6 @@ void FixKineticsMonod::init()
 
   if (kinetics == NULL)
     lmp->error->all(FLERR,"The fix kinetics command is required for running iBM simulation");
-
-  if (nevery > 0 && diffusion == NULL)
-    lmp->error->all(FLERR,"The fix diffusion command is required");
 
   EPSdens = input->variable->compute_equal(ivar[0]);
 
@@ -172,6 +162,8 @@ void FixKineticsMonod::init()
 
   ngrids = nx * ny * nz;
   nnus = bio->nnus;
+  catCoeff = bio->catCoeff;
+  anabCoeff = bio->anabCoeff;
   maintain = bio->maintain;
   decay = bio->decay;
 
@@ -209,18 +201,6 @@ void FixKineticsMonod::init()
   vol = stepx * stepy * stepz;
 }
 
-/* ---------------------------------------------------------------------- */
-
-void FixKineticsMonod::pre_force(int vflag)
-{
-  if (nevery == 0) return;
-  if (update->ntimestep % nevery) return;
-
-  growth(nevery * update->dt);
-
-  delete []nuConv;
-}
-
 /* ----------------------------------------------------------------------
   metabolism and atom update
 ------------------------------------------------------------------------- */
@@ -241,7 +221,6 @@ void FixKineticsMonod::growth(double dt)
   DGRCat = kinetics->DRGCat;
   nuConv = kinetics->nuConv;
 
-
   //initialization
   for (int i = 0; i <= ntypes; i++) {
     for (int j = 0; j < ngrids; j++) {
@@ -252,27 +231,27 @@ void FixKineticsMonod::growth(double dt)
 
   for (int i = 0; i < nall; i++) {
     //get new growth rate based on new nutrients
-    double biomass = consumption(nuConv) * dt;
+    double mass = biomass(i) * dt;
     //update bacteria mass, radius etc
-    bio_update(biomass, i);
+    bio_update(mass, i);
   }
 
 }
 
-double FixKineticsMonod::consumption() {
+double FixKineticsMonod::biomass(int i) {
 
   int t = type[i];
   int pos = position(i);
 
-  if (avec->atom_mu[i] == 0 || DGRCat[t][pos] == 0)
-    return 0;
+  if (avec->atom_mu[i] == 0 || DGRCat[t][pos] == 0) return 0;
 
   double qMet;       // specific substrate uptake rate for growth metabolism
   double qCat;       // specific substrate uptake rate for catabolism
 
   double bacMaint;    // specific substrate consumption required for maintenance
   double mu;          // specific biomass growth
-  double biomass;
+  double mass;
+  double invYield;
 
   double m = gMonod[t][pos];
   if (m < 0) {
@@ -285,42 +264,54 @@ double FixKineticsMonod::consumption() {
   qCat = qMet;
   bacMaint = maintain[t] / -DGRCat[t][pos];
 
+  if (gYield[t][pos] != 0) invYield = 1/gYield[t][pos];
+  else invYield = 0;
+
   for (int nu = 1; nu <= nnus; nu++) {
-    if (!nuConv[nu]) {
-      double consume;
+    if ((bio->nuType[nu] == 0 && bio->diffCoeff[nu] != 0)) {
+      if (!nuConv[nu]) {
+        double consume;
 
-      if (1.2 * bacMaint < qCat) {
-        double invYield;
-        if (gYield[t][pos] != 0)
-          invYield = 1/gYield[t][pos];
-        else
-          invYield = 0;
+        if (1.2 * bacMaint < qCat) {
+          double metCoeff = catCoeff[t][nu] * invYield + anabCoeff[t][nu];
 
-        double metCoeff = catCoeff[t][nu] * invYield + anabCoeff[t][nu];
+          mu = gYield[t][pos] * (qMet - bacMaint);
+          mass = mu * rmass[i];
+          consume = mass  * metCoeff;
+        } else if (qCat <= 1.2 * bacMaint && bacMaint <= qCat) {
+          consume = catCoeff[t][nu] * gYield[t][pos] * bacMaint * rmass[i];
+        } else {
+          double f;
+          if (bacMaint == 0) f = 0;
+          else f = (bacMaint - qCat) / bacMaint;
 
-        mu = gYield[t][pos] * (qMet - bacMaint);
-        biomass = mu * rmass[i];
-        consume = biomass  * metCoeff;
-      } else if (qCat <= 1.2 * bacMaint && bacMaint <= qCat) {
-        consume = catCoeff[t][nu] * gYield[t][pos] * bacMaint * rmass[i];
-      } else {
-        double f;
-        if (bacMaint == 0) f = 0;
-        else f = (bacMaint - qCat) / bacMaint;
+          mass = -decay[t] * f * rmass[i];
+          consume = -mass * bio->decayCoeff[t][nu] + catCoeff[t][nu] * gYield[t][pos] * qCat * rmass[i];
+        }
+        // convert biomass unit from kg to mol
+        consume = consume * 1000 / 24.6;
+        //calculate liquid consumption, mol/m3
+        consume = consume / vol;
 
-        biomass = -decay[t] * f * rmass[i];
-        consume = -biomass * bio->decayCoeff[t][nu] + catCoeff[t][nu] * gYield[t][pos] * qCat * rmass[i];
+        nuR[nu][pos] += consume;
       }
-      // convert biomass unit from kg to mol
-      consume = consume * 1000 / 24.6;
-      //calculate liquid consumption, mol/m3
-      consume = consume / vol;
-
-      nuR[nu][pos] += consume;
     }
   }
 
-  return biomass;
+  if (1.2 * bacMaint < qCat) {
+    mu = gYield[t][pos] * (qMet - bacMaint);
+    mass = mu * rmass[i];
+  } else if (qCat <= 1.2 * bacMaint && bacMaint <= qCat) {
+    mass = 0;
+  } else {
+    double f;
+    if (bacMaint == 0) f = 0;
+    else f = (bacMaint - qCat) / bacMaint;
+
+    mass = -decay[t] * f * rmass[i];
+  }
+
+  return mass;
 }
 
 /* ----------------------------------------------------------------------

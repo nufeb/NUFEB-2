@@ -57,7 +57,8 @@ using namespace Eigen;
 FixDiffusion::FixDiffusion(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
 
-  if (narg != 10) error->all(FLERR,"Not enough arguments in fix diffusion command");
+  if (narg != 9) error->all(FLERR,"Not enough arguments in fix diffusion command");
+
   var = new char*[1];
   ivar = new int[1];
 
@@ -95,7 +96,7 @@ FixDiffusion::FixDiffusion(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, a
   else error->all(FLERR,"Illegal z-axis boundary condition command");
 
   rflag = 0;
-  rstep = atoi(arg[9]);
+  rstep = atoi(arg[8]);
   if (rstep > 1) rflag = 1;
 
 }
@@ -109,16 +110,20 @@ FixDiffusion::~FixDiffusion()
     delete [] var[i];
   }
 
-  for (int i = 0; i < ntypes + 1; i++) {
-    delete [] gMonod[i];
-  }
-
-  delete [] gMonod;
   delete [] var;
   delete [] ivar;
   delete [] r;
   delete [] maxBC;
-  delete [] prevS;
+  delete [] nRES;
+}
+
+/* ---------------------------------------------------------------------- */
+
+int FixDiffusion::setmask()
+{
+  int mask = 0;
+  mask |= PRE_FORCE;
+  return mask;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -169,7 +174,7 @@ void FixDiffusion::init()
 
   r = new double[nnus+1]();
   maxBC = new double[nnus+1]();
-  prevS = new double[nnus+1]();
+  nRES = new VectorXd[nnus+1];
 
   //Get computational domain size
   if (domain->triclinic == 0) {
@@ -193,7 +198,7 @@ void FixDiffusion::init()
   stepy = (yhi-ylo)/ny;
   stepz = (zhi-zlo)/nz;
 
- // if (!isEuqal(gridx, gridy, gridz)) error->all(FLERR,"Grid is not cubic");
+  if (!isEuqal(stepx, stepy, stepz)) error->all(FLERR,"Grid is not cubic");
   grid = stepx;
 
   //inlet concentration, diffusion constant
@@ -206,10 +211,12 @@ void FixDiffusion::init()
       bc[j] = iniS[i][j+1];
     }
     maxBC[i] = *max_element(bc, bc+6);
-    prevS[i] = -1;
+    nRES[i] = VectorXd(ngrids);
+    nRES[i].setZero();
   }
 
   LAP = laplacian_matrix_3d();
+
   //create identity matrix
   SparseMatrix<double> In(ngrids, ngrids);
   In.setIdentity();
@@ -229,14 +236,16 @@ SparseMatrix<double> FixDiffusion::laplacian_matrix_3d()
   ex << ex1, -3*ex1, ex1;
   VectorXi dx(3);
   dx << -1, 0, 1;
-  SparseMatrix<double> Lx = spdiags(ex, dx, nx, ny, 3);
-  VectorXi ey1(nx);
+  SparseMatrix<double> Lx = spdiags(ex, dx, nx, nx, 3);
+
+  VectorXi ey1(ny);
   ey1.setOnes();
-  MatrixXi  ey (nx, 3);
+  MatrixXi ey(ny, 3);
   ey << ey1, -3*ey1, ey1;
   VectorXi dy(3);
   dy << -1, 0, 1;
-  SparseMatrix<double> Ly = spdiags(ex, dy, nx, ny, 3);
+  SparseMatrix<double> Ly = spdiags(ey, dy, ny, ny, 3);
+
   SparseMatrix<double> Ix(nx, nx);
   Ix.setIdentity();
   SparseMatrix<double> Iy(ny, ny);
@@ -244,6 +253,7 @@ SparseMatrix<double> FixDiffusion::laplacian_matrix_3d()
 
   SparseMatrix<double> L2a = kroneckerProduct(Iy, Lx);
   SparseMatrix<double> L2b = kroneckerProduct(Ly, Ix);
+
   SparseMatrix<double> L2 = L2a + L2b;
 
   VectorXi ez1(ngrids);
@@ -259,31 +269,6 @@ SparseMatrix<double> FixDiffusion::laplacian_matrix_3d()
   SparseMatrix<double> Aa = kroneckerProduct(Iz, L2);
 
   SparseMatrix<double> A = Aa + L;
-
-  return A;
-}
-
-/* ----------------------------------------------------------------------
-  build 2d laplacian matrix
-------------------------------------------------------------------------- */
-
-SparseMatrix<double> FixDiffusion::laplacian_matrix_2d()
-{
-  VectorXi e(nx);
-  e.setOnes();
-
-  MatrixXi  ex (nx, 3);
-  ex << e, -2*e, e;
-  VectorXi dx(3);
-  dx << -1, 0, 1;
-  SparseMatrix<double> spe = spdiags(ex, dx, nx, nx, 3);
-
-  SparseMatrix<double> Iz(nz, nz);
-  Iz.setIdentity();
-
-  SparseMatrix<double> sp1 = kroneckerProduct(Iz, spe);
-  SparseMatrix<double> sp2 = kroneckerProduct(spe, Iz);
-  SparseMatrix<double> A = sp1 + sp2;
 
   return A;
 }
@@ -308,6 +293,33 @@ SparseMatrix<double> FixDiffusion::spdiags(MatrixXi& B, VectorXi& d, int m, int 
   return A;
 }
 
+//template <class numeric_t>
+//SparseMatrix<numeric_t> FixDiffusion::spdiags2(const Matrix<numeric_t,-1,-1> &B,
+//          const VectorXi &d, const int m, const int n) {
+//  typedef Triplet<numeric_t> triplet_t;
+//  std::vector<triplet_t> triplets;
+//  triplets.reserve(std::min(m,n)*d.size());
+//  for (int k = 0; k < d.size(); ++k) {
+//    int diag = d(k);  // get diagonal
+//    int i_start = std::max(-diag, 0); // get row of 1st element
+//    int i_end = std::min(m, m-diag-(m-n)); // get row of last element
+//    int j = -std::min(0, -diag); // get col of 1st element
+//    int B_i; // start index i in matrix B
+//    if(m < n)
+//      B_i = std::max(-diag,0); // m < n
+//    else
+//      B_i = std::max(0,diag); // m >= n
+//    for(int i = i_start; i < i_end; ++i, ++j, ++B_i){
+//      triplets.push_back( {i, j,  B(B_i,k)} );
+//    }
+//  }
+//  SparseMatrix<numeric_t> A(m,n);
+//  A.setFromTriplets(triplets.begin(), triplets.end());
+//  return A;
+//}
+//
+//
+
 /* ----------------------------------------------------------------------
   solve diffusion equations and metabolism
 ------------------------------------------------------------------------- */
@@ -317,15 +329,10 @@ bool* FixDiffusion::diffusion(bool *nuConv, int iter, double diffT)
 
   VectorXd *vecS = new VectorXd[nnus+1];
   VectorXd *vecR = new VectorXd[nnus+1];
-  VectorXd *nRES = new VectorXd[nnus+1];
   //double testMax = 0;
 
   nuS = kinetics->nuS;
   nuR = kinetics->nuR;
-
-  DGRCat = kinetics->DRGCat;
-  gYield = kinetics->gYield;
-
 
   VectorXd BC(ngrids);
   VectorXd RES(ngrids);
@@ -336,7 +343,6 @@ bool* FixDiffusion::diffusion(bool *nuConv, int iter, double diffT)
   MatrixXd diagBC;
   VectorXd vecPrvS;
 
-
   for (int i = 1; i <= nnus; i++) {
     if (bio->nuType[i] == 0 && diffCoeff[i] != 0 && !nuConv[i]) {
       //initialization
@@ -345,9 +351,6 @@ bool* FixDiffusion::diffusion(bool *nuConv, int iter, double diffT)
       vecR[i] = Map<VectorXd> (nuR[i], ngrids, 1);
       // convert from mol/l to mol/m3
       vecS[i] = vecS[i] * 1000;
-
-      nRES[i] = VectorXd(ngrids);
-      nRES[i].setZero();
 
       xbcm = iniS[i][1] * 1000;
       xbcp = iniS[i][2] * 1000;
@@ -407,17 +410,19 @@ bool* FixDiffusion::diffusion(bool *nuConv, int iter, double diffT)
           nuConv[i] = true;
         }
       }
+
       //convert from kg/m3 to mol/l
       vecS[i] = vecS[i] / 1000;
+      vecR[i].setZero();
       //convert concentration vector into normal data type
       Map<MatrixXd>(nuS[i], vecS[i].rows(), vecS[i].cols()) =  vecS[i];
+      Map<MatrixXd>(nuR[i], vecR[i].rows(), vecR[i].cols()) =  vecR[i];
     }
   }
 
   //test();
   delete [] vecS;
   delete [] vecR;
-  delete [] nRES;
 
   return nuConv;
 }

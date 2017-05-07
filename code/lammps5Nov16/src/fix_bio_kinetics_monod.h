@@ -23,6 +23,8 @@ class FixKineticsMonod : public Fix {
   FixKineticsMonod(class LAMMPS *, int, char **);
   ~FixKineticsMonod();
   void init();
+  int setmask();
+  void growth(double);
 
  private:
   char **var;
@@ -53,23 +55,24 @@ class FixKineticsMonod : public Fix {
   double *decay;
   double **DGRCat;
 
+  double **catCoeff;                 // catabolism coefficients of species
+  double **anabCoeff;                // anabolism  coefficients of species
   double **gYield;                   // yield coefficients
   double **gMonod;
   bool *nuConv;
   //double **minCatMonod;
 
   double **nuS;                    // nutrient concentration for all grids
+  double **nuR;                    // nutrient consumption for all grids
 
   class AtomVecBio *avec;
   class FixKinetics *kinetics;
-  class FixDiffusion *diffusion;
   class BIO *bio;
 
-  void growth(double);
  // double minimal_monod(int, int, int);
   double grid_monod(int, int, int);
   void bio_update(double, int);
-  double consumption();
+  double  biomass(int);
   int position(int);
 
 };

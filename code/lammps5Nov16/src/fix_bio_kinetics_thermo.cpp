@@ -242,6 +242,15 @@ void FixKineticsThermo::init_KhV()
   }
 }
 
+/* ---------------------------------------------------------------------- */
+
+int FixKineticsThermo::setmask()
+{
+  int mask = 0;
+  mask |= PRE_FORCE;
+  return mask;
+}
+
 /* ----------------------------------------------------------------------
   thermodynamics
 ------------------------------------------------------------------------- */
@@ -255,6 +264,14 @@ void FixKineticsThermo::thermo()
   double vRgT = kinetics->gVol * 1000 / (kinetics->gasTrans * kinetics->temp);
   double vg = vol * 1000;
   double rGas, rLiq;
+
+  if (closeR == 0) {
+    for (int j = 1; j <= nnus; j++) {
+      if (bio->nuType[j] == 1) {
+        kinetics->nuConv[j] = true;
+      }
+    }
+  }
 
   for (int i = 0; i < ngrids; i++) {
     // gas transfer
