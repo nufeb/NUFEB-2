@@ -54,15 +54,6 @@ class FixDiffusion : public Fix {
   double **nuS;
   double *r;
   double* maxBC;
-  double **gMonod;
-  double **DGRCat;
-  double *prevS;
-
-  double *maintain;
-  double *decay;
-  double **catCoeff;               // catabolism coefficients of species
-  double **anabCoeff;              // anabolism  coefficients of species
-  double **gYield;                   // yield coefficients
 
   int nx, ny, nz;               // # of grids in x, y and z
   int ngrids;                   // total # of grids
@@ -72,14 +63,17 @@ class FixDiffusion : public Fix {
   double xbcm, xbcp, ybcm, ybcp, zbcm, zbcp; //inlet BC concentrations for each surface
   SparseMatrix<double> LAP;       //laplacian matrix
   SparseMatrix<double> I;       //sparse identity matrix
+  VectorXd *nRES;
 
   class FixKinetics *kinetics;
   class BIO *bio;
   class AtomVecBio *avec;
 
   SparseMatrix<double> laplacian_matrix_3d();
-  SparseMatrix<double> laplacian_matrix_2d();
   SparseMatrix<double> spdiags(MatrixXi&, VectorXi&, int, int, int);
+//  template <class numeric_t>
+//  SparseMatrix<numeric_t> spdiags2(const Matrix<numeric_t,-1,-1> &,
+//            const VectorXi &, const int, const int);
   VectorXd bc_vec(VectorXd&, double);
   bool isEuqal(double, double, double);
 

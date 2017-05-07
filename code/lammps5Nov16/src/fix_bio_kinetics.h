@@ -29,7 +29,7 @@ class FixKinetics : public Fix {
   FixKinetics(class LAMMPS *, int, char **);
   ~FixKinetics();
   int setmask();
-  void pre_exchange();
+  virtual void pre_force(int);
   void init();
 
  private:

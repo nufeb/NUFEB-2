@@ -57,15 +57,15 @@ variable ph equal 7.0
 
 #Defining diffusion variables
 variable diffT equal 1e-3
-variable tol equal 1e-3
+variable tol equal 1e-5
 
 ##############Ibm functions##############
 
 fix k1 all kinetics 100 25 25 25 v_temp v_rth v_gvol v_gasTran v_ph v_diffT
-fix g1 all diffusion exp v_tol pp pp nd 50
 #fix ki3 all kinetics/ph
 fix ki2 all kinetics/thermo fix open v_pressure
 fix ki1 all kinetics/monod v_EPSdens	
+fix g1 all diffusion exp v_tol pp pp nd 1
 fix d1 all divide 100 v_EPSdens v_divMass 31231
 
 ##############Ibm compute##############
@@ -80,7 +80,7 @@ thermo_style    custom step cpu atoms biomass c_myNtypes[*]
 thermo		100
 thermo_modify	lost ignore
 
-run 100
+run 144000
 
 
 

@@ -23,6 +23,8 @@ class FixKineticsPH : public Fix {
   FixKineticsPH(class LAMMPS *, int, char **);
   ~FixKineticsPH();
   void init();
+  int setmask();
+  void solve_ph();
 
  private:
   int nnus;                     // # of nutrients
@@ -39,7 +41,6 @@ class FixKineticsPH : public Fix {
   class FixKinetics *kinetics;
   class BIO *bio;
 
-  void solve_ph();
   void init_keq();
   void output_data();
 };

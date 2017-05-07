@@ -38,6 +38,9 @@
 
 #include "pointers.h"
 #include "variable.h"
+#include "modify.h"
+#include "update.h"
+#include "force.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -52,7 +55,9 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg
   avec = (AtomVecBio *) atom->style_match("bio");
   if (!avec) error->all(FLERR,"Fix kinetics requires atom style bio");
 
-  if (narg != 11) error->all(FLERR,"Not enough arguments in fix kinetics command");
+  bio = avec->bio;
+
+  if (narg != 13) error->all(FLERR,"Not enough arguments in fix kinetics command");
 
   nevery = force->inumeric(FLERR,arg[3]);
   if (nevery < 0) error->all(FLERR,"Illegal fix kinetics command: calling steps should be positive integer");
@@ -91,7 +96,7 @@ FixKinetics::~FixKinetics()
   memory->destroy(DRGAn);
   memory->destroy(kEq);
   memory->destroy(Sh);
-  memory->destroy(nuConv);
+  delete[] nuConv;;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -114,7 +119,6 @@ void FixKinetics::init()
     if (!input->variable->equalstyle(ivar[n]))
       error->all(FLERR,"Variable for fix kinetics is invalid style");
   }
-  bio = avec->bio;
 
   if (bio->nnus == 0)
     error->all(FLERR,"fix_kinetics requires # of Nutrients inputs");
@@ -163,7 +167,7 @@ void FixKinetics::init()
   DRGAn = memory->create(DRGAn,ntypes+1,ngrids,"kinetics:DRGAn");
   kEq = memory->create(kEq,nnus+1,4,"kinetics:kEq");
   Sh = memory->create(Sh,ngrids,"kinetics:Sh");
-  nuConv = memory->create(nuConv,nnus,"kinetics:nuConv");
+  nuConv = new bool[nnus+1]();
 
   //initialize grid yield, inlet concentration, consumption
   for (int j = 0; j < ngrids; j++) {
@@ -235,7 +239,9 @@ void FixKinetics::init_activity() {
   memory->destroy(denm);
 }
 
-void FixKinetics::pre_exchange()
+/* ---------------------------------------------------------------------- */
+
+void FixKinetics::pre_force(int vflag)
 {
   if (nevery == 0) return;
   if (update->ntimestep % nevery) return;
@@ -250,7 +256,9 @@ void FixKinetics::integration() {
 
   //initialization
   for (int i = 1; i <= nnus; i++) {
-    nuConv[i] = false;
+    if (strcmp(bio->nuName[i],"h2o")==0) nuConv[i] = true;
+    else if (strcmp(bio->nuName[i],"h")==0) nuConv[i] = true;
+    else nuConv[i] = false;
   }
 
   while (!isConv) {
@@ -261,6 +269,7 @@ void FixKinetics::integration() {
     if (thermo != NULL) thermo->thermo();
     if (monod != NULL) monod->growth(diffT);
     if (diffusion != NULL) nuConv = diffusion->diffusion(nuConv, iteration, diffT);
+    else break;
 
     for (int i = 1; i <= nnus; i++){
       if (!nuConv[i]) {
@@ -269,12 +278,16 @@ void FixKinetics::integration() {
       }
     }
 
-    if (iteration > 10000) {
+    if (iteration > 1000) {
       isConv = true;
+      for (int i = 1; i <= nnus; i++) {
+        nuConv[i] = true;
+      }
     }
   }
 
-  cout << "number of iteration: " << iteration << endl;
+ printf( "number of iteration: %i \n", iteration);
 
+ if (monod != NULL) monod->growth(update->dt * nevery);
 }
 
