@@ -278,10 +278,13 @@ void FixKinetics::integration() {
       }
     }
 
-    if (iteration > 1000) {
+    if (iteration > 5000) {
       isConv = true;
       for (int i = 1; i <= nnus; i++) {
-        nuConv[i] = true;
+        if (!nuConv[i]){
+          nuConv[i] = true;
+          printf( "%s  ", bio->nuName[i]);
+        }
       }
     }
   }
