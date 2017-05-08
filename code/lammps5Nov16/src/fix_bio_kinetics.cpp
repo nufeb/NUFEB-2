@@ -224,15 +224,15 @@ void FixKinetics::init_activity() {
         lmp->error->all(FLERR,"denm returns a zero value");
       }
       // not hydrated form acitivity
-      activity[k][0][j] = kEq[k][0] * iniNuS * gSh * gSh * gSh / denm[k];
+      activity[k][0][j] = kEq[k][0] * nuS[k][j] * gSh * gSh * gSh / denm[k];
       // fully protonated form activity
-      activity[k][1][j] = iniNuS * gSh * gSh * gSh / denm[k];
+      activity[k][1][j] = nuS[k][j] * gSh * gSh * gSh / denm[k];
       // 1st deprotonated form activity
-      activity[k][2][j] = iniNuS * gSh * gSh * kEq[k][1] / denm[k];
+      activity[k][2][j] = nuS[k][j] * gSh * gSh * kEq[k][1] / denm[k];
       // 2nd deprotonated form activity
-      activity[k][3][j] = iniNuS * gSh * kEq[k][1] * kEq[k][2] / denm[k];
+      activity[k][3][j] = nuS[k][j] * gSh * kEq[k][1] * kEq[k][2] / denm[k];
       // 3rd deprotonated form activity
-      activity[k][4][j] = iniNuS * kEq[k][1] * kEq[k][2] * kEq[k][3] / denm[k];
+      activity[k][4][j] = nuS[k][j] * kEq[k][1] * kEq[k][2] * kEq[k][3] / denm[k];
     }
   }
 
@@ -266,6 +266,7 @@ void FixKinetics::integration() {
     isConv = true;
 
     if (ph != NULL) ph->solve_ph();
+    else init_activity();
     if (thermo != NULL) thermo->thermo();
     if (monod != NULL) monod->growth(diffT);
     if (diffusion != NULL) nuConv = diffusion->diffusion(nuConv, iteration, diffT);

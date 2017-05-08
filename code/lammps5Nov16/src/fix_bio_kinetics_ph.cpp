@@ -96,12 +96,6 @@ void FixKineticsPH::init()
   nuGCoeff = bio->nuGCoeff;
   typeGCoeff = bio->typeGCoeff;
   nuChr = bio->nuChr;
-
-  temp = kinetics->temp;
-  rth = kinetics->rth;
-  activity = kinetics->activity;
-  kEq = kinetics->kEq;
-  nuS = kinetics->nuS;
 }
 
 
@@ -127,6 +121,12 @@ void FixKineticsPH::solve_ph()
   double *denm = memory->create(denm,nnus+1,"kinetics/ph:denm");
   double *dDenm = memory->create(dDenm,nnus+1,"kinetics/ph:denm");
   double *aux = memory->create(aux,nnus+1,"kinetics/ph:aux");
+
+  nuS = kinetics->nuS;
+  temp = kinetics->temp;
+  rth = kinetics->rth;
+  activity = kinetics->activity;
+  kEq = kinetics->kEq;
 
   for (int i = 0; i < kinetics->ngrids; i++) {
     double a = 1e-14;

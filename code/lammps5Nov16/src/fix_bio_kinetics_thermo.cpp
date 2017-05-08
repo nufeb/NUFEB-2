@@ -56,7 +56,7 @@ FixKineticsThermo::FixKineticsThermo(LAMMPS *lmp, int narg, char **arg) : Fix(lm
   fixY = 0;
   closeR = 0;
 
-  if (strcmp(arg[3], "unfixY") == 0) fixY = 1;
+  if (strcmp(arg[3], "unfix") == 0) fixY = 1;
   if (strcmp(arg[4], "close") == 0) closeR = 1;
 
   var = new char*[1];
@@ -135,13 +135,6 @@ void FixKineticsThermo::init()
   ngrids = nx * ny * nz;
   temp = kinetics->temp;
   rth = kinetics->rth;
-  DRGCat = kinetics->DRGCat;
-  DRGAn = kinetics->DRGAn;
-  nuR = kinetics->nuR;
-  nuS = kinetics->nuS;
-  qGas = kinetics->qGas;
-  gYield = kinetics->gYield;
-  activity = kinetics->activity;
 
   nnus = bio->nnus;
   catCoeff = bio->catCoeff;
@@ -261,6 +254,14 @@ void FixKineticsThermo::thermo()
   int nall = nlocal + atom->nghost;
   int *type = atom->type;
 
+  DRGCat = kinetics->DRGCat;
+  DRGAn = kinetics->DRGAn;
+  nuR = kinetics->nuR;
+  nuS = kinetics->nuS;
+  gYield = kinetics->gYield;
+  activity = kinetics->activity;
+  qGas = kinetics->qGas;
+
   double vRgT = kinetics->gVol * 1000 / (kinetics->gasTrans * kinetics->temp);
   double vg = vol * 1000;
   double rGas, rLiq;
@@ -341,7 +342,6 @@ void FixKineticsThermo::thermo()
           gYield[j][i] = 0;
         }
       }
-     // printf("gYield = %e \n", gYield[j][i]);
     }
   }
 }
