@@ -59,9 +59,6 @@ variable ph equal 7.0
 variable diffT equal 1e-3
 variable tol equal 1e-4
 
-#Defining diffusion variables
-variable diffT equal 1e-3
-variable tol equal 1e-4
 
 ##############Ibm functions##############
 

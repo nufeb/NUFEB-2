@@ -165,8 +165,6 @@ void FixDiffusion::init()
   ny = kinetics->ny;
   nz = kinetics->nz;
   ngrids=nx*ny*nz;
-  nuS = kinetics->nuS;
-  nuR = kinetics->nuR;
 
   nnus = bio->nnus;
   iniS = bio->iniS;
