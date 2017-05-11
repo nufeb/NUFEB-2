@@ -275,6 +275,13 @@ void FixKineticsPH::solve_ph()
       ipH += ipH;
     }
     kinetics->Sh[i] = gSh;
+
+    for (int k = 1; k < nnus+1; k++) {
+      if (strcmp(bio->nuName[k], "h") == 0) {
+        activity[k][1][i] = gSh;
+        break;
+      }
+    }
   }
 
 //    for (int k = 1; k < nnus+1; k++) {
@@ -285,6 +292,7 @@ void FixKineticsPH::solve_ph()
 //      printf("%e ", activity[k][4][0]);
 //      printf("\n");
 //    }
+//    printf("\n");
 
   memory->destroy(dDenm);
   memory->destroy(denm);
