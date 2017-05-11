@@ -358,7 +358,7 @@ bool* FixDiffusion::diffusion(bool *nuConv, int iter, double diffT)
       zbcp = iniS[i][6] * 1000;
 
       BC = bc_vec(vecS[i], grid);
-
+      //if (i==1 && iter == 1)cout<<BC/1000<<endl;
       double max;
       //Explicit method
       if (sflag == 0) {
