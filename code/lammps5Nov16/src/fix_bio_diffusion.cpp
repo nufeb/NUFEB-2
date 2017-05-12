@@ -26,8 +26,8 @@
 #include <iostream>
 #include <string>
 
-#include "Eigen/Eigen"
-#include "unsupported/Eigen/KroneckerProduct"
+#include "eigen/Eigen/Eigen"
+#include "eigen/unsupported/Eigen/KroneckerProduct"
 #include "atom.h"
 #include "domain.h"
 #include "error.h"

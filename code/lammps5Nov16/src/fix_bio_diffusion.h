@@ -15,7 +15,7 @@ FixStyle(diffusion,FixDiffusion)
 #define SRC_FIX_DIFFUSION_H
 
 #include "fix.h"
-#include "Eigen/Eigen"
+#include "eigen/Eigen/Eigen"
 
 using namespace Eigen;
 
