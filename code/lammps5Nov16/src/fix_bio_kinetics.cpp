@@ -283,7 +283,7 @@ void FixKinetics::integration() {
       }
     }
 
-    if (iteration > 5000) {
+    if (iteration > 10000) {
       isConv = true;
       for (int i = 1; i <= nnus; i++) {
         if (!nuConv[i]){
@@ -291,6 +291,10 @@ void FixKinetics::integration() {
           printf( "%s  ", bio->nuName[i]);
         }
       }
+    }
+
+    if (update->ntimestep > 20000 && iteration > 10000) {
+      error->all(FLERR,"# of iteration jumps to 10000, diffusion solver is unstable.");
     }
   }
 
