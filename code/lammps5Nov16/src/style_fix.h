@@ -13,6 +13,7 @@
 #include "fix_bio_divide.h"
 #include "fix_bio_eps_extract.h"
 #include "fix_bio_epsadh.h"
+#include "fix_bio_immgration.h"
 #include "fix_bio_kinetics.h"
 #include "fix_bio_kinetics_monod.h"
 #include "fix_bio_kinetics_ph.h"
