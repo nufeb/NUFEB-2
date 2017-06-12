@@ -27,7 +27,7 @@ namespace LAMMPS_NS {
 class ComputeNufebDiversity : public Compute {
  public:
   ComputeNufebDiversity(class LAMMPS *, int, char **);
-  virtual ~ComputeNufebDiversity();
+  ~ComputeNufebDiversity();
   void init() {}
   virtual void compute_vector();
 };

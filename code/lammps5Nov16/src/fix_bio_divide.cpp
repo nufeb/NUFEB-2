@@ -21,7 +21,6 @@
 #include "atom_vec_bio.h"
 #include "domain.h"
 #include "error.h"
-
 #include "bio.h"
 #include "force.h"
 #include "input.h"
@@ -117,7 +116,7 @@ FixDivide::~FixDivide()
 int FixDivide::setmask()
 {
   int mask = 0;
-  mask |= PRE_EXCHANGE;
+  mask |= POST_INTEGRATE;
   return mask;
 }
 
@@ -142,9 +141,10 @@ void FixDivide::init()
 
 }
 
-void FixDivide::pre_exchange()
+void FixDivide::post_integrate()
 {
-  if (next_reneighbor != update->ntimestep) return;
+  if (nevery == 0) return;
+  if (update->ntimestep % nevery) return;
 
   double EPSdens = input->variable->compute_equal(ivar[0]);
   double divMass = input->variable->compute_equal(ivar[1]);
@@ -311,7 +311,9 @@ void FixDivide::pre_exchange()
 		atom->map_init();
 		atom->map_set();
 	}
-  next_reneighbor += nevery;
+
+  // trigger immediate reneighboring
+  next_reneighbor = update->ntimestep;
 }
 
 

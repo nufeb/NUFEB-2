@@ -17,6 +17,7 @@
 #include "error.h"
 #include "pointers.h"
 #include "update.h"
+#include "memory.h"
 
 using namespace LAMMPS_NS;
 
@@ -28,17 +29,17 @@ ComputeNufebDiversity::ComputeNufebDiversity(LAMMPS *lmp, int narg, char **arg) 
   if (narg != 3) error->all(FLERR,"Illegal compute ntypes command");
 
   vector_flag = 1;
-  size_vector = atom->ntypes;
   extvector = 0;
-
-  vector = new double[atom->ntypes]();
+  int ntypes = atom->ntypes;
+  size_vector = atom->ntypes;
+  memory->create(vector,ntypes,"compute:vector");
 }
 
 /* ---------------------------------------------------------------------- */
 
 ComputeNufebDiversity::~ComputeNufebDiversity()
 {
-   delete [] vector;
+  memory->destroy(vector);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -52,7 +53,8 @@ void ComputeNufebDiversity::compute_vector()
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
   int ntypes = atom->ntypes;
-
+  size_vector = ntypes;
+  memory->grow(vector,ntypes,"compute:vector");
   int *ntypeList = new int[ntypes + 1]();
 
   for (int i = 0; i < ntypes; i++) {

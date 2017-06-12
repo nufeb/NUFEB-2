@@ -27,7 +27,7 @@ namespace LAMMPS_NS {
 class ComputeNufebBiomass : public Compute {
  public:
   ComputeNufebBiomass(class LAMMPS *, int, char **);
-  virtual ~ComputeNufebBiomass();
+  ~ComputeNufebBiomass();
   void init() {}
   virtual void compute_vector();
 };

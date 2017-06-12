@@ -27,7 +27,7 @@ namespace LAMMPS_NS {
 class ComputeNufebNtypes : public Compute {
  public:
   ComputeNufebNtypes(class LAMMPS *, int, char **);
-  virtual ~ComputeNufebNtypes();
+  ~ComputeNufebNtypes();
   void init() {}
   virtual void compute_vector();
 };

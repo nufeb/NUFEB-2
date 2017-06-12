@@ -88,6 +88,30 @@ BIO::~BIO()
 
   memory->sfree(typeName);
   memory->sfree(nuName);
+}
+
+void BIO::type_grow()
+{
+  if (yield != NULL) memory->grow(yield,atom->ntypes+1,"bio:yield");
+  if (maintain != NULL) memory->grow(maintain,atom->ntypes+1,"bio:maintain");
+  if (decay != NULL) memory->grow(decay,atom->ntypes+1,"bio:decay");
+  if (dissipation != NULL) memory->grow(dissipation,atom->ntypes+1,"bio:dissipation");
+  if (mu != NULL) memory->grow(mu,atom->ntypes+1,"bio:growth");
+  if (ks != NULL) memory->grow(ks,atom->ntypes+1,nnus+1,"bio:ks");
+  if (anabCoeff != NULL) memory->grow(anabCoeff,atom->ntypes+1,nnus+1,"bio:anabCoeff");
+  if (catCoeff != NULL) memory->grow(catCoeff,atom->ntypes+1,nnus+1,"bio:catCoeff");
+  if (decayCoeff != NULL) memory->grow(decayCoeff,atom->ntypes+1,nnus+1,"bio:decayCoeff");
+  if (typeGCoeff != NULL) memory->grow(typeGCoeff,atom->ntypes+1,5,"bio:typeGCoeff");
+  if (tgflag != NULL) memory->grow(tgflag,atom->ntypes+1,"bio:tgflag");
+  if (typeChr != NULL) memory->grow(typeChr,atom->ntypes+1,5,"bio:typeChr");
+  if (eD != NULL) memory->grow(eD,atom->ntypes+1,"bio:eD");
+  if (typeName != NULL) typeName = (char **) memory->srealloc(typeName,(atom->ntypes+1)*sizeof(char *),"bio:typeName");
+}
+
+void BIO::create_type(char *name) {
+  atom->ntypes = atom->ntypes + 1;
+  type_grow();
+  typeName[atom->ntypes] = name;
 
 }
 

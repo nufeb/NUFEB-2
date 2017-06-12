@@ -57,7 +57,12 @@ FixKineticsThermo::FixKineticsThermo(LAMMPS *lmp, int narg, char **arg) : Fix(lm
   closeR = 0;
 
   if (strcmp(arg[3], "unfix") == 0) fixY = 1;
+  else if (strcmp(arg[3], "fix") == 0) fixY = 0;
+  else error->all(FLERR,"Illegal fix kinetics/thermo command: specify 'fix' or 'unfix' yield");
+
   if (strcmp(arg[4], "close") == 0) closeR = 1;
+  else if (strcmp(arg[4], "open") == 0) closeR = 0;
+  else error->all(FLERR,"Illegal fix kinetics/thermo command: specify 'open' or 'close' reactor");
 
   var = new char*[1];
   ivar = new int[1];
@@ -73,9 +78,9 @@ FixKineticsThermo::FixKineticsThermo(LAMMPS *lmp, int narg, char **arg) : Fix(lm
 
 FixKineticsThermo::~FixKineticsThermo()
 {
-  memory->destroy(dG0);
   memory->destroy(khV);
   memory->destroy(liq2Gas);
+  memory->destroy(dG0);
 
   for (int i = 0; i < 1; i++) {
     delete [] var[i];
@@ -128,7 +133,6 @@ void FixKineticsThermo::init()
   else if (fixY == 1 && bio->eD == NULL)
     error->all(FLERR,"fix_kinetics/thermo requires eD input for unfix yield");
 
-  ntypes = atom->ntypes;
   nx = kinetics->nx;
   ny = kinetics->ny;
   nz = kinetics->nz;
@@ -137,18 +141,13 @@ void FixKineticsThermo::init()
   rth = kinetics->rth;
 
   nnus = bio->nnus;
-  catCoeff = bio->catCoeff;
-  anabCoeff = bio->anabCoeff;
-  nuGCoeff = bio->nuGCoeff;
-  typeGCoeff = bio->typeGCoeff;
-  diss = bio->dissipation;
   kLa = bio->kLa;
+  nuGCoeff = bio->nuGCoeff;
 
   khV = memory->create(khV,nnus+1,"kinetics/thermo:khV");
   liq2Gas = memory->create(liq2Gas,nnus+1,"kinetics/thermo:liq2Gas");
-  dG0 = memory->create(dG0,ntypes+1,2,"kinetics/thermo:dG0");
+  dG0 = memory->create(dG0,atom->ntypes+1,2,"kinetics/thermo:dG0");
 
-  init_dG0();
   init_KhV();
 
   //Get computational domain size
@@ -183,7 +182,7 @@ void FixKineticsThermo::init_dG0()
   int *ngflag = bio->ngflag;
   int *tgflag = bio->tgflag;
 
-  for (int i = 1; i <= ntypes; i++) {
+  for (int i = 1; i <= atom->ntypes; i++) {
     dG0[i][0] = 0;
     dG0[i][1] = 0;
 
@@ -253,6 +252,7 @@ void FixKineticsThermo::thermo()
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
   int *type = atom->type;
+  ntypes = atom->ntypes;
 
   DRGCat = kinetics->DRGCat;
   DRGAn = kinetics->DRGAn;
@@ -261,6 +261,15 @@ void FixKineticsThermo::thermo()
   gYield = kinetics->gYield;
   activity = kinetics->activity;
   qGas = kinetics->qGas;
+
+  catCoeff = bio->catCoeff;
+  anabCoeff = bio->anabCoeff;
+  typeGCoeff = bio->typeGCoeff;
+  diss = bio->dissipation;
+
+  dG0 = memory->grow(dG0,ntypes+1,2,"kinetics/thermo:dG0");
+
+  init_dG0();
 
   double vRgT = kinetics->gVol * 1000 / (kinetics->gasTrans * kinetics->temp);
   double vg = vol * 1000;
@@ -324,6 +333,7 @@ void FixKineticsThermo::thermo()
          // printf ("%e ",  value);
           DRGCat[j][i] += catCoeff[j][k] * dgr;
           DRGAn[j][i] += anabCoeff[j][k] * dgr;
+         //if (k ==1 && j==7)printf("%e %s %e %s\n", DRGCat[j][i], bio->typeName[j], catCoeff[j][k], bio->nuName[k]);
         } else {
           error->all(FLERR,"nuGCoeff[1] is inf value");
         }

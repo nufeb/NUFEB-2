@@ -48,6 +48,8 @@ class BIO : protected Pointers {
   BIO(class LAMMPS *);
   ~BIO();
 
+  void type_grow();
+  void create_type(char *);
   void data_nutrients(int, char **);
   void set_growth(const char *);
   void set_mw(const char *);

@@ -84,17 +84,10 @@ void FixKineticsPH::init()
 
   if (bio->nnus == 0)
     error->all(FLERR,"fix_kinetics requires # of Nutrients inputs");
-  else if (bio->nuGCoeff == NULL)
-    error->all(FLERR,"fix_kinetics requires Nutrient Energy inputs");
-  else if (bio->typeGCoeff == NULL)
-    error->all(FLERR,"fix_kinetics requires Type Energy inputs");
   else if (bio->nuChr == NULL)
     error->all(FLERR,"fix_kinetics requires Nutrient Charge inputs");
 
-  ntypes = atom->ntypes;
   nnus = bio->nnus;
-  nuGCoeff = bio->nuGCoeff;
-  typeGCoeff = bio->typeGCoeff;
   nuChr = bio->nuChr;
 }
 

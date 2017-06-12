@@ -30,16 +30,8 @@ class FixEPSExtract : public Fix {
   FixEPSExtract(class LAMMPS *, int, char **);
   ~FixEPSExtract();
   int setmask();
-  // void post_constructor();
   void init();
-  // void setup_pre_force(int);
-  // void pre_force(int);
-  void pre_exchange();
-  // void end_of_step();
-  // void post_run();
-  // void setup_pre_force_respa(int,int);
-  // void pre_force_respa(int,int,int);
-  // void set_arrays(int);
+  void post_integrate();
 
  private:
 

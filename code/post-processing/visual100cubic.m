@@ -91,8 +91,15 @@ fid=fopen('data_p.pov','w');
        if (Tp(l)==10)
         RED = 0.0;
         GREEN = 0.32;
-        BLUE = 0.76;
+        BLUE = 0.76; 
+	end
+
+       if (Tp(l) > 10)
+        RED = 0.8;
+        GREEN = 0.2;
+        BLUE = 0.2;
         end 
+        
         
 fprintf(fid,['sphere{<' num2str(X(l)) ',' num2str(Y(l)) ',' num2str(Z(l)) '>,' num2str(1*D(l)/2) ' pigment {rgb <' num2str(RED) ',' num2str(GREEN) ',' num2str(BLUE) '>} finish{reflection 0.2 specular 0.3 ambient 0.42}}\n']);
     end

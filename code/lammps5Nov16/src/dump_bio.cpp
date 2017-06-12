@@ -68,6 +68,7 @@ DumpBio::DumpBio(LAMMPS *lmp, int narg, char **arg) :
   massFlag = 0;
   massHeader = 0;
   gasFlag = 0;
+  yieldFlag = 0;
 
   // customize for new sections
   keywords = (char **) memory->srealloc(keywords, nkeywords*sizeof(char *), "keywords");
@@ -144,7 +145,7 @@ void DumpBio::init_style()
   }
 
   while (i < nkeywords) {
-    if (strcmp(keywords[i],"Conc") == 0) {
+    if (strcmp(keywords[i],"conc") == 0) {
       concFlag = 1;
       if (stat("./Results/S", &st) == -1) {
           mkdir("./Results/S", 0700);
@@ -511,10 +512,10 @@ void DumpBio::write_biomass_data()
 {
   if (!massHeader) {
     for(int i = 1; i < atom->ntypes+1; i++){
-      fprintf(fp, "%s\t", kinetics->bio->typeName[i]);
+      fprintf(fp, "%s,\t", kinetics->bio->typeName[i]);
     }
-    fprintf(fp, "\n");
     massHeader = 1;
+    fprintf(fp, "\n");
   }
 
   int local = atom->nlocal;
@@ -527,10 +528,20 @@ void DumpBio::write_biomass_data()
     mass[type] += atom->rmass[i];
   }
 
+  fprintf(fp, "%i,\t", update->ntimestep);
+
   for(int i = 1; i < atom->ntypes+1; i++){
-    fprintf(fp, "%e\t", mass[i]);
+    fprintf(fp, "%e,\t", mass[i]);
   }
   fprintf(fp, "\n");
+
+  if (update->ntimestep == update->nsteps) {
+    for(int i = 1; i < atom->ntypes+1; i++){
+      fprintf(fp, "%s,\t", kinetics->bio->typeName[i]);
+    }
+    massHeader = 1;
+    fprintf(fp, "\n");
+  }
 
   delete[] mass;
 }

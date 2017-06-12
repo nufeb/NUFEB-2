@@ -29,12 +29,13 @@
 #include "input.h"
 #include "memory.h"
 
+#include "bio.h"
 #include "atom_vec_bio.h"
 #include "fix_bio_kinetics_ph.h"
 #include "fix_bio_kinetics_thermo.h"
 #include "fix_bio_kinetics_monod.h"
-#include "fix_bio_diffusion.h"
-#include "bio.h"
+#include "fix_bio_immigration.h"
+#include "fix_bio_kinetics_diffusion.h"
 
 #include "pointers.h"
 #include "variable.h"
@@ -137,8 +138,8 @@ void FixKinetics::init()
   for (int j = 0; j < nfix; j++) {
     if (strcmp(modify->fix[j]->style,"kinetics/monod") == 0) {
       monod = static_cast<FixKineticsMonod *>(lmp->modify->fix[j]);
-    } else if (strcmp(modify->fix[j]->style,"diffusion") == 0) {
-      diffusion = static_cast<FixDiffusion *>(lmp->modify->fix[j]);
+    } else if (strcmp(modify->fix[j]->style,"kinetics/diffusion") == 0) {
+      diffusion = static_cast<FixKineticsDiffusion *>(lmp->modify->fix[j]);
     } else if (strcmp(modify->fix[j]->style,"kinetics/ph") == 0) {
       ph = static_cast<FixKineticsPH *>(lmp->modify->fix[j]);
     } else if (strcmp(modify->fix[j]->style,"kinetics/thermo") == 0) {
@@ -183,6 +184,22 @@ void FixKinetics::init()
 
   init_keq();
   init_activity();
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixKinetics::grow() {
+  int ntypes = atom->ntypes;
+
+  gYield = memory->grow(gYield,ntypes+1,ngrids,"kinetic:gYield");
+  DRGCat = memory->grow(DRGCat,ntypes+1,ngrids,"kinetics:DRGCat");
+  DRGAn = memory->grow(DRGAn,ntypes+1,ngrids,"kinetics:DRGAn");
+
+  for (int j = 0; j < ngrids; j++) {
+    for (int i = 1; i <= ntypes; i++) {
+      gYield[i][j] = bio->yield[i];
+    }
+  }
 }
 
 /* ---------------------------------------------------------------------- */
