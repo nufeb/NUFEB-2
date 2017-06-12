@@ -124,7 +124,7 @@ FixEPSExtract::~FixEPSExtract()
 int FixEPSExtract::setmask()
 {
   int mask = 0;
-  mask |= PRE_EXCHANGE;
+  mask |= POST_INTEGRATE;
   return mask;
 }
 
@@ -168,9 +168,10 @@ void FixEPSExtract::init()
 }
 
 
-void FixEPSExtract::pre_exchange()
+void FixEPSExtract::post_integrate()
 {
-  if (next_reneighbor != update->ntimestep) return;
+  if (nevery == 0) return;
+  if (update->ntimestep % nevery) return;
 
   double EPSratio = input->variable->compute_equal(ivar[0]);
   double EPSdens = input->variable->compute_equal(ivar[1]);
@@ -283,7 +284,8 @@ void FixEPSExtract::pre_exchange()
     atom->map_set();
   }
 
-  next_reneighbor += nevery;
+  // trigger immediate reneighboring
+  next_reneighbor = update->ntimestep;
 }
 
 

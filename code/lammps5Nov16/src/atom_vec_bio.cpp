@@ -46,6 +46,7 @@ AtomVecBio::AtomVecBio(LAMMPS *lmp) : AtomVecSphere(lmp)
   outerRadius = memory->create(outerRadius,nmax,"atom:outerRadius");;
   atom_mu = memory->create(atom_mu,nmax,"atom:atom_growth");
   typeEPS = 0;
+  typeDEAD = 0;
   maskEPS = 0;
   maskHET = 0;
   maskDEAD = 0;

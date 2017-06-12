@@ -80,20 +80,14 @@ FixKineticsMonod::FixKineticsMonod(LAMMPS *lmp, int narg, char **arg) : Fix(lmp,
 
 FixKineticsMonod::~FixKineticsMonod()
 {
+  memory->destroy(gMonod);
+
   int i;
   for (i = 0; i < 1; i++) {
     delete [] var[i];
   }
   delete [] var;
   delete [] ivar;
-
-  for (int i = 0; i < ntypes + 1; i++) {
-    delete [] gMonod[i];
-    //delete [] minCatMonod[i];
-  }
-
-  delete [] gMonod;
-  //delete [] minCatMonod;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -154,27 +148,13 @@ void FixKineticsMonod::init()
   else if (bio->decayCoeff == NULL)
     error->all(FLERR,"fix_kinetics/monod requires Decay Coeffs input");
 
-  ntypes = atom->ntypes;
   nx = kinetics->nx;
   ny = kinetics->ny;
   nz = kinetics->nz;
-  gYield = kinetics->gYield;
-
   ngrids = nx * ny * nz;
   nnus = bio->nnus;
-  catCoeff = bio->catCoeff;
-  anabCoeff = bio->anabCoeff;
-  maintain = bio->maintain;
-  decay = bio->decay;
 
-  gMonod = new double*[ntypes+1];
-  //minCatMonod = new double*[ntypes+1];
-
-  //initialization
-  for (int i = 0; i <= ntypes; i++) {
-    gMonod[i] = new double[ngrids];
-    //minCatMonod[i] = new double[ngrids];
-  }
+  gMonod = memory->create(gMonod,atom->ntypes+1,ngrids,"kinetics/monod:gMonod");
 
   //Get computational domain size
   if (domain->triclinic == 0) {
@@ -210,6 +190,12 @@ void FixKineticsMonod::growth(double dt)
   nlocal = atom->nlocal;
   nall = nlocal + atom->nghost;
   type = atom->type;
+  ntypes = atom->ntypes;
+
+  catCoeff = bio->catCoeff;
+  anabCoeff = bio->anabCoeff;
+  maintain = bio->maintain;
+  decay = bio->decay;
 
   radius = atom->radius;
   rmass = atom->rmass;
@@ -220,6 +206,9 @@ void FixKineticsMonod::growth(double dt)
   nuR = kinetics->nuR;
   DGRCat = kinetics->DRGCat;
   nuConv = kinetics->nuConv;
+  gYield = kinetics->gYield;
+
+  memory->grow(gMonod,atom->ntypes+1,ngrids,"kinetics/monod:gMonod");
 
   //initialization
   for (int i = 0; i <= ntypes; i++) {
@@ -235,7 +224,6 @@ void FixKineticsMonod::growth(double dt)
     //update bacteria mass, radius etc
     bio_update(mass, i);
   }
-
 }
 
 double FixKineticsMonod::biomass(int i) {
@@ -310,7 +298,7 @@ double FixKineticsMonod::biomass(int i) {
 
     mass = -decay[t] * f * rmass[i];
   }
-
+ // if(atom->type[i] == 5) printf("mass = %e \n", gMonod[t][pos]);
   return mass;
 }
 

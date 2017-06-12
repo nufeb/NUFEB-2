@@ -31,7 +31,7 @@ class FixDivide : public Fix {
   ~FixDivide();
   int setmask();
   void init();
-  void pre_exchange();
+  void post_integrate();
 
  private:
   char **var;

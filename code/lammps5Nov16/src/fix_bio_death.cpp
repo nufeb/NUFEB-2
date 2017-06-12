@@ -77,7 +77,7 @@ void FixDeath::init(){
   deadMass= input->variable->compute_equal(ivar);
 
   if (avec->typeDEAD == 0) {
-    error->all(FLERR,"At least one initial DEAD bactera is required.");
+    error->all(FLERR,"At least one initial DEAD particle is required.");
   }
 }
 
@@ -86,6 +86,9 @@ void FixDeath::init(){
 void FixDeath::pre_exchange()
 {
   //if (next_reneighbor != update->ntimestep) return;
+  if (nevery == 0) return;
+  if (update->ntimestep % nevery) return;
+
   death();
 }
 
