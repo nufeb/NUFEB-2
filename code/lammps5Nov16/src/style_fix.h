@@ -21,6 +21,7 @@
 #include "fix_bio_nve.h"
 #include "fix_bio_shear.h"
 #include "fix_bio_utilities.h"
+#include "fix_bio_viscous.h"
 #include "fix_bio_walladh.h"
 #include "fix_box_relax.h"
 #include "fix_cmap.h"
