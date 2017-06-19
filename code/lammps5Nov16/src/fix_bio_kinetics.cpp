@@ -300,7 +300,7 @@ void FixKinetics::integration() {
       }
     }
 
-    if (iteration > 1) {
+    if (iteration > 10000) {
       isConv = true;
       for (int i = 1; i <= nnus; i++) {
         if (!nuConv[i]){
