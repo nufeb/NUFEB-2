@@ -24,6 +24,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <math.h>
+#include <dirent.h>
 
 #include "comm.h"
 #include "force.h"
@@ -36,6 +37,13 @@
 #include "atom.h"
 #include "bio.h"
 #include "fix_bio_kinetics.h"
+
+#include "compute_bio_diameter.h"
+#include "compute_bio_dimension.h"
+#include "compute_bio_diversity.h"
+#include "compute_bio_height.h"
+#include "compute_bio_rough.h"
+#include "compute_bio_segregate.h"
 
 struct stat st = {0};
 
@@ -67,8 +75,16 @@ DumpBio::DumpBio(LAMMPS *lmp, int narg, char **arg) :
   phFlag = 0;
   massFlag = 0;
   massHeader = 0;
+  divHeader = 0;
   gasFlag = 0;
   yieldFlag = 0;
+
+  diaFlag = 0;
+  dimFlag = 0;
+  divFlag = 0;
+  heightFlag = 0;
+  roughFlag = 0;
+  segFlag = 0;
 
   // customize for new sections
   keywords = (char **) memory->srealloc(keywords, nkeywords*sizeof(char *), "keywords");
@@ -98,12 +114,15 @@ void DumpBio::init_style()
   // register fix kinetics with this class
   kinetics = NULL;
   nfix = modify->nfix;
+  ncompute = modify->ncompute;
+
   for (int j = 0; j < nfix; j++) {
     if (strcmp(modify->fix[j]->style,"kinetics") == 0) {
       kinetics = static_cast<FixKinetics *>(lmp->modify->fix[j]);
       break;
     }
   }
+
   if (kinetics == NULL)
     lmp->error->all(FLERR,"The fix kinetics command is required");
 
@@ -222,9 +241,6 @@ void DumpBio::init_style()
       }
     } else if (strcmp(keywords[i],"biomass") == 0) {
       massFlag = 1;
-      if (stat("./Results/BioMass", &st) == -1) {
-          mkdir("./Results/BioMass", 0700);
-      }
     } else if (strcmp(keywords[i],"gas") == 0) {
       gasFlag = 1;
       if (stat("./Results/Gas", &st) == -1) {
@@ -244,9 +260,45 @@ void DumpBio::init_style()
           }
         }
       }
-    }
+    } else if (strcmp(keywords[i],"diameter") == 0) {
+      diaFlag = 1;
+    } else if (strcmp(keywords[i],"dimension") == 0) {
+      dimFlag = 1;
+    } else if (strcmp(keywords[i],"diversity") == 0) {
+      divFlag = 1;
+    } else if (strcmp(keywords[i],"ave_height") == 0) {
+      heightFlag = 1;
+    } else if (strcmp(keywords[i],"roughness") == 0) {
+      roughFlag = 1;
+    } else if (strcmp(keywords[i],"segregation") == 0) {
+      segFlag = 1;
+    } else lmp->error->all(FLERR,"Undefined dump_bios keyword");
+
     i++;
   }
+
+  for (int j = 0; j < ncompute; j++) {
+    if (strcmp(modify->compute[j]->style,"diameter") == 0) {
+      cdia = static_cast<ComputeNufebDiameter *>(lmp->modify->compute[j]);
+      continue;
+    } else if (strcmp(modify->compute[j]->style,"dimension") == 0) {
+      cdim = static_cast<ComputeNufebDimension *>(lmp->modify->compute[j]);
+      continue;
+    } else if (strcmp(modify->compute[j]->style,"diversity") == 0) {
+      cdiv = static_cast<ComputeNufebDiversity *>(lmp->modify->compute[j]);
+      continue;
+    } else if (strcmp(modify->compute[j]->style,"ave_height") == 0) {
+      cheight = static_cast<ComputeNufebHeight *>(lmp->modify->compute[j]);
+      continue;
+    } else if (strcmp(modify->compute[j]->style,"roughness") == 0) {
+      crough = static_cast<ComputeNufebRough *>(lmp->modify->compute[j]);
+      continue;
+    } else if (strcmp(modify->compute[j]->style,"segregation") == 0) {
+      cseg = static_cast<ComputeNufebSegregate *>(lmp->modify->compute[j]);
+      continue;
+    }
+  }
+
 }
 
 /* ---------------------------------------------------------------------- */
@@ -342,11 +394,77 @@ void DumpBio::write()
   if (massFlag == 1) {
     int len = 35;
     char path[len];
-    strcpy(path, "./Results/BioMass/biomass.csv");
+    strcpy(path, "./Results/biomass.csv");
 
     filename = path;
     fp = fopen(filename,"a");
     write_biomass_data();
+    fclose(fp);
+  }
+
+  if (diaFlag == 1) {
+    int len = 36;
+    char path[len];
+    strcpy(path, "./Results/diameter.csv");
+
+    filename = path;
+    fp = fopen(filename,"a");
+    write_diameter_data();
+    fclose(fp);
+  }
+
+  if (dimFlag == 1) {
+    int len = 38;
+    char path[len];
+    strcpy(path, "./Results/dimension.csv");
+
+    filename = path;
+    fp = fopen(filename,"a");
+    write_dimension_data();
+    fclose(fp);
+  }
+
+  if (divFlag == 1) {
+    int len = 38;
+    char path[len];
+    strcpy(path, "./Results/diversity.csv");
+
+    filename = path;
+    fp = fopen(filename,"a");
+    write_diversity_data();
+    fclose(fp);
+  }
+
+  if (heightFlag == 1) {
+    int len = 38;
+    char path[len];
+    strcpy(path, "./Results/ave_height.csv");
+
+    filename = path;
+    fp = fopen(filename,"a");
+    write_height_data();
+    fclose(fp);
+  }
+
+  if (roughFlag == 1) {
+    int len = 38;
+    char path[len];
+    strcpy(path, "./Results/roughness.csv");
+
+    filename = path;
+    fp = fopen(filename,"a");
+    write_rough_data();
+    fclose(fp);
+  }
+
+  if (roughFlag == 1) {
+    int len = 38;
+    char path[len];
+    strcpy(path, "./Results/segregation.csv");
+
+    filename = path;
+    fp = fopen(filename,"a");
+    write_segregate_data();
     fclose(fp);
   }
 
@@ -548,6 +666,68 @@ void DumpBio::write_biomass_data()
 
 /* ---------------------------------------------------------------------- */
 
+void DumpBio::write_diameter_data()
+{
+  cdia->compute_scalar();
+  fprintf(fp, "%i,\t %e, \n", update->ntimestep, cdia->scalar);
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpBio::write_dimension_data()
+{
+  cdim->compute_scalar();
+  fprintf(fp, "%i,\t %e, \n", update->ntimestep, cdim->scalar);
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpBio::write_diversity_data()
+{
+  if (!divHeader) {
+    for(int i = 1; i < atom->ntypes+1; i++){
+      fprintf(fp, "%s,\t", kinetics->bio->typeName[i]);
+    }
+    divHeader = 1;
+    fprintf(fp, "\n");
+  }
+
+  cdiv->compute_vector();
+
+  fprintf(fp, "%i,\t", update->ntimestep);
+
+  for(int i = 1; i < atom->ntypes+1; i++){
+    fprintf(fp, "%e,\t", cdiv->vector[i-1]);
+  }
+  fprintf(fp, "\n");
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpBio::write_height_data()
+{
+  cheight->compute_scalar();
+  fprintf(fp, "%i,\t %e, \n", update->ntimestep, cheight->scalar);
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpBio::write_rough_data()
+{
+  crough->compute_scalar();
+  fprintf(fp, "%i,\t %e, \n", update->ntimestep, crough->scalar);
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpBio::write_segregate_data()
+{
+  cseg->compute_scalar();
+  fprintf(fp, "%i,\t %e, \n", update->ntimestep, cseg->scalar);
+}
+
+/* ---------------------------------------------------------------------- */
+
 void DumpBio::write_gas_data(int nuID)
 {
   fprintf(fp, ",x,y,z,scalar,1,1,1,0.5\n");
@@ -569,3 +749,4 @@ void DumpBio::write_gas_data(int nuID)
 bigint DumpBio::memory_usage() {
   return 0;
 }
+
