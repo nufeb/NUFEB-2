@@ -42,8 +42,8 @@ class DumpBio : public Dump {
   char **id_fix;             // their IDs
   class Fix **fix;           // list of ptrs to the Fix objects
 
-  int anFlag, concFlag, catFlag, phFlag, massFlag, gasFlag, yieldFlag;
-  int massHeader;
+  int anFlag, concFlag, catFlag, phFlag, massFlag, gasFlag, yieldFlag, diaFlag, dimFlag, divFlag, heightFlag, roughFlag, segFlag;
+  int massHeader, divHeader;
 
   double xlo,xhi,ylo,yhi,zlo,zhi;
   double stepx, stepy, stepz;
@@ -52,7 +52,16 @@ class DumpBio : public Dump {
   char **keywords;
   class FixKinetics *kinetics;
   class BIO *bio;
-//
+
+  int ncompute;                  // # of Compute objects used by dump
+  class ComputeNufebDiameter *cdia;
+  class ComputeNufebDimension *cdim;
+  class ComputeNufebDiversity *cdiv;
+  class ComputeNufebHeight *cheight;
+  class ComputeNufebRough *crough;
+  class ComputeNufebSegregate *cseg;
+
+
   void openfile();
   void write();
   void init_style();
@@ -67,6 +76,13 @@ class DumpBio : public Dump {
   void write_pH_data();
   void write_yield_data(int);
   void write_biomass_data();
+
+  void write_diameter_data();
+  void write_dimension_data();
+  void write_diversity_data();
+  void write_height_data();
+  void write_rough_data();
+  void write_segregate_data();
 
   bigint memory_usage();
 };

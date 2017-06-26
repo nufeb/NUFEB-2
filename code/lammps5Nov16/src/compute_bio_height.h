@@ -13,7 +13,7 @@
 
 #ifdef COMPUTE_CLASS
 
-ComputeStyle(height,ComputeNufebHeight)
+ComputeStyle(ave_height,ComputeNufebHeight)
 
 #else
 
