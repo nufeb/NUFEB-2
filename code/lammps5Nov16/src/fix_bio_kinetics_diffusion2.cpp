@@ -89,7 +89,7 @@ FixKineticsDiffusion2::FixKineticsDiffusion2(LAMMPS *lmp, int narg, char **arg) 
   else if(strcmp(arg[7], "nn") == 0) zbcflag = 3;
   else if(strcmp(arg[7], "dn") == 0) zbcflag = 4;
   else error->all(FLERR,"Illegal z-axis boundary condition command");
-
+  printf("%i, %i, %i \n", xbcflag, ybcflag, zbcflag);
   rflag = 0;
   rstep = atoi(arg[8]);
   if (rstep > 1) rflag = 1;
@@ -200,7 +200,7 @@ void FixKineticsDiffusion2::init()
   //inlet concentration, diffusion constant
   //and maximum boundary condition conc value
   for (int i = 1; i <= nnus; i++) {
-    diffD[i] = diffCoeff[i]/(2 * stepx * stepx);
+    diffD[i] = diffCoeff[i];
   }
 
   xGrid =  memory->create(xGrid,nXYZ,3,"diffusion:xGrid");
@@ -220,25 +220,25 @@ void FixKineticsDiffusion2::init()
         for (int nu = 1; nu <= nnus; nu++) {
           if (i < xlo) {
             ghost[grid] = true;
-            nuGrid[nu][grid] = iniS[nu][1];
+            nuGrid[nu][grid] = iniS[nu][1] * 1000;
           } else if (i > xhi) {
             ghost[grid] = true;
-            nuGrid[nu][grid] = iniS[nu][2];
+            nuGrid[nu][grid] = iniS[nu][2] * 1000;
           } else if (j < ylo) {
             ghost[grid] = true;
-            nuGrid[nu][grid] = iniS[nu][3];
+            nuGrid[nu][grid] = iniS[nu][3] * 1000;
           } else if (j > yhi) {
             ghost[grid] = true;
-            nuGrid[nu][grid] = iniS[nu][4];
+            nuGrid[nu][grid] = iniS[nu][4] * 1000;
           } else if (k < zlo) {
             ghost[grid] = true;
-            nuGrid[nu][grid] = iniS[nu][5];
+            nuGrid[nu][grid] = iniS[nu][5] * 1000;
           } else if (k > zhi) {
             ghost[grid] = true;
-            nuGrid[nu][grid] = iniS[nu][6];
+            nuGrid[nu][grid] = iniS[nu][6] * 1000;
           } else {
             ghost[grid] = false;
-            nuGrid[nu][grid] = iniS[nu][0];
+            nuGrid[nu][grid] = iniS[nu][0] * 1000;
           }
         }
         grid++;
@@ -252,50 +252,25 @@ void FixKineticsDiffusion2::init()
   solve diffusion and reaction
 ------------------------------------------------------------------------- */
 
-bool* FixKineticsDiffusion2::diffusion(bool *nuConv, int iter, double diffT)
+bool* FixKineticsDiffusion2::diffusion(bool *nuConv, int iter, double diffT, double **nuPrev)
 {
   this->diffT = diffT;
   nuS = kinetics->nuS;
   nuR = kinetics->nuR;
 
-//  printf(" %i \n ",iter);
-//
-//  for (int i = nZ-1; i>=0; i--){
-//    printf(" \n ");
-//    for (int j = 0; j<nY; j++){
-//      printf("  ");
-//      for (int k = 0; k<nX; k++){
-//        int ind = k * nY * nZ + j * nZ + i;
-//        printf("%e ", nuGrid[1][ind]);
-//        //printf("%d ", ghost[ind]);
-//        //printf("%d ", ind);
-//      }
-//    }
-//  }
-
   for (int i = 1; i <= nnus; i++) {
     if (bio->nuType[i] == 0 && diffCoeff[i] != 0 && !nuConv[i]) {
-      double *nuPrev = memory->create(nuPrev,nXYZ,"diffusion:nuPrev");
       double maxS = 0;
 
-      // transform nXYZ index to nuS indux
+      // copy current concentrations
       for (int grid = 0; grid < nXYZ; grid++) {
-        if (!ghost[grid]) {
-          int ix = floor(xGrid[grid][0]/stepx);
-          int iy = floor(xGrid[grid][1]/stepy);
-          int iz = floor(xGrid[grid][2]/stepz);
-
-          int ind = ix * ny * nz + iy * nz + iz;
-          nuGrid[i][grid] = nuS[i][ind] * 1000;
-        }
-        nuPrev[grid] = nuGrid[i][grid];
+        nuPrev[i][grid] = nuGrid[i][grid];
       }
-      //memcpy(nuPrev, nuGrid[i], sizeof(nuPrev))
 
       xbcm = iniS[i][1] * 1000;
       xbcp = iniS[i][2] * 1000;
       ybcm = iniS[i][3] * 1000;
-      ybcp = iniS[i][4] * 1000 ;
+      ybcp = iniS[i][4] * 1000;
       zbcm = iniS[i][5] * 1000;
       zbcp = iniS[i][6] * 1000;
 
@@ -309,32 +284,39 @@ bool* FixKineticsDiffusion2::diffusion(bool *nuConv, int iter, double diffT)
 
           int ind = ix * ny * nz + iy * nz + iz;
          // printf("\n nuS1 = %e \n", nuS[i][ind]);
-          compute_flux(diffD[i], nuGrid[i], nuPrev, nuR[i][ind], grid);
-
+          compute_flux(diffD[i], nuGrid[i], nuPrev[i], nuR[i][ind], grid);
+          printf("nuR[i][ind] = %e  \n", nuR[i][ind]);
           if (maxS < nuGrid[i][grid]) maxS = nuGrid[i][grid];
+
           if (nuGrid[i][grid] > 0) nuS[i][ind] = nuGrid[i][grid] / 1000;
           else {
             nuGrid[i][grid] = 0;
             nuS[i][ind] = 0;
           }
-
-        } else {
-          compute_bc(nuGrid[i], nuPrev, grid);
-        }
+        } else compute_bc(nuGrid[i], nuPrev[i], grid);
       }
 
+      bool conv = true;
+      double r = -100;
+      int gridx = 0;
       // check convergence criteria
       for (int grid = 0; grid < nXYZ; grid++) {
         if(!ghost[grid]){
           if (maxS == 0) maxS = 1;
 
           double rate = nuGrid[i][grid]/maxS;
-          double prevRate = nuPrev[grid]/maxS;
-
-          if(fabs(rate - prevRate) < tol)  nuConv[i] = true;
+          double prevRate = nuPrev[i][grid]/maxS;
+          if (fabs(rate - prevRate) > r) r =fabs(rate - prevRate);
+          if(fabs(rate - prevRate) >= tol)  {
+            conv = false;
+            gridx++;
+            printf("nus = %e, prv = %e  \n", nuGrid[i][grid], nuPrev[i][grid]);
+            //break;
+          }
         }
       }
-      memory->destroy(nuPrev);
+      nuConv[i] = conv;
+      printf("grid = %i, %e  \n", gridx, r);
     }
   }
 //
@@ -346,9 +328,9 @@ bool* FixKineticsDiffusion2::diffusion(bool *nuConv, int iter, double diffT)
 //      printf("  ");
 //      for (int k = 0; k<nX; k++){
 //        int ind = k * nY * nZ + j * nZ + i;
-//        printf("%e ", nuGrid[1][ind]);
+//        //printf("%e ", nuGrid[1][ind]);
 //        //printf("%d ", ghost[ind]);
-//        //printf("%d ", ind);
+//        printf("%d ", ind);
 //      }
 //    }
 //  }
@@ -401,11 +383,11 @@ void FixKineticsDiffusion2::compute_bc(double *nuCell, double *nuPrev, int grid)
     } else if (zbcflag == 1) {
       nuCell[grid] = 2*zbcp - nuPrev[down];
     } else if (zbcflag == 2) {
-      nuCell[grid] = nuPrev[down];
+      nuCell[grid] = 2*zbcp - nuPrev[down];
     } else if (zbcflag == 3) {
       nuCell[grid] = nuPrev[down];
     } else if (zbcflag == 4) {
-      nuCell[grid] = 2*zbcp - nuPrev[down];
+      nuCell[grid] = nuPrev[down];
     }
   }
   // low-y surface
@@ -431,11 +413,11 @@ void FixKineticsDiffusion2::compute_bc(double *nuCell, double *nuPrev, int grid)
     } else if (ybcflag == 1) {
       nuCell[grid] = 2*ybcp - nuPrev[bwd];
     } else if (ybcflag == 2) {
-      nuCell[grid] = nuPrev[bwd];
+      nuCell[grid] = 2*ybcp - nuPrev[bwd];
     } else if (ybcflag == 3) {
       nuCell[grid] = nuPrev[bwd];
     } else if (ybcflag == 4) {
-      nuCell[grid] = 2*ybcp - nuPrev[bwd];
+      nuCell[grid] = nuPrev[bwd];
     }
   }
   // low-x surface
@@ -461,11 +443,11 @@ void FixKineticsDiffusion2::compute_bc(double *nuCell, double *nuPrev, int grid)
     } else if (xbcflag == 1) {
       nuCell[grid] = 2*xbcp - nuPrev[lhs];
     } else if (xbcflag == 2) {
-      nuCell[grid] = nuPrev[lhs];
+      nuCell[grid] = 2*xbcp - nuPrev[lhs];
     } else if (xbcflag == 3) {
       nuCell[grid] = nuPrev[lhs];
     } else if (xbcflag == 4) {
-      nuCell[grid] = 2*xbcp - nuPrev[lhs];
+      nuCell[grid] = nuPrev[lhs];
     }
   }
 }
@@ -502,6 +484,8 @@ void FixKineticsDiffusion2::compute_flux(double cellDNu, double *nuCell, double 
   double Ratesub = jX + jY + jZ + rateNu;
   //Updating the value: Ratesub*diffT + nuCell[cell](previous)
   nuCell[grid] = nuPrev[grid] + Ratesub*diffT;
+//  printf("before = %e \n", nuPrev[grid]);
+//  printf("after = %e \n", nuCell[grid]);
 }
 
 
