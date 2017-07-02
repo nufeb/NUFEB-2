@@ -25,7 +25,7 @@ class FixKineticsDiffusion2 : public Fix {
   ~FixKineticsDiffusion2();
   int setmask();
   void init();
-  bool* diffusion(bool*, int, double);
+  bool* diffusion(bool*, int, double, double**);
 
  private:
   char **var;
