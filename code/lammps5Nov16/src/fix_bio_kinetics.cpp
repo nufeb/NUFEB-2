@@ -42,6 +42,7 @@
 #include "modify.h"
 #include "update.h"
 #include "force.h"
+#include "group.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -274,8 +275,6 @@ void FixKinetics::integration() {
 
   int iteration = 0;
   bool isConv = false;
-  int nXYZ = (nx+2)*(ny+2)*(nz+2);
-  double **nuPrev = memory->create(nuPrev,nnus+1,nXYZ,"diffusion:nuPrev");
 
   //initialization
   for (int i = 1; i <= nnus; i++) {
@@ -292,7 +291,7 @@ void FixKinetics::integration() {
     else init_activity();
     if (thermo != NULL) thermo->thermo();
     if (monod != NULL) monod->growth(diffT);
-    if (diffusion != NULL) nuConv = diffusion->diffusion(nuConv, iteration, diffT, nuPrev);
+    if (diffusion != NULL) nuConv = diffusion->diffusion(nuConv, iteration, diffT);
     else break;
 
     for (int i = 1; i <= nnus; i++){
@@ -311,15 +310,12 @@ void FixKinetics::integration() {
         }
       }
     }
-
-    if (update->ntimestep > 20000 && iteration > 10000) {
-      error->all(FLERR,"# of iteration jumps to 10000, diffusion solver is unstable.");
-    }
+//    if (update->ntimestep > 20000 && iteration > 5000) {
+//      error->all(FLERR,"# of iteration jumps to 5000, diffusion solver is unstable.");
+//    }
   }
 
  printf( "number of iteration: %i \n", iteration);
 
  if (monod != NULL) monod->growth(update->dt * nevery);
- memory->destroy(nuPrev);
 }
-

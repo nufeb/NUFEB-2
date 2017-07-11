@@ -25,7 +25,7 @@ class FixKineticsDiffusion2 : public Fix {
   ~FixKineticsDiffusion2();
   int setmask();
   void init();
-  bool* diffusion(bool*, int, double, double**);
+  bool* diffusion(bool*, int, double);
 
  private:
   char **var;
@@ -51,11 +51,16 @@ class FixKineticsDiffusion2 : public Fix {
   double **nuS;
   double *diffD;
 
+  double bl;
+  double q, rvol, af;
+  bool reactor;
+  double *nuBS;
+
   int nx, ny, nz;               // # of non-ghost grids in x, y and z
   int nX, nY, nZ;               // # of all grids in x, y and z
   int nXYZ;                   // total # of grids
   double diffT;
-  double xlo,xhi,ylo,yhi,zlo,zhi;
+  double xlo,xhi,ylo,yhi,zlo,zhi,izhi;
   int xbcflag, ybcflag, zbcflag;             // 0=PERIODIC-PERIODIC, 1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
   double xbcm, xbcp, ybcm, ybcp, zbcm, zbcp; // inlet BC concentrations for each surface
 
@@ -67,9 +72,14 @@ class FixKineticsDiffusion2 : public Fix {
   class BIO *bio;
   class AtomVecBio *avec;
 
-  void compute_bc(double *, double *, int);
-  void compute_flux(double, double *, double *, double, int);
+  void update_grids(int);
+  void compute_bc(double &, double *, int, double);
+  void compute_bulk();
+  void compute_bl();
+  void compute_flux(double, double &, double *, double, int);
   bool isEuqal(double, double, double);
+  double getMaxHeight();
+  void test();
 };
 
 }
