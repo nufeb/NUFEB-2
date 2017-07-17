@@ -57,17 +57,21 @@ variable pressure equal 1
 variable ph equal 7.0
 
 #Defining diffusion variables
-variable diffT equal 1e-6
-variable tol equal 1e-7
+variable diffT equal 1e-4
+variable tol equal 1e-5
+variable bl equal 5e-5
+variable Q equal 2.31e-7
+variable rvol equal 1.25e-3
+variable Af equal 0.1
 
 ##############Ibm functions##############
 
-fix k1 all kinetics 100 1 1 1 v_temp v_rth v_gvol v_gasTran v_ph v_diffT
+fix k1 all kinetics 100 25 25 25 v_temp v_rth v_gvol v_gasTran v_ph v_diffT
 #fix ki3 all kinetics/ph
 fix ki2 all kinetics/thermo fix open v_pressure
 fix ki1 all kinetics/monod v_EPSdens	
 #fix g1 all kinetics/diffusion exp v_tol pp pp nd 10
-fix g1 all kinetics/diffusion2 exp v_tol pp pp nd 10
+fix g1 all kinetics/diffusion2 exp v_tol v_bl v_Q v_rvol v_Af pp pp nd 10
 
 fix d1 all divide 100 v_EPSdens v_divMass 3123
 #fix i1 all immigration 1200 v_divMass v_density 3215

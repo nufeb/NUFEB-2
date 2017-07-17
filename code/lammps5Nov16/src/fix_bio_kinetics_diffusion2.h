@@ -74,7 +74,7 @@ class FixKineticsDiffusion2 : public Fix {
 
   void update_grids(int);
   void compute_bc(double &, double *, int, double);
-  void compute_bulk();
+  void compute_bulk(int);
   void compute_bl();
   void compute_flux(double, double &, double *, double, int);
   bool isEuqal(double, double, double);

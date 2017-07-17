@@ -52,7 +52,7 @@ using namespace std;
 FixKineticsDiffusion2::FixKineticsDiffusion2(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
 
-  if (narg != 10) error->all(FLERR,"Not enough arguments in fix diffusion command");
+  if (narg != 13) error->all(FLERR,"Not enough arguments in fix diffusion command");
 
   var = new char*[5];
   ivar = new int[5];
@@ -297,6 +297,8 @@ bool* FixKineticsDiffusion2::diffusion(bool *nuConv, int iter, double diffT)
       zbcm = iniS[i][5] * 1000;
       zbcp = iniS[i][6] * 1000;
 
+      if(iter == 1 && strcmp(bio->nuName[i], "o3") != 0) compute_bulk(i);
+
       // solve diffusion and reaction
       for (int grid = 0; grid < nXYZ; grid++) {
         // transform nXYZ index to nuR index
@@ -355,8 +357,6 @@ void FixKineticsDiffusion2::compute_bl() {
   zhi = nz * stepz;
 
   if (nz != prv_nz){
-//    printf("1 nZ = %e \n ", height);
-//    test();
     nZ = nz + 2;
     nXYZ = nX * nY * nZ;
 
@@ -365,8 +365,6 @@ void FixKineticsDiffusion2::compute_bl() {
     ghost = memory->grow(ghost,nXYZ,"diffusion:ghost");
 
     update_grids(nz - prv_nz);
-//    printf("2 nZ = %i \n ", nZ);
-//    test();
   }
 }
 
@@ -413,12 +411,12 @@ void FixKineticsDiffusion2::update_grids(int dnz){
   Mass balances of nutrients in the bulk liquid
 ------------------------------------------------------------------------- */
 
-void FixKineticsDiffusion2::compute_bulk() {
-  for (int nu = 1; nu <= nnus; nu++) {
-    double sumR = 0;
-    for (int i = 0; i < nx*ny*kinetics->nz; i++) sumR += nuR[nu][i];
-    nuBS[nu] = q/rvol(iniS[i][6] * 1000 - nuBS[nu])+ af/(rvol*ny*nz)*sumR;
-  }
+void FixKineticsDiffusion2::compute_bulk(int nu) {
+  double sumR = 0;
+  for (int i = 0; i < nx*ny*kinetics->nz; i++) sumR += nuR[nu][i];
+ // printf("nuBS[%i] = %e \n", nu, nuBS[nu]);
+  nuBS[nu] = nuBS[nu] + ((q/rvol) * (zbcp - nuBS[nu]) + (af/(rvol*yhi*xhi))*sumR*stepx*stepy*stepz)*update->dt * nevery;
+ // printf("nuBS[%i] = %e \n", nu, nuBS[nu]);
 }
 
 
@@ -593,7 +591,6 @@ double FixKineticsDiffusion2::getMaxHeight() {
 
   for (int i=0; i<nall; i++) {
     if((x[i][2]+r[i]) > maxh) maxh = x[i][2]+r[i];
-    printf("i=%i, z = %e \n",i, x[i][2]);
   }
 
   return maxh;
