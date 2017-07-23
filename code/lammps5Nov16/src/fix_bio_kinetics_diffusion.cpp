@@ -1,5 +1,5 @@
 /*
- * fix_metabolism.h
+ * fix_kinetics/diffusion.cpp
  *
  *  Created on: 15 Aug 2016
  *      Author: bowen
@@ -24,8 +24,6 @@
 #include <iostream>
 #include <string>
 
-#include "eigen/Eigen/Eigen"
-#include "eigen/unsupported/Eigen/KroneckerProduct"
 #include "atom.h"
 #include "domain.h"
 #include "error.h"
@@ -39,6 +37,7 @@
 #include "lammps.h"
 #include "modify.h"
 #include "pointers.h"
+#include "memory.h"
 #include "update.h"
 #include "variable.h"
 #include "group.h"
@@ -47,24 +46,22 @@ using namespace LAMMPS_NS;
 using namespace FixConst;
 
 using namespace std;
-using namespace Eigen;
-
 
 /* ---------------------------------------------------------------------- */
 
 FixKineticsDiffusion::FixKineticsDiffusion(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
 
-  if (narg != 9) error->all(FLERR,"Not enough arguments in fix diffusion command");
+  if (narg != 12) error->all(FLERR,"Not enough arguments in fix diffusion command");
 
-  var = new char*[1];
-  ivar = new int[1];
+  var = new char*[5];
+  ivar = new int[5];
 
   if(strcmp(arg[3], "exp") == 0) sflag = 0;
   else if(strcmp(arg[3], "imp") == 0) sflag = 1;
   else error->all(FLERR,"Illegal PDE method command");
 
-  for (int i = 0; i < 1; i++) {
+  for (int i = 0; i < 5; i++) {
     int n = strlen(&arg[4+i][2]) + 1;
     var[i] = new char[n];
     strcpy(var[i],&arg[4+i][2]);
@@ -72,30 +69,31 @@ FixKineticsDiffusion::FixKineticsDiffusion(LAMMPS *lmp, int narg, char **arg) : 
 
   //set boundary condition flag:
   //0=PERIODIC-PERIODIC,  1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
-  if(strcmp(arg[5], "pp") == 0) xbcflag = 0;
-  else if(strcmp(arg[5], "dd") == 0) xbcflag = 1;
-  else if(strcmp(arg[5], "nd") == 0) xbcflag = 2;
-  else if(strcmp(arg[5], "nn") == 0) xbcflag = 3;
-  else if(strcmp(arg[5], "dn") == 0) xbcflag = 4;
+  if(strcmp(arg[9], "pp") == 0) xbcflag = 0;
+  else if(strcmp(arg[9], "dd") == 0) xbcflag = 1;
+  else if(strcmp(arg[9], "nd") == 0) xbcflag = 2;
+  else if(strcmp(arg[9], "nn") == 0) xbcflag = 3;
+  else if(strcmp(arg[9], "dn") == 0) xbcflag = 4;
   else error->all(FLERR,"Illegal x-axis boundary condition command");
 
-  if(strcmp(arg[6], "pp") == 0) ybcflag = 0;
-  else if(strcmp(arg[6], "dd") == 0) ybcflag = 1;
-  else if(strcmp(arg[6], "nd") == 0) ybcflag = 2;
-  else if(strcmp(arg[6], "nn") == 0) ybcflag = 3;
-  else if(strcmp(arg[6], "dn") == 0) ybcflag = 4;
+  if(strcmp(arg[10], "pp") == 0) ybcflag = 0;
+  else if(strcmp(arg[10], "dd") == 0) ybcflag = 1;
+  else if(strcmp(arg[10], "nd") == 0) ybcflag = 2;
+  else if(strcmp(arg[10], "nn") == 0) ybcflag = 3;
+  else if(strcmp(arg[10], "dn") == 0) ybcflag = 4;
   else error->all(FLERR,"Illegal y-axis boundary condition command");
 
-  if(strcmp(arg[7], "pp") == 0) zbcflag = 0;
-  else if(strcmp(arg[7], "dd") == 0) zbcflag = 1;
-  else if(strcmp(arg[7], "nd") == 0) zbcflag = 2;
-  else if(strcmp(arg[7], "nn") == 0) zbcflag = 3;
-  else if(strcmp(arg[7], "dn") == 0) zbcflag = 4;
+  if(strcmp(arg[11], "pp") == 0) zbcflag = 0;
+  else if(strcmp(arg[11], "dd") == 0) zbcflag = 1;
+  else if(strcmp(arg[11], "nd") == 0) zbcflag = 2;
+  else if(strcmp(arg[11], "nn") == 0) zbcflag = 3;
+  else if(strcmp(arg[11], "dn") == 0) zbcflag = 4;
+  else if(strcmp(arg[11], "db") == 0) zbcflag = 5;
   else error->all(FLERR,"Illegal z-axis boundary condition command");
 
   rflag = 0;
-  rstep = atoi(arg[8]);
-  if (rstep > 1) rflag = 1;
+  //rstep = atoi(arg[12]);
+  //if (rstep > 1) rflag = 1;
 
 }
 
@@ -104,15 +102,18 @@ FixKineticsDiffusion::FixKineticsDiffusion(LAMMPS *lmp, int narg, char **arg) : 
 FixKineticsDiffusion::~FixKineticsDiffusion()
 {
   int i;
-  for (i = 0; i < 1; i++) {
+  for (i = 0; i < 5; i++) {
     delete [] var[i];
   }
 
   delete [] var;
   delete [] ivar;
-  delete [] r;
-  delete [] maxBC;
-  delete [] nRES;
+
+  memory->destroy(diffD);
+  memory->destroy(xGrid);
+  memory->destroy(nuGrid);
+  memory->destroy(ghost);
+  memory->destroy(nuBS);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -134,7 +135,7 @@ void FixKineticsDiffusion::init()
   if (!atom->radius_flag)
     error->all(FLERR,"Fix requires atom attribute diameter");
 
-  for (int n = 0; n < 1; n++) {
+  for (int n = 0; n < 5; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
       error->all(FLERR,"Variable name for fix diffusion does not exist");
@@ -157,20 +158,22 @@ void FixKineticsDiffusion::init()
 
   bio = kinetics->bio;
   tol = input->variable->compute_equal(ivar[0]);
+  bl = input->variable->compute_equal(ivar[1]);
+  q = input->variable->compute_equal(ivar[2]);
+  rvol = input->variable->compute_equal(ivar[3]);
+  if (rvol <= 0) lmp->error->all(FLERR,"Reactor volume cannot be equal or less than 0");
+  af = input->variable->compute_equal(ivar[4]);
 
-  //set grid size
+  //set diffusion grid size
   nx = kinetics->nx;
   ny = kinetics->ny;
   nz = kinetics->nz;
-  ngrids=nx*ny*nz;
 
   nnus = bio->nnus;
   iniS = bio->iniS;
   diffCoeff = bio->diffCoeff;
 
-  r = new double[nnus+1]();
-  maxBC = new double[nnus+1]();
-  nRES = new VectorXd[nnus+1];
+  diffD = memory->create(diffD,nnus+1,"diffusion:diffD");
 
   //Get computational domain size
   if (domain->triclinic == 0) {
@@ -190,340 +193,378 @@ void FixKineticsDiffusion::init()
     zhi = domain->boxhi_bound[2];
   }
 
+  izhi = zhi;
+
   stepx = (xhi-xlo)/nx;
   stepy = (yhi-ylo)/ny;
   stepz = (zhi-zlo)/nz;
 
   if (!isEuqal(stepx, stepy, stepz)) error->all(FLERR,"Grid is not cubic");
-  grid = stepx;
+
+  if (bl >= 0) {
+    double height = getMaxHeight();
+    nz = ceil((bl + height)/stepz);
+    if (nz > kinetics->nz) nz = kinetics->nz;
+  }
+
+  zhi = nz * stepz;
+
+  nX = nx + 2;
+  nY = ny + 2;
+  nZ = nz + 2;
+
+  nXYZ = nX*nY*nZ;
 
   //inlet concentration, diffusion constant
   //and maximum boundary condition conc value
   for (int i = 1; i <= nnus; i++) {
-    r[i] = diffCoeff[i]/(2 * stepx * stepx);
-
-    double bc[6];
-    for (int j = 0; j < 6; j++ ) {
-      bc[j] = iniS[i][j+1];
-    }
-    maxBC[i] = *max_element(bc, bc+6);
-    nRES[i] = VectorXd(ngrids);
-    nRES[i].setZero();
+    diffD[i] = diffCoeff[i];
   }
 
-  LAP = laplacian_matrix_3d();
+  xGrid =  memory->create(xGrid,nXYZ,3,"diffusion:xGrid");
+  nuGrid = memory->create(nuGrid,nXYZ,nnus+1,"diffusion:nuGrid");
+  ghost = memory->create(ghost,nXYZ,"diffusion:ghost");
+  nuBS = memory->create(nuBS,nnus+1,"diffusion:nuBS");
 
-  //create identity matrix
-  SparseMatrix<double> In(ngrids, ngrids);
-  In.setIdentity();
-  I = In;
-}
-
-
-/* ----------------------------------------------------------------------
-  build 3d laplacian matrix
-------------------------------------------------------------------------- */
-
-SparseMatrix<double> FixKineticsDiffusion::laplacian_matrix_3d()
-{
-  VectorXi ex1(nx);
-  ex1.setOnes();
-  MatrixXi  ex (nx, 3);
-  ex << ex1, -3*ex1, ex1;
-  VectorXi dx(3);
-  dx << -1, 0, 1;
-  SparseMatrix<double> Lx = spdiags(ex, dx, nx, nx, 3);
-
-  VectorXi ey1(ny);
-  ey1.setOnes();
-  MatrixXi ey(ny, 3);
-  ey << ey1, -3*ey1, ey1;
-  VectorXi dy(3);
-  dy << -1, 0, 1;
-  SparseMatrix<double> Ly = spdiags(ey, dy, ny, ny, 3);
-
-  SparseMatrix<double> Ix(nx, nx);
-  Ix.setIdentity();
-  SparseMatrix<double> Iy(ny, ny);
-  Iy.setIdentity();
-
-  SparseMatrix<double> L2a = kroneckerProduct(Iy, Lx);
-  SparseMatrix<double> L2b = kroneckerProduct(Ly, Ix);
-
-  SparseMatrix<double> L2 = L2a + L2b;
-
-  VectorXi ez1(ngrids);
-  ez1.setOnes();
-  MatrixXi  ez (ngrids, 2);
-  ez << ez1, ez1;
-  VectorXi dz(2);
-  dz << -nx*ny, nx*ny;
-  SparseMatrix<double> L = spdiags(ez, dz, ngrids, ngrids, 2);
-
-  SparseMatrix<double> Iz(nz, nz);
-  Iz.setIdentity();
-  SparseMatrix<double> Aa = kroneckerProduct(Iz, L2);
-
-  SparseMatrix<double> A = Aa + L;
-
-  return A;
-}
-
-/* ----------------------------------------------------------------------
-  extract and create sparse band and diagonal matrices
-------------------------------------------------------------------------- */
-
-SparseMatrix<double> FixKineticsDiffusion::spdiags(MatrixXi& B, VectorXi& d, int m, int n, int size_d)
-{
-  SparseMatrix<double> A(m,n);
-
-  for (int k = 0; k < size_d; k++) {
-    int i_min = max(0, (int)(-d(k)));
-    int i_max = min(m - 1, (int)(n - d(k) - 1));
-    int B_idx_start = m >= n ? d(k) : 0;
-
-    for (int i = i_min; i <= i_max; i++) {
-     A.insert(i, (double)(i+d(k))) = B(B_idx_start + i, k);
+  //initialise grids
+  double i, j, k;
+  int grid = 0;
+  for (k = zlo - (stepz/2); k < zhi + stepz; k += stepz) {
+    for (j = ylo - (stepy/2); j < yhi + stepy; j += stepy) {
+      for (i = xlo - (stepx/2); i < xhi + stepx; i += stepx) {
+        xGrid[grid][0] = i;
+        xGrid[grid][1] = j;
+        xGrid[grid][2] = k;
+        //Initialise concentration values for ghost and std grids
+        for (int nu = 1; nu <= nnus; nu++) {
+          if (i < xlo) {
+            ghost[grid] = true;
+            nuGrid[grid][nu] = iniS[nu][1] * 1000;
+          } else if (i > xhi) {
+            ghost[grid] = true;
+            nuGrid[grid][nu] = iniS[nu][2] * 1000;
+          } else if (j < ylo) {
+            ghost[grid] = true;
+            nuGrid[grid][nu] = iniS[nu][3] * 1000;
+          } else if (j > yhi) {
+            ghost[grid] = true;
+            nuGrid[grid][nu] = iniS[nu][4] * 1000;
+          } else if (k < zlo) {
+            ghost[grid] = true;
+            nuGrid[grid][nu] = iniS[nu][5] * 1000;
+          } else if (k > zhi) {
+            ghost[grid] = true;
+            nuGrid[grid][nu] = iniS[nu][6] * 1000;
+          } else {
+            ghost[grid] = false;
+            nuGrid[grid][nu] = iniS[nu][0] * 1000;
+          }
+          if (grid == 0) {
+            nuBS[nu] =  iniS[nu][6] * 1000;
+          }
+        }
+        grid++;
+      }
     }
   }
-  return A;
 }
 
-//template <class numeric_t>
-//SparseMatrix<numeric_t> FixDiffusion::spdiags2(const Matrix<numeric_t,-1,-1> &B,
-//          const VectorXi &d, const int m, const int n) {
-//  typedef Triplet<numeric_t> triplet_t;
-//  std::vector<triplet_t> triplets;
-//  triplets.reserve(std::min(m,n)*d.size());
-//  for (int k = 0; k < d.size(); ++k) {
-//    int diag = d(k);  // get diagonal
-//    int i_start = std::max(-diag, 0); // get row of 1st element
-//    int i_end = std::min(m, m-diag-(m-n)); // get row of last element
-//    int j = -std::min(0, -diag); // get col of 1st element
-//    int B_i; // start index i in matrix B
-//    if(m < n)
-//      B_i = std::max(-diag,0); // m < n
-//    else
-//      B_i = std::max(0,diag); // m >= n
-//    for(int i = i_start; i < i_end; ++i, ++j, ++B_i){
-//      triplets.push_back( {i, j,  B(B_i,k)} );
-//    }
-//  }
-//  SparseMatrix<numeric_t> A(m,n);
-//  A.setFromTriplets(triplets.begin(), triplets.end());
-//  return A;
-//}
-//
-//
 
 /* ----------------------------------------------------------------------
-  solve diffusion equations and metabolism
+  solve diffusion and reaction
 ------------------------------------------------------------------------- */
 
 bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
 {
-
-  VectorXd *vecS = new VectorXd[nnus+1];
-  VectorXd *vecR = new VectorXd[nnus+1];
-  //double testMax = 0;
-
+  this->diffT = diffT;
   nuS = kinetics->nuS;
   nuR = kinetics->nuR;
 
-  VectorXd BC(ngrids);
-  VectorXd RES(ngrids);
-
-  SparseMatrix<double> sdiagBC;
-  MatrixXd B;
-  MatrixXd A;
-  MatrixXd diagBC;
-  VectorXd vecPrvS;
+  if(iter == 1 && bl >= 0) compute_bl();
 
   for (int i = 1; i <= nnus; i++) {
     if (bio->nuType[i] == 0 && diffCoeff[i] != 0 && !nuConv[i]) {
-      //initialization
-      //convert concentration and consumption data types to Eigen vector type
-      vecS[i] = Map<VectorXd> (nuS[i], ngrids, 1);
-      vecR[i] = Map<VectorXd> (nuR[i], ngrids, 1);
-      // convert from mol/l to mol/m3
-      vecS[i] = vecS[i] * 1000;
+      double maxS = 0;
+      double *nuPrev = memory->create(nuPrev,nXYZ,"diffusion:nuPrev");
+      // copy current concentrations
+      for (int grid = 0; grid < nXYZ; grid++) {
+        nuPrev[grid] = nuGrid[grid][i];
+      }
 
       xbcm = iniS[i][1] * 1000;
       xbcp = iniS[i][2] * 1000;
       ybcm = iniS[i][3] * 1000;
-      ybcp = iniS[i][4] * 1000 ;
+      ybcp = iniS[i][4] * 1000;
       zbcm = iniS[i][5] * 1000;
       zbcp = iniS[i][6] * 1000;
 
-      BC = bc_vec(vecS[i], grid);
-      //if (i==1 && iter == 1)cout<<BC/1000<<endl;
-      double max;
-      //Explicit method
-      if (sflag == 0) {
+      if(iter == 1 && strcmp(bio->nuName[i], "o2") != 0 && q >= 0 && af >= 0) compute_bulk(i);
 
-        RES = LAP * vecS[i] + BC;
-        RES = (2 * r[i] * RES + vecR[i]) * diffT;
+      // solve diffusion and reaction
+      for (int grid = 0; grid < nXYZ; grid++) {
+        // transform nXYZ index to nuR index
+        if (!ghost[grid]) {
+          int ix = floor(xGrid[grid][0]/stepx);
+          int iy = floor(xGrid[grid][1]/stepy);
+          int iz = floor(xGrid[grid][2]/stepz);
 
-        //decide
-        if (rflag == 1) {
-          if (iter % rstep != 0) {
-            nRES[i] = nRES[i] + RES;
-          } else{
-            max = nRES[i].array().abs().maxCoeff();
-            nRES[i].setZero();
+          int ind = iz * nx * ny + iy * nx + ix;
+
+          compute_flux(diffD[i], nuGrid[grid][i], nuPrev, nuR[i][ind], grid);
+
+          nuR[i][ind] = 0;
+
+          if (nuGrid[grid][i] > 0) nuS[i][ind] = nuGrid[grid][i] / 1000;
+          else {
+            nuGrid[grid][i] = 0;
+            nuS[i][ind] = 0;
           }
-        } else {
-          max = RES.array().abs().maxCoeff();
-        }
+        } else compute_bc(nuGrid[grid][i], nuPrev, grid, nuBS[i]);
 
-        vecS[i] = RES + vecS[i];
-      //Implicit method
-      } else {
-        vecPrvS = vecS[i].replicate(1, 1);
-        diagBC = BC.asDiagonal();
-        sdiagBC = diagBC.sparseView();
-
-        B = ((r[i] * LAP + I) * vecS[i] + r[i] * BC +  vecR[i]) * diffT;
-        A = I - r[i] * LAP * diffT - r[i] * sdiagBC * diffT;
-        vecS[i] = A.colPivHouseholderQr().solve(B);
-
-        VectorXd vecDiffS = vecS[i] - vecPrvS;
-        max = vecDiffS.array().abs().maxCoeff();
+        if (maxS < nuGrid[grid][i]) maxS = nuGrid[grid][i];
       }
 
-      if (iter % rstep == 0) {
+      bool conv = true;
+      // check convergence criteria
+      for (int grid = 0; grid < nXYZ; grid++) {
+        if(!ghost[grid]){
+          if (maxS == 0) maxS = 1;
+          double rate = nuGrid[grid][i]/maxS;
+          double prevRate = nuPrev[grid]/maxS;
 
-        double maxS = vecS[i].array().abs().maxCoeff();
-        if (maxS == 0) maxS = 1;
-
-        double ratio = max / maxS;
-
-        if (ratio < tol)  {
-          nuConv[i] = true;
+          if(fabs(rate - prevRate) >= tol)  {
+            conv = false;
+            break;
+          }
         }
       }
-
-      for (int j = 0; j < ngrids; j++) {
-        if (vecS[i][j] < 0) vecS[i][j] = 0;
-      }
-
-      //convert from kg/m3 to mol/l
-      vecS[i] = vecS[i] / 1000;
-      vecR[i].setZero();
-      //convert concentration vector into normal data type
-      Map<MatrixXd>(nuS[i], vecS[i].rows(), vecS[i].cols()) =  vecS[i];
-      Map<MatrixXd>(nuR[i], vecR[i].rows(), vecR[i].cols()) =  vecR[i];
+      nuConv[i] = conv;
+      memory->destroy(nuPrev);
     }
   }
-
-  //test();
-  delete [] vecS;
-  delete [] vecR;
 
   return nuConv;
 }
 
 /* ----------------------------------------------------------------------
-  build matrix of boundary condition
+  update diffusion boundary layer
 ------------------------------------------------------------------------- */
 
-VectorXd FixKineticsDiffusion::bc_vec(VectorXd& S, double h)
-{
-  VectorXd B(ngrids);
-  B.setZero();
-  int i_m;
-  int i_p;
+void FixKineticsDiffusion::compute_bl() {
+  double height = getMaxHeight();
+  int prv_nz = nz;
+  nz = ceil((bl + height)/stepz);
+  if (nz > kinetics->nz) nz = kinetics->nz;
+  zhi = nz * stepz;
 
-  //X-AXIS SURFACE
-  for(int i = 1; i < ny +1; i++) {
-    for(int j = 1; j < nz +1; j++) {
-      int k = 1+(i-1)*nx+(j-1)*nx*ny;
+  if (nz != prv_nz){
+    nZ = nz + 2;
+    nXYZ = nX * nY * nZ;
 
-      i_m = k-1 ;
-      i_p = k+nx-2;
-      //cout << i_m << " ip " << i_p << endl;
-      if (xbcflag == 0) {
-        B(i_m) = B(i_m)+S(i_p); //BOTTOM, X_MINUS
-        B(i_p) = B(i_p)+S(i_m); //TOP, X_PLUS
-      }
-      else if (xbcflag == 1) {
-        B(i_m) = B(i_m)+2*xbcm-S(i_m); //BOTTOM, X_MINUS
-        B(i_p) = B(i_p)+2*xbcp-S(i_p); //TOP, X_PLUS
-      }
-      else if (xbcflag == 2) {
-        B(i_m) = B(i_m)-h*xbcm+S(i_m); //BOTTOM,X_MINUS
-        B(i_p) = B(i_p)+2*xbcp-S(i_p); //TOP, X_PLUS
-      }
-      else if (xbcflag == 3) {
-        B(i_m) = B(i_m)-h*xbcm+S(i_m); //BOTTOM,X_MINUS
-        B(i_p) = B(i_p)+h*xbcp+S(i_p); //TOP,X_PLUS
-      }
-      else if (xbcflag == 4) {
-        B(i_m) = B(i_m)+2*xbcm-S(i_m); //BOTTOM, X_MINUS
-        B(i_p) = B(i_p)+h*xbcp+S(i_p); //TOP,X_PLUS
-      }
-    }
+    xGrid =  memory->grow(xGrid,nXYZ,3,"diffusion:xGrid");
+    nuGrid = memory->grow(nuGrid,nXYZ,nnus+1,"diffusion:nuGrid");
+    ghost = memory->grow(ghost,nXYZ,"diffusion:ghost");
+
+    update_grids(nz - prv_nz);
   }
-
-  //Y-AXIS SURFACE
-  for(int i = 1; i < nz +1; i++) {
-    i_p = (i)*nx*ny-nx;
-    for (i_m = (i-1)*nx*ny; i_m <= (i-1)*nx*ny+nx-1; i_m++) {
-      //error ip im?
-      if (ybcflag == 0) {
-        B(i_m) = B(i_m)+ S(i_p); //BOTTOM, Y_MINUS
-        B(i_p)=B(i_p)+S(i_m); //TOP, Y_PLUS
-      }
-      else if (ybcflag == 1) {
-        B(i_m)=B(i_m)+2*ybcm-S(i_m); //BOTTOM, Y_MINUS
-        B(i_p)=B(i_p)+2*ybcp-S(i_p); //TOP, Y_PLUS
-      }
-      else if (ybcflag == 2) {
-        B(i_m)=B(i_m)-h*ybcm+S(i_m); //BOTTOM,Y_MINUS
-        B(i_p)=B(i_p)+2*ybcp-S(i_p); //TOP, Y_PLUS
-      }
-      else if (ybcflag == 3) {
-        B(i_m)=B(i_m)-h*ybcm+S(i_m); //BOTTOM,Y_MINUS
-        B(i_p)=B(i_p)+h*ybcp+S(i_p); //TOP,Y_PLUS
-      }
-      else if (ybcflag == 4) {
-        B(i_m)=B(i_m)+2*ybcm-S(i_m); //BOTTOM, Y_MINUS
-        B(i_p)=B(i_p)+h*ybcp+S(i_p); //TOP,Y_PLUSvecR
-      }
-      i_p++;
-    }
-  }
-
-  //Z-AXIS SURFACE
-  i_p = nx*ny*(nz-1);
-  for (i_m = 0; i_m < nx*ny; i_m++) {
-
-    //error ip im?
-    if (zbcflag == 0) {
-      B(i_m)=B(i_m)+S(i_p); //BOTTOM, Z_MINUS
-      B(i_p)=B(i_p)+S(i_m); //TOP, Z_PLUS
-    }
-    else if (zbcflag == 1) {
-      B(i_m)=B(i_m)+2*zbcm-S(i_m); //BOTTOM, Z_MINUS
-      B(i_p)=B(i_p)+2*zbcp-S(i_p); //TOP, Z_PLUS
-    }
-    else if (zbcflag == 2) {
-      B(i_m)=B(i_m)-h*zbcm+S(i_m); //BOTTOM,Z_MINUS
-      B(i_p)=B(i_p)+2*zbcp-S(i_p); //TOP, Z_PLUS
-    }
-    else if (zbcflag == 3) {
-      B(i_m)=B(i_m)-h*zbcm+S(i_m); //BOTTOM,Z_MINUS
-      B(i_p)=B(i_p)+h*zbcp+S(i_p); //TOP,Z_PLUS
-    }
-    else if (zbcflag == 4) {
-      B(i_m)=B(i_m)+2*zbcm-S(i_m); //BOTTOM, Z_MINUS
-      B(i_p)=B(i_p)+h*zbcp+S(i_p); //TOP,Z_PLUS
-    }
-    i_p++;
-  }
-
-  return B;
 }
+
+
+void FixKineticsDiffusion::update_grids(int dnz){
+  //update grids
+  double i, j, k;
+  double sk;
+  int grid;
+
+  if (dnz > 0) {
+    sk = (nZ-dnz-2)*stepz;
+    grid = (nZ-dnz-1)*nX*nY;
+  } else {
+    sk = (nZ-2)*stepz;
+    grid = (nZ-1)*nX*nY;
+  }
+  //printf("sk = %e, grid = %i \n", sk, grid);
+  for (k = zlo - (stepz/2); k < zhi + stepz; k += stepz) {
+    if(k < sk) continue;
+    for (j = ylo - (stepy/2); j < yhi + stepy; j += stepy) {
+      for (i = xlo - (stepx/2); i < xhi + stepx; i += stepx) {
+        xGrid[grid][0] = i;
+        xGrid[grid][1] = j;
+        xGrid[grid][2] = k;
+
+        int down = grid - nX*nY; // z direction
+        //Initialise concentration values for ghost and std grids
+        for (int nu = 1; nu <= nnus; nu++) {
+          if ((i < xlo) || (i > xhi) || (j < ylo) || (j > yhi) || (k > zhi))
+            ghost[grid] = true;
+          else ghost[grid] = false;
+
+          if (k > zhi) nuGrid[grid][nu] = iniS[nu][6] * 1000;
+          else nuGrid[grid][nu] = nuGrid[down][nu];
+        }
+        grid++;
+      }
+    }
+  }
+}
+
+/* ----------------------------------------------------------------------
+  Mass balances of nutrients in the bulk liquid
+------------------------------------------------------------------------- */
+
+void FixKineticsDiffusion::compute_bulk(int nu) {
+  double sumR = 0;
+  for (int i = 0; i < nx*ny*kinetics->nz; i++) sumR += nuR[nu][i];
+ // printf("nuBS[%i] = %e \n", nu, nuBS[nu]);
+  nuBS[nu] = nuBS[nu] + ((q/rvol) * (zbcp - nuBS[nu]) + (af/(rvol*yhi*xhi))*sumR*stepx*stepy*stepz)*update->dt * nevery;
+ // printf("nuBS[%i] = %e \n", nu, nuBS[nu]);
+}
+
+
+/* ----------------------------------------------------------------------
+  update boundary condition
+------------------------------------------------------------------------- */
+
+void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, double bulk) {
+  //for nx = ny = nz = 1 grids
+  //18 19 20        21 22 23       24 25 26
+  //9  10 11        12 13 14       15 16 17
+  //0   1  2         3  4  5        6  7  8
+
+  int lhs = grid - 1;   // x direction
+  int rhs = grid + 1;  // x direction
+  int bwd = grid - nX;  // y direction
+  int fwd = grid + nX;  // y direction
+  int down = grid - nX*nY; // z direction
+  int up = grid + nX*nY;  // z dirction
+
+  // assign values to the ghost-grids according to the boundary conditions.
+  // If ghostcells are Neu then take the values equal from the adjacent cells.
+  // if ghostcells are dirich then take the values equal to negative of the adjacent cells.
+  // if ghostcells are mixed then zlo ghost cells are nuemann, zhi ghost cells are dirichlet, other four surfaces are periodic BC.
+    // Low-z surface
+  if (xGrid[grid][2] < zlo && !ghost[up]) {
+    //0=PERIODIC-PERIODIC,  1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
+    if (zbcflag == 0) {
+      int zhiGrid = grid + nX*nY*nz;
+      nuCell = nuPrev[zhiGrid];
+    } else if (zbcflag == 1) {
+      nuCell = 2*zbcm - nuPrev[up];
+    } else if (zbcflag == 2) {
+      nuCell = nuPrev[up];
+    } else if (zbcflag == 3) {
+      nuCell = nuPrev[up];
+    } else if (zbcflag == 4) {
+      nuCell = 2*zbcm - nuPrev[up];
+    }
+  }
+  // high-z surface
+  else if (xGrid[grid][2] > zhi && !ghost[down]) {
+    if (zbcflag == 0) {
+      int zloGrid = grid - nX*nY*nz;
+      nuCell = nuPrev[zloGrid];
+    } else if (zbcflag == 1) {
+      nuCell = 2*bulk - nuPrev[down];
+    } else if (zbcflag == 2) {
+      nuCell = 2*bulk - nuPrev[down];
+    } else if (zbcflag == 3) {
+      nuCell = nuPrev[down];
+    } else if (zbcflag == 4) {
+      nuCell = nuPrev[down];
+    }
+  }
+  // low-y surface
+  else if (xGrid[grid][1] < ylo && !ghost[fwd]) {
+    if (ybcflag == 0) {
+      int yhiGrid = grid + nX*ny;
+      nuCell = nuPrev[yhiGrid];
+    } else if (ybcflag == 1) {
+      nuCell = 2*ybcm - nuPrev[fwd];
+    } else if (ybcflag == 2) {
+      nuCell = nuPrev[fwd];
+    } else if (ybcflag == 3) {
+      nuCell = nuPrev[fwd];
+    } else if (ybcflag == 4) {
+      nuCell = 2*ybcm - nuPrev[fwd];
+    }
+  }
+  // high-y surface
+  else if (xGrid[grid][1] > yhi && !ghost[bwd]) {
+    if (ybcflag == 0) {
+      int yloGrid = grid - nX*ny;
+      nuCell = nuPrev[yloGrid];
+    } else if (ybcflag == 1) {
+      nuCell = 2*ybcp - nuPrev[bwd];
+    } else if (ybcflag == 2) {
+      nuCell = 2*ybcp - nuPrev[bwd];
+    } else if (ybcflag == 3) {
+      nuCell = nuPrev[bwd];
+    } else if (ybcflag == 4) {
+      nuCell = nuPrev[bwd];
+    }
+  }
+  // low-x surface
+  else if (xGrid[grid][0] < xlo && !ghost[rhs]) {
+    if (xbcflag == 0) {
+      int xhiGrid = grid + nx;
+      nuCell = nuPrev[xhiGrid];
+    } else if (xbcflag == 1) {
+      nuCell = 2*xbcm - nuPrev[rhs];
+    } else if (xbcflag == 2) {
+      nuCell = nuPrev[rhs];
+    } else if (xbcflag == 3) {
+      nuCell = nuPrev[rhs];
+    } else if (xbcflag == 4) {
+      nuCell = 2*xbcm - nuPrev[rhs];
+    }
+  }
+  // high-x surface
+  else if (xGrid[grid][0] > xhi && !ghost[lhs]) {
+    if (xbcflag == 0) {
+      int xloGrid = grid - nx;
+      nuCell = nuPrev[xloGrid];
+    } else if (xbcflag == 1) {
+      nuCell = 2*xbcp - nuPrev[lhs];
+    } else if (xbcflag == 2) {
+      nuCell = 2*xbcp - nuPrev[lhs];
+    } else if (xbcflag == 3) {
+      nuCell = nuPrev[lhs];
+    } else if (xbcflag == 4) {
+      nuCell = nuPrev[lhs];
+    }
+  }
+}
+
+/* ----------------------------------------------------------------------
+  update non-ghost grids
+------------------------------------------------------------------------- */
+
+void FixKineticsDiffusion::compute_flux(double cellDNu, double &nuCell, double *nuPrev, double rateNu, int grid) {
+  int lhs = grid - 1;   // x direction
+  int rhs = grid + 1;  // x direction
+  int bwd = grid - nX;  // y direction
+  int fwd = grid + nX;  // y direction
+  int down = grid - nX*nY; // z direction
+  int up = grid + nX*nY;  // z dirction
+
+  double jRight = cellDNu*(nuPrev[rhs] - nuPrev[grid])/stepx;
+  double jLeft = cellDNu*(nuPrev[grid] - nuPrev[lhs])/stepx;
+  double jX = (jRight - jLeft)/stepx;
+
+  double jForward = cellDNu*(nuPrev[fwd] - nuPrev[grid])/stepy;
+  double jBackward = cellDNu*(nuPrev[grid] - nuPrev[bwd])/stepy;
+  double jY = (jForward - jBackward)/stepy;
+
+  double jUp = cellDNu*(nuPrev[up] - nuPrev[grid])/stepz;
+  double jDown = cellDNu*(nuPrev[grid] - nuPrev[down])/stepz;
+  double jZ = (jUp - jDown)/stepz;
+
+  // Adding fluxes in all the directions and the uptake rate (RHS side of the equation)
+  double res = jX + jY + jZ + rateNu;
+  //Updating the value: Ratesub*diffT + nuCell[cell](previous)
+  nuCell += res*diffT;
+}
+
 
 /* ----------------------------------------------------------------------
   compare double values for equality
@@ -536,4 +577,41 @@ bool FixKineticsDiffusion::isEuqal(double a, double b, double c)
     return false;
 
   return true;
+}
+
+double FixKineticsDiffusion::getMaxHeight() {
+//  double minmax[6];
+//  group->bounds(0,minmax);
+//
+//  return minmax[5];
+  int nlocal = atom->nlocal;
+  int nall = nlocal + atom->nghost;
+  double **x = atom->x;
+  double *r = atom->radius;
+  double maxh = 0;
+
+  for (int i=0; i<nall; i++) {
+    if((x[i][2]+r[i]) > maxh) maxh = x[i][2]+r[i];
+  }
+
+  return maxh;
+}
+
+
+void FixKineticsDiffusion::test(){
+  //test code
+  for (int i = nZ-1; i>=0; i--){
+    printf(" \n ");
+    for (int j = 0; j<nY; j++){
+      printf("  ");
+      for (int k = 0; k<nX; k++){
+        int ind = i * nX * nY + j * nX + k;
+        printf("%e ", nuGrid[ind][1]);
+        //printf("%d ", ghost[ind]);
+        //printf("%i ", ind);
+        //printf("%e ", xGrid[ind][2]);
+      }
+    }
+  }
+  printf(" \n ");
 }

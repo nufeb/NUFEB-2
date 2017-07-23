@@ -15,7 +15,6 @@
 #include "fix_bio_immigration.h"
 #include "fix_bio_kinetics.h"
 #include "fix_bio_kinetics_diffusion.h"
-#include "fix_bio_kinetics_diffusion2.h"
 #include "fix_bio_kinetics_monod.h"
 #include "fix_bio_kinetics_ph.h"
 #include "fix_bio_kinetics_thermo.h"

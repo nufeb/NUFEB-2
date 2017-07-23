@@ -85,12 +85,13 @@ double ComputeNufebRough::compute_scalar()
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
       int pos = position(i);
-      if (x[i][2] > maxh[pos]) maxh[pos] = x[i][2];
+      double z = x[i][2] + atom->radius[i];
+      if (z > maxh[pos]) maxh[pos] = z;
     }
   }
 
   for (int i = 0; i < nxy; i++) {
-    height += maxh[i];
+    height += maxh[i] * stepx * stepy;
   }
   height = height/nxy;
 
@@ -98,7 +99,7 @@ double ComputeNufebRough::compute_scalar()
     scalar = scalar + ((maxh[i] - height) * (maxh[i] - height));
   }
 
-  scalar = scalar/nxy;
+  scalar = scalar/(xhi*yhi);
   scalar = pow(scalar, 0.5);
 
   return scalar;
