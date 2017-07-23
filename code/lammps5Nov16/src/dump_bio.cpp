@@ -44,6 +44,7 @@
 #include "compute_bio_height.h"
 #include "compute_bio_rough.h"
 #include "compute_bio_segregate.h"
+#include "compute_bio_ntypes.h"
 
 struct stat st = {0};
 
@@ -76,6 +77,7 @@ DumpBio::DumpBio(LAMMPS *lmp, int narg, char **arg) :
   massFlag = 0;
   massHeader = 0;
   divHeader = 0;
+  typeHeader = 0;
   gasFlag = 0;
   yieldFlag = 0;
 
@@ -164,7 +166,7 @@ void DumpBio::init_style()
   }
 
   while (i < nkeywords) {
-    if (strcmp(keywords[i],"conc") == 0) {
+    if (strcmp(keywords[i],"concentration") == 0) {
       concFlag = 1;
       if (stat("./Results/S", &st) == -1) {
           mkdir("./Results/S", 0700);
@@ -272,6 +274,8 @@ void DumpBio::init_style()
       roughFlag = 1;
     } else if (strcmp(keywords[i],"segregation") == 0) {
       segFlag = 1;
+    }  else if (strcmp(keywords[i],"ntypes") == 0) {
+      ntypeFlag = 1;
     } else lmp->error->all(FLERR,"Undefined dump_bios keyword");
 
     i++;
@@ -295,6 +299,9 @@ void DumpBio::init_style()
       continue;
     } else if (strcmp(modify->compute[j]->style,"segregation") == 0) {
       cseg = static_cast<ComputeNufebSegregate *>(lmp->modify->compute[j]);
+      continue;
+    } else if (strcmp(modify->compute[j]->style,"ntypes") == 0) {
+      ctype = static_cast<ComputeNufebNtypes *>(lmp->modify->compute[j]);
       continue;
     }
   }
@@ -457,7 +464,7 @@ void DumpBio::write()
     fclose(fp);
   }
 
-  if (roughFlag == 1) {
+  if (segFlag == 1) {
     int len = 38;
     char path[len];
     strcpy(path, "./Results/segregation.csv");
@@ -465,6 +472,17 @@ void DumpBio::write()
     filename = path;
     fp = fopen(filename,"a");
     write_segregate_data();
+    fclose(fp);
+  }
+
+  if (ntypeFlag == 1) {
+    int len = 38;
+    char path[len];
+    strcpy(path, "./Results/ntypes.csv");
+
+    filename = path;
+    fp = fopen(filename,"a");
+    write_ntype_data();
     fclose(fp);
   }
 
@@ -724,6 +742,28 @@ void DumpBio::write_segregate_data()
 {
   cseg->compute_scalar();
   fprintf(fp, "%i,\t %e, \n", update->ntimestep, cseg->scalar);
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpBio::write_ntype_data()
+{
+  if (!typeHeader) {
+    for(int i = 1; i < atom->ntypes+1; i++){
+      fprintf(fp, "%s,\t", kinetics->bio->typeName[i]);
+    }
+    typeHeader = 1;
+    fprintf(fp, "\n");
+  }
+
+  ctype->compute_vector();
+
+  fprintf(fp, "%i,\t", update->ntimestep);
+
+  for(int i = 1; i < atom->ntypes+1; i++){
+    fprintf(fp, "%i,\t", ctype->vector[i-1]);
+  }
+  fprintf(fp, "\n");
 }
 
 /* ---------------------------------------------------------------------- */

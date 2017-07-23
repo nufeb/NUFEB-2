@@ -82,15 +82,16 @@ double ComputeNufebHeight::compute_scalar()
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
       int pos = position(i);
-      if (x[i][2] > maxh[pos]) maxh[pos] = x[i][2];
+      double z = x[i][2] + atom->radius[i];
+      if (z > maxh[pos]) maxh[pos] = z;
     }
   }
 
   for (int i = 0; i < nxy; i++) {
-      scalar += maxh[i];
+      scalar += maxh[i] * stepx * stepy;
   }
 
-  scalar = scalar/nxy;
+  scalar = scalar/(xhi*yhi);
   return scalar;
 }
 

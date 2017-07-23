@@ -20,7 +20,7 @@ fprintf(fid,'look_at 0\n')
 fprintf(fid,'rotate <0, 0, 45>\n', rotate);
 fprintf(fid,'}\n');
 fprintf(fid,'// Create simualtion domain\n');
-fprintf(fid,'#declare b_x=6e-3;\n');
+fprintf(fid,'#declare b_x=12e-3;\n');
 fprintf(fid,'#declare b_y=0.1;\n');
 fprintf(fid,'#declare b_z=0.1;\n');
 fprintf(fid,'object{ \n');

@@ -22,7 +22,6 @@ class FixKinetics : public Fix {
   friend class FixKineticsMonod;
   friend class FixKineticsThermo;
   friend class FixKineticsDiffusion;
-  friend class FixKineticsDiffusion2;
   friend class FixKineticsPH;
   friend class FixImmigration;
   friend class DumpBio;
@@ -59,7 +58,7 @@ class FixKinetics : public Fix {
 
   class AtomVecBio *avec;
   class BIO *bio;
-  class FixKineticsDiffusion2 *diffusion;
+  class FixKineticsDiffusion *diffusion;
   class FixKineticsMonod *monod;
   class FixKineticsPH *ph;
   class FixKineticsThermo *thermo;

@@ -1,5 +1,5 @@
 /*
- * fix_metabolism.h
+ * fix_kinetics/diffusion.h
  *
  *  Created on: 15 Aug 2016
  *      Author: bowen
@@ -15,13 +15,10 @@ FixStyle(kinetics/diffusion,FixKineticsDiffusion)
 #define SRC_FIX_KINETICS_DIFFUSION_H
 
 #include "fix.h"
-#include "eigen/Eigen/Eigen"
-
-using namespace Eigen;
 
 namespace LAMMPS_NS {
 
-class FixKineticsDiffusion : public Fix {
+class FixKineticsDiffusion: public Fix {
 
  public:
   FixKineticsDiffusion(class LAMMPS *, int, char **);
@@ -48,35 +45,40 @@ class FixKineticsDiffusion : public Fix {
   double *diffCoeff;            // diffusion coefficients of nutrients
   double *mw;                   // molecular weights of nutrients
   double tol;                   // tolerance for convergence criteria for nutrient balance equation
-  int rstep;                    // steps leave between Si+n-Si
+  int rstep;                    // steps skipped between Si+n-Si
   int rflag;
   double **nuR;
   double **nuS;
-  double *r;
-  double* maxBC;
+  double *diffD;
 
-  int nx, ny, nz;               // # of grids in x, y and z
-  int ngrids;                   // total # of grids
-  double xlo,xhi,ylo,yhi,zlo,zhi;
+  double bl;
+  double q, rvol, af;
+  bool reactor;
+  double *nuBS;
+
+  int nx, ny, nz;               // # of non-ghost grids in x, y and z
+  int nX, nY, nZ;               // # of all grids in x, y and z
+  int nXYZ;                   // total # of grids
+  double diffT;
+  double xlo,xhi,ylo,yhi,zlo,zhi,izhi;
   int xbcflag, ybcflag, zbcflag;             // 0=PERIODIC-PERIODIC, 1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
-  double grid;                               // grid height
-  double xbcm, xbcp, ybcm, ybcp, zbcm, zbcp; //inlet BC concentrations for each surface
-  SparseMatrix<double> LAP;       //laplacian matrix
-  SparseMatrix<double> I;       //sparse identity matrix
-  VectorXd *nRES;
+  double xbcm, xbcp, ybcm, ybcp, zbcm, zbcp; // inlet BC concentrations for each surface
+
+  double **xGrid;
+  double **nuGrid;
+  bool *ghost;
 
   class FixKinetics *kinetics;
   class BIO *bio;
   class AtomVecBio *avec;
 
-  SparseMatrix<double> laplacian_matrix_3d();
-  SparseMatrix<double> spdiags(MatrixXi&, VectorXi&, int, int, int);
-//  template <class numeric_t>
-//  SparseMatrix<numeric_t> spdiags2(const Matrix<numeric_t,-1,-1> &,
-//            const VectorXi &, const int, const int);
-  VectorXd bc_vec(VectorXd&, double);
+  void update_grids(int);
+  void compute_bc(double &, double *, int, double);
+  void compute_bulk(int);
+  void compute_bl();
+  void compute_flux(double, double &, double *, double, int);
   bool isEuqal(double, double, double);
-
+  double getMaxHeight();
   void test();
 };
 
