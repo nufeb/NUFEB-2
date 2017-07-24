@@ -21,7 +21,8 @@ namespace LAMMPS_NS {
 class FixKinetics : public Fix {
   friend class FixKineticsMonod;
   friend class FixKineticsThermo;
-  friend class FixKineticsDiffusion;
+  friend class FixKineticsDiffusionS;
+  friend class FixKineticsDiffusionM;
   friend class FixKineticsPH;
   friend class FixImmigration;
   friend class DumpBio;
@@ -58,7 +59,8 @@ class FixKinetics : public Fix {
 
   class AtomVecBio *avec;
   class BIO *bio;
-  class FixKineticsDiffusion *diffusion;
+  class FixKineticsDiffusionS *diffusionS;
+  class FixKineticsDiffusionM *diffusionM;
   class FixKineticsMonod *monod;
   class FixKineticsPH *ph;
   class FixKineticsThermo *thermo;
