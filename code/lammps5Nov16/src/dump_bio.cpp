@@ -756,14 +756,24 @@ void DumpBio::write_ntype_data()
     fprintf(fp, "\n");
   }
 
-  ctype->compute_vector();
+  int local = atom->nlocal;
+  int ghost = atom->nghost;
+  int all = local + ghost;
+  int *ntypes1 = new int[atom->ntypes+1]();
+
+  for(int i = 0; i < all; i++){
+    int type = atom->type[i];
+    ntypes1[type] ++;
+  }
 
   fprintf(fp, "%i,\t", update->ntimestep);
 
   for(int i = 1; i < atom->ntypes+1; i++){
-    fprintf(fp, "%i,\t", ctype->vector[i-1]);
+    fprintf(fp, "%i,\t", ntypes1[i]);
   }
   fprintf(fp, "\n");
+
+  delete[] ntypes1;
 }
 
 /* ---------------------------------------------------------------------- */
