@@ -27,7 +27,7 @@
 #include "math_const.h"
 #include "pointers.h"
 #include "random_park.h"
-#include "STUBS/mpi.h"
+//#include "STUBS/mpi.h"
 #include "update.h"
 #include "variable.h"
 #include "group.h"
@@ -302,7 +302,8 @@ void FixEPSExtract::find_maxid()
 
   tagint max = 0;
   for (int i = 0; i < nlocal; i++) max = MAX(max,tag[i]);
-  MPI_Allreduce(&max,&maxtag_all,1,MPI_LMP_TAGINT,MPI_MAX,world);
+  maxtag_all = max;
+  //MPI_Allreduce(&max,&maxtag_all,1,MPI_LMP_TAGINT,MPI_MAX,world);
 }
 
 

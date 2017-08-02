@@ -34,9 +34,7 @@
 #include "fix_bio_kinetics_ph.h"
 #include "fix_bio_kinetics_thermo.h"
 #include "fix_bio_kinetics_monod.h"
-#include "fix_bio_immigration.h"
 #include "fix_bio_kinetics_diffusionS.h"
-#include "fix_bio_kinetics_diffusionM.h"
 #include "pointers.h"
 #include "variable.h"
 #include "modify.h"
@@ -131,7 +129,6 @@ void FixKinetics::init()
 
   // register fix kinetics with this class
   diffusionS = NULL;
-  diffusionM = NULL;
   monod = NULL;
   ph = NULL;
   thermo = NULL;
@@ -142,8 +139,6 @@ void FixKinetics::init()
       monod = static_cast<FixKineticsMonod *>(lmp->modify->fix[j]);
     } else if (strcmp(modify->fix[j]->style,"kinetics/diffusionS") == 0) {
       diffusionS = static_cast<FixKineticsDiffusionS *>(lmp->modify->fix[j]);
-    } else if (strcmp(modify->fix[j]->style,"kinetics/diffusionM") == 0) {
-      diffusionM = static_cast<FixKineticsDiffusionM *>(lmp->modify->fix[j]);
     } else if (strcmp(modify->fix[j]->style,"kinetics/ph") == 0) {
       ph = static_cast<FixKineticsPH *>(lmp->modify->fix[j]);
     } else if (strcmp(modify->fix[j]->style,"kinetics/thermo") == 0) {
@@ -295,7 +290,6 @@ void FixKinetics::integration() {
     if (thermo != NULL) thermo->thermo();
     if (monod != NULL) monod->growth(diffT);
     if (diffusionS != NULL) nuConv = diffusionS->diffusion(nuConv, iteration, diffT);
-    else if (diffusionM != NULL) nuConv = diffusionM->diffusion(nuConv, iteration, diffT);
     else break;
 
     for (int i = 1; i <= nnus; i++){
