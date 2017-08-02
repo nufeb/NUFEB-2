@@ -52,7 +52,6 @@ void ComputeNufebNtypes::compute_vector()
 
   invoked_vector = update->ntimestep;
 
-  double *rmass = atom->rmass;
   int *type = atom->type;
   int *mask = atom->mask;
   int nlocal = atom->nlocal;

@@ -606,10 +606,22 @@ void FixKineticsDiffusionS::test(){
       printf("  ");
       for (int k = 0; k<nX; k++){
         int ind = i * nX * nY + j * nX + k;
-        printf("%e ", nuGrid[ind][1]);
+
+        if (!ghost[ind]) {
+          int ix = floor(xGrid[ind][0]/stepx);
+          int iy = floor(xGrid[ind][1]/stepy);
+          int iz = floor(xGrid[ind][2]/stepz);
+
+          int ind2 = iz * nx * ny + iy * nx + ix;
+
+          //printf("%i ", ind2);
+          printf("%.1e ", kinetics->nuR[1][ind2]);
+        } else {
+          printf("0 ");
+        }
         //printf("%d ", ghost[ind]);
         //printf("%i ", ind);
-        //printf("%e ", xGrid[ind][2]);
+        //printf("%.1e ", xGrid[ind][1]);
       }
     }
   }

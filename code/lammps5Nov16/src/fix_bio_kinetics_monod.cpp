@@ -298,7 +298,7 @@ double FixKineticsMonod::biomass(int i) {
 
     mass = -decay[t] * f * rmass[i];
   }
- // if(atom->type[i] == 5) printf("mass = %e \n", gMonod[t][pos]);
+  // if(atom->type[i] == 5) printf("mass = %e \n", gMonod[t][pos]);
   return mass;
 }
 
@@ -341,7 +341,7 @@ void FixKineticsMonod::bio_update(double biomass, int i)
     //update mass and radius for EPS shell if PES production is on
     if (epsflag == 1) {
       outerMass[i] = fourThirdsPI * (outerRadius[i] * outerRadius[i] * outerRadius[i] - radius[i] * radius[i] * radius[i]) * EPSdens
-      + biomass;
+          + biomass;
       outerRadius[i] = pow(threeQuartersPI * (rmass[i] / density + outerMass[i] / EPSdens), third);
     }
   } else if (mask[i] != avec->maskEPS && mask[i] != avec->maskDEAD){
@@ -358,10 +358,10 @@ int FixKineticsMonod::position(int i) {
   int xpos = (atom->x[i][0] - xlo) / stepx + 1;
   int ypos = (atom->x[i][1] - ylo) / stepy + 1;
   int zpos = (atom->x[i][2] - zlo) / stepz + 1;
-  int pos = (xpos - 1) + (ypos - 1) * ny + (zpos - 1) * (nx * ny);
+  int pos = (xpos - 1) + (ypos - 1) * nx + (zpos - 1) * (nx * ny);
 
   if (pos >= ngrids) {
-     printf("Too big! pos=%d   size = %i\n", pos, ngrids);
+    printf("Too big! pos=%d   size = %i\n", pos, ngrids);
   }
 
   return pos;

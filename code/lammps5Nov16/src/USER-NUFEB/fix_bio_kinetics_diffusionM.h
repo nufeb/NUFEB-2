@@ -15,7 +15,7 @@ FixStyle(kinetics/diffusionM,FixKineticsDiffusionM)
 #define SRC_FIX_KINETICS_DIFFUSIONM_H
 
 #include "fix.h"
-#include "Eigen/Eigen"
+#include "eigen/Eigen/Eigen"
 
 using namespace Eigen;
 

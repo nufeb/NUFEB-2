@@ -35,9 +35,9 @@ fid=fopen('data_p.pov','w');
        
         
         if (Tp(l)==1)
-        RED = 0.0;
-        GREEN = 0.0;
-        BLUE = 0.0;
+        RED = 0.8;
+        GREEN = 0.2;
+        BLUE = 0.2;
         end 
         
          if (Tp(l)==2)
@@ -53,84 +53,13 @@ fid=fopen('data_p.pov','w');
         end 
         
           if (Tp(l)==4)
-        RED = 0.2;
-        GREEN = 0.85;
-        BLUE = 0.2;
-        end 
-        
-       if (Tp(l)==5)
-        RED = 0.2;
-        GREEN = 0.8;
-        BLUE = 0.2;
-        end 
-
-       if (Tp(l)==6)
-        RED = 0.2;
-        GREEN = 0.90;
-        BLUE = 0.2;
-        end 
-        
-       if (Tp(l)==7)
-        RED = 0.2;
-        GREEN = 0.95;
-        BLUE = 0.2;
-        end       
-        
-       if (Tp(l)==8)
-        RED = 0.2;
-        GREEN = 0.75;
-        BLUE = 0.2;
-        end 
-
-       if (Tp(l)==9)
         RED = 0.5;
         GREEN = 0.5;
-        BLUE = 0.7;
+        BLUE = 0.5;
         end 
 
-       if (Tp(l)==10)
-        RED = 0.2;
-        GREEN = 0.70;
-        BLUE = 0.2;
-        end 
 
-       if (Tp(l) > 11)
-        RED = 0.8;
-        GREEN = 0.82;
-        BLUE = 0.2;
-        end 
-
-       if (Tp(l) > 12)
-         RED = 0.2;
-        GREEN = 0.89;
-        BLUE = 0.2;
-        end 
-
-       if (Tp(l) > 13)
-        RED = 0.2;
-        GREEN = 0.97;
-        BLUE = 0.2;
-        end 
-
-       if (Tp(l) > 14)
-         RED = 0.2;
-        GREEN = 0.77;
-        BLUE = 0.2;
-        end 
-
-       if (Tp(l) > 15)
-         RED = 0.2;
-        GREEN = 0.79;
-        BLUE = 0.2;
-        end 
-
-       if (Tp(l) > 16)
-        RED = 0.2;
-        GREEN = 0.85;
-        BLUE = 0.2;
-        end 
-
-        
+     
         
 fprintf(fid,['sphere{<' num2str(X(l)) ',' num2str(Y(l)) ',' num2str(Z(l)) '>,' num2str(1*D(l)/2) ' pigment {rgb <' num2str(RED) ',' num2str(GREEN) ',' num2str(BLUE) '>} finish{reflection 0.2 specular 0.3 ambient 0.42}}\n']);
     end
@@ -138,7 +67,7 @@ fprintf(fid,['sphere{<' num2str(X(l)) ',' num2str(Y(l)) ',' num2str(Z(l)) '>,' n
     j=i+1000000;   
 POV_RAY=PvrRotate100cubic(image, i)
 
-generate=['povray +H3000 +W3000 +FJ Display=-D +O0_images/image' num2str(j) '.jpg import.pov'];
+generate=['povray +H2000 +W2000 +FJ Display=-D +O0_images/image' num2str(j) '.jpg import.pov'];
 system(generate);
     
     i=i+1;
