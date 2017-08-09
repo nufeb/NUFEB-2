@@ -196,7 +196,7 @@ void FixKineticsDiffusionS::init()
   stepz = (zhi-zlo)/nz;
   bzhi = kinetics->bnz * stepz;
 
-  //if (!isEuqal(stepx, stepy, stepz)) error->all(FLERR,"Grid is not cubic");
+  if (!isEuqal(stepx, stepy, stepz)) error->all(FLERR,"Grid is not cubic");
 
   nX = nx + 2;
   nY = ny + 2;
