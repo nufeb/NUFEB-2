@@ -37,7 +37,7 @@ class FixKinetics : public Fix {
   char **var;
   int *ivar;
 
-  int nx, ny, nz;                  // number of grids in x y z axis
+  int nx, ny, nz, bnz;                  // number of grids in x y z axis
   int ngrids;                      // # of grids
   double iph;                       // initial ph
   int nnus;                        // # of nutrients
@@ -55,6 +55,9 @@ class FixKinetics : public Fix {
   double *Sh;
   bool *nuConv;
   double diffT;                    // diffsuion timestep
+  double bl;
+  double zhi,bzhi,zlo;
+  double stepz;
 
   class AtomVecBio *avec;
   class BIO *bio;
@@ -67,6 +70,7 @@ class FixKinetics : public Fix {
   void init_keq();
   void integration();
   void grow();
+  double getMaxHeight();
 };
 
 }

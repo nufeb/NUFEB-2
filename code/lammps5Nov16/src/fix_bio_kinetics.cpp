@@ -41,6 +41,7 @@
 #include "update.h"
 #include "force.h"
 #include "group.h"
+#include "domain.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -57,19 +58,32 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg
 
   bio = avec->bio;
 
-  if (narg != 13) error->all(FLERR,"Not enough arguments in fix kinetics command");
+  if (narg != 14) error->all(FLERR,"Not enough arguments in fix kinetics command");
 
   nevery = force->inumeric(FLERR,arg[3]);
   if (nevery < 0) error->all(FLERR,"Illegal fix kinetics command: calling steps should be positive integer");
 
-  var = new char*[6];
-  ivar = new int[6];
+  var = new char*[7];
+  ivar = new int[7];
 
   nx = atoi(arg[4]);
   ny = atoi(arg[5]);
   nz = atoi(arg[6]);
+  bnz = nz;
 
-  for (int i = 0; i < 6; i++) {
+  //Get computational domain size
+  if (domain->triclinic == 0) {
+    zlo = domain->boxlo[2];
+    zhi = domain->boxhi[2];
+  }
+  else {
+    zlo = domain->boxlo_bound[2];
+    zhi = domain->boxhi_bound[2];
+  }
+
+  stepz = (zhi-zlo)/nz;
+
+  for (int i = 0; i < 7; i++) {
     int n = strlen(&arg[7+i][2]) + 1;
     var[i] = new char[n];
     strcpy(var[i],&arg[7+i][2]);
@@ -81,7 +95,7 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg
 FixKinetics::~FixKinetics()
 {
   int i;
-  for (i = 0; i < 6; i++) {
+  for (i = 0; i < 7; i++) {
     delete [] var[i];
   }
   delete [] var;
@@ -112,7 +126,7 @@ int FixKinetics::setmask()
 
 void FixKinetics::init()
 {
-  for (int n = 0; n < 6; n++) {
+  for (int n = 0; n < 7; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
       error->all(FLERR,"Variable name for fix kinetics does not exist");
@@ -152,6 +166,7 @@ void FixKinetics::init()
   gasTrans = input->variable->compute_equal(ivar[3]);
   iph = input->variable->compute_equal(ivar[4]);
   diffT = input->variable->compute_equal(ivar[5]);
+  bl = input->variable->compute_equal(ivar[6]);
 
   ngrids = nx * ny * nz;
 
@@ -179,6 +194,13 @@ void FixKinetics::init()
       nuR[i][j] = 0;
       qGas[i][j] = 0;
     }
+  }
+
+  //update ngrids
+  if (bl > 0) {
+    double height = getMaxHeight();
+    bnz = ceil((bl + height)/stepz);
+    if (bnz > nz) bnz = nz;
   }
 
   init_keq();
@@ -281,6 +303,14 @@ void FixKinetics::integration() {
     else nuConv[i] = false;
   }
 
+  //update ngrids
+  if (bl > 0) {
+    double height = getMaxHeight();
+    bnz = ceil((bl + height)/stepz);
+    if (bnz > nz) bnz = nz;
+    ngrids = nx * ny * bnz;
+  }
+
   while (!isConv) {
     iteration++;
     isConv = true;
@@ -299,7 +329,7 @@ void FixKinetics::integration() {
       }
     }
 
-    if (iteration >= 10000) {
+    if (iteration >= 5000) {
       isConv = true;
       for (int i = 1; i <= nnus; i++) {
         if (!nuConv[i]){
@@ -313,4 +343,22 @@ void FixKinetics::integration() {
  printf( "number of iteration: %i \n", iteration);
 
  if (monod != NULL) monod->growth(update->dt * nevery);
+}
+
+double FixKinetics::getMaxHeight() {
+//  double minmax[6];
+//  group->bounds(0,minmax);
+//
+//  return minmax[5];
+  int nlocal = atom->nlocal;
+  int nall = nlocal + atom->nghost;
+  double **x = atom->x;
+  double *r = atom->radius;
+  double maxh = 0;
+
+  for (int i=0; i<nall; i++) {
+    if((x[i][2]+r[i]) > maxh) maxh = x[i][2]+r[i];
+  }
+
+  return maxh;
 }

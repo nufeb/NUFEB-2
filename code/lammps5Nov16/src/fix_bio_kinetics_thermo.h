@@ -42,8 +42,6 @@ class FixKineticsThermo : public Fix {
   double vol;                       // grid volume and gas volume
 
   int nnus;                        // # of nutrients
-  int nx, ny, nz;                  // number of grids in x y z axis
-  int ngrids;                      // # of grids
   double **catCoeff;               // catabolism coefficients of species
   double **anabCoeff;              // anabolism  coefficients of species
   double **nuGCoeff;               // Gibbs free energy coefficient [nutrient][5charges]

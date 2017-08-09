@@ -133,10 +133,6 @@ void FixKineticsThermo::init()
   else if (fixY == 1 && bio->eD == NULL)
     error->all(FLERR,"fix_kinetics/thermo requires eD input for unfix yield");
 
-  nx = kinetics->nx;
-  ny = kinetics->ny;
-  nz = kinetics->nz;
-  ngrids = nx * ny * nz;
   temp = kinetics->temp;
   rth = kinetics->rth;
 
@@ -168,9 +164,9 @@ void FixKineticsThermo::init()
     zhi = domain->boxhi_bound[2];
   }
 
-  stepx = (xhi - xlo) / nx;
-  stepy = (yhi - ylo) / ny;
-  stepz = (zhi - zlo) / nz;
+  stepx = (xhi - xlo) / kinetics->nx;
+  stepy = (yhi - ylo) / kinetics->ny;
+  stepz = (zhi - zlo) / kinetics->nz;
 
   vol = stepx * stepy * stepz;
 }
@@ -283,7 +279,7 @@ void FixKineticsThermo::thermo()
     }
   }
 
-  for (int i = 0; i < ngrids; i++) {
+  for (int i = 0; i < kinetics->ngrids; i++) {
     // gas transfer
     if (closeR == 1){
       for (int j = 1; j <= nnus; j++) {

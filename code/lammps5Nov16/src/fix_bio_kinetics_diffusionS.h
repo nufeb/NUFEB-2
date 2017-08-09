@@ -60,19 +60,20 @@ class FixKineticsDiffusionS: public Fix {
   int nX, nY, nZ;               // # of all grids in x, y and z
   int nXYZ;                   // total # of grids
   double diffT;
-  double xlo,xhi,ylo,yhi,zlo,zhi,izhi;
+  double xlo,xhi,ylo,yhi,zlo,zhi,bzhi;
   int xbcflag, ybcflag, zbcflag;             // 0=PERIODIC-PERIODIC, 1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
   double xbcm, xbcp, ybcm, ybcp, zbcm, zbcp; // inlet BC concentrations for each surface
 
   double **xGrid;
   double **nuGrid;
   bool *ghost;
+  //double *nRES;
 
   class FixKinetics *kinetics;
   class BIO *bio;
   class AtomVecBio *avec;
 
-  void update_grids(int);
+  void update_grids();
   void compute_bc(double &, double *, int, double);
   void compute_bulk(int);
   void compute_bl();
