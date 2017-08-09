@@ -42,12 +42,11 @@ class FixKineticsMonod : public Fix {
 
   int nnus;                         // # of nutrients
   int ntypes;                       // # of species
-  int nx, ny, nz;                   // number of grids in x y z axis
-  int ngrids;                       //# of grids
   int epsflag;
 
   double stepx, stepy, stepz;       // grids size
   double xlo,xhi,ylo,yhi,zlo,zhi;   // computational domain size
+  int nx, ny, nz;
   double vol;                       // grid volume and gas volume
   double temp;                      // gas transfer constant and temperature
   double EPSdens;                   // EPS density

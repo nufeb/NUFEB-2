@@ -80,8 +80,6 @@ FixKineticsMonod::FixKineticsMonod(LAMMPS *lmp, int narg, char **arg) : Fix(lmp,
 
 FixKineticsMonod::~FixKineticsMonod()
 {
-  memory->destroy(gMonod);
-
   int i;
   for (i = 0; i < 1; i++) {
     delete [] var[i];
@@ -148,13 +146,10 @@ void FixKineticsMonod::init()
   else if (bio->decayCoeff == NULL)
     error->all(FLERR,"fix_kinetics/monod requires Decay Coeffs input");
 
+  nnus = bio->nnus;
   nx = kinetics->nx;
   ny = kinetics->ny;
   nz = kinetics->nz;
-  ngrids = nx * ny * nz;
-  nnus = bio->nnus;
-
-  gMonod = memory->create(gMonod,atom->ntypes+1,ngrids,"kinetics/monod:gMonod");
 
   //Get computational domain size
   if (domain->triclinic == 0) {
@@ -208,11 +203,11 @@ void FixKineticsMonod::growth(double dt)
   nuConv = kinetics->nuConv;
   gYield = kinetics->gYield;
 
-  memory->grow(gMonod,atom->ntypes+1,ngrids,"kinetics/monod:gMonod");
+  memory->create(gMonod,atom->ntypes+1,kinetics->ngrids,"kinetics/monod:gMonod");
 
   //initialization
   for (int i = 0; i <= ntypes; i++) {
-    for (int j = 0; j < ngrids; j++) {
+    for (int j = 0; j < kinetics->ngrids; j++) {
       gMonod[i][j] = -1;
       //minCatMonod[i][j] = -1;
     }
@@ -224,6 +219,8 @@ void FixKineticsMonod::growth(double dt)
     //update bacteria mass, radius etc
     bio_update(mass, i);
   }
+
+  memory->destroy(gMonod);
 }
 
 double FixKineticsMonod::biomass(int i) {
@@ -360,8 +357,8 @@ int FixKineticsMonod::position(int i) {
   int zpos = (atom->x[i][2] - zlo) / stepz + 1;
   int pos = (xpos - 1) + (ypos - 1) * nx + (zpos - 1) * (nx * ny);
 
-  if (pos >= ngrids) {
-    printf("Too big! pos=%d   size = %i\n", pos, ngrids);
+  if (pos >= kinetics->ngrids) {
+    printf("Too big! pos=%d   size = %i\n", pos, kinetics->ngrids);
   }
 
   return pos;
