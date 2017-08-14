@@ -69,6 +69,7 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg
   nx = atoi(arg[4]);
   ny = atoi(arg[5]);
   nz = atoi(arg[6]);
+
   bnz = nz;
 
   //Get computational domain size
@@ -168,26 +169,29 @@ void FixKinetics::init()
   diffT = input->variable->compute_equal(ivar[5]);
   bl = input->variable->compute_equal(ivar[6]);
 
+  bgrids = nx * ny * nz;
   ngrids = nx * ny * nz;
 
   nnus = bio->nnus;
   int ntypes = atom->ntypes;
 
-  nuS = memory->create(nuS,nnus+1, ngrids, "kinetics:nuS");
-  nuR = memory->create(nuR,nnus+1, ngrids, "kinetics:nuR");
-  qGas = memory->create(qGas,nnus+1, ngrids, "kinetics:nuGas");
-  gYield = memory->create(gYield,ntypes+1,ngrids,"kinetic:gYield");
-  activity = memory->create(activity,nnus+1,5, ngrids,"kinetics:activity");
-  DRGCat = memory->create(DRGCat,ntypes+1,ngrids,"kinetics:DRGCat");
-  DRGAn = memory->create(DRGAn,ntypes+1,ngrids,"kinetics:DRGAn");
+  nuS = memory->create(nuS,nnus+1, bgrids, "kinetics:nuS");
+  nuR = memory->create(nuR,nnus+1, bgrids, "kinetics:nuR");
+  qGas = memory->create(qGas,nnus+1, bgrids, "kinetics:nuGas");
+  gYield = memory->create(gYield,ntypes+1,bgrids,"kinetic:gYield");
+  activity = memory->create(activity,nnus+1,5, bgrids,"kinetics:activity");
+  DRGCat = memory->create(DRGCat,ntypes+1,bgrids,"kinetics:DRGCat");
+  DRGAn = memory->create(DRGAn,ntypes+1,bgrids,"kinetics:DRGAn");
   kEq = memory->create(kEq,nnus+1,4,"kinetics:kEq");
-  Sh = memory->create(Sh,ngrids,"kinetics:Sh");
+  Sh = memory->create(Sh,bgrids,"kinetics:Sh");
   nuConv = new bool[nnus+1]();
 
   //initialize grid yield, inlet concentration, consumption
-  for (int j = 0; j < ngrids; j++) {
+  for (int j = 0; j < bgrids; j++) {
     for (int i = 1; i <= ntypes; i++) {
       gYield[i][j] = bio->yield[i];
+      DRGCat[i][j] = 0;
+      DRGAn[i][j] = 0;
     }
     for (int i = 1; i <= nnus; i++) {
       nuS[i][j] = bio->iniS[i][0];
@@ -212,11 +216,11 @@ void FixKinetics::init()
 void FixKinetics::grow() {
   int ntypes = atom->ntypes;
 
-  gYield = memory->grow(gYield,ntypes+1,ngrids,"kinetic:gYield");
-  DRGCat = memory->grow(DRGCat,ntypes+1,ngrids,"kinetics:DRGCat");
-  DRGAn = memory->grow(DRGAn,ntypes+1,ngrids,"kinetics:DRGAn");
+  gYield = memory->grow(gYield,ntypes+1,bgrids,"kinetic:gYield");
+  DRGCat = memory->grow(DRGCat,ntypes+1,bgrids,"kinetics:DRGCat");
+  DRGAn = memory->grow(DRGAn,ntypes+1,bgrids,"kinetics:DRGAn");
 
-  for (int j = 0; j < ngrids; j++) {
+  for (int j = 0; j < bgrids; j++) {
     for (int i = 1; i <= ntypes; i++) {
       gYield[i][j] = bio->yield[i];
     }
@@ -254,7 +258,7 @@ void FixKinetics::init_activity() {
   double gSh = pow(10, -iph);
 
   for (int k = 1; k < nnus+1; k++) {
-    for (int j = 0; j < ngrids; j++) {
+    for (int j = 0; j < bgrids; j++) {
       double iniNuS = bio->iniS[k][0];
       Sh[j] = gSh;
       denm[k] = (1 + kEq[k][0]) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][3] * gSh + kEq[k][3] * kEq[k][2] * kEq[k][1];
@@ -308,7 +312,7 @@ void FixKinetics::integration() {
     double height = getMaxHeight();
     bnz = ceil((bl + height)/stepz);
     if (bnz > nz) bnz = nz;
-    ngrids = nx * ny * bnz;
+    bgrids = nx * ny * bnz;
   }
 
   while (!isConv) {

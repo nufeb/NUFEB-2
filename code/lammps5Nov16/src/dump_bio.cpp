@@ -72,12 +72,14 @@ DumpBio::DumpBio(LAMMPS *lmp, int narg, char **arg) :
 
   anFlag = 0;
   concFlag = 0;
+  aveconcFlag = 0;
   catFlag = 0;
   phFlag = 0;
   massFlag = 0;
   massHeader = 0;
   divHeader = 0;
   typeHeader = 0;
+  nuHeader = 0;
   gasFlag = 0;
   yieldFlag = 0;
 
@@ -243,6 +245,8 @@ void DumpBio::init_style()
       }
     } else if (strcmp(keywords[i],"biomass") == 0) {
       massFlag = 1;
+    } else if (strcmp(keywords[i],"ave_concentration") == 0) {
+      aveconcFlag = 1;
     } else if (strcmp(keywords[i],"gas") == 0) {
       gasFlag = 1;
       if (stat("./Results/Gas", &st) == -1) {
@@ -330,7 +334,7 @@ void DumpBio::write()
 
         filename = path;
         openfile();
-        write_diffsuion_data(i);
+        write_concentration_data(i);
         fclose(fp);
       }
     }
@@ -486,6 +490,17 @@ void DumpBio::write()
     fclose(fp);
   }
 
+  if (aveconcFlag == 1) {
+    int len = 38;
+    char path[len];
+    strcpy(path, "./Results/ave_concentration.csv");
+
+    filename = path;
+    fp = fopen(filename,"a");
+    write_aveconcentration_data();
+    fclose(fp);
+  }
+
   if (gasFlag == 1) {
     for (int i = 1; i < nnus+1; i++) {
       if (bio->nuType[i] == 1) {
@@ -541,7 +556,7 @@ void DumpBio::pack(tagint *ids)
 
 /* ---------------------------------------------------------------------- */
 
-void DumpBio::write_diffsuion_data(int nuID)
+void DumpBio::write_concentration_data(int nuID)
 {
   fprintf(fp, ",x,y,z,scalar,1,1,1,0.5\n");
 
@@ -640,6 +655,31 @@ void DumpBio::write_pH_data()
 
     fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%e\n",i, x, y, z, -log10(kinetics->Sh[i]));
   }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpBio::write_aveconcentration_data()
+{
+  if (!nuHeader) {
+    for(int i = 1; i < kinetics->nnus+1; i++){
+      fprintf(fp, "%s,\t", kinetics->bio->nuName[i]);
+    }
+    nuHeader = 1;
+    fprintf(fp, "\n");
+  }
+
+  fprintf(fp, "%i,\t", update->ntimestep);
+
+  for(int i = 1; i < kinetics->nnus+1; i++){
+    double s = 0;
+    for(int j = 0; j < kinetics->bgrids; j++){
+      s += kinetics->nuS[i][j];
+    }
+    s = s/kinetics->bgrids;
+    fprintf(fp, "%e,\t", s);
+  }
+  fprintf(fp, "\n");
 }
 
 /* ---------------------------------------------------------------------- */

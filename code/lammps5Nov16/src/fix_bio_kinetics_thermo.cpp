@@ -279,7 +279,7 @@ void FixKineticsThermo::thermo()
     }
   }
 
-  for (int i = 0; i < kinetics->ngrids; i++) {
+  for (int i = 0; i < kinetics->bgrids; i++) {
     // gas transfer
     if (closeR == 1){
       for (int j = 1; j <= nnus; j++) {

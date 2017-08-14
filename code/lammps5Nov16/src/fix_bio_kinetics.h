@@ -37,9 +37,10 @@ class FixKinetics : public Fix {
   char **var;
   int *ivar;
 
-  int nx, ny, nz, bnz;                  // number of grids in x y z axis
+  int nx, ny, nz, bnz;             // number of grids in x y z axis
+  int bgrids;                      // # of non-boundary grids
   int ngrids;                      // # of grids
-  double iph;                       // initial ph
+  double iph;                      // initial ph
   int nnus;                        // # of nutrients
 
   double **nuS;                    // nutrient concentration [nutrient][grid]
