@@ -42,8 +42,8 @@ class DumpBio : public Dump {
   char **id_fix;             // their IDs
   class Fix **fix;           // list of ptrs to the Fix objects
 
-  int anFlag, concFlag, catFlag, phFlag, massFlag, gasFlag, yieldFlag, diaFlag, dimFlag, divFlag, heightFlag, roughFlag, segFlag, ntypeFlag;
-  int massHeader, divHeader, typeHeader;
+  int anFlag, concFlag, aveconcFlag, catFlag, phFlag, massFlag, gasFlag, yieldFlag, diaFlag, dimFlag, divFlag, heightFlag, roughFlag, segFlag, ntypeFlag;
+  int massHeader, divHeader, typeHeader, nuHeader;
 
   double xlo,xhi,ylo,yhi,zlo,zhi;
   double stepx, stepy, stepz;
@@ -70,7 +70,8 @@ class DumpBio : public Dump {
   void pack(tagint *);
   void write_data(int, double *);
 
-  void write_diffsuion_data(int);
+  void write_concentration_data(int);
+  void write_aveconcentration_data();
   void write_gas_data(int);
   void write_DGRCat_data(int);
   void write_DGRAn_data(int);

@@ -203,11 +203,11 @@ void FixKineticsMonod::growth(double dt)
   nuConv = kinetics->nuConv;
   gYield = kinetics->gYield;
 
-  memory->create(gMonod,atom->ntypes+1,kinetics->ngrids,"kinetics/monod:gMonod");
+  memory->create(gMonod,atom->ntypes+1,kinetics->bgrids,"kinetics/monod:gMonod");
 
   //initialization
   for (int i = 0; i <= ntypes; i++) {
-    for (int j = 0; j < kinetics->ngrids; j++) {
+    for (int j = 0; j < kinetics->bgrids; j++) {
       gMonod[i][j] = -1;
       //minCatMonod[i][j] = -1;
     }
@@ -357,8 +357,8 @@ int FixKineticsMonod::position(int i) {
   int zpos = (atom->x[i][2] - zlo) / stepz + 1;
   int pos = (xpos - 1) + (ypos - 1) * nx + (zpos - 1) * (nx * ny);
 
-  if (pos >= kinetics->ngrids) {
-    printf("Too big! pos=%d   size = %i\n", pos, kinetics->ngrids);
+  if (pos >= kinetics->bgrids) {
+    printf("Too big! pos=%d   size = %i\n", pos, kinetics->bgrids);
   }
 
   return pos;

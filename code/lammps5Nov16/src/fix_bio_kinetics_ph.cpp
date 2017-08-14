@@ -121,7 +121,7 @@ void FixKineticsPH::solve_ph()
   activity = kinetics->activity;
   kEq = kinetics->kEq;
 
-  for (int i = 0; i < kinetics->ngrids; i++) {
+  for (int i = 0; i < kinetics->bgrids; i++) {
     double a = 1e-14;
     int b = 1;
     int ipH = 1;
