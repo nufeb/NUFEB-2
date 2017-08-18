@@ -7,7 +7,7 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(kinetics/monod,FixKineticsMonod)
+FixStyle(kinetics/growth/monod,FixKineticsMonod)
 
 #else
 
@@ -30,10 +30,12 @@ class FixKineticsMonod : public Fix {
   char **var;
   int *ivar;
 
-  double *radius;
-  double *rmass;
-  double *outerMass;
-  double *outerRadius;
+  int isub, io2, inh4, ino2, ino3;   // nutrient index
+  int idead, ieps;
+
+  int *species;                      // species index 0 = unknow, 1 = het, 2 = aob, 3 = nob, 4 = eps, 5 = dead
+  double **xtype;                    // type density [type][grids]
+  double ***growrate;
 
   int *mask;
   int *type;
@@ -42,37 +44,21 @@ class FixKineticsMonod : public Fix {
 
   int nnus;                         // # of nutrients
   int ntypes;                       // # of species
-  int epsflag;
 
   double stepx, stepy, stepz;       // grids size
   double xlo,xhi,ylo,yhi,zlo,zhi;   // computational domain size
   int nx, ny, nz;
   double vol;                       // grid volume and gas volume
-  double temp;                      // gas transfer constant and temperature
   double EPSdens;                   // EPS density
-  double *maintain;
-  double *decay;
-  double **DGRCat;
-
-  double **catCoeff;                 // catabolism coefficients of species
-  double **anabCoeff;                // anabolism  coefficients of species
-  double **gYield;                   // yield coefficients
-  double **gMonod;
-  bool *nuConv;
-  //double **minCatMonod;
-
-  double **nuS;                    // nutrient concentration for all grids
-  double **nuR;                    // nutrient consumption for all grids
+  double etaHET;
+  double bX;
 
   class AtomVecBio *avec;
   class FixKinetics *kinetics;
   class BIO *bio;
 
- // double minimal_monod(int, int, int);
-  double grid_monod(int, int, int);
-  void bio_update(double, int);
-  double  biomass(int);
   int position(int);
+  void init_param();
 
 };
 

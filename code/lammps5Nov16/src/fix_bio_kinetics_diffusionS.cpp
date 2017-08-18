@@ -52,7 +52,7 @@ using namespace std;
 FixKineticsDiffusionS::FixKineticsDiffusionS(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
 {
 
-  if (narg != 11) error->all(FLERR,"Not enough arguments in fix diffusion command");
+  if (narg != 12) error->all(FLERR,"Not enough arguments in fix diffusion command");
 
   var = new char*[4];
   ivar = new int[4];
@@ -90,6 +90,10 @@ FixKineticsDiffusionS::FixKineticsDiffusionS(LAMMPS *lmp, int narg, char **arg) 
   else if(strcmp(arg[10], "dn") == 0) zbcflag = 4;
   else if(strcmp(arg[10], "db") == 0) zbcflag = 5;
   else error->all(FLERR,"Illegal z-axis boundary condition command");
+
+  if (strcmp(arg[11], "kg") == 0) unit = 1;
+  else if (strcmp(arg[11], "mol") == 0) unit = 0;
+  else error->all(FLERR,"Illegal fix kinetics/thermo command: specify 'fix' or 'unfix' yield");
 
   rflag = 0;
 //  rstep = atoi(arg[11]);
@@ -228,29 +232,29 @@ void FixKineticsDiffusionS::init()
         for (int nu = 1; nu <= nnus; nu++) {
           if (i < xlo) {
             ghost[grid] = true;
-            nuGrid[grid][nu] = iniS[nu][1] * 1000;
+            nuGrid[grid][nu] = iniS[nu][1];
           } else if (i > xhi) {
             ghost[grid] = true;
-            nuGrid[grid][nu] = iniS[nu][2] * 1000;
+            nuGrid[grid][nu] = iniS[nu][2];
           } else if (j < ylo) {
             ghost[grid] = true;
-            nuGrid[grid][nu] = iniS[nu][3] * 1000;
+            nuGrid[grid][nu] = iniS[nu][3];
           } else if (j > yhi) {
             ghost[grid] = true;
-            nuGrid[grid][nu] = iniS[nu][4] * 1000;
+            nuGrid[grid][nu] = iniS[nu][4];
           } else if (k < zlo) {
             ghost[grid] = true;
-            nuGrid[grid][nu] = iniS[nu][5] * 1000;
+            nuGrid[grid][nu] = iniS[nu][5];
           } else if (k > bzhi) {
             ghost[grid] = true;
-            nuGrid[grid][nu] = iniS[nu][6] * 1000;
+            nuGrid[grid][nu] = iniS[nu][6];
           } else {
             ghost[grid] = false;
-            nuGrid[grid][nu] = iniS[nu][0] * 1000;
+            nuGrid[grid][nu] = iniS[nu][0];
           }
-          if (grid == 0) {
-            nuBS[nu] =  iniS[nu][6] * 1000;
-          }
+
+          if (unit == 0) nuGrid[grid][nu] *= 1000;
+          if (grid == 0) nuBS[nu] =  iniS[nu][6];
         }
         grid++;
       }
@@ -282,12 +286,21 @@ bool* FixKineticsDiffusionS::diffusion(bool *nuConv, int iter, double diffT)
         nuPrev[grid] = nuGrid[grid][i];
       }
 
-      xbcm = iniS[i][1] * 1000;
-      xbcp = iniS[i][2] * 1000;
-      ybcm = iniS[i][3] * 1000;
-      ybcp = iniS[i][4] * 1000;
-      zbcm = iniS[i][5] * 1000;
-      zbcp = iniS[i][6] * 1000;
+      if (unit == 0) {
+        xbcm = iniS[i][1] * 1000;
+        xbcp = iniS[i][2] * 1000;
+        ybcm = iniS[i][3] * 1000;
+        ybcp = iniS[i][4] * 1000;
+        zbcm = iniS[i][5] * 1000;
+        zbcp = iniS[i][6] * 1000;
+      } else {
+        xbcm = iniS[i][1];
+        xbcp = iniS[i][2];
+        ybcm = iniS[i][3];
+        ybcp = iniS[i][4];
+        zbcm = iniS[i][5];
+        zbcp = iniS[i][6];
+      }
 
       if(iter == 1 && strcmp(bio->nuName[i], "o2") != 0 && q >= 0 && af >= 0) compute_bulk(i);
 
@@ -305,7 +318,10 @@ bool* FixKineticsDiffusionS::diffusion(bool *nuConv, int iter, double diffT)
 
           nuR[i][ind] = 0;
 
-          if (nuGrid[grid][i] > 0) nuS[i][ind] = nuGrid[grid][i] / 1000;
+          if (nuGrid[grid][i] > 0) {
+            if (unit == 0) nuS[i][ind] = nuGrid[grid][i] / 1000;
+            else nuS[i][ind] = nuGrid[grid][i];
+          }
           else {
             nuGrid[grid][i] = 0;
             nuS[i][ind] = 0;

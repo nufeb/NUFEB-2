@@ -33,7 +33,6 @@
 #include "atom_vec_bio.h"
 #include "fix_bio_kinetics_ph.h"
 #include "fix_bio_kinetics_thermo.h"
-#include "fix_bio_kinetics_monod.h"
 #include "fix_bio_kinetics_diffusionS.h"
 #include "pointers.h"
 #include "variable.h"
@@ -42,6 +41,8 @@
 #include "force.h"
 #include "group.h"
 #include "domain.h"
+#include "fix_bio_kinetics_energy.h"
+#include "fix_bio_kinetics_monod.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -135,31 +136,40 @@ void FixKinetics::init()
       error->all(FLERR,"Variable for fix kinetics is invalid style");
   }
 
-  if (bio->nnus == 0)
-    error->all(FLERR,"fix_kinetics requires # of Nutrients inputs");
-  else if (bio->nuGCoeff == NULL)
-    error->all(FLERR,"fix_kinetics requires Nutrient Energy inputs");
-  else if (bio->iniS == NULL)
-    error->all(FLERR,"fix_kinetics requires Nutrients inputs");
-
   // register fix kinetics with this class
   diffusionS = NULL;
-  monod = NULL;
+  energy = NULL;
   ph = NULL;
   thermo = NULL;
+  monod = NULL;
 
   int nfix = modify->nfix;
   for (int j = 0; j < nfix; j++) {
-    if (strcmp(modify->fix[j]->style,"kinetics/monod") == 0) {
-      monod = static_cast<FixKineticsMonod *>(lmp->modify->fix[j]);
+    if (strcmp(modify->fix[j]->style,"kinetics/growth/energy") == 0) {
+      energy = static_cast<FixKineticsEnergy *>(lmp->modify->fix[j]);
     } else if (strcmp(modify->fix[j]->style,"kinetics/diffusionS") == 0) {
       diffusionS = static_cast<FixKineticsDiffusionS *>(lmp->modify->fix[j]);
     } else if (strcmp(modify->fix[j]->style,"kinetics/ph") == 0) {
       ph = static_cast<FixKineticsPH *>(lmp->modify->fix[j]);
     } else if (strcmp(modify->fix[j]->style,"kinetics/thermo") == 0) {
       thermo = static_cast<FixKineticsThermo *>(lmp->modify->fix[j]);
+    } else if (strcmp(modify->fix[j]->style,"kinetics/growth/monod") == 0) {
+      monod = static_cast<FixKineticsMonod *>(lmp->modify->fix[j]);
     }
   }
+
+  if (bio->nnus == 0)
+    error->all(FLERR,"fix_kinetics requires # of Nutrients inputs");
+  else if (bio->nuGCoeff == NULL && energy !=NULL)
+    error->all(FLERR,"fix_kinetics requires Nutrient Energy inputs");
+  else if (bio->iniS == NULL)
+    error->all(FLERR,"fix_kinetics requires Nutrients inputs");
+
+  bgrids = nx * ny * nz;
+  ngrids = nx * ny * nz;
+
+  nnus = bio->nnus;
+  int ntypes = atom->ntypes;
 
   temp = input->variable->compute_equal(ivar[0]);
   rth = input->variable->compute_equal(ivar[1]);
@@ -169,12 +179,7 @@ void FixKinetics::init()
   diffT = input->variable->compute_equal(ivar[5]);
   bl = input->variable->compute_equal(ivar[6]);
 
-  bgrids = nx * ny * nz;
-  ngrids = nx * ny * nz;
-
-  nnus = bio->nnus;
-  int ntypes = atom->ntypes;
-
+  nuConv = new bool[nnus+1]();
   nuS = memory->create(nuS,nnus+1, bgrids, "kinetics:nuS");
   nuR = memory->create(nuR,nnus+1, bgrids, "kinetics:nuR");
   qGas = memory->create(qGas,nnus+1, bgrids, "kinetics:nuGas");
@@ -184,7 +189,6 @@ void FixKinetics::init()
   DRGAn = memory->create(DRGAn,ntypes+1,bgrids,"kinetics:DRGAn");
   kEq = memory->create(kEq,nnus+1,4,"kinetics:kEq");
   Sh = memory->create(Sh,bgrids,"kinetics:Sh");
-  nuConv = new bool[nnus+1]();
 
   //initialize grid yield, inlet concentration, consumption
   for (int j = 0; j < bgrids; j++) {
@@ -200,15 +204,17 @@ void FixKinetics::init()
     }
   }
 
+  if (energy != NULL) {
+    init_keq();
+    init_activity();
+  }
+
   //update ngrids
   if (bl > 0) {
     double height = getMaxHeight();
     bnz = ceil((bl + height)/stepz);
     if (bnz > nz) bnz = nz;
   }
-
-  init_keq();
-  init_activity();
 }
 
 /* ---------------------------------------------------------------------- */
@@ -319,10 +325,16 @@ void FixKinetics::integration() {
     iteration++;
     isConv = true;
 
-    if (ph != NULL) ph->solve_ph();
-    else init_activity();
-    if (thermo != NULL) thermo->thermo();
-    if (monod != NULL) monod->growth(diffT);
+    if (energy != NULL) {
+      if (ph != NULL) ph->solve_ph();
+      else init_activity();
+
+      thermo->thermo();
+      energy->growth(diffT);
+    } else if (monod != NULL) {
+      monod->growth(diffT);
+    }
+
     if (diffusionS != NULL) nuConv = diffusionS->diffusion(nuConv, iteration, diffT);
     else break;
 
@@ -333,7 +345,7 @@ void FixKinetics::integration() {
       }
     }
 
-    if (iteration >= 10000) {
+    if (iteration >= 20000) {
       isConv = true;
       for (int i = 1; i <= nnus; i++) {
         if (!nuConv[i]){
@@ -346,6 +358,7 @@ void FixKinetics::integration() {
 
  printf( "number of iteration: %i \n", iteration);
 
+ if (energy != NULL) energy->growth(update->dt * nevery);
  if (monod != NULL) monod->growth(update->dt * nevery);
 }
 
