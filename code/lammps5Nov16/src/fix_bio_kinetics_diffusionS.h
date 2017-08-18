@@ -54,6 +54,7 @@ class FixKineticsDiffusionS: public Fix {
   double bl;
   double q, rvol, af;
   bool reactor;
+  int unit;                     // nutrient unit 0 = mol/l; 1 = kg/m3
   double *nuBS;
 
   int nx, ny, nz;               // # of non-ghost grids in x, y and z

@@ -19,6 +19,7 @@ FixStyle(kinetics,FixKinetics)
 namespace LAMMPS_NS {
 
 class FixKinetics : public Fix {
+  friend class FixKineticsEnergy;
   friend class FixKineticsMonod;
   friend class FixKineticsThermo;
   friend class FixKineticsDiffusionS;
@@ -63,6 +64,7 @@ class FixKinetics : public Fix {
   class AtomVecBio *avec;
   class BIO *bio;
   class FixKineticsDiffusionS *diffusionS;
+  class FixKineticsEnergy *energy;
   class FixKineticsMonod *monod;
   class FixKineticsPH *ph;
   class FixKineticsThermo *thermo;
