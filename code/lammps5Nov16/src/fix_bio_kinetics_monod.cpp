@@ -259,6 +259,8 @@ void FixKineticsMonod::growth(double dt)
   double **nuS = kinetics->nuS;
   double **nuR = kinetics->nuR;
 
+  bool *nuConv = kinetics->nuConv;
+
   for (int i = 0; i < nall; i++) {
     if (mask[i] & groupbit) {
       int pos = position(i);
@@ -288,14 +290,14 @@ void FixKineticsMonod::growth(double dt)
         double R14 = (1 / 1.71) * maintain[i] * etaHET * (nuS[ino2][grid] / (ks[i][ino2] + nuS[ino2][grid]))
             * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
 
-        nuR[isub][grid] +=  ((-1 / yield[i]) * ((R1 + R4 + R5) * xtype[i][grid]));
+        if (!nuConv[isub]) nuR[isub][grid] +=  ((-1 / yield[i]) * ((R1 + R4 + R5) * xtype[i][grid]));
         //if (xtype[i][grid] != 0) printf("nuR = %e \n", xtype[i][grid]);
-        nuR[io2][grid] +=  (-((1 - yield[i] - yield[ieps]) / yield[i]) * R1 * xtype[i][grid]);
-        nuR[ino2][grid] +=  -(((1 - yield[i] - yield[ieps]) / (1.17 * yield[i])) * R5 * xtype[i][grid]);
-        nuR[ino3][grid] +=  -(((1 - yield[i] - yield[ieps]) / (2.86 * yield[i])) * R4 * xtype[i][grid]);
-        nuR[io2][grid] += -(R10 * xtype[i][grid]);
-        nuR[ino2][grid] += -(R14 * xtype[i][grid]);
-        nuR[ino3][grid] += -(R13 * xtype[i][grid]);
+        if (!nuConv[io2]) nuR[io2][grid] +=  (-((1 - yield[i] - yield[ieps]) / yield[i]) * R1 * xtype[i][grid]);
+        if (!nuConv[ino2]) nuR[ino2][grid] +=  -(((1 - yield[i] - yield[ieps]) / (1.17 * yield[i])) * R5 * xtype[i][grid]);
+        if (!nuConv[ino3]) nuR[ino3][grid] +=  -(((1 - yield[i] - yield[ieps]) / (2.86 * yield[i])) * R4 * xtype[i][grid]);
+        if (!nuConv[io2]) nuR[io2][grid] += -(R10 * xtype[i][grid]);
+        if (!nuConv[ino2]) nuR[ino2][grid] += -(R14 * xtype[i][grid]);
+        if (!nuConv[ino3]) nuR[ino3][grid] += -(R13 * xtype[i][grid]);
 
         growrate[i][0][grid] = dt * (R1 + R4 + R5 - R6 - R10 - R13 - R14);
         growrate[i][1][grid] = dt * (yield[ieps] / yield[i]) * (R1 + R4 + R5);
@@ -305,10 +307,10 @@ void FixKineticsMonod::growth(double dt)
         double R7 = decay[i];
         double R11 = maintain[i] * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
 
-        nuR[io2][grid] +=  -(((3.42 - yield[i]) / yield[i]) * R2 * xtype[i][grid]);
-        nuR[inh4][grid] +=  -(1 / yield[i]) * R2 * xtype[i][grid];
-        nuR[ino2][grid] +=  (1 / yield[i]) * R2 * xtype[i][grid];
-        nuR[io2][grid] += -(R11 * xtype[i][grid]);
+        if (!nuConv[io2]) nuR[io2][grid] +=  -(((3.42 - yield[i]) / yield[i]) * R2 * xtype[i][grid]);
+        if (!nuConv[inh4]) nuR[inh4][grid] +=  -(1 / yield[i]) * R2 * xtype[i][grid];
+        if (!nuConv[ino2]) nuR[ino2][grid] +=  (1 / yield[i]) * R2 * xtype[i][grid];
+        if (!nuConv[io2]) nuR[io2][grid] += -(R11 * xtype[i][grid]);
 
         growrate[i][0][grid] = dt * (R2 - R7 - R11);
       } else if (spec == 3) {
@@ -317,21 +319,21 @@ void FixKineticsMonod::growth(double dt)
         double R8 = decay[i];
         double R12 = maintain[i] * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
 
-        nuR[io2][grid] +=  - (((1.15 - yield[i]) / yield[i]) * R3 * xtype[i][grid]);
-        nuR[ino2][grid] +=  (1 / yield[i]) * R3 * xtype[i][grid];
-        nuR[ino3][grid] +=  -(1 / yield[i]) * R3 * xtype[i][grid];
-        nuR[io2][grid] += -(R12 * xtype[i][grid]);
+        if (!nuConv[io2]) nuR[io2][grid] +=  - (((1.15 - yield[i]) / yield[i]) * R3 * xtype[i][grid]);
+        if (!nuConv[ino2]) nuR[ino2][grid] +=  (1 / yield[i]) * R3 * xtype[i][grid];
+        if (!nuConv[ino3]) nuR[ino3][grid] +=  -(1 / yield[i]) * R3 * xtype[i][grid];
+        if (!nuConv[io2]) nuR[io2][grid] += -(R12 * xtype[i][grid]);
 
         growrate[i][0][grid] = dt * (R3 - R8 - R12);
       } else if (spec == 4) {
         // EPS monod model
         double R9 = decay[i];
 
-        nuR[isub][grid] += R9 * xtype[i][grid];
+        if (!nuConv[isub]) nuR[isub][grid] += R9 * xtype[i][grid];
         growrate[i][0][grid] = dt * -decay[i];
       } else if (spec == 5) {
         // DEAD monod model
-        nuR[isub][grid] += (decay[i] * xtype[i][grid]);
+        if (!nuConv[isub]) nuR[isub][grid] += (decay[i] * xtype[i][grid]);
         growrate[i][0][grid] = dt * -decay[i];
       }
     }
@@ -357,7 +359,7 @@ void FixKineticsMonod::growth(double dt)
         radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
       } else {
         radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
-        outerMass[i] = rmass[i];
+        outerMass[i] = 0.0;
         outerRadius[i] = radius[i];
       }
     }
