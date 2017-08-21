@@ -93,7 +93,7 @@ FixKineticsDiffusionS::FixKineticsDiffusionS(LAMMPS *lmp, int narg, char **arg) 
 
   if (strcmp(arg[11], "kg") == 0) unit = 1;
   else if (strcmp(arg[11], "mol") == 0) unit = 0;
-  else error->all(FLERR,"Illegal fix kinetics/thermo command: specify 'fix' or 'unfix' yield");
+  else error->all(FLERR,"Illegal unit in fix kinetics/diffusionS command: specify 'kg' or 'mol'");
 
   rflag = 0;
 //  rstep = atoi(arg[11]);
@@ -323,8 +323,8 @@ bool* FixKineticsDiffusionS::diffusion(bool *nuConv, int iter, double diffT)
             else nuS[i][ind] = nuGrid[grid][i];
           }
           else {
-            nuGrid[grid][i] = 0;
-            nuS[i][ind] = 0;
+            nuGrid[grid][i] = 1e-20;
+            nuS[i][ind] = 1e-20;
           }
         } else compute_bc(nuGrid[grid][i], nuPrev, grid, nuBS[i]);
 
@@ -343,12 +343,6 @@ bool* FixKineticsDiffusionS::diffusion(bool *nuConv, int iter, double diffT)
             double prevRate = nuPrev[grid]/maxS;
             ratio = fabs(rate - prevRate);
           }
-//          else {
-//            if (iter % rstep == 0) {
-//              ratio = fabs(nRES[grid]);
-//              nRES[grid] = 0;
-//            }
-//          }
 
           if(ratio >= tol) {
             conv = false;

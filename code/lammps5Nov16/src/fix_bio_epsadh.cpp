@@ -91,7 +91,6 @@ void FixEPSAdh::init_list(int id, NeighList *ptr)
 
 void FixEPSAdh::post_force(int vflag)
 {
-
   double ke = input->variable->compute_equal(ivar);
   int i,ii=0,j=0,jj=0,*numneigh,inum,**firstneigh;
   int jnum;

@@ -37,11 +37,6 @@ class FixKineticsMonod : public Fix {
   double **xtype;                    // type density [type][grids]
   double ***growrate;
 
-  int *mask;
-  int *type;
-  int nlocal;
-  int nall;
-
   int nnus;                         // # of nutrients
   int ntypes;                       // # of species
 
@@ -51,7 +46,6 @@ class FixKineticsMonod : public Fix {
   double vol;                       // grid volume and gas volume
   double EPSdens;                   // EPS density
   double etaHET;
-  double bX;
 
   class AtomVecBio *avec;
   class FixKinetics *kinetics;

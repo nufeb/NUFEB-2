@@ -97,6 +97,7 @@ void FixShear::post_force(int vflag)
 
   double **f = atom->f;
   double **x = atom->x;
+  double **v = atom->v;
   double *radius = atom->radius;
   double viscosity = input->variable->compute_equal(ivar[0]);
   double shearRate = input->variable->compute_equal(ivar[1]);
@@ -109,11 +110,21 @@ void FixShear::post_force(int vflag)
   int nall = nlocal + atom->nghost;
 
   for (int i = 0; i < nall; i++) {
-  	double diameter = 2 * radius[i];
-  	if (dflag == 1) {
-  		f[i][0] = MY_3PI * viscosity * diameter * shearRate * (x[i][2] - height);
-  	} else {
-  		f[i][1] = MY_3PI * viscosity * diameter * shearRate * (x[i][2] - height);
-  	}
+  double diameter = 2 * radius[i];
+  if (dflag == 1) {
+    f[i][0] += MY_3PI * viscosity * diameter * (shearRate * (x[i][2] - height)-v[i][0]);
+    f[i][1] += MY_3PI * viscosity * diameter * (0.0 -v[i][1]);
+    f[i][2] += MY_3PI * viscosity * diameter * (0.0 -v[i][2]);
+
+    //f[i][0] += MY_3PI * viscosity * diameter * (shearRate * (x[i][2] - height));
+
+  } else {
+    f[i][1] += MY_3PI * viscosity * diameter * (shearRate * (x[i][2] - height)-v[i][1]);
+    f[i][0] += MY_3PI * viscosity * diameter * (0.0 -v[i][0]);
+    f[i][2] += MY_3PI * viscosity * diameter * (0.0 -v[i][2]);
+
+
+    //f[i][1] += MY_3PI * viscosity * diameter * (shearRate * (x[i][2] - height));
   }
+}
 }
