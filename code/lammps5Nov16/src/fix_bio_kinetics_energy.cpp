@@ -343,7 +343,7 @@ void FixKineticsEnergy::bio_update(double biomass, int i)
     }
   } else if (mask[i] != avec->maskEPS && mask[i] != avec->maskDEAD){
     radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
-    outerMass[i] = 0.0;
+    outerMass[i] = rmass[i];
     outerRadius[i] = radius[i];
   }
 }
