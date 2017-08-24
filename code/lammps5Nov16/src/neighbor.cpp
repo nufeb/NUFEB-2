@@ -271,7 +271,6 @@ void Neighbor::init()
   cutneighmax = 0.0;
 
   for (i = 1; i <= n; i++) {
-    cuttype[i] = cuttypesq[i] = 0.0;
     for (j = 1; j <= n; j++) {
       if (force->pair) cutoff = sqrt(force->pair->cutsq[i][j]);
       else cutoff = 0.0;
