@@ -332,7 +332,7 @@ void FixKinetics::integration() {
       thermo->thermo();
       energy->growth(diffT);
     } else if (monod != NULL) {
-      monod->growth(0);
+      monod->growth(diffT);
     }
 
     if (diffusionS != NULL) nuConv = diffusionS->diffusion(nuConv, iteration, diffT);
