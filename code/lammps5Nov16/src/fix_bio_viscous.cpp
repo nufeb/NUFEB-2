@@ -120,18 +120,21 @@ void FixBioViscous::post_force(int vflag)
   int *type = atom->type;
   int nlocal = atom->nlocal;
 
+
   gamma = memory->grow(gamma,atom->ntypes+1,"bio/viscous:gamma");
   for (int i = 1; i <= atom->ntypes; i++) gamma[i] = gamma_one;
 
   double drag;
 
-  for (int i = 0; i < nlocal; i++)
+  for (int i = 0; i < nlocal; i++) {
+    //printf("i = %i, numneigh = %i \n", i, numneigh[ii]);
     if (mask[i] & groupbit) {
       drag = gamma[type[i]];
       f[i][0] -= drag*v[i][0];
       f[i][1] -= drag*v[i][1];
       f[i][2] -= drag*v[i][2];
     }
+  }
 }
 
 /* ---------------------------------------------------------------------- */

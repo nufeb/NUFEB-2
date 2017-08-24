@@ -342,7 +342,7 @@ int FixDivide::overlap()
 	int** ptr = new int*[atom->nlocal];
 	for(int m =0; m < atom->nlocal; m++)
 	{
-		ptr[m] = new int[atom->nlocal];
+		ptr[m] = new int[atom->nlocal]();
 	}
 
 	for(int i = 0; i < atom->nlocal; i++){

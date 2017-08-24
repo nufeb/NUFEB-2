@@ -253,8 +253,9 @@ void FixKineticsDiffusionS::init()
             nuGrid[grid][nu] = iniS[nu][0];
           }
 
-          if (unit == 0) nuGrid[grid][nu] *= 1000;
-          if (grid == 0) nuBS[nu] =  iniS[nu][6];
+          if (unit == 0) nuGrid[grid][nu] = nuGrid[grid][nu]*1000;
+          if (grid == 0 && unit == 1) nuBS[nu] =  iniS[nu][6];
+          else if (grid == 0 && unit == 0) nuBS[nu] =  iniS[nu][6]*1000;
         }
         grid++;
       }
@@ -323,8 +324,8 @@ bool* FixKineticsDiffusionS::diffusion(bool *nuConv, int iter, double diffT)
             else nuS[i][ind] = nuGrid[grid][i];
           }
           else {
-            nuGrid[grid][i] = 1e-20;
-            nuS[i][ind] = 1e-20;
+            nuGrid[grid][i] = 0;
+            nuS[i][ind] = 0;
           }
         } else compute_bc(nuGrid[grid][i], nuPrev, grid, nuBS[i]);
 

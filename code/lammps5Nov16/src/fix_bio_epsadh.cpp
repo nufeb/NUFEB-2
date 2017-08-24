@@ -92,6 +92,7 @@ void FixEPSAdh::init_list(int id, NeighList *ptr)
 void FixEPSAdh::post_force(int vflag)
 {
   double ke = input->variable->compute_equal(ivar);
+
   int i,ii=0,j=0,jj=0,*numneigh,inum,**firstneigh;
   int jnum;
   double xtmp,ytmp,ztmp,delx,dely,delz;
@@ -127,12 +128,9 @@ void FixEPSAdh::post_force(int vflag)
 	  outerRadi = outerRadius[i];
 	  jlist = firstneigh[i];
 	  jnum = numneigh[i];
-    if (atom->mask[i] == avec->maskEPS) {
-      epsMassi = rmass[i];
-    }
-    else {
-      epsMassi = outerMass[i];
-    }
+
+    if (atom->mask[i] == avec->maskEPS) epsMassi = rmass[i];
+    else epsMassi = outerMass[i];
 
 	  for (jj = 0; jj < jnum; jj++) {
 		  j = jlist[jj];
@@ -142,12 +140,10 @@ void FixEPSAdh::post_force(int vflag)
 		  rsq = delx*delx + dely*dely + delz*delz;
 
 		  outerRadj = outerRadius[j];
-		  if (atom->mask[j] == avec->maskEPS) {
-        epsMassj = rmass[j];
-      }
-      else {
-        epsMassj = outerMass[j];
-      }
+
+		  if (atom->mask[j] == avec->maskEPS) epsMassj = rmass[j];
+      else epsMassj = outerMass[j];
+
       radsum = outerRadi + outerRadj;
       massSum = epsMassi + epsMassj;
 
@@ -165,8 +161,6 @@ void FixEPSAdh::post_force(int vflag)
   				rinv = 1/r;
   				ccel = -massSum*ke*(radsum/r)*(radsum/r);
       	}
-      }else{
-      	continue;
       }
 
   		ccelx = delx*ccel*rinv ;

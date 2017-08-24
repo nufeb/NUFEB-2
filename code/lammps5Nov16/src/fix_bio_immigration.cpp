@@ -93,6 +93,8 @@ FixImmigration::FixImmigration(LAMMPS *lmp, int narg, char **arg) :
 
   bio = avec->bio;
 
+  for (int i = 0; i < atom->nlocal; i++)   atom->omega[i][0] = atom->type[i];
+
   force_reneighbor = 1;
   next_reneighbor = update->ntimestep + 1;
 }
@@ -152,9 +154,8 @@ void FixImmigration::post_integrate()
   if (nevery == 0) return;
   if (update->ntimestep % nevery) return;
 
-//  int r = round(random->uniform());
-//  if (r) immgration();
-  immgration();
+  int r = round(random->uniform());
+  if (r) immgration();
 }
 
 /* ---------------------------------------------------------------------- */
@@ -305,11 +306,11 @@ void FixImmigration::immgration() {
 
   atom->v[n][0] = atom->v[i][0];
   atom->v[n][1] = atom->v[i][1];
-  atom->v[n][2] = -1;
+  atom->v[n][2] = -10;
 
   atom->f[n][0] = atom->f[i][0];
   atom->f[n][1] = atom->f[i][1];
-  atom->f[n][2] = atom->f[i][2];
+  atom->f[n][2] = -10;
 
   atom->omega[n][0] = atom->omega[i][0];
   atom->omega[n][1] = atom->omega[i][1];
