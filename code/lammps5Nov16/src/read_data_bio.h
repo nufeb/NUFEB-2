@@ -117,6 +117,7 @@ class ReadDataBIO : protected Pointers {
 
   void nutrients();
 
+  void consumption();
   void growth();
   void ks();
   void yield();
