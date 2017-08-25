@@ -535,7 +535,11 @@ void ReadDataBIO::command(int narg, char **arg)
         nuflag = 1;
         if (firstpass) nutrients();
         else skip_lines(bio->nnus);
-      }else if (strcmp(keyword,"Growth") == 0) {
+      }else if (strcmp(keyword,"Consumption Rate") == 0) {
+        if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
+        if (firstpass) consumption();
+        else skip_lines(atom->ntypes);
+      } else if (strcmp(keyword,"Growth Rate") == 0) {
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) growth();
         else skip_lines(atom->ntypes);
@@ -2205,6 +2209,29 @@ void ReadDataBIO::nutrients()
 
 /* ---------------------------------------------------------------------- */
 
+void ReadDataBIO::consumption()
+{
+  int i,m;
+  char *next;
+  char *buf = new char[atom->ntypes*MAXLINE];
+
+  int eof = comm->read_lines_from_file(fp,atom->ntypes,MAXLINE,buf);
+  if (eof) error->all(FLERR,"Unexpected end of data file");
+
+  bio->q = memory->create(bio->q,atom->ntypes+1,"bio:q");
+
+  char *original = buf;
+  for (i = 0; i < atom->ntypes; i++) {
+    next = strchr(buf,'\n');
+    *next = '\0';
+    bio->set_q(buf);
+    buf = next + 1;
+  }
+  delete [] original;
+}
+
+/* ---------------------------------------------------------------------- */
+
 void ReadDataBIO::growth()
 {
   int i,m;
@@ -2214,13 +2241,13 @@ void ReadDataBIO::growth()
   int eof = comm->read_lines_from_file(fp,atom->ntypes,MAXLINE,buf);
   if (eof) error->all(FLERR,"Unexpected end of data file");
 
-  bio->mu = memory->create(bio->mu,atom->ntypes+1,"bio:growth");
+  bio->mu = memory->create(bio->mu,atom->ntypes+1,"bio:mu");
 
   char *original = buf;
   for (i = 0; i < atom->ntypes; i++) {
     next = strchr(buf,'\n');
     *next = '\0';
-    bio->set_growth(buf);
+    bio->set_mu(buf);
     buf = next + 1;
   }
   delete [] original;

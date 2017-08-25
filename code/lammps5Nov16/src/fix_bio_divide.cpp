@@ -297,7 +297,7 @@ void FixDivide::post_integrate()
 
         atom->radius[n] = childRadius;
         avec->outerRadius[n] = childOuterRadius;
-        avec->atom_mu[n] = bio->mu[atom->type[i]];
+        avec->atom_q[n] = bio->q[atom->type[i]];
 
         atom->natoms++;
 

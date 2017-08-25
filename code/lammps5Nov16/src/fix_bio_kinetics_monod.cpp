@@ -141,6 +141,8 @@ void FixKineticsMonod::init()
     error->all(FLERR,"fix_kinetics/monod requires Ks input");
   else if (bio->yield == NULL)
     error->all(FLERR,"fix_kinetics/monod requires Yield input");
+  else if (bio->mu == NULL)
+    error->all(FLERR,"fix_kinetics/monod requires Growth Rate input");
 
   ntypes = atom->ntypes;
   nnus = bio->nnus;

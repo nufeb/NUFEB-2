@@ -30,7 +30,7 @@ class AtomVecBio : public AtomVecSphere {
   //atom
   double *outerRadius;     //atom outer radius
   double *outerMass;       //atom outer mass
-  double *atom_mu;         //atom maximum growth rate
+  double *atom_q;         //atom maximum consumption rate
   int maskEPS;               // mask of EPS group
   int maskHET;               // mask of HET group
   int maskDEAD;               // mask of HET group

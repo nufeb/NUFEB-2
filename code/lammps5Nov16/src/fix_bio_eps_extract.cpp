@@ -268,7 +268,7 @@ void FixEPSExtract::post_integrate()
         atom->torque[n][2] = atom->torque[i][2];
         atom->radius[n] = childRadius;
         avec->outerRadius[n] = childRadius;
-        avec->atom_mu[n] = 0;
+        avec->atom_q[n] = 0;
 
         atom->natoms++;
 

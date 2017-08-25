@@ -33,7 +33,6 @@
 #include "atom_vec_bio.h"
 #include "fix_bio_kinetics_ph.h"
 #include "fix_bio_kinetics_thermo.h"
-#include "fix_bio_kinetics_diffusionS.h"
 #include "pointers.h"
 #include "variable.h"
 #include "modify.h"
@@ -41,6 +40,7 @@
 #include "force.h"
 #include "group.h"
 #include "domain.h"
+#include "fix_bio_kinetics_diffusion.h"
 #include "fix_bio_kinetics_energy.h"
 #include "fix_bio_kinetics_monod.h"
 
@@ -137,7 +137,7 @@ void FixKinetics::init()
   }
 
   // register fix kinetics with this class
-  diffusionS = NULL;
+  diffusion = NULL;
   energy = NULL;
   ph = NULL;
   thermo = NULL;
@@ -147,8 +147,8 @@ void FixKinetics::init()
   for (int j = 0; j < nfix; j++) {
     if (strcmp(modify->fix[j]->style,"kinetics/growth/energy") == 0) {
       energy = static_cast<FixKineticsEnergy *>(lmp->modify->fix[j]);
-    } else if (strcmp(modify->fix[j]->style,"kinetics/diffusionS") == 0) {
-      diffusionS = static_cast<FixKineticsDiffusionS *>(lmp->modify->fix[j]);
+    } else if (strcmp(modify->fix[j]->style,"kinetics/diffusion") == 0) {
+      diffusion = static_cast<FixKineticsDiffusion *>(lmp->modify->fix[j]);
     } else if (strcmp(modify->fix[j]->style,"kinetics/ph") == 0) {
       ph = static_cast<FixKineticsPH *>(lmp->modify->fix[j]);
     } else if (strcmp(modify->fix[j]->style,"kinetics/thermo") == 0) {
@@ -160,7 +160,7 @@ void FixKinetics::init()
 
   if (bio->nnus == 0)
     error->all(FLERR,"fix_kinetics requires # of Nutrients inputs");
-  else if (bio->nuGCoeff == NULL && energy !=NULL)
+  else if (bio->nuGCoeff == NULL && energy != NULL)
     error->all(FLERR,"fix_kinetics requires Nutrient Energy inputs");
   else if (bio->iniS == NULL)
     error->all(FLERR,"fix_kinetics requires Nutrients inputs");
@@ -335,7 +335,7 @@ void FixKinetics::integration() {
       monod->growth(diffT);
     }
 
-    if (diffusionS != NULL) nuConv = diffusionS->diffusion(nuConv, iteration, diffT);
+    if (diffusion != NULL) nuConv = diffusion->diffusion(nuConv, iteration, diffT);
     else break;
 
     for (int i = 1; i <= nnus; i++){
@@ -373,7 +373,7 @@ double FixKinetics::getMaxHeight() {
   double *r = atom->radius;
   double maxh = 0;
 
-  for (int i=0; i<nall; i++) {
+  for (int i=0; i < nall; i++) {
     if((x[i][2]+r[i]) > maxh) maxh = x[i][2]+r[i];
   }
 

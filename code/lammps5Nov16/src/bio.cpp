@@ -26,6 +26,7 @@ BIO::BIO(LAMMPS *lmp) : Pointers(lmp)
   yield = NULL;
   maintain = NULL;
   decay = NULL;
+  q = NULL;
   mu = NULL;
   ks = NULL;
   eD = NULL;
@@ -59,6 +60,7 @@ BIO::~BIO()
   memory->destroy(maintain);
   memory->destroy(decay);
   memory->destroy(eD);
+  memory->destroy(q);
   memory->destroy(mu);
   memory->destroy(ks);
   memory->destroy(anabCoeff);
@@ -96,7 +98,8 @@ void BIO::type_grow()
   if (maintain != NULL) memory->grow(maintain,atom->ntypes+1,"bio:maintain");
   if (decay != NULL) memory->grow(decay,atom->ntypes+1,"bio:decay");
   if (dissipation != NULL) memory->grow(dissipation,atom->ntypes+1,"bio:dissipation");
-  if (mu != NULL) memory->grow(mu,atom->ntypes+1,"bio:growth");
+  if (q != NULL) memory->grow(q,atom->ntypes+1,"bio:q");
+  if (mu != NULL) memory->grow(mu,atom->ntypes+1,"bio:mu");
   if (ks != NULL) memory->grow(ks,atom->ntypes+1,nnus+1,"bio:ks");
   if (anabCoeff != NULL) memory->grow(anabCoeff,atom->ntypes+1,nnus+1,"bio:anabCoeff");
   if (catCoeff != NULL) memory->grow(catCoeff,atom->ntypes+1,nnus+1,"bio:catCoeff");
@@ -181,9 +184,45 @@ void BIO::data_nutrients(int narg, char **arg)
    called from reading of data file
 ------------------------------------------------------------------------- */
 
-void BIO::set_growth(const char *str)
+void BIO::set_q(const char *str)
 {
-  if (mu == NULL) error->all(FLERR,"Cannot set growth for this atom style");
+  if (q == NULL) error->all(FLERR,"Cannot set growth rate for this atom style");
+
+  char* typeName;
+  double growth_one;
+  int len = strlen(str) + 1;
+  typeName = new char[len];
+
+  int n = sscanf(str,"%s %lg",typeName,&growth_one);
+
+  if (n != 2) error->all(FLERR,"Invalid growth line in data file");
+
+  int itype = find_typeID(typeName);
+  delete [] typeName;
+
+  if (itype < 1 || itype > atom->ntypes)
+    error->all(FLERR,"Invalid type for growth set");
+
+  q[itype] = growth_one;
+
+  if (q[itype] < 0.0) error->all(FLERR,"Invalid growth value");
+
+  AtomVecBio* avec = (AtomVecBio *) atom->style_match("bio");
+  //set growth rate for each atom
+  for (int i = 0; i < atom->nlocal; i++) {
+    if (atom->type[i] == itype)
+      avec->atom_q[i] = q[itype];
+  }
+}
+
+/* ----------------------------------------------------------------------
+   set growth values for all types
+   called from reading of data file
+------------------------------------------------------------------------- */
+
+void BIO::set_mu(const char *str)
+{
+  if (mu == NULL) error->all(FLERR,"Cannot set consumption rate for this atom style");
 
   char* typeName;
   double growth_one;
@@ -205,12 +244,8 @@ void BIO::set_growth(const char *str)
   if (mu[itype] < 0.0) error->all(FLERR,"Invalid growth value");
 
   AtomVecBio* avec = (AtomVecBio *) atom->style_match("bio");
-  //set growth rate for each atom
-  for (int i = 0; i < atom->nlocal; i++) {
-    if (atom->type[i] == itype)
-      avec->atom_mu[i] = mu[itype];
-  }
 }
+
 /* ----------------------------------------------------------------------
    set ks values for all types
    called from reading of data file
