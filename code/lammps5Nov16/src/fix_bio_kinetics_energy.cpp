@@ -132,7 +132,7 @@ void FixKineticsEnergy::init()
   bio = kinetics->bio;
 
   if (bio->nnus == 0)
-    error->all(FLERR,"fix_kinetics/monod requires # of Nutrients input");
+    error->all(FLERR,"fix_kinetics/monod requires Nutrients input");
   else if (bio->catCoeff == NULL)
     error->all(FLERR,"fix_kinetics/monod requires Catabolism Coeffs input");
   else if (bio->anabCoeff == NULL)
@@ -145,6 +145,8 @@ void FixKineticsEnergy::init()
     error->all(FLERR,"fix_kinetics/monod requires Ks input");
   else if (bio->decayCoeff == NULL)
     error->all(FLERR,"fix_kinetics/monod requires Decay Coeffs input");
+  else if (bio->q == NULL)
+    error->all(FLERR,"fix_kinetics/monod requires Consumption Rate input");
 
   nnus = bio->nnus;
   nx = kinetics->nx;
@@ -228,7 +230,7 @@ double FixKineticsEnergy::biomass(int i) {
   int t = type[i];
   int pos = position(i);
 
-  if (avec->atom_mu[i] == 0 || DGRCat[t][pos] == 0) return 0;
+  if (avec->atom_q[i] == 0 || DGRCat[t][pos] == 0) return 0;
 
   double qMet;       // specific substrate uptake rate for growth metabolism
   double qCat;       // specific substrate uptake rate for catabolism
@@ -241,9 +243,9 @@ double FixKineticsEnergy::biomass(int i) {
   double m = gMonod[t][pos];
   if (m < 0) {
     gMonod[t][pos] = grid_monod(pos, t, 1);
-    qMet = avec->atom_mu[i] * gMonod[t][pos];
+    qMet = avec->atom_q[i] * gMonod[t][pos];
   } else {
-    qMet = avec->atom_mu[i] * m;
+    qMet = avec->atom_q[i] * m;
   }
 
   qCat = qMet;
@@ -259,9 +261,7 @@ double FixKineticsEnergy::biomass(int i) {
 
         if (1.2 * bacMaint < qCat) {
           double metCoeff = catCoeff[t][nu] * invYield + anabCoeff[t][nu];
-
-          //mu = gYield[t][pos] * (qMet - bacMaint);
-          mu = qMet - bacMaint;
+          mu = gYield[t][pos] * (qMet - bacMaint);
           mass = mu * rmass[i];
           consume = mass  * metCoeff;
         } else if (qCat <= 1.2 * bacMaint && bacMaint <= qCat) {
@@ -285,8 +285,7 @@ double FixKineticsEnergy::biomass(int i) {
   }
 
   if (1.2 * bacMaint < qCat) {
-    //mu = gYield[t][pos] * (qMet - bacMaint);
-    mu = qMet - bacMaint;
+    mu = gYield[t][pos] * (qMet - bacMaint);
     mass = mu * rmass[i];
   } else if (qCat <= 1.2 * bacMaint && bacMaint <= qCat) {
     mass = 0;
@@ -297,7 +296,7 @@ double FixKineticsEnergy::biomass(int i) {
 
     mass = -decay[t] * f * rmass[i];
   }
-  // if(atom->type[i] == 5) printf("mass = %e \n", gMonod[t][pos]);
+
   return mass;
 }
 

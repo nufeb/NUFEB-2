@@ -18,7 +18,8 @@ class BIO : protected Pointers {
   char **typeName;            // type name
 
   double **ks;                // half-saturation constant [type][nutrient]
-  double *mu;                 // maximum species growth rate
+  double *q;                  // specific consumption rate
+  double *mu;                 // specific growth rate
   double *yield;              // growth yield coefficient
   double *dissipation;        // universal gas constant (thermodynamics)
   double *maintain;           // maintenance [type]
@@ -51,7 +52,8 @@ class BIO : protected Pointers {
   void type_grow();
   void create_type(char *);
   void data_nutrients(int, char **);
-  void set_growth(const char *);
+  void set_q(const char *);
+  void set_mu(const char *);
   void set_mw(const char *);
   void set_ks(int, char **);
   void set_yield(const char *);
