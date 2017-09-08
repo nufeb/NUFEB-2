@@ -29,7 +29,7 @@ class ComputeNufebDiversity : public Compute {
   ComputeNufebDiversity(class LAMMPS *, int, char **);
   ~ComputeNufebDiversity();
   void init() {}
-  virtual void compute_vector();
+  virtual double compute_scalar();
 };
 
 }

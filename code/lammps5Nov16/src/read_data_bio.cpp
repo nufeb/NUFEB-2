@@ -551,7 +551,7 @@ void ReadDataBIO::command(int narg, char **arg)
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) yield();
         else skip_lines(atom->ntypes);
-      } else if (strcmp(keyword,"eD") == 0) {
+      } else if (strcmp(keyword,"Electron Donor") == 0) {
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) eD();
         else skip_lines(atom->ntypes);
