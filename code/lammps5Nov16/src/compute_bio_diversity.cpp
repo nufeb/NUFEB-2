@@ -28,33 +28,28 @@ ComputeNufebDiversity::ComputeNufebDiversity(LAMMPS *lmp, int narg, char **arg) 
 {
   if (narg != 3) error->all(FLERR,"Illegal compute ntypes command");
 
-  vector_flag = 1;
-  extvector = 0;
-  int ntypes = atom->ntypes;
-  size_vector = atom->ntypes;
-  memory->create(vector,ntypes,"compute:vector");
+  scalar_flag = 1;
+  extscalar = 0;
 }
 
 /* ---------------------------------------------------------------------- */
 
 ComputeNufebDiversity::~ComputeNufebDiversity()
 {
-  memory->destroy(vector);
 }
 
 /* ---------------------------------------------------------------------- */
 
-void ComputeNufebDiversity::compute_vector()
+double ComputeNufebDiversity::compute_scalar()
 {
-  invoked_vector = update->ntimestep;
+  invoked_scalar = update->ntimestep;
 
   double *rmass = atom->rmass;
   int *type = atom->type;
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
   int ntypes = atom->ntypes;
-  size_vector = ntypes;
-  memory->grow(vector,ntypes,"compute:vector");
+
   int *ntypeList = new int[ntypes + 1]();
 
   for (int i = 0; i < ntypes; i++) {
@@ -68,19 +63,16 @@ void ComputeNufebDiversity::compute_vector()
     }
   }
 
+  int n = 0;
   for (int i = 1; i < ntypes + 1; i++) {
-    int sum = 0;
-    for (int j = 1; j <= ntypeList[i]; j++) {
-      sum = sum + j * (j - 1);
-    }
-
-    int a = nlocal * (nlocal - 1);
-
-    if (a != 0)
-      vector[i-1] = 1 - ((double)sum / a);
-    else
-      vector[i-1] = 1;
+    n = n + ntypeList[i] * (ntypeList[i] - 1);
   }
 
+  int N = nlocal * (nlocal - 1);
+
+  scalar = 1 - n / N;
+
   delete [] ntypeList;
+
+  return scalar;
 }
