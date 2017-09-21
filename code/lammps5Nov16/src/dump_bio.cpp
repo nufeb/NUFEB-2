@@ -280,7 +280,7 @@ void DumpBio::init_style()
       segFlag = 1;
     }  else if (strcmp(keywords[i],"ntypes") == 0) {
       ntypeFlag = 1;
-    } else lmp->error->all(FLERR,"Undefined dump_bios keyword");
+    } else lmp->error->all(FLERR,"Undefined dump_bio keyword");
 
     i++;
   }
@@ -742,22 +742,8 @@ void DumpBio::write_dimension_data()
 
 void DumpBio::write_diversity_data()
 {
-  if (!divHeader) {
-    for(int i = 1; i < atom->ntypes+1; i++){
-      fprintf(fp, "%s,\t", kinetics->bio->typeName[i]);
-    }
-    divHeader = 1;
-    fprintf(fp, "\n");
-  }
-
-  cdiv->compute_vector();
-
-  fprintf(fp, "%i,\t", update->ntimestep);
-
-  for(int i = 1; i < atom->ntypes+1; i++){
-    fprintf(fp, "%e,\t", cdiv->vector[i-1]);
-  }
-  fprintf(fp, "\n");
+  cdiv->compute_scalar();
+  fprintf(fp, "%i,\t %e, \n", update->ntimestep, cdiv->scalar);
 }
 
 /* ---------------------------------------------------------------------- */

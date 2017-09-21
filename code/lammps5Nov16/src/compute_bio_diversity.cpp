@@ -52,10 +52,6 @@ double ComputeNufebDiversity::compute_scalar()
 
   int *ntypeList = new int[ntypes + 1]();
 
-  for (int i = 0; i < ntypes; i++) {
-    vector[i] = 0;
-  }
-
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
       int t = type[i];
@@ -68,9 +64,9 @@ double ComputeNufebDiversity::compute_scalar()
     n = n + ntypeList[i] * (ntypeList[i] - 1);
   }
 
-  int N = nlocal * (nlocal - 1);
-
-  scalar = 1 - n / N;
+  int m = nlocal * (nlocal - 1);
+  double x = n/(double)m;
+  scalar = 1 - x;
 
   delete [] ntypeList;
 

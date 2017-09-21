@@ -92,13 +92,6 @@ FixEPSExtract::FixEPSExtract(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg,
     zhi = domain->boxhi_bound[2];
   }
 
-
-  // All gather arrays: fix pour
-  // MPI_Comm_rank(world,&me);
-  // MPI_Comm_size(world,&nprocs);
-  // recvcounts = new int[nprocs];
-  // displs = new int[nprocs];
-
   // Set up renieghbouring here: required for re building the neighbour list: fix pour/ deposit
  
   force_reneighbor = 1;
@@ -268,7 +261,7 @@ void FixEPSExtract::post_integrate()
         atom->torque[n][2] = atom->torque[i][2];
         atom->radius[n] = childRadius;
         avec->outerRadius[n] = childRadius;
-        avec->atom_q[n] = 0;
+        //avec->atom_q[n] = 0;
 
         atom->natoms++;
 
