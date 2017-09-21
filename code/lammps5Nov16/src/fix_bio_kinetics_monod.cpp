@@ -217,6 +217,7 @@ void FixKineticsMonod::init_param()
       // take first three char
       char *name = new char[4];
       strncpy(name, bio->typeName[i], 3);
+      name[3] = 0;
 
       if (strcmp(name, "het") == 0) species[i] = 1;
       else if (strcmp(name, "aob") == 0) species[i] = 2;
