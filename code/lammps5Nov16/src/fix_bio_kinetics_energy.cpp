@@ -230,7 +230,7 @@ double FixKineticsEnergy::biomass(int i) {
   int t = type[i];
   int pos = position(i);
 
-  if (avec->atom_q[i] == 0 || DGRCat[t][pos] == 0) return 0;
+  if (bio->q[t] == 0 || DGRCat[t][pos] == 0) return 0;
 
   double qMet;       // specific substrate uptake rate for growth metabolism
   double qCat;       // specific substrate uptake rate for catabolism
@@ -243,9 +243,9 @@ double FixKineticsEnergy::biomass(int i) {
   double m = gMonod[t][pos];
   if (m < 0) {
     gMonod[t][pos] = grid_monod(pos, t, 1);
-    qMet = avec->atom_q[i] * gMonod[t][pos];
+    qMet = bio->q[t] * gMonod[t][pos];
   } else {
-    qMet = avec->atom_q[i] * m;
+    qMet = bio->q[t] * m;
   }
 
   qCat = qMet;
