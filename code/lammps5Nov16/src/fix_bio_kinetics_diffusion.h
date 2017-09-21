@@ -40,7 +40,7 @@ class FixKineticsDiffusion: public Fix {
   int *mask;
   int *type;
 
-  int sflag;
+  double shearRate;
   double **iniS;                // inlet concentrations of nutrients
   double *diffCoeff;            // diffusion coefficients of nutrients
   double *mw;                   // molecular weights of nutrients
@@ -68,7 +68,6 @@ class FixKineticsDiffusion: public Fix {
   double **xGrid;
   double **nuGrid;
   bool *ghost;
-  //double *nRES;
 
   class FixKinetics *kinetics;
   class BIO *bio;

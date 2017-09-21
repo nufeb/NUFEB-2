@@ -217,15 +217,16 @@ void FixKineticsMonod::init_param()
       // take first three char
       char *name = new char[4];
       strncpy(name, bio->typeName[i], 3);
-      if (strcmp(bio->typeName[i], "het") == 0) species[i] = 1;
-      else if (strcmp(bio->typeName[i], "aob") == 0) species[i] = 2;
-      else if (strcmp(bio->typeName[i], "nob") == 0) species[i] = 3;
-      else {
-        species[i] = 0;
-        error->all(FLERR,"unknow species in fix_kinetics/kinetics/monod");
-      }
+
+      if (strcmp(name, "het") == 0) species[i] = 1;
+      else if (strcmp(name, "aob") == 0) species[i] = 2;
+      else if (strcmp(name, "nob") == 0) species[i] = 3;
+      else error->all(FLERR,"unknow species in fix_kinetics/kinetics/monod");
+
+      delete[] name;
     }
   }
+  if (ieps == 0) (error->warning(FLERR,"EPS is not defined in fix_kinetics/kinetics/monod"));
 }
 
 /* ----------------------------------------------------------------------
@@ -262,6 +263,9 @@ void FixKineticsMonod::growth(double dt)
   double **nuR = kinetics->nuR;
 
   bool *nuConv = kinetics->nuConv;
+  double yieldEPS = 0;
+  if (ieps != 0) yieldEPS = yield[ieps];
+
 
   for (int i = 0; i < nall; i++) {
     if (mask[i] & groupbit) {
@@ -294,15 +298,15 @@ void FixKineticsMonod::growth(double dt)
 
         if (!nuConv[isub]) nuR[isub][grid] +=  ((-1 / yield[i]) * ((R1 + R4 + R5) * xtype[i][grid]));
         //if (xtype[i][grid] != 0) printf("nuR = %e \n", xtype[i][grid]);
-        if (!nuConv[io2]) nuR[io2][grid] +=  (-((1 - yield[i] - yield[ieps]) / yield[i]) * R1 * xtype[i][grid]);
-        if (!nuConv[ino2]) nuR[ino2][grid] +=  -(((1 - yield[i] - yield[ieps]) / (1.17 * yield[i])) * R5 * xtype[i][grid]);
-        if (!nuConv[ino3]) nuR[ino3][grid] +=  -(((1 - yield[i] - yield[ieps]) / (2.86 * yield[i])) * R4 * xtype[i][grid]);
+        if (!nuConv[io2]) nuR[io2][grid] +=  (-((1 - yield[i] - yieldEPS) / yield[i]) * R1 * xtype[i][grid]);
+        if (!nuConv[ino2]) nuR[ino2][grid] +=  -(((1 - yield[i] - yieldEPS) / (1.17 * yield[i])) * R5 * xtype[i][grid]);
+        if (!nuConv[ino3]) nuR[ino3][grid] +=  -(((1 - yield[i] - yieldEPS) / (2.86 * yield[i])) * R4 * xtype[i][grid]);
         if (!nuConv[io2]) nuR[io2][grid] += -(R10 * xtype[i][grid]);
         if (!nuConv[ino2]) nuR[ino2][grid] += -(R14 * xtype[i][grid]);
         if (!nuConv[ino3]) nuR[ino3][grid] += -(R13 * xtype[i][grid]);
 
         growrate[i][0][grid] = dt * (R1 + R4 + R5 - R6 - R10 - R13 - R14);
-        growrate[i][1][grid] = dt * (yield[ieps] / yield[i]) * (R1 + R4 + R5);
+        growrate[i][1][grid] = dt * (yieldEPS / yield[i]) * (R1 + R4 + R5);
       } else if (spec == 2) {
         // AOB monod model
         double R2 = mu[i] * (nuS[inh4][grid] / (ks[i][inh4] + nuS[inh4][grid])) * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));

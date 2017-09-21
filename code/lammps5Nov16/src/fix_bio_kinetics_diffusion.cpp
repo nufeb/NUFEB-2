@@ -55,17 +55,13 @@ FixKineticsDiffusion::FixKineticsDiffusion(LAMMPS *lmp, int narg, char **arg) : 
 
   if (narg != 12) error->all(FLERR,"Not enough arguments in fix diffusion command");
 
-  var = new char*[4];
-  ivar = new int[4];
+  var = new char*[5];
+  ivar = new int[5];
 
-  if(strcmp(arg[3], "exp") == 0) sflag = 0;
-  else if(strcmp(arg[3], "imp") == 0) sflag = 1;
-  else error->all(FLERR,"Illegal PDE method command");
-
-  for (int i = 0; i < 4; i++) {
-    int n = strlen(&arg[4+i][2]) + 1;
+  for (int i = 0; i < 5; i++) {
+    int n = strlen(&arg[3+i][2]) + 1;
     var[i] = new char[n];
-    strcpy(var[i],&arg[4+i][2]);
+    strcpy(var[i],&arg[3+i][2]);
   }
 
   //set boundary condition flag:
@@ -106,7 +102,7 @@ FixKineticsDiffusion::FixKineticsDiffusion(LAMMPS *lmp, int narg, char **arg) : 
 FixKineticsDiffusion::~FixKineticsDiffusion()
 {
   int i;
-  for (i = 0; i < 4; i++) {
+  for (i = 0; i < 5; i++) {
     delete [] var[i];
   }
 
@@ -139,7 +135,7 @@ void FixKineticsDiffusion::init()
   if (!atom->radius_flag)
     error->all(FLERR,"Fix requires atom attribute diameter");
 
-  for (int n = 0; n < 4; n++) {
+  for (int n = 0; n < 5; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
       error->all(FLERR,"Variable name for fix diffusion does not exist");
@@ -161,11 +157,12 @@ void FixKineticsDiffusion::init()
     lmp->error->all(FLERR,"The fix kinetics command is required for running iBM simulation");
 
   bio = kinetics->bio;
-  tol = input->variable->compute_equal(ivar[0]);
-  q = input->variable->compute_equal(ivar[1]);
-  rvol = input->variable->compute_equal(ivar[2]);
+  shearRate = input->variable->compute_equal(ivar[0]);
+  tol = input->variable->compute_equal(ivar[1]);
+  q = input->variable->compute_equal(ivar[2]);
+  rvol = input->variable->compute_equal(ivar[3]);
   if (rvol <= 0) lmp->error->all(FLERR,"Reactor volume cannot be equal or less than 0");
-  af = input->variable->compute_equal(ivar[3]);
+  af = input->variable->compute_equal(ivar[4]);
 
   //set diffusion grid size
   nx = kinetics->nx;
@@ -201,7 +198,7 @@ void FixKineticsDiffusion::init()
   stepz = (zhi-zlo)/nz;
   bzhi = kinetics->bnz * stepz;
 
-  //if (!isEuqal(stepx, stepy, stepz)) error->all(FLERR,"Grid is not cubic");
+  if (!isEuqal(stepx, stepy, stepz)) error->all(FLERR,"Grid is not cubic");
 
   nX = nx + 2;
   nY = ny + 2;
@@ -280,7 +277,7 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
   //nRES = new double[nXYZ]();
 
   for (int i = 1; i <= nnus; i++) {
-    if (bio->nuType[i] == 0 && diffCoeff[i] != 0 && !nuConv[i]) {
+    if (bio->nuType[i] == 0 && !nuConv[i]) {
       double maxS = 0;
       double *nuPrev = memory->create(nuPrev,nXYZ,"diffusion:nuPrev");
       // copy current concentrations
@@ -525,8 +522,22 @@ void FixKineticsDiffusion::compute_flux(double cellDNu, double &nuCell, double *
   double jDown = cellDNu*(nuPrev[grid] - nuPrev[down])/stepz;
   double jZ = (jUp - jDown)/stepz;
 
+  double shear = 0;
+
+  if (shearRate != 0) {
+    int hgrid = grid;
+    int deep = 0;
+
+    while (!ghost[hgrid]) {
+      hgrid--;
+      deep++;
+    }
+    shear = shearRate * (deep * stepz - stepz / 2)
+        * (nuPrev[rhs] - nuPrev[lhs]) / (2 * stepz);
+  }
+
   // Adding fluxes in all the directions and the uptake rate (RHS side of the equation)
-  double res = (jX + jY + jZ + rateNu) * diffT;
+  double res = (jX + jY + jZ + rateNu - shear) * diffT;
   //nRES[grid] += res;
   //Updating the value: Ratesub*diffT + nuCell[cell](previous)
   nuCell = nuPrev[grid] + res;

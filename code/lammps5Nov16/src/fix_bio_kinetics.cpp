@@ -310,6 +310,7 @@ void FixKinetics::integration() {
   for (int i = 1; i <= nnus; i++) {
     if (strcmp(bio->nuName[i],"h2o")==0) nuConv[i] = true;
     else if (strcmp(bio->nuName[i],"h")==0) nuConv[i] = true;
+    else if (bio->diffCoeff[i] == 0) nuConv[i] = true;
     else nuConv[i] = false;
   }
 
