@@ -7,7 +7,7 @@ newton		off
 #processors  2 1 1
 
 comm_modify	vel yes
-read_data_bio atom.in
+read_data_bio atom2.in
 
 group HET type 1
 group AOB type 2
@@ -92,5 +92,5 @@ thermo_style    custom step cpu atoms biomass c_myNtypes[*]
 thermo		100
 thermo_modify	lost ignore
 
-run 40000
+run 400
 

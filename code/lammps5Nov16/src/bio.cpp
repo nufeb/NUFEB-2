@@ -115,7 +115,6 @@ void BIO::create_type(char *name) {
   atom->ntypes = atom->ntypes + 1;
   type_grow();
   typeName[atom->ntypes] = name;
-
 }
 
 void BIO::data_nutrients(int narg, char **arg)
@@ -177,6 +176,40 @@ void BIO::data_nutrients(int narg, char **arg)
   iniS[id][4] = ybcp;
   iniS[id][5] = zbcm;
   iniS[id][6] = zbcp;
+}
+
+void BIO::set_typeName(int narg, char **arg)
+{
+  if (narg != 2) error->all(FLERR,"Incorrect args for type name definitions");
+
+  int id = force->numeric(FLERR,arg[0]);
+
+  // type name
+  char *name;
+  int n = strlen(arg[1]) + 1;
+  name = new char[n];
+  strcpy(name,arg[1]);
+
+  for (int i = 0; i < n-1; i++)
+    if (!isalnum(name[i]) && name[i] != '_')
+      error->all(FLERR,"Type name must be "
+                       "alphanumeric or underscore characters");
+
+  for (int i = 0; i < atom->ntypes; i++)
+    if ((typeName[i] != NULL) && (strcmp(typeName[i], name) == 0)
+        && (i != id)){
+      error->one(FLERR,"Repeat type names");
+    }
+
+  if (typeName[id] == NULL) {
+    typeName[id] = new char[n];
+  } else if (strcmp(typeName[id], name) != 0){
+    error->one(FLERR,"Incompatible type names");
+  }
+
+  strcpy(typeName[id],name);
+
+  delete [] name;
 }
 
 /* ----------------------------------------------------------------------
