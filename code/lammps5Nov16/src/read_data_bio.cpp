@@ -344,7 +344,8 @@ void ReadDataBIO::command(int narg, char **arg)
   int bondflag,angleflag,dihedralflag,improperflag;
   int ellipsoidflag,lineflag,triflag,bodyflag;
 
-  //NUFEB package
+  // NUFEB package
+  int tnflag = 0; // type name flag
   int nuflag = 0;
 
   atomflag = topoflag = 0;
@@ -531,11 +532,15 @@ void ReadDataBIO::command(int narg, char **arg)
         else skip_lines(ntypes);
 
       // NUFEB CODE
+      } else if (strcmp(keyword,"Type Name") == 0) {
+        tnflag = 1;
+        if (firstpass) typeName();
+        else skip_lines(atom->ntypes);
       } else if (strcmp(keyword,"Nutrients") == 0) {
         nuflag = 1;
         if (firstpass) nutrients();
         else skip_lines(bio->nnus);
-      }else if (strcmp(keyword,"Consumption Rate") == 0) {
+      } else if (strcmp(keyword,"Consumption Rate") == 0) {
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) consumption();
         else skip_lines(atom->ntypes);
@@ -2175,6 +2180,36 @@ void ReadDataBIO::nutrient_memory(){
 
   bio->iniS = memory->create(bio->iniS,nnus+1,7,"bio:nuConc");
   bio->nuType = memory->create(bio->nuType, nnus+1, "bio::nuGCoeff");
+}
+
+/* ---------------------------------------------------------------------- */
+
+void ReadDataBIO::typeName()
+{
+  int i,m;
+  char *next;
+  char *buf = new char[atom->ntypes*MAXLINE];
+
+  int eof = comm->read_lines_from_file(fp,atom->ntypes,MAXLINE,buf);
+  if (eof) error->all(FLERR,"Unexpected end of data file");
+
+  char *original = buf;
+  for (i = 0; i < atom->ntypes; i++) {
+    next = strchr(buf,'\n');
+    *next = '\0';
+    parse_coeffs(buf,NULL,0,0,boffset);
+    bio->set_typeName(narg,arg);
+
+    if (strcmp(arg[1], "eps") == 0) {
+       avec_bio->typeEPS = atoi(arg[0]);
+    } else if (strcmp(arg[1], "dead") == 0) {
+       avec_bio->typeDEAD = atoi(arg[0]);
+    }
+
+
+    buf = next + 1;
+  }
+  delete [] original;
 }
 
 /* ----------------------------------------------------------------------
