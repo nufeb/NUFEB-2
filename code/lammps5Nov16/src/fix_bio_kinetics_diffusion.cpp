@@ -496,6 +496,8 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
       nuCell = nuPrev[lhs];
     }
   }
+
+  if(nuCell <= 0) nuCell = 1e-20;
 }
 
 /* ----------------------------------------------------------------------
