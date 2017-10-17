@@ -322,8 +322,8 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
             else nuS[i][ind] = nuGrid[grid][i];
           }
           else {
-            nuGrid[grid][i] = 0;
-            nuS[i][ind] = 0;
+            nuGrid[grid][i] = 1e-20;
+            nuS[i][ind] = 1e-20;
           }
         } else compute_bc(nuGrid[grid][i], nuPrev, grid, nuBS[i]);
 
