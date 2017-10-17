@@ -83,6 +83,9 @@ FixKineticsMonod::~FixKineticsMonod()
   }
   delete [] var;
   delete [] ivar;
+
+  memory->destroy(species);
+  memory->destroy(growrate);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -92,9 +95,6 @@ int FixKineticsMonod::setmask()
   int mask = 0;
   mask |= PRE_FORCE;
   return mask;
-
-  memory->destroy(species);
-  memory->destroy(growrate);
 }
 
 /* ---------------------------------------------------------------------- */
