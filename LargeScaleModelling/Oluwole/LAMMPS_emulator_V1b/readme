@@ -28,7 +28,7 @@ To run any case, the input parameters must be converted to the units stated abov
 
 (ii) To run from Linux terminal:
 $ cd path to /LAMMPS_emulator_V1b
-$ R CMD BATCH emu.R result.txt 
+$ R CMD BATCH emu.R 
 
 (E) Obtain the simulation results from subfolder "output".
 The sample input.txt file in the "input" folder takes (~5minutes) to run the (2 days) simulation on Window 
