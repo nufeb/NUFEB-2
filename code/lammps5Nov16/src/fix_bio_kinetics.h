@@ -61,6 +61,9 @@ class FixKinetics : public Fix {
   double zhi,bzhi,zlo;
   double stepz;
 
+  int subn[2];                     // number of grids in x y axis for this proc
+  double sublo[2], subhi[2];       // subdomain size trimmed to the grid
+
   class AtomVecBio *avec;
   class BIO *bio;
   class FixKineticsDiffusion *diffusion;
@@ -74,6 +77,7 @@ class FixKinetics : public Fix {
   void integration();
   void grow();
   double getMaxHeight();
+  int position(int);
 };
 
 }
