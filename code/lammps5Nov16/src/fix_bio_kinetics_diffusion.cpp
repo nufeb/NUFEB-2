@@ -200,8 +200,8 @@ void FixKineticsDiffusion::init()
 
   if (!isEuqal(stepx, stepy, stepz)) error->all(FLERR,"Grid is not cubic");
 
-  nX = nx + 2;
-  nY = ny + 2;
+  nX = kinetics->subn[0] + 2;
+  nY = kinetics->subn[1] + 2;
   nZ = nz + 2;
 
   nXYZ = nX*nY*nZ;
@@ -221,8 +221,8 @@ void FixKineticsDiffusion::init()
   double i, j, k;
   int grid = 0;
   for (k = zlo - (stepz/2); k < zhi + stepz; k += stepz) {
-    for (j = ylo - (stepy/2); j < yhi + stepy; j += stepy) {
-      for (i = xlo - (stepx/2); i < xhi + stepx; i += stepx) {
+    for (j = kinetics->sublo[1] - (stepy/2); j < kinetics->subhi[1] + stepy; j += stepy) {
+      for (i = kinetics->sublo[0] - (stepx/2); i < kinetics->subhi[0] + stepx; i += stepx) {
         xGrid[grid][0] = i;
         xGrid[grid][1] = j;
         xGrid[grid][2] = k;
@@ -311,7 +311,7 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
           int iy = floor(xGrid[grid][1]/stepy);
           int iz = floor(xGrid[grid][2]/stepz);
 
-          int ind = iz * nx * ny + iy * nx + ix;
+          int ind = iz * kinetics->subn[0] * kinetics->subn[1] + iy * kinetics->subn[0] + ix;
 
           compute_flux(diffD[i], nuGrid[grid][i], nuPrev, nuR[i][ind], grid);
 

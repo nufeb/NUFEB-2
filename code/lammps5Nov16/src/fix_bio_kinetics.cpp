@@ -49,7 +49,6 @@ using namespace FixConst;
 
 using namespace std;
 
-
 /* ---------------------------------------------------------------------- */
 
 FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
@@ -89,6 +88,13 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg
     int n = strlen(&arg[7+i][2]) + 1;
     var[i] = new char[n];
     strcpy(var[i],&arg[7+i][2]);
+  }
+
+  for (int i = 0; i < 2; i++) {
+    // considering that the grid will always have a cubic cell (i.e. stepx = stepy = stepz)
+    subn[i] = floor(domain->subhi[i] / stepz) - floor(domain->sublo[i] / stepz);
+    sublo[i] = floor(domain->sublo[i] / stepz) * stepz;
+    subhi[i] = floor(domain->subhi[i] / stepz) * stepz;
   }
 }
 
@@ -165,8 +171,10 @@ void FixKinetics::init()
   else if (bio->iniS == NULL)
     error->all(FLERR,"fix_kinetics requires Nutrients inputs");
 
-  bgrids = nx * ny * nz;
-  ngrids = nx * ny * nz;
+//  bgrids = nx * ny * nz;
+//  ngrids = nx * ny * nz;
+  bgrids = subn[0] * subn[1] * nz;
+  ngrids = subn[0] * subn[1] * nz;
 
   nnus = bio->nnus;
   int ntypes = atom->ntypes;
@@ -319,7 +327,7 @@ void FixKinetics::integration() {
     double height = getMaxHeight();
     bnz = ceil((bl + height)/stepz);
     if (bnz > nz) bnz = nz;
-    bgrids = nx * ny * bnz;
+    bgrids = subn[0] * subn[1] * bnz;
   }
 
   while (!isConv) {
@@ -379,4 +387,19 @@ double FixKinetics::getMaxHeight() {
   }
 
   return maxh;
+}
+
+int FixKinetics::position(int i) {
+
+  // get index of grid containing i
+  int xpos = (atom->x[i][0] - sublo[0]) / stepz + 1;
+  int ypos = (atom->x[i][1] - sublo[1]) / stepz + 1;
+  int zpos = (atom->x[i][2] - zlo) / stepz + 1;
+  int pos = (xpos - 1) + (ypos - 1) * subn[0] + (zpos - 1) * (subn[0] * subn[1]);
+
+  if (pos >= bgrids) {
+    printf("Too big! pos=%d   size = %i\n", pos, bgrids);
+  }
+
+  return pos;
 }

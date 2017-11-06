@@ -270,7 +270,7 @@ void FixKineticsMonod::growth(double dt)
 
   for (int i = 0; i < nall; i++) {
     if (mask[i] & groupbit) {
-      int pos = position(i);
+      int pos = kinetics->position(i);
       int t = type[i];
       double rmassCellVol = rmass[i] / vol;
 
@@ -353,7 +353,7 @@ void FixKineticsMonod::growth(double dt)
   for (int i = 0; i < nall; i++) {
     if (mask[i] & groupbit) {
       int t = type[i];
-      int pos = position(i);
+      int pos = kinetics->position(i);
 
       double density = rmass[i] / (fourThirdsPI * radius[i] * radius[i] * radius[i]);
       rmass[i] = rmass[i] * (1 + growrate[t][0][pos]);
@@ -373,22 +373,4 @@ void FixKineticsMonod::growth(double dt)
   }
 
   memory->destroy(xtype);
-}
-
-
-
-
-int FixKineticsMonod::position(int i) {
-
-  // get index of grid containing i
-  int xpos = (atom->x[i][0] - xlo) / stepx + 1;
-  int ypos = (atom->x[i][1] - ylo) / stepy + 1;
-  int zpos = (atom->x[i][2] - zlo) / stepz + 1;
-  int pos = (xpos - 1) + (ypos - 1) * nx + (zpos - 1) * (nx * ny);
-
-  if (pos >= kinetics->bgrids) {
-    printf("Too big! pos=%d   size = %i\n", pos, kinetics->bgrids);
-  }
-
-  return pos;
 }

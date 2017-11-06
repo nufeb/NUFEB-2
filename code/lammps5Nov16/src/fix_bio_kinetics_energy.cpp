@@ -228,7 +228,7 @@ void FixKineticsEnergy::growth(double dt)
 double FixKineticsEnergy::biomass(int i) {
 
   int t = type[i];
-  int pos = position(i);
+  int pos = kinetics->position(i);
 
   if (bio->q[t] == 0 || DGRCat[t][pos] == 0) return 0;
 
@@ -347,20 +347,4 @@ void FixKineticsEnergy::bio_update(double biomass, int i)
     outerMass[i] = rmass[i];
     outerRadius[i] = radius[i];
   }
-}
-
-
-int FixKineticsEnergy::position(int i) {
-
-  // get index of grid containing i
-  int xpos = (atom->x[i][0] - xlo) / stepx + 1;
-  int ypos = (atom->x[i][1] - ylo) / stepy + 1;
-  int zpos = (atom->x[i][2] - zlo) / stepz + 1;
-  int pos = (xpos - 1) + (ypos - 1) * nx + (zpos - 1) * (nx * ny);
-
-  if (pos >= kinetics->bgrids) {
-    printf("Too big! pos=%d   size = %i\n", pos, kinetics->bgrids);
-  }
-
-  return pos;
 }
