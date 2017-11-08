@@ -7,7 +7,7 @@ newton		off
 #processors  2 1 1
 
 comm_modify	vel yes
-read_data_bio atom2.in
+read_data_bio atom.in
 
 group HET type 1
 group AOB type 2
