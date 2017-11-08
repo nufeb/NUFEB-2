@@ -541,34 +541,42 @@ void ReadDataBIO::command(int narg, char **arg)
         if (firstpass) nutrients();
         else skip_lines(bio->nnus);
       } else if (strcmp(keyword,"Consumption Rate") == 0) {
+        if (tnflag == 0) error->all(FLERR,"Must read Type Name before Lines");
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) consumption();
         else skip_lines(atom->ntypes);
       } else if (strcmp(keyword,"Growth Rate") == 0) {
+        if (tnflag == 0) error->all(FLERR,"Must read Type Name before Lines");
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) growth();
         else skip_lines(atom->ntypes);
       } else if (strcmp(keyword,"Ks") == 0) {
+        if (tnflag == 0) error->all(FLERR,"Must read Type Name before Lines");
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) ks();
         else skip_lines(atom->ntypes);
       } else if (strcmp(keyword,"Yield") == 0) {
+        if (tnflag == 0) error->all(FLERR,"Must read Type Name before Lines");
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) yield();
         else skip_lines(atom->ntypes);
       } else if (strcmp(keyword,"Electron Donor") == 0) {
+        if (tnflag == 0) error->all(FLERR,"Must read Type Name before Lines");
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) eD();
         else skip_lines(atom->ntypes);
       } else if (strcmp(keyword,"Maintenance") == 0) {
+        if (tnflag == 0) error->all(FLERR,"Must read Type Name before Lines");
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) maintain();
         else skip_lines(atom->ntypes);
       } else if (strcmp(keyword,"Decay") == 0) {
+        if (tnflag == 0) error->all(FLERR,"Must read Type Name before Lines");
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) decay();
         else skip_lines(atom->ntypes);
       }   else if (strcmp(keyword,"Dissipation") == 0) {
+        if (tnflag == 0) error->all(FLERR,"Must read Type Name before Lines");
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) dissipation();
         else skip_lines(atom->ntypes);
@@ -606,6 +614,7 @@ void ReadDataBIO::command(int narg, char **arg)
         else skip_lines(bio->nnus);
       } else if (strcmp(keyword,"Type Charge") == 0) {
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
+        if (tnflag == 0) error->all(FLERR,"Must read Type Name before Lines");
         if (firstpass) typeChr();
         else skip_lines(atom->ntypes);
       } else if (strcmp(keyword,"KLa") == 0) {

@@ -198,13 +198,13 @@ void BIO::set_typeName(int narg, char **arg)
   for (int i = 0; i < atom->ntypes; i++)
     if ((typeName[i] != NULL) && (strcmp(typeName[i], name) == 0)
         && (i != id)){
-      error->one(FLERR,"Repeat type names");
+      error->one(FLERR,"Duplicated type name");
     }
 
   if (typeName[id] == NULL) {
     typeName[id] = new char[n];
   } else if (strcmp(typeName[id], name) != 0){
-    error->one(FLERR,"Incompatible type names");
+    error->one(FLERR,"Incompatible type name");
   }
 
   strcpy(typeName[id],name);
