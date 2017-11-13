@@ -15,6 +15,7 @@ FixStyle(kinetics,FixKinetics)
 #define SRC_FIX_KINETICS_H
 
 #include "fix.h"
+#include "grid.h"
 
 namespace LAMMPS_NS {
 
@@ -56,13 +57,21 @@ class FixKinetics : public Fix {
   double **kEq;                    // equilibrium constants [nutrient][4]
   double *Sh;
   bool *nuConv;
-  double diffT;                    // diffsuion timestep
+  double diffT;                    // diffusion timestep
   double bl;
   double zhi,bzhi,zlo;
   double stepz;
 
-  int subn[2];                     // number of grids in x y axis for this proc
-  double sublo[2], subhi[2];       // subdomain size trimmed to the grid
+  int subn[3];                     // number of grids in x y axis for this proc
+  int subnlo[3],subnhi[3];         // cell index of the lower and upper boundaries for each axis
+  double sublo[3],subhi[3];        // subdomain size trimmed to the grid
+
+  int recv_buff_size;
+  int send_buff_size;
+  int *recvcells;
+  int *sendcells;
+  int *recvbegin, *recvend;
+  int *sendbegin, *sendend;
 
   class AtomVecBio *avec;
   class BIO *bio;
@@ -78,6 +87,9 @@ class FixKinetics : public Fix {
   void grow();
   double getMaxHeight();
   int position(int);
+  void add_cells(const Grid &, const Grid &, int *, int);
+  bool is_intesection_valid(const Grid &);
+  void send_recv_cells(const Grid &, const Grid &, const Grid &, int &, int &);
 };
 
 }
