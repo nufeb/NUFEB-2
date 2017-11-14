@@ -245,7 +245,7 @@ void FixKineticsMonod::growth(double dt)
 
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
-  int nall = nlocal + atom->nghost;
+  int nall = nlocal;// + atom->nghost;
   int *type = atom->type;
   int ntypes = atom->ntypes;
 
