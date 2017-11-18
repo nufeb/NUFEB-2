@@ -35,8 +35,6 @@ class FixKineticsDiffusion: public Fix {
   int nnus;                     // # of nutrients
   double stepx, stepy, stepz;
 
-  int nlocal;
-  int nall;
   double *rmass;
   int ntypes;                       // # of species
   int *mask;

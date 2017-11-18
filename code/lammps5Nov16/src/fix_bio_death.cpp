@@ -101,11 +101,10 @@ void FixDeath::death()
   int *mask = atom->mask;
   double *rmass = atom->rmass;
   int nlocal = atom->nlocal;
-  int nall = nlocal + atom->nghost;
   int i;
 
 //(rmass[i] < criticalMass)
-  for (i = nall-1; i >= 0; i--) {
+  for (i = nlocal-1; i >= 0; i--) {
 //  	//delete atom
 //  	if((mask[i] & groupbit) && (rmass[i] < criticalMass)) {
 //			atom->avec->copy(nall-1,i,1);

@@ -245,8 +245,6 @@ int FixKineticsThermo::setmask()
 void FixKineticsThermo::thermo()
 {
   int *mask = atom->mask;
-  int nlocal = atom->nlocal;
-  int nall = nlocal + atom->nghost;
   int *type = atom->type;
   ntypes = atom->ntypes;
 
