@@ -711,12 +711,11 @@ double FixKineticsDiffusion::getMaxHeight() {
 //
 //  return minmax[5];
   int nlocal = atom->nlocal;
-  int nall = nlocal + atom->nghost;
   double **x = atom->x;
   double *r = atom->radius;
   double maxh = 0;
 
-  for (int i=0; i<nall; i++) {
+  for (int i=0; i<nlocal; i++) {
     if((x[i][2]+r[i]) > maxh) maxh = x[i][2]+r[i];
   }
 

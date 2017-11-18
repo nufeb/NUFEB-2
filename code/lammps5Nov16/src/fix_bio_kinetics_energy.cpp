@@ -45,6 +45,7 @@
 #include "update.h"
 #include "variable.h"
 #include "group.h"
+#include "comm.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -185,7 +186,6 @@ void FixKineticsEnergy::growth(double dt)
 {
   mask = atom->mask;
   nlocal = atom->nlocal;
-  nall = nlocal + atom->nghost;
   type = atom->type;
   ntypes = atom->ntypes;
 
@@ -215,7 +215,7 @@ void FixKineticsEnergy::growth(double dt)
     }
   }
 
-  for (int i = 0; i < nall; i++) {
+  for (int i = 0; i < nlocal; i++) {
     //get new growth rate based on new nutrients
     double mass = biomass(i) * dt;
     //update bacteria mass, radius etc
@@ -229,7 +229,6 @@ double FixKineticsEnergy::biomass(int i) {
 
   int t = type[i];
   int pos = kinetics->position(i);
-
   if (bio->q[t] == 0 || DGRCat[t][pos] == 0) return 0;
 
   double qMet;       // specific substrate uptake rate for growth metabolism
@@ -263,7 +262,7 @@ double FixKineticsEnergy::biomass(int i) {
           double metCoeff = catCoeff[t][nu] * invYield + anabCoeff[t][nu];
           mu = gYield[t][pos] * (qMet - bacMaint);
           mass = mu * rmass[i];
-          consume = mass  * metCoeff;
+          consume = mass * metCoeff;
         } else if (qCat <= 1.2 * bacMaint && bacMaint <= qCat) {
           consume = catCoeff[t][nu] * gYield[t][pos] * bacMaint * rmass[i];
         } else {

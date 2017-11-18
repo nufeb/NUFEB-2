@@ -245,7 +245,6 @@ void FixKineticsMonod::growth(double dt)
 
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
-  int nall = nlocal;// + atom->nghost;
   int *type = atom->type;
   int ntypes = atom->ntypes;
 
@@ -268,12 +267,12 @@ void FixKineticsMonod::growth(double dt)
   if (ieps != 0) yieldEPS = yield[ieps];
 
 
-  for (int i = 0; i < nall; i++) {
+  for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
       int pos = kinetics->position(i);
       int t = type[i];
       double rmassCellVol = rmass[i] / vol;
-
+      
       xtype[t][pos] += rmassCellVol;
     }
   }
@@ -350,24 +349,23 @@ void FixKineticsMonod::growth(double dt)
   const double fourThirdsPI = 4.0 * MY_PI / 3.0;
   const double third = 1.0 / 3.0;
 
-  for (int i = 0; i < nall; i++) {
+  for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
       int t = type[i];
       int pos = kinetics->position(i);
-
       double density = rmass[i] / (fourThirdsPI * radius[i] * radius[i] * radius[i]);
       rmass[i] = rmass[i] * (1 + growrate[t][0][pos]);
 
       if (species[t] == 1) {
-        outerMass[i] = fourThirdsPI * (outerRadius[i] * outerRadius[i] * outerRadius[i]
-                - radius[i] * radius[i] * radius[i]) * EPSdens + growrate[t][1][pos] * rmass[i];
+	outerMass[i] = fourThirdsPI * (outerRadius[i] * outerRadius[i] * outerRadius[i]
+				       - radius[i] * radius[i] * radius[i]) * EPSdens + growrate[t][1][pos] * rmass[i];
 
-        outerRadius[i] = pow(threeQuartersPI * (rmass[i] / density + outerMass[i] / EPSdens), third);
-        radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
+	outerRadius[i] = pow(threeQuartersPI * (rmass[i] / density + outerMass[i] / EPSdens), third);
+	radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
       } else {
-        radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
-        outerMass[i] = 0.0;
-        outerRadius[i] = radius[i];
+	radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
+	outerMass[i] = 0.0;
+	outerRadius[i] = radius[i];
       }
     }
   }
