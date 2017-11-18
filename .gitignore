@@ -9,6 +9,8 @@
 *~
 code/lammps1Feb2014/src/Obj_serial/
 code/lammps1Feb2014/src/Obj_serial_debug/
+code/lammps1Feb2014/src/Obj_mpi/
+code/lammps1Feb2014/src/Obj_mpi_debug/
 
 #inputscript dir
 code/input/*
@@ -17,3 +19,8 @@ code/inputs/*
 code/post_processing/snapshot.bubblemd
 code/post_processing/0_images/*
 !code/post_processing/
+
+# Ouput files
+*.vtu
+*.pvtu
+*.vtr
