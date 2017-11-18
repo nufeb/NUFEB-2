@@ -27,6 +27,7 @@ class FixKinetics : public Fix {
   friend class FixKineticsPH;
   friend class FixImmigration;
   friend class DumpBio;
+  friend class FixKineticsBalance;
 
  public:
   FixKinetics(class LAMMPS *, int, char **);
@@ -86,6 +87,7 @@ class FixKinetics : public Fix {
   void integration();
   void grow();
   double getMaxHeight();
+  bool is_inside(int);
   int position(int);
   void add_cells(const Grid &, const Grid &, int *, int);
   bool is_intesection_valid(const Grid &);

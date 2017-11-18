@@ -170,22 +170,10 @@ void FixEPSExtract::post_integrate()
   double EPSdens = input->variable->compute_equal(ivar[1]);
 
   int nlocal = atom->nlocal;
-  int nall = nlocal + atom->nghost;
   int i;
 
-  double *sublo,*subhi;
-  if (domain->triclinic == 0) {
-    sublo = domain->sublo;
-    subhi = domain->subhi;
-  } else {
-    sublo = domain->sublo_lamda;
-    subhi = domain->subhi_lamda;
-  }
-
-  for (i = 0; i < nall; i++) {
-    if ((atom->mask[i] & groupbit) && atom->x[i][0] >= sublo[0] && atom->x[i][0] < subhi[0] &&
-          atom->x[i][1] >= sublo[1] && atom->x[i][1] < subhi[1] &&
-          atom->x[i][2] >= sublo[2] && atom->x[i][2] < subhi[2]) {
+  for (i = 0; i < nlocal; i++) {
+    if (atom->mask[i] & groupbit) {
       // fprintf(stdout, "outerRadius/radius = %e\n", (outerRadius[i]/radius[i]));
       if ((avec->outerRadius[i]/atom->radius[i]) > EPSratio) {
         avec->outerMass[i] = (4.0*MY_PI/3.0)*(( avec->outerRadius[i] * avec->outerRadius[i]* avec->outerRadius[i])

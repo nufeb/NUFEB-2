@@ -252,6 +252,20 @@ void FixKinetics::init()
     sendbegin[i] = 0;
     sendend[i] = 0;
   }
+
+  for (int i = 0; i < comm->procgrid[0]; i++) {
+    int n = nx * i * 1.0 / comm->procgrid[0];
+    comm->xsplit[i] = (double)n / nx;
+  }
+  for (int i = 0; i < comm->procgrid[1]; i++) {
+    int n = ny * i * 1.0 / comm->procgrid[1];
+    comm->ysplit[i] = (double)n / ny;
+  }
+  for (int i = 0; i < comm->procgrid[2]; i++) {
+    int n = nz * i * 1.0 / comm->procgrid[2];
+    comm->zsplit[i] = (double)n / nz;
+  }
+  domain->set_local_box();
 }
 
 /* ---------------------------------------------------------------------- */
@@ -575,25 +589,31 @@ double FixKinetics::getMaxHeight() {
 //
 //  return minmax[5];
   int nlocal = atom->nlocal;
-  int nall = nlocal + atom->nghost;
   double **x = atom->x;
   double *r = atom->radius;
   double maxh = 0;
 
-  for (int i=0; i < nall; i++) {
+  for (int i=0; i < nlocal; i++) {
     if((x[i][2]+r[i]) > maxh) maxh = x[i][2]+r[i];
   }
 
   return maxh;
 }
 
-int FixKinetics::position(int i) {
+bool FixKinetics::is_inside(int i) {
+  if (atom->x[i][0] < sublo[0] || atom->x[i][0] >= subhi[0] ||
+      atom->x[i][1] < sublo[1] || atom->x[i][1] >= subhi[1] ||
+      atom->x[i][2] < sublo[2] || atom->x[i][2] >= subhi[2])
+    return false;
+  return true;
+}  
 
+int FixKinetics::position(int i) {
   // get index of grid containing i
-  int xpos = (atom->x[i][0] - sublo[0]) / stepz + 1;
-  int ypos = (atom->x[i][1] - sublo[1]) / stepz + 1;
-  int zpos = (atom->x[i][2] - sublo[2]) / stepz + 1;
-  int pos = (xpos - 1) + (ypos - 1) * subn[0] + (zpos - 1) * (subn[0] * subn[1]);
+  int xpos = (atom->x[i][0] - sublo[0]) / stepz;
+  int ypos = (atom->x[i][1] - sublo[1]) / stepz;
+  int zpos = (atom->x[i][2] - sublo[2]) / stepz;
+  int pos = xpos + ypos * subn[0] + zpos * subn[0] * subn[1];
 
   if (pos >= bgrids) {
     printf("Too big! pos=%d   size = %i\n", pos, bgrids);

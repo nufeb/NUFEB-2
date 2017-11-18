@@ -150,25 +150,12 @@ void FixDivide::post_integrate()
   double divMass = input->variable->compute_equal(ivar[1]);
   double density;
   int nlocal = atom->nlocal;
-  int nall = nlocal + atom->nghost;
   int i;
 
-  double *sublo,*subhi;
-  if (domain->triclinic == 0) {
-    sublo = domain->sublo;
-    subhi = domain->subhi;
-  } else {
-    sublo = domain->sublo_lamda;
-    subhi = domain->subhi_lamda;
-  }
-
-  for (i = 0; i < nall; i++) {
+  for (i = 0; i < nlocal; i++) {
     if (atom->mask[i] == avec->maskEPS || atom->mask[i] == avec->maskDEAD) continue;
 
-    if ((atom->mask[i] & groupbit) &&
-      atom->x[i][0] >= sublo[0] && atom->x[i][0] < subhi[0] &&
-      atom->x[i][1] >= sublo[1] && atom->x[i][1] < subhi[1] &&
-      atom->x[i][2] >= sublo[2] && atom->x[i][2] < subhi[2]) {
+    if (atom->mask[i] & groupbit) {
 
       density = atom->rmass[i] / (4.0*MY_PI/3.0 *
                 atom->radius[i]*atom->radius[i]*atom->radius[i]);
