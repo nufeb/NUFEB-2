@@ -297,11 +297,13 @@ void FixKineticsBalance::rebalance()
     n[0] = kinetics->nx;
     n[1] = kinetics->ny;
     n[2] = kinetics->nz;
+    double (*mysplit)[2] = comm->mysplit;
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 2; j++) {
-	comm->mysplit[i][j] = trim(comm->mysplit[i][j], n[i]);
+        mysplit[i][j] = trim(mysplit[i][j], n[i]);
       }
     }
+    comm->rcbcutfrac = trim(comm->rcbcutfrac, n[comm->rcbcutdim]);
     delete [] n;    
   }
   
