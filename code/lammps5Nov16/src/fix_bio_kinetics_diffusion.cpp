@@ -267,23 +267,6 @@ void FixKineticsDiffusion::init()
     }
   }
 
-  // initialize nuGrid with test values
-  // for (int nu = 1; nu <= nnus; nu++) {
-  //   for (int k = 0; k < nZ; k++) {
-  //     for (int j = 0; j < nY; j++) {
-  //       for (int i = 0; i < nX; i++) {
-  //         if (i == 0 || j == 0 || k == 0 || i == nX - 1 || j == nY - 1 || k == nZ - 1)
-  //           nuGrid[i + j * nX + k * nX * nY][nu] = 0;
-  //         else
-  //           nuGrid[i + j * nX + k * nX * nY][nu] = (i + kinetics->subnlo[0]) + (j + kinetics->subnlo[1]) * (nx + 2) + (k + kinetics->subnlo[2]) * (nx + 2) * (ny + 2);
-  //       }
-  //     }
-  //   }
-  // }
-
-  // if (comm->me == 0)
-  //   test2();
-
   // create send and recv buffers
   recv_buff_size = BUFMIN;
   recvbuff = memory->create(recvbuff, recv_buff_size, "diffusion::recvbuff");
@@ -350,11 +333,7 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
       // copy received data to nuGrid
       for (int c = 0; c < nrecvcells; c++) {
         nuGrid[kinetics->recvcells[c]][i] = recvbuff[c];
-        // if (comm->me == 0) printf("%d: %.5e ", kinetics->recvcells[c], recvbuff[c]);
       }
-      // if (comm->me == 0) printf("\n");
-
-      // test2();
 
       double maxS = 0;
       double *nuPrev = memory->create(nuPrev,nXYZ,"diffusion:nuPrev");
@@ -381,35 +360,6 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
 
       if(iter == 1 && strcmp(bio->nuName[i], "o2") != 0 && q >= 0 && af >= 0) compute_bulk(i);
 
-      // // copy nutrient grid data to send buffer
-      // for (int c = 0; c < nsendcells; c++) {
-      //   sendbuff[c] = nuPrev[kinetics->sendcells[c]];
-      // }
-      // // send and recv grid data
-      // int nrequests = 0;
-      // for (int p = 0; p < comm->nprocs; p++) {
-      //   if (p == comm->me)
-      //     continue;
-      //   int recvn = kinetics->recvend[p] - kinetics->recvbegin[p];
-      //   if (recvn > 0)
-      //     MPI_Irecv(&recvbuff[kinetics->recvbegin[p]], recvn, MPI_DOUBLE, p, 0, world, &requests[nrequests++]);
-      //   int sendn = kinetics->sendend[p] - kinetics->sendbegin[p];
-      //   if (sendn > 0)
-      //     MPI_Isend(&sendbuff[kinetics->sendbegin[p]], sendn, MPI_DOUBLE, p, 0, world, &requests[nrequests++]);
-      // }
-      // // wait for all MPI requests
-      // MPI_Waitall(nrequests, requests, status);
-      // // copy received data to nuGrid
-      // for (int c = 0; c < nrecvcells; c++) {
-      //   nuPrev[kinetics->recvcells[c]] = recvbuff[c];
-      //   if (comm->me == 0 ) printf("%d: %.5e ", kinetics->recvcells[c], recvbuff[c]);
-      // }
-      // for (int c = 0; c < nrecvcells; c++) {
-      //   nuPrev[kinetics->recvcells[c]] = recvbuff[c];
-      //   if (comm->me == 0 ) printf("%d: %.5e ", kinetics->recvcells[c], recvbuff[c]);
-      // }
-      // if (comm->me == 0 ) printf("\n");
-
       // solve diffusion and reaction
       for (int grid = 0; grid < nXYZ; grid++) {
         // transform nXYZ index to nuR index
@@ -419,7 +369,6 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
           int iz = floor((xGrid[grid][2] - kinetics->sublo[2])/stepz);
 
           int ind = iz * kinetics->subn[0] * kinetics->subn[1] + iy * kinetics->subn[0] + ix;
-          // if (comm->me == 1) printf("%d:%d ", grid, ind);
 
           compute_flux(diffD[i], nuGrid[grid][i], nuPrev, nuR[i][ind], grid);
 
@@ -437,8 +386,6 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
 
         if (maxS < nuGrid[grid][i]) maxS = nuGrid[grid][i];
       }
-      // if (comm->me == 1) printf("\n");
-
 
       // copy nutrient grid boundary data to send buffer
       for (int c = 0; c < nsendbound; c++) {
@@ -461,12 +408,7 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
       // copy received boudnary data to nuGrid
       for (int c = 0; c < nrecvbound; c++) {
         nuGrid[kinetics->recvcells[nrecvcells + c]][i] = recvbuff[c];
-        // if (comm->me == 0) printf("%d: %.5e ", kinetics->recvcells[nrecvcells + c], recvbuff[c]);
       }
-      // if (comm->me == 0) printf("\n");
-
-      // if (comm->me == 0) printf("\n");
-      // test2();
 
       bool conv = true;
       // check convergence criteria
