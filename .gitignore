@@ -1,0 +1,19 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+*.ko
+*.elf
+*.orig
+*~
+code/lammps1Feb2014/src/Obj_serial/
+code/lammps1Feb2014/src/Obj_serial_debug/
+
+#inputscript dir
+code/input/*
+code/inputs/*
+!code/input/examples/
+code/post_processing/snapshot.bubblemd
+code/post_processing/0_images/*
+!code/post_processing/
