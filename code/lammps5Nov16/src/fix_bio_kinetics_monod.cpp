@@ -6,17 +6,17 @@
  */
 
 /* ----------------------------------------------------------------------
-   LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
-   http://lammps.sandia.gov, Sandia National Laboratories
-   Steve Plimpton, sjplimp@sandia.gov
+ LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
+ http://lammps.sandia.gov, Sandia National Laboratories
+ Steve Plimpton, sjplimp@sandia.gov
 
-   Copyright (2003) Sandia Corporation.  Under the terms of Contract
-   DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under
-   the GNU General Public License.
+ Copyright (2003) Sandia Corporation.  Under the terms of Contract
+ DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+ certain rights in this software.  This software is distributed under
+ the GNU General Public License.
 
-   See the README file in the top-level LAMMPS directory.
-------------------------------------------------------------------------- */
+ See the README file in the top-level LAMMPS directory.
+ ------------------------------------------------------------------------- */
 
 #include <math.h>
 #include <string.h>
@@ -51,23 +51,24 @@ using namespace MathConst;
 
 using namespace std;
 
-
 /* ---------------------------------------------------------------------- */
 
-FixKineticsMonod::FixKineticsMonod(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
-{
+FixKineticsMonod::FixKineticsMonod(LAMMPS *lmp, int narg, char **arg) :
+    Fix(lmp, narg, arg) {
   avec = (AtomVecBio *) atom->style_match("bio");
-  if (!avec) error->all(FLERR,"Fix kinetics requires atom style bio");
+  if (!avec)
+    error->all(FLERR, "Fix kinetics requires atom style bio");
 
-  if (narg != 5) error->all(FLERR,"Not enough arguments in fix kinetics/growth/monod command");
+  if (narg != 5)
+    error->all(FLERR, "Not enough arguments in fix kinetics/growth/monod command");
 
   var = new char*[2];
   ivar = new int[2];
 
   for (int i = 0; i < 2; i++) {
-    int n = strlen(&arg[3+i][2]) + 1;
+    int n = strlen(&arg[3 + i][2]) + 1;
     var[i] = new char[n];
-    strcpy(var[i],&arg[3+i][2]);
+    strcpy(var[i], &arg[3 + i][2]);
   }
 
   kinetics = NULL;
@@ -75,14 +76,21 @@ FixKineticsMonod::FixKineticsMonod(LAMMPS *lmp, int narg, char **arg) : Fix(lmp,
 
 /* ---------------------------------------------------------------------- */
 
-FixKineticsMonod::~FixKineticsMonod()
-{
+FixKineticsMonod::~FixKineticsMonod() {
   int i;
   for (i = 0; i < 2; i++) {
-    delete [] var[i];
+    delete[] var[i];
   }
-  delete [] var;
-  delete [] ivar;
+  delete[] var;
+  delete[] ivar;
+}
+
+/* ---------------------------------------------------------------------- */
+
+int FixKineticsMonod::setmask() {
+  int mask = 0;
+  mask |= PRE_FORCE;
+  return mask;
 
   memory->destroy(species);
   memory->destroy(growrate);
@@ -90,26 +98,16 @@ FixKineticsMonod::~FixKineticsMonod()
 
 /* ---------------------------------------------------------------------- */
 
-int FixKineticsMonod::setmask()
-{
-  int mask = 0;
-  mask |= PRE_FORCE;
-  return mask;
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixKineticsMonod::init()
-{
+void FixKineticsMonod::init() {
   if (!atom->radius_flag)
-    error->all(FLERR,"Fix requires atom attribute diameter");
+    error->all(FLERR, "Fix requires atom attribute diameter");
 
   for (int n = 0; n < 2; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
-      error->all(FLERR,"Variable name for fix kinetics/monod does not exist");
+      error->all(FLERR, "Variable name for fix kinetics/monod does not exist");
     if (!input->variable->equalstyle(ivar[n]))
-      error->all(FLERR,"Variable for fix kinetics/monod is invalid style");
+      error->all(FLERR, "Variable for fix kinetics/monod is invalid style");
   }
 
   // register fix kinetics with this class
@@ -117,14 +115,14 @@ void FixKineticsMonod::init()
 
   int nfix = modify->nfix;
   for (int j = 0; j < nfix; j++) {
-    if (strcmp(modify->fix[j]->style,"kinetics") == 0) {
+    if (strcmp(modify->fix[j]->style, "kinetics") == 0) {
       kinetics = static_cast<FixKinetics *>(lmp->modify->fix[j]);
       break;
     }
   }
 
   if (kinetics == NULL)
-    lmp->error->all(FLERR,"The fix kinetics command is required for running iBM simulation");
+    lmp->error->all(FLERR, "The fix kinetics command is required for running iBM simulation");
 
   EPSdens = input->variable->compute_equal(ivar[0]);
   etaHET = input->variable->compute_equal(ivar[1]);
@@ -132,17 +130,17 @@ void FixKineticsMonod::init()
   bio = kinetics->bio;
 
   if (bio->nnus == 0)
-    error->all(FLERR,"fix_kinetics/monod requires Nutrients input");
+    error->all(FLERR, "fix_kinetics/monod requires Nutrients input");
   else if (bio->maintain == NULL)
-    error->all(FLERR,"fix_kinetics/monod requires Maintenance input");
+    error->all(FLERR, "fix_kinetics/monod requires Maintenance input");
   else if (bio->decay == NULL)
-    error->all(FLERR,"fix_kinetics/monod requires Decay input");
+    error->all(FLERR, "fix_kinetics/monod requires Decay input");
   else if (bio->ks == NULL)
-    error->all(FLERR,"fix_kinetics/monod requires Ks input");
+    error->all(FLERR, "fix_kinetics/monod requires Ks input");
   else if (bio->yield == NULL)
-    error->all(FLERR,"fix_kinetics/monod requires Yield input");
+    error->all(FLERR, "fix_kinetics/monod requires Yield input");
   else if (bio->mu == NULL)
-    error->all(FLERR,"fix_kinetics/monod requires Growth Rate input");
+    error->all(FLERR, "fix_kinetics/monod requires Growth Rate input");
 
   ntypes = atom->ntypes;
   nnus = bio->nnus;
@@ -150,8 +148,8 @@ void FixKineticsMonod::init()
   ny = kinetics->ny;
   nz = kinetics->nz;
 
-  species =  memory->create(species,ntypes+1,"monod:species");
-  growrate = memory->create(growrate,ntypes+1,2,kinetics->ngrids,"monod:growrate");
+  species = memory->create(species, ntypes + 1, "monod:species");
+  growrate = memory->create(growrate, ntypes + 1, 2, kinetics->ngrids, "monod:growrate");
 
   //Get computational domain size
   if (domain->triclinic == 0) {
@@ -161,8 +159,7 @@ void FixKineticsMonod::init()
     yhi = domain->boxhi[1];
     zlo = domain->boxlo[2];
     zhi = domain->boxhi[2];
-  }
-  else {
+  } else {
     xlo = domain->boxlo_bound[0];
     xhi = domain->boxhi_bound[0];
     ylo = domain->boxlo_bound[1];
@@ -181,29 +178,39 @@ void FixKineticsMonod::init()
 }
 
 /* ----------------------------------------------------------------------
-  initialize growth parameters
-------------------------------------------------------------------------- */
-void FixKineticsMonod::init_param()
-{
+ initialize growth parameters
+ ------------------------------------------------------------------------- */
+void FixKineticsMonod::init_param() {
   isub = io2 = inh4 = ino2 = ino3 = 0;
   ieps = idead = 0;
 
   // initialize nutrient
   for (int nu = 1; nu <= nnus; nu++) {
-    if (strcmp(bio->nuName[nu], "sub") == 0) isub = nu;
-    else if (strcmp(bio->nuName[nu], "o2") == 0) io2 = nu;
-    else if (strcmp(bio->nuName[nu], "nh4") == 0) inh4 = nu;
-    else if (strcmp(bio->nuName[nu], "no2") == 0) ino2 = nu;
-    else if (strcmp(bio->nuName[nu], "no3") == 0) ino3 = nu;
-    else error->all(FLERR,"unknow nutrient in fix_kinetics/kinetics/monod");
+    if (strcmp(bio->nuName[nu], "sub") == 0)
+      isub = nu;
+    else if (strcmp(bio->nuName[nu], "o2") == 0)
+      io2 = nu;
+    else if (strcmp(bio->nuName[nu], "nh4") == 0)
+      inh4 = nu;
+    else if (strcmp(bio->nuName[nu], "no2") == 0)
+      ino2 = nu;
+    else if (strcmp(bio->nuName[nu], "no3") == 0)
+      ino3 = nu;
+    else
+      error->all(FLERR, "unknow nutrient in fix_kinetics/kinetics/monod");
 
   }
 
-  if (isub == 0) error->all(FLERR,"fix_kinetics/kinetics/monod requires nutrient substrate");
-  if (io2 == 0) error->all(FLERR,"fix_kinetics/kinetics/monod requires nutrient o2");
-  if (inh4 == 0) error->all(FLERR,"fix_kinetics/kinetics/monod requires nutrient nh4");
-  if (ino2 == 0) error->all(FLERR,"fix_kinetics/kinetics/monod requires nutrient no2");
-  if (ino3 == 0) error->all(FLERR,"fix_kinetics/kinetics/monod requires nutrient no3");
+  if (isub == 0)
+    error->all(FLERR, "fix_kinetics/kinetics/monod requires nutrient substrate");
+  if (io2 == 0)
+    error->all(FLERR, "fix_kinetics/kinetics/monod requires nutrient o2");
+  if (inh4 == 0)
+    error->all(FLERR, "fix_kinetics/kinetics/monod requires nutrient nh4");
+  if (ino2 == 0)
+    error->all(FLERR, "fix_kinetics/kinetics/monod requires nutrient no2");
+  if (ino3 == 0)
+    error->all(FLERR, "fix_kinetics/kinetics/monod requires nutrient no3");
 
   // initialize type
   for (int i = 1; i <= atom->ntypes; i++) {
@@ -219,33 +226,36 @@ void FixKineticsMonod::init_param()
       strncpy(name, bio->typeName[i], 3);
       name[3] = 0;
 
-      if (strcmp(name, "het") == 0) species[i] = 1;
-      else if (strcmp(name, "aob") == 0) species[i] = 2;
-      else if (strcmp(name, "nob") == 0) species[i] = 3;
-      else error->all(FLERR,"unknow species in fix_kinetics/kinetics/monod");
+      if (strcmp(name, "het") == 0)
+        species[i] = 1;
+      else if (strcmp(name, "aob") == 0)
+        species[i] = 2;
+      else if (strcmp(name, "nob") == 0)
+        species[i] = 3;
+      else
+        error->all(FLERR, "unknow species in fix_kinetics/kinetics/monod");
 
       delete[] name;
     }
   }
-  if (ieps == 0) (error->warning(FLERR,"EPS is not defined in fix_kinetics/kinetics/monod"));
+  if (ieps == 0)
+    (error->warning(FLERR, "EPS is not defined in fix_kinetics/kinetics/monod"));
 }
 
 /* ----------------------------------------------------------------------
-  metabolism and atom update
-------------------------------------------------------------------------- */
-void FixKineticsMonod::growth(double dt)
-{
+ metabolism and atom update
+ ------------------------------------------------------------------------- */
+void FixKineticsMonod::growth(double dt) {
 
-  xtype = memory->create(xtype,ntypes+1, kinetics->bgrids,"monod:xtype");
+  xtype = memory->create(xtype, ntypes + 1, kinetics->bgrids, "monod:xtype");
   for (int i = 1; i <= ntypes; i++) {
-    for (int grid = 0; grid < kinetics->bgrids; grid++){
+    for (int grid = 0; grid < kinetics->bgrids; grid++) {
       xtype[i][grid] = 0;
     }
   }
 
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
-  int nall = nlocal + atom->nghost;
   int *type = atom->type;
   int ntypes = atom->ntypes;
 
@@ -255,7 +265,7 @@ void FixKineticsMonod::growth(double dt)
   double *outerRadius = avec->outerRadius;
 
   double *mu = bio->mu;
-  double *decay =  bio->decay;
+  double *decay = bio->decay;
   double *maintain = bio->maintain;
   double *yield = bio->yield;
   double **ks = bio->ks;
@@ -265,18 +275,25 @@ void FixKineticsMonod::growth(double dt)
 
   bool *nuConv = kinetics->nuConv;
   double yieldEPS = 0;
-  if (ieps != 0) yieldEPS = yield[ieps];
+  int out = 0;
+  if (ieps != 0)
+    yieldEPS = yield[ieps];
 
-
-  for (int i = 0; i < nall; i++) {
+  for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
-      int pos = position(i);
+      int pos = kinetics->position(i);
       int t = type[i];
       double rmassCellVol = rmass[i] / vol;
 
-      xtype[t][pos] += rmassCellVol;
+      if (pos != -1)
+        xtype[t][pos] += rmassCellVol;
+      else
+        out = 1;
     }
   }
+
+  if (out)
+    error->warning(FLERR, "Cross-boundary particles reported in ");
 
   for (int grid = 0; grid < kinetics->bgrids; grid++) {
     for (int i = 1; i <= ntypes; i++) {
@@ -285,10 +302,10 @@ void FixKineticsMonod::growth(double dt)
       // HET monod model
       if (spec == 1) {
         double R1 = mu[i] * (nuS[isub][grid] / (ks[i][isub] + nuS[isub][grid])) * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
-        double R4 = etaHET * mu[i] * (nuS[isub][grid] / (ks[i][isub] + nuS[isub][grid])) *
-            (nuS[ino3][grid] / (ks[i][ino3] + nuS[ino3][grid])) * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
-        double R5 = etaHET * mu[i] * (nuS[isub][grid] / (ks[i][isub] + nuS[isub][grid])) *
-            (nuS[ino2][grid] / (ks[i][ino2] + nuS[ino2][grid])) * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
+        double R4 = etaHET * mu[i] * (nuS[isub][grid] / (ks[i][isub] + nuS[isub][grid]))
+            * (nuS[ino3][grid] / (ks[i][ino3] + nuS[ino3][grid])) * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
+        double R5 = etaHET * mu[i] * (nuS[isub][grid] / (ks[i][isub] + nuS[isub][grid]))
+            * (nuS[ino2][grid] / (ks[i][ino2] + nuS[ino2][grid])) * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
         double R6 = decay[i];
 
         double R10 = maintain[i] * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
@@ -297,14 +314,21 @@ void FixKineticsMonod::growth(double dt)
         double R14 = (1 / 1.71) * maintain[i] * etaHET * (nuS[ino2][grid] / (ks[i][ino2] + nuS[ino2][grid]))
             * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
 
-        if (!nuConv[isub]) nuR[isub][grid] +=  ((-1 / yield[i]) * ((R1 + R4 + R5) * xtype[i][grid]));
+        if (!nuConv[isub])
+          nuR[isub][grid] += ((-1 / yield[i]) * ((R1 + R4 + R5) * xtype[i][grid]));
         //if (xtype[i][grid] != 0) printf("nuR = %e \n", xtype[i][grid]);
-        if (!nuConv[io2]) nuR[io2][grid] +=  (-((1 - yield[i] - yieldEPS) / yield[i]) * R1 * xtype[i][grid]);
-        if (!nuConv[ino2]) nuR[ino2][grid] +=  -(((1 - yield[i] - yieldEPS) / (1.17 * yield[i])) * R5 * xtype[i][grid]);
-        if (!nuConv[ino3]) nuR[ino3][grid] +=  -(((1 - yield[i] - yieldEPS) / (2.86 * yield[i])) * R4 * xtype[i][grid]);
-        if (!nuConv[io2]) nuR[io2][grid] += -(R10 * xtype[i][grid]);
-        if (!nuConv[ino2]) nuR[ino2][grid] += -(R14 * xtype[i][grid]);
-        if (!nuConv[ino3]) nuR[ino3][grid] += -(R13 * xtype[i][grid]);
+        if (!nuConv[io2])
+          nuR[io2][grid] += (-((1 - yield[i] - yieldEPS) / yield[i]) * R1 * xtype[i][grid]);
+        if (!nuConv[ino2])
+          nuR[ino2][grid] += -(((1 - yield[i] - yieldEPS) / (1.17 * yield[i])) * R5 * xtype[i][grid]);
+        if (!nuConv[ino3])
+          nuR[ino3][grid] += -(((1 - yield[i] - yieldEPS) / (2.86 * yield[i])) * R4 * xtype[i][grid]);
+        if (!nuConv[io2])
+          nuR[io2][grid] += -(R10 * xtype[i][grid]);
+        if (!nuConv[ino2])
+          nuR[ino2][grid] += -(R14 * xtype[i][grid]);
+        if (!nuConv[ino3])
+          nuR[ino3][grid] += -(R13 * xtype[i][grid]);
 
         growrate[i][0][grid] = dt * (R1 + R4 + R5 - R6 - R10 - R13 - R14);
         growrate[i][1][grid] = dt * (yieldEPS / yield[i]) * (R1 + R4 + R5);
@@ -314,10 +338,14 @@ void FixKineticsMonod::growth(double dt)
         double R7 = decay[i];
         double R11 = maintain[i] * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
 
-        if (!nuConv[io2]) nuR[io2][grid] +=  -(((3.42 - yield[i]) / yield[i]) * R2 * xtype[i][grid]);
-        if (!nuConv[inh4]) nuR[inh4][grid] +=  -(1 / yield[i]) * R2 * xtype[i][grid];
-        if (!nuConv[ino2]) nuR[ino2][grid] +=  (1 / yield[i]) * R2 * xtype[i][grid];
-        if (!nuConv[io2]) nuR[io2][grid] += -(R11 * xtype[i][grid]);
+        if (!nuConv[io2])
+          nuR[io2][grid] += -(((3.42 - yield[i]) / yield[i]) * R2 * xtype[i][grid]);
+        if (!nuConv[inh4])
+          nuR[inh4][grid] += -(1 / yield[i]) * R2 * xtype[i][grid];
+        if (!nuConv[ino2])
+          nuR[ino2][grid] += (1 / yield[i]) * R2 * xtype[i][grid];
+        if (!nuConv[io2])
+          nuR[io2][grid] += -(R11 * xtype[i][grid]);
 
         growrate[i][0][grid] = dt * (R2 - R7 - R11);
       } else if (spec == 3) {
@@ -326,21 +354,27 @@ void FixKineticsMonod::growth(double dt)
         double R8 = decay[i];
         double R12 = maintain[i] * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
 
-        if (!nuConv[io2]) nuR[io2][grid] +=  - (((1.15 - yield[i]) / yield[i]) * R3 * xtype[i][grid]);
-        if (!nuConv[ino2]) nuR[ino2][grid] +=  (1 / yield[i]) * R3 * xtype[i][grid];
-        if (!nuConv[ino3]) nuR[ino3][grid] +=  -(1 / yield[i]) * R3 * xtype[i][grid];
-        if (!nuConv[io2]) nuR[io2][grid] += -(R12 * xtype[i][grid]);
+        if (!nuConv[io2])
+          nuR[io2][grid] += -(((1.15 - yield[i]) / yield[i]) * R3 * xtype[i][grid]);
+        if (!nuConv[ino2])
+          nuR[ino2][grid] += (1 / yield[i]) * R3 * xtype[i][grid];
+        if (!nuConv[ino3])
+          nuR[ino3][grid] += -(1 / yield[i]) * R3 * xtype[i][grid];
+        if (!nuConv[io2])
+          nuR[io2][grid] += -(R12 * xtype[i][grid]);
 
         growrate[i][0][grid] = dt * (R3 - R8 - R12);
       } else if (spec == 4) {
         // EPS monod model
         double R9 = decay[i];
 
-        if (!nuConv[isub]) nuR[isub][grid] += R9 * xtype[i][grid];
+        if (!nuConv[isub])
+          nuR[isub][grid] += R9 * xtype[i][grid];
         growrate[i][0][grid] = dt * -decay[i];
       } else if (spec == 5) {
         // DEAD monod model
-        if (!nuConv[isub]) nuR[isub][grid] += (decay[i] * xtype[i][grid]);
+        if (!nuConv[isub])
+          nuR[isub][grid] += (decay[i] * xtype[i][grid]);
         growrate[i][0][grid] = dt * -decay[i];
       }
     }
@@ -350,17 +384,17 @@ void FixKineticsMonod::growth(double dt)
   const double fourThirdsPI = 4.0 * MY_PI / 3.0;
   const double third = 1.0 / 3.0;
 
-  for (int i = 0; i < nall; i++) {
+  for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
       int t = type[i];
-      int pos = position(i);
+      int pos = kinetics->position(i);
 
       double density = rmass[i] / (fourThirdsPI * radius[i] * radius[i] * radius[i]);
       rmass[i] = rmass[i] * (1 + growrate[t][0][pos]);
 
       if (species[t] == 1) {
-        outerMass[i] = fourThirdsPI * (outerRadius[i] * outerRadius[i] * outerRadius[i]
-                - radius[i] * radius[i] * radius[i]) * EPSdens + growrate[t][1][pos] * rmass[i];
+        outerMass[i] = fourThirdsPI * (outerRadius[i] * outerRadius[i] * outerRadius[i] - radius[i] * radius[i] * radius[i]) * EPSdens
+            + growrate[t][1][pos] * rmass[i];
 
         outerRadius[i] = pow(threeQuartersPI * (rmass[i] / density + outerMass[i] / EPSdens), third);
         radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
@@ -373,22 +407,4 @@ void FixKineticsMonod::growth(double dt)
   }
 
   memory->destroy(xtype);
-}
-
-
-
-
-int FixKineticsMonod::position(int i) {
-
-  // get index of grid containing i
-  int xpos = (atom->x[i][0] - xlo) / stepx + 1;
-  int ypos = (atom->x[i][1] - ylo) / stepy + 1;
-  int zpos = (atom->x[i][2] - zlo) / stepz + 1;
-  int pos = (xpos - 1) + (ypos - 1) * nx + (zpos - 1) * (nx * ny);
-
-  if (pos >= kinetics->bgrids) {
-    printf("Too big! pos=%d   size = %i\n", pos, kinetics->bgrids);
-  }
-
-  return pos;
 }
