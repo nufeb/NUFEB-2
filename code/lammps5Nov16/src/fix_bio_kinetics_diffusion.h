@@ -39,6 +39,7 @@ class FixKineticsDiffusion: public Fix {
   int ntypes;                       // # of species
   int *mask;
   int *type;
+  int shearflag, dragflag;
 
   double shearRate;
   double **iniS;                // inlet concentrations of nutrients

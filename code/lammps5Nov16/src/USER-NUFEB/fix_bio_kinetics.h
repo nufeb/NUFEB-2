@@ -34,7 +34,6 @@ class FixKinetics : public Fix {
   virtual void pre_force(int);
   void init();
 
- private:
   char **var;
   int *ivar;
 
@@ -46,6 +45,7 @@ class FixKinetics : public Fix {
 
   double **nuS;                    // nutrient concentration [nutrient][grid]
   double **nuR;                    // nutrient consumption [nutrient][grid]
+  double **fV;                     // velocity field [velo][grid]
   double **qGas;                   // gas chemicals [nutrient][grid]
   double **gYield;                 // inverse yield [type][grid]
   double ***activity;              // activities of chemical species [nutrient][5 charges][grid]
@@ -58,8 +58,11 @@ class FixKinetics : public Fix {
   bool *nuConv;
   double diffT;                    // diffsuion timestep
   double bl;
-  double zhi,bzhi,zlo;
-  double stepz;
+  double zhi,bzhi,zlo, xlo, xhi, ylo, yhi;
+  double stepz, stepx, stepy;
+
+  int subn[2];                     // number of grids in x y axis for this proc
+  double sublo[2], subhi[2];       // subdomain size trimmed to the grid
 
   class AtomVecBio *avec;
   class BIO *bio;
@@ -74,6 +77,7 @@ class FixKinetics : public Fix {
   void integration();
   void grow();
   double getMaxHeight();
+  int position(int);
 };
 
 }
