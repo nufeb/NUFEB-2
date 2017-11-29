@@ -51,7 +51,6 @@ class FixKineticsMonod : public Fix {
   class FixKinetics *kinetics;
   class BIO *bio;
 
-  int position(int);
   void init_param();
 
 };

@@ -12,6 +12,7 @@
 ------------------------------------------------------------------------- */
 
 #include <stdio.h>
+#include <stdlib.h> // atoi
 #include <string.h>
 #include "fix_bio_nve.h"
 #include "atom.h"

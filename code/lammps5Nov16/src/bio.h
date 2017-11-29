@@ -52,6 +52,7 @@ class BIO : protected Pointers {
   void type_grow();
   void create_type(char *);
   void data_nutrients(int, char **);
+  void set_typeName(int narg, char **arg);
   void set_q(const char *);
   void set_mu(const char *);
   void set_mw(const char *);

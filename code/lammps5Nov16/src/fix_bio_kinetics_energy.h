@@ -72,8 +72,6 @@ class FixKineticsEnergy : public Fix {
   double grid_monod(int, int, int);
   void bio_update(double, int);
   double  biomass(int);
-  int position(int);
-
 };
 
 }
