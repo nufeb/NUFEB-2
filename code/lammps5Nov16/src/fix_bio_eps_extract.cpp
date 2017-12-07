@@ -182,6 +182,7 @@ void FixEPSExtract::post_integrate()
     subhi = domain->subhi_lamda;
   }
 
+  #pragma omp parallel for
   for (i = 0; i < nall; i++) {
     if ((atom->mask[i] & groupbit) && atom->x[i][0] >= sublo[0] && atom->x[i][0] < subhi[0] &&
           atom->x[i][1] >= sublo[1] && atom->x[i][1] < subhi[1] &&
@@ -236,11 +237,13 @@ void FixEPSExtract::post_integrate()
         coord[0] = newX;
         coord[1] = newY;
         coord[2] = newZ;
-        find_maxid();
-        atom->avec->create_atom(typeEPS,coord);
+	
+        #pragma omp critical
+	atom->avec->create_atom(typeEPS,coord);
+
         // fprintf(stdout, "Created atom\n");
         int n = atom->nlocal - 1;
-        atom->tag[n] = maxtag_all + 1;
+        atom->tag[n] = 0;
         atom->mask[n] = avec->maskEPS;
 
         atom->v[n][0] = atom->v[i][0];
@@ -263,13 +266,19 @@ void FixEPSExtract::post_integrate()
         avec->outerRadius[n] = childRadius;
         //avec->atom_q[n] = 0;
 
-        atom->natoms++;
-
         delete[] coord;
       }
     }
   }
   //fprintf(stdout, "Divided: %i\n", divided);
+
+  bigint nblocal = atom->nlocal;
+  MPI_Allreduce(&nblocal, &atom->natoms, 1, MPI_LMP_BIGINT, MPI_SUM, world);
+  if (atom->natoms < 0 || atom->natoms >= MAXBIGINT)
+    error->all(FLERR,"Too many total atoms");
+
+  if (atom->tag_enable) atom->tag_extend();
+  atom->tag_check();
 
   if (atom->map_style) {
     atom->nghost = 0;

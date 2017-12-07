@@ -281,6 +281,7 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
       double maxS = 0;
       double *nuPrev = memory->create(nuPrev,nXYZ,"diffusion:nuPrev");
       // copy current concentrations
+      #pragma omp parallel for
       for (int grid = 0; grid < nXYZ; grid++) {
         nuPrev[grid] = nuGrid[grid][i];
       }
@@ -304,6 +305,7 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
       if(iter == 1 && strcmp(bio->nuName[i], "o2") != 0 && q >= 0 && af >= 0) compute_bulk(i);
 
       // solve diffusion and reaction
+      #pragma omp parallel for reduction(max : maxS)
       for (int grid = 0; grid < nXYZ; grid++) {
         // transform nXYZ index to nuR index
         if (!ghost[grid]) {
@@ -329,13 +331,14 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
 
         if (maxS < nuGrid[grid][i]) maxS = nuGrid[grid][i];
       }
-
+      if (maxS == 0) maxS = 1;
+      
       bool conv = true;
       // check convergence criteria
+      #pragma omp parallel for reduction(& : conv)
       for (int grid = 0; grid < nXYZ; grid++) {
         if(!ghost[grid]){
           double ratio = 1000;
-          if (maxS == 0) maxS = 1;
 
           if (rflag == 0) {
             double rate = nuGrid[grid][i]/maxS;
@@ -343,10 +346,7 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
             ratio = fabs(rate - prevRate);
           }
 
-          if(ratio >= tol) {
-            conv = false;
-            break;
-          }
+	  conv &= (ratio < tol);
         }
       }
       nuConv[i] = conv;
