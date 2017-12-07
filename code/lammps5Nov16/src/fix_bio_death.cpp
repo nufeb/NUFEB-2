@@ -97,15 +97,15 @@ void FixDeath::pre_exchange()
 void FixDeath::death()
 {
   //double criticalMass = 1e-20;
-  int *type = atom->type;
-  int *mask = atom->mask;
-  double *rmass = atom->rmass;
-  int nlocal = atom->nlocal;
-  int nall = nlocal + atom->nghost;
-  int i;
+  int * const type = atom->type;
+  int * const mask = atom->mask;
+  double * const rmass = atom->rmass;
+  const int nlocal = atom->nlocal;
+  const int nall = nlocal + atom->nghost;
 
 //(rmass[i] < criticalMass)
-  for (i = nall-1; i >= 0; i--) {
+  #pragma omp parallel for
+  for (int i = 0; i < nall; i++) {
 //  	//delete atom
 //  	if((mask[i] & groupbit) && (rmass[i] < criticalMass)) {
 //			atom->avec->copy(nall-1,i,1);

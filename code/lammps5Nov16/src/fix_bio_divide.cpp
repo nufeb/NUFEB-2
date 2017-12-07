@@ -162,16 +162,17 @@ void FixDivide::post_integrate()
     subhi = domain->subhi_lamda;
   }
 
+  #pragma omp parallel for
   for (i = 0; i < nall; i++) {
     if (atom->mask[i] == avec->maskEPS || atom->mask[i] == avec->maskDEAD) continue;
 
     if ((atom->mask[i] & groupbit) &&
-      atom->x[i][0] >= sublo[0] && atom->x[i][0] < subhi[0] &&
-      atom->x[i][1] >= sublo[1] && atom->x[i][1] < subhi[1] &&
-      atom->x[i][2] >= sublo[2] && atom->x[i][2] < subhi[2]) {
+	atom->x[i][0] >= sublo[0] && atom->x[i][0] < subhi[0] &&
+	atom->x[i][1] >= sublo[1] && atom->x[i][1] < subhi[1] &&
+	atom->x[i][2] >= sublo[2] && atom->x[i][2] < subhi[2]) {
 
       density = atom->rmass[i] / (4.0*MY_PI/3.0 *
-                atom->radius[i]*atom->radius[i]*atom->radius[i]);
+				  atom->radius[i]*atom->radius[i]*atom->radius[i]);
 
       if (atom->rmass[i] >= divMass) {
         double newX, newY, newZ;
@@ -233,7 +234,7 @@ void FixDivide::post_integrate()
         atom->x[i][0] = newX;
         atom->x[i][1] = newY;
         atom->x[i][2] = newZ;
-     //   fprintf(stdout, "Diameter of atom: %f\n", radius[i]*2);
+	//   fprintf(stdout, "Diameter of atom: %f\n", radius[i]*2);
 
         // fprintf(stdout, "Moved and resized parent\n");
 
@@ -245,31 +246,33 @@ void FixDivide::post_integrate()
         newY = oldY - (childOuterRadius*sin(thetaD)*sin(phiD)*DELTA);
         newZ = oldZ - (childOuterRadius*cos(phiD)*DELTA);
         if (newX - childOuterRadius < xlo) {
-        	newX = xlo + childOuterRadius;
+	  newX = xlo + childOuterRadius;
         }
         else if (newX + childOuterRadius > xhi) {
-        	newX = xhi - childOuterRadius;
+	  newX = xhi - childOuterRadius;
         }
         if (newY - childOuterRadius < ylo) {
-        	newY = ylo + childOuterRadius;
+	  newY = ylo + childOuterRadius;
         }
         else if (newY + childOuterRadius > yhi) {
-        	newY = yhi - childOuterRadius;
+	  newY = yhi - childOuterRadius;
         }
         if (newZ - childOuterRadius < zlo) {
-        	newZ = zlo + childOuterRadius;
+	  newZ = zlo + childOuterRadius;
         }
         else if (newZ + childOuterRadius > zhi) {
-        	newZ = zhi - childOuterRadius;
+	  newZ = zhi - childOuterRadius;
         }
         coord[0] = newX;
         coord[1] = newY;
         coord[2] = newZ;
-        find_maxid();
+
+	#pragma omp critical
         atom->avec->create_atom(atom->type[i],coord);
+
         // fprintf(stdout, "Created atom\n");
         int n = atom->nlocal - 1;
-        atom->tag[n] = maxtag_all+1;
+        atom->tag[n] = 0;
         atom->mask[n] = atom->mask[i];
         atom->image[n] = atom->image[i];
 
@@ -299,18 +302,25 @@ void FixDivide::post_integrate()
         avec->outerRadius[n] = childOuterRadius;
         //avec->atom_q[n] = bio->q[atom->type[i]];
 
-        atom->natoms++;
-
         delete[] coord;
       }
     }
   }
-	//fprintf(stdout, "after divide ,overlap pair= %i\n", overlap());
-	if (atom->map_style) {
-		atom->nghost = 0;
-		atom->map_init();
-		atom->map_set();
-	}
+  //fprintf(stdout, "after divide ,overlap pair= %i\n", overlap());
+
+  bigint nblocal = atom->nlocal;
+  MPI_Allreduce(&nblocal, &atom->natoms, 1, MPI_LMP_BIGINT, MPI_SUM, world);
+  if (atom->natoms < 0 || atom->natoms >= MAXBIGINT)
+    error->all(FLERR,"Too many total atoms");
+
+  if (atom->tag_enable) atom->tag_extend();
+  atom->tag_check();
+
+  if (atom->map_style) {
+    atom->nghost = 0;
+    atom->map_init();
+    atom->map_set();
+  }
 
   // trigger immediate reneighboring
   next_reneighbor = update->ntimestep;
