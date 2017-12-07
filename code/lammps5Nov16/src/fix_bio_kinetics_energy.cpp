@@ -209,12 +209,14 @@ void FixKineticsEnergy::growth(double dt)
 
   //initialization
   for (int i = 0; i <= ntypes; i++) {
+    #pragma omp parallel for
     for (int j = 0; j < kinetics->bgrids; j++) {
       gMonod[i][j] = -1;
       //minCatMonod[i][j] = -1;
     }
   }
 
+  #pragma omp parallel for
   for (int i = 0; i < nall; i++) {
     //get new growth rate based on new nutrients
     double mass = biomass(i) * dt;
