@@ -122,7 +122,7 @@
      hety 0.000022778
      hetr 0.000045556
 
- Yield
+ Yield Coeffs
     
      hety 0.046
      hetr 0.023
@@ -132,7 +132,7 @@
      hety 0
      hetr 0
 
- Decay
+ Decay Rate
 
      hety 0
      hetr 0
