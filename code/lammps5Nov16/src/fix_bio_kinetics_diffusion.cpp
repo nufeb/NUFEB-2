@@ -292,8 +292,6 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
   nuS = kinetics->nuS;
   nuR = kinetics->nuR;
 
-  //nRES = new double[nXYZ]();
-
   int nrecvcells = kinetics->recvend[comm->nprocs - 1];
   int nsendcells = kinetics->sendend[comm->nprocs - 1];
   int nrecvbound = kinetics->recvend[2 * comm->nprocs - 1] - nrecvcells;
@@ -338,6 +336,7 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
       double maxS = 0;
       double *nuPrev = memory->create(nuPrev,nXYZ,"diffusion:nuPrev");
       // copy current concentrations
+      #pragma omp parallel for
       for (int grid = 0; grid < nXYZ; grid++) {
         nuPrev[grid] = nuGrid[grid][i];
       }
@@ -361,6 +360,7 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
       if(iter == 1 && strcmp(bio->nuName[i], "o2") != 0 && q >= 0 && af >= 0) compute_bulk(i);
 
       // solve diffusion and reaction
+      #pragma omp parallel for reduction(max : maxS)
       for (int grid = 0; grid < nXYZ; grid++) {
         // transform nXYZ index to nuR index
         if (!ghost[grid]) {
@@ -379,13 +379,14 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
             else nuS[i][ind] = nuGrid[grid][i];
           }
           else {
-            nuGrid[grid][i] = 0;
-            nuS[i][ind] = 0;
+            nuGrid[grid][i] = 1e-20;
+            nuS[i][ind] = 1e-20;
           }
         } else compute_bc(nuGrid[grid][i], nuPrev, grid, nuBS[i]);
 
         if (maxS < nuGrid[grid][i]) maxS = nuGrid[grid][i];
       }
+      if (maxS == 0) maxS = 1;
 
       // copy nutrient grid boundary data to send buffer
       for (int c = 0; c < nsendbound; c++) {
@@ -412,10 +413,10 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
 
       bool conv = true;
       // check convergence criteria
+      #pragma omp parallel for reduction(& : conv)
       for (int grid = 0; grid < nXYZ; grid++) {
         if(!ghost[grid]){
           double ratio = 1000;
-          if (maxS == 0) maxS = 1;
 
           if (rflag == 0) {
             double rate = nuGrid[grid][i]/maxS;
@@ -423,10 +424,7 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
             ratio = fabs(rate - prevRate);
           }
 
-          if(ratio >= tol) {
-            conv = false;
-            break;
-          }
+	  conv &= (ratio < tol);
         }
       }
 
@@ -442,7 +440,6 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
     }
   }
 
-  //delete[] nRES;
   return nuConv;
 }
 
@@ -584,6 +581,8 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
       nuCell = nuPrev[lhs];
     }
   }
+
+  if(nuCell <= 0) nuCell = 1e-20;
 }
 
 /* ----------------------------------------------------------------------
@@ -694,29 +693,4 @@ void FixKineticsDiffusion::test(){
     }
   }
   printf(" \n ");
-}
-
-#include <fstream>
-#include <sstream>
-
-void FixKineticsDiffusion::test2()
-{
-  std::ostringstream ss;
-  ss << "grid_" << comm->me << ".txt";
-  std::ofstream out(ss.str().c_str(), std::ofstream::app);
-  out.precision(5);
-  // out << "sublo: (" << std::scientific << kinetics->sublo[0] << ", " << kinetics->sublo[1] << ", " << kinetics->sublo[2] << ")" << std::endl; 
-  // out << "subhi: (" << std::scientific << kinetics->subhi[0] << ", " << kinetics->subhi[1] << ", " << kinetics->subhi[2] << ")" << std::endl; 
-  for (int grid = 0; grid < nXYZ; grid++) {
-    out << grid << ": " << std::scientific << nuGrid[grid][1] << " ";
-  }
-  out << std::endl;
-  for (int grid = 0; grid < nXYZ; grid++) {
-    out << grid << ": (" << std::scientific << xGrid[grid][0] << ", " << xGrid[grid][1] << ", "<< xGrid[grid][2] << ") ";
-  }
-  out << std::endl;
-  for (int grid = 0; grid < nXYZ; grid++) {
-    out << grid << ": " << ghost[grid] << " ";
-  }
-  out << std::endl;
 }

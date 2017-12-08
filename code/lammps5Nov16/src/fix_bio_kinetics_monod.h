@@ -34,7 +34,6 @@ class FixKineticsMonod : public Fix {
   int idead, ieps;
 
   int *species;                      // species index 0 = unknow, 1 = het, 2 = aob, 3 = nob, 4 = eps, 5 = dead
-  double **xtype;                    // type density [type][grids]
   double ***growrate;
 
   int nnus;                         // # of nutrients
