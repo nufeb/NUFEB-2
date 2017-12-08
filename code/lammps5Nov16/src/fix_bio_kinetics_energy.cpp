@@ -227,7 +227,7 @@ void FixKineticsEnergy::growth(double dt)
   memory->destroy(gMonod);
 }
 
-double FixKineticsEnergy::biomass(int i) {
+inline double FixKineticsEnergy::biomass(int i) {
 
   int t = type[i];
   int pos = position(i);
@@ -244,6 +244,7 @@ double FixKineticsEnergy::biomass(int i) {
 
   double m = gMonod[t][pos];
   if (m < 0) {
+    #pragma omp atomic write
     gMonod[t][pos] = grid_monod(pos, t, 1);
     qMet = bio->q[t] * gMonod[t][pos];
   } else {
@@ -281,6 +282,7 @@ double FixKineticsEnergy::biomass(int i) {
         //calculate liquid consumption, mol/m3
         consume = consume / vol;
 
+	#pragma omp atomic
         nuR[nu][pos] += consume;
       }
     }
@@ -306,7 +308,7 @@ double FixKineticsEnergy::biomass(int i) {
   get monod term w.r.t all nutrients
 ------------------------------------------------------------------------- */
 
-double FixKineticsEnergy::grid_monod(int pos, int type, int ind)
+inline double FixKineticsEnergy::grid_monod(int pos, int type, int ind)
 {
   double monod = 1;
 
