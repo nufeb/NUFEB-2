@@ -96,36 +96,17 @@ void FixDeath::pre_exchange()
 
 void FixDeath::death()
 {
-  //double criticalMass = 1e-20;
-  int *type = atom->type;
-  int *mask = atom->mask;
-  double *rmass = atom->rmass;
-  int nlocal = atom->nlocal;
-  int i;
+  int * const type = atom->type;
+  int * const mask = atom->mask;
+  double * const rmass = atom->rmass;
 
-//(rmass[i] < criticalMass)
-  for (i = nlocal-1; i >= 0; i--) {
-//  	//delete atom
-//  	if((mask[i] & groupbit) && (rmass[i] < criticalMass)) {
-//			atom->avec->copy(nall-1,i,1);
-//			atom->nlocal--;
-//			atom->natoms--;
-//			continue;
-//  	}
-
+  #pragma omp parallel for
+  for (int i = 0; i < atom->nlocal; i++) {
     if ((mask[i] & groupbit) && (mask[i] != avec->maskDEAD) && (mask[i] != avec->maskEPS)) {
-    	if(rmass[i] < deadMass) {
-    		type[i] = avec->typeDEAD;
-    		mask[i] = avec->maskDEAD;
-    	}
+      if(rmass[i] < deadMass) {
+	type[i] = avec->typeDEAD;
+	mask[i] = avec->maskDEAD;
+      }
     }
   }
-
-//  if (atom->map_style) {
-//    atom->nghost = 0;
-//    atom->map_init();
-//    atom->map_set();
-//  }
- // printf("nlocal=%i, all=%i \n", nlocal, atom->natoms );
-  //next_reneighbor += nevery;
 }

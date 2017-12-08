@@ -277,6 +277,7 @@ void FixKineticsThermo::thermo()
     }
   }
 
+  #pragma omp parallel for
   for (int i = 0; i < kinetics->bgrids; i++) {
     // gas transfer
     if (closeR == 1){

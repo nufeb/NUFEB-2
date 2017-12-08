@@ -83,6 +83,9 @@ FixKineticsMonod::~FixKineticsMonod()
   }
   delete [] var;
   delete [] ivar;
+
+  memory->destroy(species);
+  memory->destroy(growrate);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -92,9 +95,6 @@ int FixKineticsMonod::setmask()
   int mask = 0;
   mask |= PRE_FORCE;
   return mask;
-
-  memory->destroy(species);
-  memory->destroy(growrate);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -235,52 +235,55 @@ void FixKineticsMonod::init_param()
 ------------------------------------------------------------------------- */
 void FixKineticsMonod::growth(double dt)
 {
+  // create density array
+  double **xtype = memory->create(xtype, ntypes+1, kinetics->bgrids,"monod:xtype");
 
-  xtype = memory->create(xtype,ntypes+1, kinetics->bgrids,"monod:xtype");
+  #pragma omp parallel for
   for (int i = 1; i <= ntypes; i++) {
     for (int grid = 0; grid < kinetics->bgrids; grid++){
       xtype[i][grid] = 0;
     }
   }
 
-  int *mask = atom->mask;
-  int nlocal = atom->nlocal;
-  int *type = atom->type;
-  int ntypes = atom->ntypes;
+  int * const mask = atom->mask;
+  const int nlocal = atom->nlocal;
+  int * const type = atom->type;
+  const int ntypes = atom->ntypes;
 
-  double *radius = atom->radius;
-  double *rmass = atom->rmass;
-  double *outerMass = avec->outerMass;
-  double *outerRadius = avec->outerRadius;
+  double * const radius = atom->radius;
+  double * const rmass = atom->rmass;
+  double * const outerMass = avec->outerMass;
+  double * const outerRadius = avec->outerRadius;
 
-  double *mu = bio->mu;
-  double *decay =  bio->decay;
-  double *maintain = bio->maintain;
-  double *yield = bio->yield;
-  double **ks = bio->ks;
+  double * const mu = bio->mu;
+  double * const decay =  bio->decay;
+  double * const maintain = bio->maintain;
+  double * const yield = bio->yield;
+  double * const * const ks = bio->ks;
 
-  double **nuS = kinetics->nuS;
-  double **nuR = kinetics->nuR;
+  double * const * const nuS = kinetics->nuS;
+  double * const * const nuR = kinetics->nuR;
 
-  bool *nuConv = kinetics->nuConv;
+  bool * const nuConv = kinetics->nuConv;
   double yieldEPS = 0;
   if (ieps != 0) yieldEPS = yield[ieps];
-
-
+  
+  #pragma omp parallel for
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
       int pos = kinetics->position(i);
       int t = type[i];
       double rmassCellVol = rmass[i] / vol;
-      
+      #pragma omp atomic
       xtype[t][pos] += rmassCellVol;
     }
   }
 
+  #pragma omp parallel for
   for (int grid = 0; grid < kinetics->bgrids; grid++) {
     for (int i = 1; i <= ntypes; i++) {
       int spec = species[i];
-
+      
       // HET monod model
       if (spec == 1) {
         double R1 = mu[i] * (nuS[isub][grid] / (ks[i][isub] + nuS[isub][grid])) * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
@@ -349,6 +352,7 @@ void FixKineticsMonod::growth(double dt)
   const double fourThirdsPI = 4.0 * MY_PI / 3.0;
   const double third = 1.0 / 3.0;
 
+  #pragma omp parallel for
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
       int t = type[i];

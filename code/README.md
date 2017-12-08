@@ -4,7 +4,7 @@ This is NUFEF development repository.
 
 - gui: a graphical user interface for NUFEB simulation (not compatible with the latest version)
 
-- input: input scripts for NUFEB simulation
+- examples: IBm running cases 
 
 - lammps5Nov16: LAMMPS code and NUFEB package
 
@@ -14,7 +14,7 @@ This is NUFEF development repository.
 
 - release: released version, see the public repository https://github.com/nufeb
 
-- unittests: unit tests for NUFEB functions
+- unittests: unit tests for NUFEB-1.0 functions
 
 ### How to build and run NUFEB simulation
 
@@ -35,8 +35,8 @@ $ make yes-GRANULAR
 In /lammps5Nov16/src directory, execute the following
  command to build the NUFEB executable:
 
-$ make serial_nufeb
+$ make serial
 
-Now, you can run the simulation by going to the /inputs/examples directory and run:
+Now, you can run the simulation by going to one of the subdirectoies in /inputs/examples/ directory and run:
 
-$  ../../lammps5Nov16/src/lmp_serial_nufeb < Inputscript.lammps
+$  ../../lammps5Nov16/src/lmp_serial < Inputscript.lammps
