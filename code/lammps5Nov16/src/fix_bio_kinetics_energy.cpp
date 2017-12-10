@@ -209,13 +209,17 @@ void FixKineticsEnergy::growth(double dt)
 
   //initialization
   for (int i = 0; i <= ntypes; i++) {
-    #pragma omp parallel for
+#if defined(_OPENMP)
+#pragma omp parallel for
+#endif
     for (int j = 0; j < kinetics->bgrids; j++) {
       gMonod[i][j] = -1;
     }
   }
 
-  #pragma omp parallel for
+#if defined(_OPENMP)
+#pragma omp parallel for
+#endif
   for (int i = 0; i < nlocal; i++) {
     //get new growth rate based on new nutrients
     double mass = biomass(i) * dt;
@@ -241,7 +245,9 @@ inline double FixKineticsEnergy::biomass(int i) {
 
   double m = gMonod[t][pos];
   if (m < 0) {
-    #pragma omp atomic write
+#if defined(_OPENMP)
+#pragma omp atomic write
+#endif
     gMonod[t][pos] = grid_monod(pos, t, 1);
     qMet = bio->q[t] * gMonod[t][pos];
   } else {
@@ -278,8 +284,9 @@ inline double FixKineticsEnergy::biomass(int i) {
         consume = consume * 1000 / 24.6;
         //calculate liquid consumption, mol/m3
         consume = consume / vol;
-
-	#pragma omp atomic
+#if defined(_OPENMP)
+#pragma omp atomic
+#endif
         nuR[nu][pos] += consume;
       }
     }
