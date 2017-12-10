@@ -327,17 +327,12 @@ void FixKineticsThermo::thermo()
           else value = activity[k][flag][i];
 
           double dgr = rthT * log(value);
-         // printf ("%e ",  value);
           DRGCat[j][i] += catCoeff[j][k] * dgr;
           DRGAn[j][i] += anabCoeff[j][k] * dgr;
-         //if (k ==1 && j==7)printf("%e %s %e %s\n", DRGCat[j][i], bio->typeName[j], catCoeff[j][k], bio->nuName[k]);
         } else {
           error->all(FLERR,"nuGCoeff[1] is inf value");
         }
       }
-     // printf("\n");
-//      printf("DRGAn[%i][%i][0] = %e \n", i,j, DRGAn[j][i]);
-//      printf("DRGCat[%i][%i][1] = %e \n", i,j, DRGCat[j][i]);
 
       //use catabolic and anabolic energy values to derive catabolic reaction equation
       if (fixY == 1){
