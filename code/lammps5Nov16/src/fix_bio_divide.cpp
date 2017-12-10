@@ -143,7 +143,9 @@ void FixDivide::post_integrate()
   double divMass = input->variable->compute_equal(ivar[1]);
   int nlocal = atom->nlocal;
 
-  #pragma omp parallel for
+#if defined(_OPENMP)
+#pragma omp parallel for
+#endif
   for (int i = 0; i < nlocal; i++) {
     if (atom->mask[i] == avec->maskEPS || atom->mask[i] == avec->maskDEAD) continue;
 
@@ -242,7 +244,9 @@ void FixDivide::post_integrate()
         coord[2] = newZ;
 
 	int n = 0;
-	#pragma omp critical
+#if defined(_OPENMP)
+#pragma omp critical
+#endif
 	{
 	  atom->avec->create_atom(atom->type[i],coord);
 	  n = atom->nlocal - 1;
