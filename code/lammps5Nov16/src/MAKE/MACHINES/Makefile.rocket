@@ -7,7 +7,7 @@ SHELL = /bin/sh
 # specify flags and libraries needed for your compiler
 
 CC =		mpiicpc
-CCFLAGS =	-O3 -mt_mpi -qopenmp #-qopt-report -qopt-report-phase=openmp
+CCFLAGS =	-O3 -mt_mpi -qopenmp -restrict #-qopt-report -qopt-report-phase=openmp
 SHFLAGS =	-fPIC
 DEPFLAGS =	-M
 
