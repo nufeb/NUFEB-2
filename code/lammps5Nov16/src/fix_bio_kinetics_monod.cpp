@@ -238,7 +238,9 @@ void FixKineticsMonod::growth(double dt)
   // create density array
   double **xtype = memory->create(xtype, ntypes+1, kinetics->bgrids,"monod:xtype");
 
-  #pragma omp parallel for
+#if defined(_OPENMP)
+#pragma omp parallel for
+#endif
   for (int i = 1; i <= ntypes; i++) {
     for (int grid = 0; grid < kinetics->bgrids; grid++){
       xtype[i][grid] = 0;
@@ -268,18 +270,24 @@ void FixKineticsMonod::growth(double dt)
   double yieldEPS = 0;
   if (ieps != 0) yieldEPS = yield[ieps];
   
-  #pragma omp parallel for
+#if defined(_OPENMP)
+#pragma omp parallel for
+#endif
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
       int pos = kinetics->position(i);
       int t = type[i];
       double rmassCellVol = rmass[i] / vol;
-      #pragma omp atomic
+#if defined(_OPENMP)
+#pragma omp atomic
+#endif
       xtype[t][pos] += rmassCellVol;
     }
   }
 
-  #pragma omp parallel for
+#if defined(_OPENMP)
+#pragma omp parallel for
+#endif
   for (int grid = 0; grid < kinetics->bgrids; grid++) {
     for (int i = 1; i <= ntypes; i++) {
       int spec = species[i];
@@ -352,7 +360,9 @@ void FixKineticsMonod::growth(double dt)
   const double fourThirdsPI = 4.0 * MY_PI / 3.0;
   const double third = 1.0 / 3.0;
 
-  #pragma omp parallel for
+#if defined(_OPENMP)
+#pragma omp parallel for
+#endif
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
       int t = type[i];
