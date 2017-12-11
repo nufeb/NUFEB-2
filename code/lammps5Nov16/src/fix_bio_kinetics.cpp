@@ -515,20 +515,22 @@ void FixKinetics::integration() {
 }
 
 double FixKinetics::getMaxHeight() {
-//  double minmax[6];
-//  group->bounds(0,minmax);
-//
-//  return minmax[5];
-  int nlocal = atom->nlocal;
-  double **x = atom->x;
-  double *r = atom->radius;
+  const int nlocal = atom->nlocal;
+  double * const * const x = atom->x;
+  double * const r = atom->radius;
   double maxh = 0;
 
+#if defined(_OPENMP)
+#pragma omp parallel for reduction(max : maxh)
+#endif
   for (int i=0; i < nlocal; i++) {
     if((x[i][2]+r[i]) > maxh) maxh = x[i][2]+r[i];
   }
 
-  return maxh;
+  double global_max;
+  MPI_Allreduce(&maxh, &global_max, 1, MPI_DOUBLE, MPI_MAX, world);
+
+  return global_max;
 }
 
 bool FixKinetics::is_inside(int i) {
