@@ -435,12 +435,7 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
       }
 
       int intconv = conv;
-      nuConv[i] = true;
-      MPI_Allgather(&intconv, 1, MPI_INT, convergences, 1, MPI_INT, world);
-      for (int p = 0; p < comm->nprocs; p++)
-      {
-        nuConv[i] &= convergences[p];
-      }
+      MPI_Allreduce(&intconv, &nuConv[i], 1, MPI_INT, MPI_BAND, world);
 
       memory->destroy(nuPrev);
     }
@@ -496,10 +491,15 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
   // If ghostcells are Neu then take the values equal from the adjacent cells.
   // if ghostcells are dirich then take the values equal to negative of the adjacent cells.
   // if ghostcells are mixed then zlo ghost cells are nuemann, zhi ghost cells are dirichlet, other four surfaces are periodic BC.
-    // Low-z surface
+  // low-z surface
   if (xGrid[grid][2] < zlo && !ghost[up]) {
     //0=PERIODIC-PERIODIC,  1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
-    if (zbcflag == 1) {
+    if (zbcflag == 0) {
+      if (comm->nprocs < 2) { // periodic boundary conditions are already handled by cell communications for cases with more than 1 process 
+	int zhiGrid = grid + nX * nY * nz;
+	nuCell = nuPrev[zhiGrid];
+      }
+    } else if (zbcflag == 1) {
       nuCell = 2*zbcm - nuPrev[up];
     } else if (zbcflag == 2) {
       nuCell = nuPrev[up];
@@ -511,7 +511,12 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
   }
   // high-z surface
   else if (xGrid[grid][2] > zhi && !ghost[down]) {
-    if (zbcflag == 1) {
+    if (zbcflag == 0) {
+      if (comm->nprocs < 2) {
+	int zloGrid = grid - nX * nY * nz;
+	nuCell = nuPrev[zloGrid];
+      }
+    } else if (zbcflag == 1) {
       nuCell = 2*bulk - nuPrev[down];
     } else if (zbcflag == 2) {
       nuCell = 2*bulk - nuPrev[down];
@@ -523,7 +528,12 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
   }
   // low-y surface
   else if (xGrid[grid][1] < ylo && !ghost[fwd]) {
-    if (ybcflag == 1) {
+    if (ybcflag == 0) {
+      if (comm->nprocs < 2) {
+	int yhiGrid = grid + nX * ny;
+	nuCell = nuPrev[yhiGrid];
+      }
+    } else if (ybcflag == 1) {
       nuCell = 2*ybcm - nuPrev[fwd];
     } else if (ybcflag == 2) {
       nuCell = nuPrev[fwd];
@@ -535,7 +545,12 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
   }
   // high-y surface
   else if (xGrid[grid][1] > yhi && !ghost[bwd]) {
-    if (ybcflag == 1) {
+    if (ybcflag == 0) {
+      if (comm->nprocs < 2) {
+	int yloGrid = grid - nX * ny;
+	nuCell = nuPrev[yloGrid];
+      }
+    } else if (ybcflag == 1) {
       nuCell = 2*ybcp - nuPrev[bwd];
     } else if (ybcflag == 2) {
       nuCell = 2*ybcp - nuPrev[bwd];
@@ -547,7 +562,12 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
   }
   // low-x surface
   else if (xGrid[grid][0] < xlo && !ghost[rhs]) {
-    if (xbcflag == 1) {
+    if (xbcflag == 0) {
+      if (comm->nprocs < 2) {
+	int xhiGrid = grid + nx;
+	nuCell = nuPrev[xhiGrid];
+      }
+    } else if (xbcflag == 1) {
       nuCell = 2*xbcm - nuPrev[rhs];
     } else if (xbcflag == 2) {
       nuCell = nuPrev[rhs];
@@ -559,7 +579,12 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
   }
   // high-x surface
   else if (xGrid[grid][0] > xhi && !ghost[lhs]) {
-    if (xbcflag == 1) {
+    if (xbcflag == 0) {
+      if (comm->nprocs < 2) {
+	int xloGrid = grid - nx;
+	nuCell = nuPrev[xloGrid];
+      }
+    } else if (xbcflag == 1) {
       nuCell = 2*xbcp - nuPrev[lhs];
     } else if (xbcflag == 2) {
       nuCell = 2*xbcp - nuPrev[lhs];
