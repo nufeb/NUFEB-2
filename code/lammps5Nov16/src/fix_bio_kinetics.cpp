@@ -360,44 +360,46 @@ void FixKinetics::pre_force(int vflag)
   // look for intersections
   Grid grid(subnlo, subnhi);
   Grid extgrid = extend(grid);
-  for (int p = 0; p < comm->nprocs; p++) {
-    recvbegin[p] = nrecv;
-    sendbegin[p] = nsend;
-    Grid other(&gridlo[3 * p], &gridhi[3 * p]);
-    // identify which cell we are going to receive
-    if (p != comm->me)
-      send_recv_cells(extgrid, grid, other, nsend, nrecv);
-    recvend[p] = nrecv;
-    sendend[p] = nsend;
-  }
-
-  for (int p = 0; p < comm->nprocs; p++) {
-    recvbegin[comm->nprocs + p] = nrecv;
-    sendbegin[comm->nprocs + p] = nsend;
-    Grid other(&gridlo[3 * p], &gridhi[3 * p]);
-    // check for periodic boundary conditions
-    if (p != comm->me) {
-      if (extgrid.lower[0] < 0 && diffusion->xbcflag == 0) {
-        send_recv_cells(extgrid, grid, translate(other, -nx, 0, 0), nsend, nrecv);
-      }
-      if (extgrid.upper[0] > nx && diffusion->xbcflag == 0) {      
-        send_recv_cells(extgrid, grid, translate(other, nx, 0, 0), nsend, nrecv);
-      }
-      if (extgrid.lower[1] < 0 && diffusion->ybcflag == 0) {
-        send_recv_cells(extgrid, grid, translate(other, 0, -ny, 0), nsend, nrecv);
-      }
-      if (extgrid.upper[1] > ny && diffusion->ybcflag == 0) {      
-        send_recv_cells(extgrid, grid, translate(other, 0, ny, 0), nsend, nrecv);
-      }
-      if (extgrid.lower[2] < 0 && diffusion->zbcflag == 0) {
-        send_recv_cells(extgrid, grid, translate(other, 0, 0, -nz), nsend, nrecv);
-      }
-      if (extgrid.upper[2] > nz && diffusion->zbcflag == 0) {      
-        send_recv_cells(extgrid, grid, translate(other, 0, 0, nz), nsend, nrecv);
-      }
+  if (comm->nprocs > 1) {
+    for (int p = 0; p < comm->nprocs; p++) {
+      recvbegin[p] = nrecv;
+      sendbegin[p] = nsend;
+      Grid other(&gridlo[3 * p], &gridhi[3 * p]);
+      // identify which cell we are going to receive
+      if (p != comm->me)
+	send_recv_cells(extgrid, grid, other, nsend, nrecv);
+      recvend[p] = nrecv;
+      sendend[p] = nsend;
     }
-    recvend[comm->nprocs + p] = nrecv;
-    sendend[comm->nprocs + p] = nsend;
+
+    for (int p = 0; p < comm->nprocs; p++) {
+      recvbegin[comm->nprocs + p] = nrecv;
+      sendbegin[comm->nprocs + p] = nsend;
+      Grid other(&gridlo[3 * p], &gridhi[3 * p]);
+      // check for periodic boundary conditions
+      if (p != comm->me) {
+	if (extgrid.lower[0] < 0 && diffusion->xbcflag == 0) {
+	  send_recv_cells(extgrid, grid, translate(other, -nx, 0, 0), nsend, nrecv);
+	}
+	if (extgrid.upper[0] > nx && diffusion->xbcflag == 0) {      
+	  send_recv_cells(extgrid, grid, translate(other, nx, 0, 0), nsend, nrecv);
+	}
+	if (extgrid.lower[1] < 0 && diffusion->ybcflag == 0) {
+	  send_recv_cells(extgrid, grid, translate(other, 0, -ny, 0), nsend, nrecv);
+	}
+	if (extgrid.upper[1] > ny && diffusion->ybcflag == 0) {      
+	  send_recv_cells(extgrid, grid, translate(other, 0, ny, 0), nsend, nrecv);
+	}
+	if (extgrid.lower[2] < 0 && diffusion->zbcflag == 0) {
+	  send_recv_cells(extgrid, grid, translate(other, 0, 0, -nz), nsend, nrecv);
+	}
+	if (extgrid.upper[2] > nz && diffusion->zbcflag == 0) {      
+	  send_recv_cells(extgrid, grid, translate(other, 0, 0, nz), nsend, nrecv);
+	}
+      }
+      recvend[comm->nprocs + p] = nrecv;
+      sendend[comm->nprocs + p] = nsend;
+    }
   }
 
 #ifdef DUMP_RECV_SEND_CELLS
