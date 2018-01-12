@@ -43,6 +43,7 @@
 #include "fix_bio_kinetics_diffusion.h"
 #include "fix_bio_kinetics_energy.h"
 #include "fix_bio_kinetics_monod.h"
+#include "fix_bio_fluid.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -159,6 +160,7 @@ void FixKinetics::init() {
   ph = NULL;
   thermo = NULL;
   monod = NULL;
+  nufebFoam = NULL;
 
   int nfix = modify->nfix;
   for (int j = 0; j < nfix; j++) {
@@ -172,6 +174,8 @@ void FixKinetics::init() {
       thermo = static_cast<FixKineticsThermo *>(lmp->modify->fix[j]);
     } else if (strcmp(modify->fix[j]->style, "kinetics/growth/monod") == 0) {
       monod = static_cast<FixKineticsMonod *>(lmp->modify->fix[j]);
+    } else if (strcmp(modify->fix[j]->style, "nufebFoam") == 0) {
+      nufebFoam = static_cast<FixFluid *>(lmp->modify->fix[j]);
     }
   }
 
@@ -320,6 +324,8 @@ void FixKinetics::pre_force(int vflag) {
   if (nevery == 0)
     return;
   if (update->ntimestep % nevery)
+    return;
+  if(nufebFoam != NULL && nufebFoam->iscfdRun)
     return;
 
   integration();

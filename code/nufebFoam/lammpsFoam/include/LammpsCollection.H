@@ -9,5 +9,6 @@
 #include "input.h"
 #include "atom.h"
 #include "library.h"
+#include "update.h"
 
 #endif

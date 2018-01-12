@@ -22,6 +22,7 @@ enhancedCloud cloud
 // Also update/create MD-related fields.
 beta = 1.0 - alpha;
 
+
 volScalarField dragCoef =
     alpha*dimensionedScalar("dum", dimensionSet(1, -3, -1, 0, 0), 0.0);
 

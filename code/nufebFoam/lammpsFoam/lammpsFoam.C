@@ -71,55 +71,65 @@ int main(int argc, char *argv[])
 
     splitTime[1] += runTime.elapsedCpuTime() - t0;
 
-    while (runTime.run())
+    for (int i = 0; i < cloud.get_lmp_nloops(); i++)
     {
-        t0 = runTime.elapsedCpuTime();
+        cloud.lmp_step(cloud.get_lmp_dem_steps());
+        cloud.set_lmp_iscfdrun(1);
+        cloud.updateParticles();
 
-        runTime++;
-        Info<< "Time = " << runTime.timeName() << nl << endl;
-
-        // Correct the kinetic viscosity
-        // not applicable in Newtonian flow
-        continuousPhaseTransport.correct();
-
-        #include "readPISO.H"
-        #include "CourantNo.H"
-
-        #include "alphaEqn.H"
-
-        #include "UEqns.H"
-
-        // --- PISO loop
-        #include "pEqn.H"
-
-        // update the turbulence viscosity
-        continuousPhaseTurbulence->correct();
-
-        #include "DDtU.H"
-
-        splitTime[0] += runTime.elapsedCpuTime() - t0;
-        t0 = runTime.elapsedCpuTime();
-
-        // get drag from latest velocity fields and evolve particles.
-        #include "moveParticles.H"
-
-        splitTime[1] += runTime.elapsedCpuTime() - t0;
-        t0 = runTime.elapsedCpuTime();
-
-        #include "liftDragCoeffs.H"
-        #include "write.H"
-
-        splitTime[2] += runTime.elapsedCpuTime() - t0;
-        t0 = runTime.elapsedCpuTime();
-
-        #include "writeCPUTime.H"
-
-        if (runTime.outputTime())
+        while (runTime.run())
         {
-            // TODO: for debugging
-            volVectorField ggradp("gradp",fvc::grad(p));
-            ggradp.write();
+          t0 = runTime.elapsedCpuTime();
+
+          runTime++;
+          Info<< "Time = " << runTime.timeName() << nl << endl;
+
+          // Correct the kinetic viscosity
+          // not applicable in Newtonian flow
+          continuousPhaseTransport.correct();
+
+          #include "readPISO.H"
+          #include "CourantNo.H"
+
+          #include "alphaEqn.H"
+
+          #include "UEqns.H"
+
+          // --- PISO loop
+          #include "pEqn.H"
+
+          // update the turbulence viscosity
+          continuousPhaseTurbulence->correct();
+
+          #include "DDtU.H"
+
+          splitTime[0] += runTime.elapsedCpuTime() - t0;
+          t0 = runTime.elapsedCpuTime();
+
+          // get drag from latest velocity fields and evolve particles.
+          #include "moveParticles.H"
+
+          splitTime[1] += runTime.elapsedCpuTime() - t0;
+          t0 = runTime.elapsedCpuTime();
+
+          #include "liftDragCoeffs.H"
+          #include "write.H"
+
+          splitTime[2] += runTime.elapsedCpuTime() - t0;
+          t0 = runTime.elapsedCpuTime();
+
+          #include "writeCPUTime.H"
+
+          if (runTime.outputTime())
+          {
+              // TODO: for debugging
+              volVectorField ggradp("gradp",fvc::grad(p));
+              ggradp.write();
+          }
         }
+
+        cloud.set_lmp_iscfdrun(0);
+        runTime.setTime(runTime.startTime(), runTime.startTimeIndex());
     }
 
     Info<< "End\n" << endl;

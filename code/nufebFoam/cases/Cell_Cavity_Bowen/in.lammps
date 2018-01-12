@@ -23,7 +23,7 @@ neigh_modify	delay 0 one 5000
 # pair_style  none
 pair_style  gran/hooke/history 1e-2 NULL 1e8 NULL 0.1 0
 pair_coeff  * *
-timestep	2e-8
+timestep	60
 
 velocity    all set 0.0 0.0 0.0 units box
 
@@ -77,10 +77,12 @@ variable deadMass equal 6e-17
 
 ##############Ibm functions##############
 
-fix k1 all kinetics 100 10 10 1 v_temp v_rth v_gvol v_gasTran v_ph v_diffT v_bl 
+fix k1 all kinetics 10 10 10 1 v_temp v_rth v_gvol v_gasTran v_ph v_diffT v_bl 
 fix kgm all kinetics/growth/monod v_EPSdens v_etaHET
 fix g1 all kinetics/diffusion v_shearRate v_tol v_Q v_rvol v_Af pp pp nd kg
-fix d1 all divide 100 v_EPSdens v_divMass 31231
+fix d1 all divide 10 v_EPSdens v_divMass 31231
+fix cfd1 all nufebFoam cfdrun 5 demrun 10 cfddt 1e-8 loop 10
+
 #fix e1 HET eps_extract 100 v_EPSratio v_EPSdens 12425
 #fix j1 all epsadh 1 v_ke 1
 #fix d5 all death 100 v_deadMass
@@ -90,15 +92,14 @@ fix d1 all divide 100 v_EPSdens v_divMass 31231
 
 compute myNtypes all ntypes
 
-dump		id all custom 1000 snapshot.bubblemd id type diameter x y z 
+dump		id all custom 200 snapshot.bubblemd id type diameter x y z 
 
 
 #thermo_style  granular # not work. syntax change?
 thermo_style    custom step cpu atoms biomass c_myNtypes[*] 
-thermo		1000
+thermo		1
 #thermo_modify	lost error
 
 thermo_modify	lost warn
 #restart		1000000  restart.*.bubblemd
-
 
