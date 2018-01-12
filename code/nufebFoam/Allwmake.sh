@@ -5,9 +5,8 @@ cd ${0%/*} || exit 1 # Run from this directory
 # And collect information of the installation of LAMMPS from user.
 echo "Installing lammpsFoam (for mac/linux).."
 currentDir=$PWD
-
 echo "Enter the directory of your LAMMPS and press [ENTER] "
-echo -n "(default directory ../lammps5Nov16: "
+echo -n "(default directory ./lammps5Nov16: "
 read lammpsDir
 
 # Determine if the directory of LAMMPS exists or not.
@@ -15,9 +14,7 @@ read lammpsDir
 if [ ! -d "$lammpsDir" ]
 then
     echo "Directory NOT found! Use default directory instead."
-    cd ..
     lammpsDir="$PWD/lammps5Nov16"
-    cd $currentDir
 fi
 
 cd $lammpsDir

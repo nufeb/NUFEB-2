@@ -653,7 +653,6 @@ enhancedCloud::enhancedCloud
 
         UfSmoothed_.correctBoundaryConditions();
     }
-
 }
 
 
@@ -730,7 +729,7 @@ void enhancedCloud::evolve()
         std::vector<vector> VLocal;
         std::vector<int> lmpCpuIdLocal;
 
-        int nstep = subSteps_;
+        int nstep = 0;
 
         // here, Ur (relative velocity is called)
         updateParticleUr();

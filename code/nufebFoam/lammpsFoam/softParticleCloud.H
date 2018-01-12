@@ -216,6 +216,9 @@ protected:
         scalar deleteParticleOption_;
         tensor deleteParticleBox_;
 
+        // Save LAMMPS fix commands
+        char ***fix;
+
         // References to the physical field
 
             //- Velocity
@@ -386,6 +389,59 @@ public:
                 return cpuTimeSplit_;
             };
 
+            bigint get_lmp_nsteps()
+            {
+              return lmp_->update->nsteps;
+            };
+
+
+            int get_lmp_cfd_steps()
+            {
+              return lammps_get_cfd_steps(lmp_);
+            };
+
+            int get_lmp_dem_steps()
+            {
+              return lammps_get_dem_steps(lmp_);
+            };
+
+            int get_lmp_nloops()
+            {
+              return lammps_get_nloops(lmp_);
+            };
+
+            double get_lmp_cfd_dt()
+            {
+              return lammps_get_cfd_dt(lmp_);
+            };
+
+            double get_lmp_ntimestep()
+            {
+              return lmp_->update->ntimestep;
+            };
+
+            void set_lmp_timestep(double dt)
+            {
+              lammps_set_timestep(lmp_, dt);
+            };
+
+            int get_lmp_iscfdrun()
+            {
+              return lammps_get_iscfdrun(lmp_);
+            };
+
+            void set_lmp_iscfdrun(int x)
+            {
+              lammps_set_iscfdrun(lmp_, x);
+            };
+
+            void lmp_step(int nstep)
+            {
+              lammps_step(lmp_, nstep);
+            };
+
+
+            void updateParticles();
         // I-O
 
             virtual void writeFields() const;
