@@ -71,6 +71,7 @@ class FixKinetics : public Fix {
   class FixKineticsMonod *monod;
   class FixKineticsPH *ph;
   class FixKineticsThermo *thermo;
+  class FixFluid *nufebFoam;
 
   void init_activity();
   void init_keq();
