@@ -41,14 +41,14 @@ class FixMassBalance : public Fix {
   int nevery;
   int cflag, nflag, mflag;
 
-  double pre_bmass;                  // total biomass in previoius step
-  double bmass;                     // total biomass in current step
-  double pre_co2mass;
-  double co2mass;
+  double* pre_bmass;                  // total biomass in previoius step
+  double* bmass;                     // total biomass in current step
+  double pre_co2_carbon;
+  double co2_carbon;
   double pre_nh3mass;
   double nh3mass;
-  double pre_glumass;
-  double glumass;
+  double pre_glu_carbon;
+  double glu_carbon;
   double pre_o2mass;
   double o2mass;
 
