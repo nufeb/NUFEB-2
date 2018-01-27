@@ -294,16 +294,12 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
 
   int nrecvcells = kinetics->recvend[comm->nprocs - 1];
   int nsendcells = kinetics->sendend[comm->nprocs - 1];
-  int nrecvbound = kinetics->recvend[2 * comm->nprocs - 1] - nrecvcells;
-  int nsendbound = kinetics->sendend[2 * comm->nprocs - 1] - nsendcells;
-
-  // grow send and recv buffers
-  if (recv_buff_size < nrecvcells || recv_buff_size < nrecvbound) {
-    recv_buff_size += ((nrecvcells > nrecvbound ? nrecvcells : nrecvbound) / BUFMIN + 1) * BUFMIN;
+  if (recv_buff_size < nrecvcells) {
+    recv_buff_size += (nrecvcells / BUFMIN + 1) * BUFMIN;
     memory->grow(recvbuff, recv_buff_size, "diffusion::recvbuff");
   }
-  if (send_buff_size < nsendcells || send_buff_size < nsendbound) {
-    send_buff_size += ((nsendcells > nsendbound ? nsendcells : nsendbound) / BUFMIN + 1) * BUFMIN;
+  if (send_buff_size < nsendcells) {
+    send_buff_size += (nsendcells / BUFMIN + 1) * BUFMIN;
     memory->grow(sendbuff, send_buff_size, "diffusion::recvbuff");
   }
 
@@ -392,29 +388,6 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
       }
       if (maxS == 0) maxS = 1;
 
-      // copy nutrient grid boundary data to send buffer
-      for (int c = 0; c < nsendbound; c++) {
-        sendbuff[c] = nuPrev[kinetics->sendcells[nsendcells + c]];
-      }
-      // send and recv grid boundary data
-      nrequests = 0;
-      for (int p = 0; p < comm->nprocs; p++) {
-        if (p == comm->me)
-          continue;
-        int recvn = kinetics->recvend[comm->nprocs + p] - kinetics->recvbegin[comm->nprocs + p];
-        if (recvn > 0)
-          MPI_Irecv(&recvbuff[kinetics->recvbegin[comm->nprocs + p] - nrecvcells], recvn, MPI_DOUBLE, p, 0, world, &requests[nrequests++]);
-        int sendn = kinetics->sendend[comm->nprocs + p] - kinetics->sendbegin[comm->nprocs + p];
-        if (sendn > 0)
-          MPI_Isend(&sendbuff[kinetics->sendbegin[comm->nprocs + p] - nsendcells], sendn, MPI_DOUBLE, p, 0, world, &requests[nrequests++]);
-      }
-      // wait for all MPI requests
-      MPI_Waitall(nrequests, requests, status);
-      // copy received boudnary data to nuGrid
-      for (int c = 0; c < nrecvbound; c++) {
-        nuGrid[kinetics->recvcells[nrecvcells + c]][i] = recvbuff[c];
-      }
-
       bool conv = true;
       // check convergence criteria
 #if defined(_OPENMP)
@@ -443,7 +416,6 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
 
   return nuConv;
 }
-
 
 void FixKineticsDiffusion::update_grids(){
   //update grids
@@ -638,13 +610,9 @@ void FixKineticsDiffusion::compute_flux(double cellDNu, double &nuCell, double *
 
   // Adding fluxes in all the directions and the uptake rate (RHS side of the equation)
   double res = (jX + jY + jZ + rateNu - shear) * diffT;
-  //nRES[grid] += res;
   //Updating the value: Ratesub*diffT + nuCell[cell](previous)
   nuCell = nuPrev[grid] + res;
-
-  // if (comm->me == 0) printf("%d: %.5e ", grid, nuPrev[grid] + res);
 }
-
 
 /* ----------------------------------------------------------------------
   compare double values for equality
@@ -660,10 +628,6 @@ bool FixKineticsDiffusion::isEuqal(double a, double b, double c)
 }
 
 double FixKineticsDiffusion::getMaxHeight() {
-//  double minmax[6];
-//  group->bounds(0,minmax);
-//
-//  return minmax[5];
   int nlocal = atom->nlocal;
   double **x = atom->x;
   double *r = atom->radius;
@@ -675,7 +639,6 @@ double FixKineticsDiffusion::getMaxHeight() {
 
   return maxh;
 }
-
 
 void FixKineticsDiffusion::test(){
   //test code

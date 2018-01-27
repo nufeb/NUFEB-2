@@ -85,6 +85,7 @@ class FixKinetics : public Fix {
   void init_activity();
   void init_keq();
   void integration();
+  void borders();
   void grow();
   double getMaxHeight();
   bool is_inside(int);
