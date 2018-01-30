@@ -9,7 +9,7 @@ newton		off
 comm_modify	vel yes
 read_data_bio atom.in
 
-group HET type 1 2
+group AOB type 1
 
 neighbor	5e-7 bin
 neigh_modify	delay 0 one 5000
@@ -67,6 +67,8 @@ fix ki2 all kinetics/thermo fix open v_pressure
 fix ki1 all kinetics/growth/energy v_EPSdens	
 fix g1 all kinetics/diffusion v_shearRate v_tol v_Q v_rvol v_Af pp pp nn mol
 fix d1 all divide 400 v_EPSdens v_divMass 31231
+#fix ki3 all kinetics/ph
+fix mb all mbalance 400 n
 
 ##############Ibm compute##############
 
@@ -75,10 +77,11 @@ compute myNtypes all ntypes
 ##############Simulation outputs##############
 
 dump		id all custom 4000 snapshot.bubblemd id type diameter x y z
-dump            d0 all bio 4000 concentration ntypes ave_concentration DGRAn DGRCat
+dump            d0 all bio 400 concentration ntypes ave_concentration DGRAn DGRCat
 thermo_style    custom step cpu atoms biomass c_myNtypes[*] 
 thermo		400
 thermo_modify	lost ignore
 
-run 192000
+#run 192000
+run 10000
 

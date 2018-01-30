@@ -41,16 +41,12 @@ class FixMassBalance : public Fix {
   int nevery;
   int cflag, nflag, mflag;
 
-  double* pre_bmass;                  // total biomass in previoius step
-  double* bmass;                     // total biomass in current step
-  double pre_co2_carbon;
-  double co2_carbon;
-  double pre_nh3mass;
-  double nh3mass;
-  double pre_glu_carbon;
-  double glu_carbon;
-  double pre_o2mass;
-  double o2mass;
+  double total_bmass, pre_total_bmass;
+  double co2_carbon, pre_co2_carbon;
+  double glu_carbon, pre_glu_carbon;
+  double nh3_nitrogen, pre_nh3_nitrogen;
+  double no2_nitrogen, pre_no2_nitrogen;
+  double no3_nitrogen, pre_no3_nitrogen;
 
   double **nuS;                    // nutrient concentration for all grids
   double **catCoeff;                 // catabolism coefficients of species

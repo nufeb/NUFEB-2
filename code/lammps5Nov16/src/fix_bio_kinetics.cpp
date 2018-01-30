@@ -236,6 +236,8 @@ void FixKinetics::init() {
     init_activity();
   }
 
+  reset_isConv();
+
   //update ngrids
   if (bl > 0) {
     double height = getMaxHeight();
@@ -285,6 +287,8 @@ void FixKinetics::init_keq() {
   }
 }
 
+/* ---------------------------------------------------------------------- */
+
 void FixKinetics::init_activity() {
   int nnus = bio->nnus;
   double *denm = memory->create(denm, nnus + 1, "kinetics:denm");
@@ -331,52 +335,42 @@ void FixKinetics::pre_force(int vflag) {
   integration();
 }
 
+/* ----------------------------------------------------------------------
+   main kenetics integration loop
+ ------------------------------------------------------------------------- */
+
 void FixKinetics::integration() {
 
   int iteration = 0;
   bool isConv = false;
-
-  //initialization
-  for (int i = 1; i <= nnus; i++) {
-    if (strcmp(bio->nuName[i], "h2o") == 0)
-      nuConv[i] = true;
-    else if (strcmp(bio->nuName[i], "h") == 0)
-      nuConv[i] = true;
-    else if (bio->diffCoeff[i] == 0)
-      nuConv[i] = true;
-    else
-      nuConv[i] = false;
-  }
+  reset_nuR();
 
   //update ngrids
   if (bl > 0) {
     double height = getMaxHeight();
+
     bnz = ceil((bl + height) / stepz);
-    if (bnz > nz)
-      bnz = nz;
+    if (bnz > nz) bnz = nz;
     bgrids = nx * ny * bnz;
   }
 
   while (!isConv) {
     iteration++;
     isConv = true;
+    gflag = 0;
 
     if (energy != NULL) {
-      if (ph != NULL)
-        ph->solve_ph();
-      else
-        init_activity();
+      if (ph != NULL) ph->solve_ph();
+      else init_activity();
 
       thermo->thermo();
-      energy->growth(diffT);
+      energy->growth(diffT, gflag);
     } else if (monod != NULL) {
-      monod->growth(diffT);
+      monod->growth(diffT, gflag);
     }
 
-    if (diffusion != NULL)
-      nuConv = diffusion->diffusion(nuConv, iteration, diffT);
-    else
-      break;
+    if (diffusion != NULL) nuConv = diffusion->diffusion(nuConv, iteration, diffT);
+    else break;
 
     for (int i = 1; i <= nnus; i++) {
       if (!nuConv[i]) {
@@ -385,24 +379,23 @@ void FixKinetics::integration() {
       }
     }
 
-    if (iteration >= 10000) {
-      isConv = true;
-      for (int i = 1; i <= nnus; i++) {
-        if (!nuConv[i]) {
-          nuConv[i] = true;
-          printf("%s  ", bio->nuName[i]);
-        }
-      }
-    }
+    if (iteration >= 10000) isConv = true;
   }
 
   printf("number of iteration: %i \n", iteration);
 
-  if (energy != NULL)
-    energy->growth(update->dt * nevery);
-  if (monod != NULL)
-    monod->growth(update->dt * nevery);
+  gflag = 1;
+  reset_isConv();
+
+  if (energy != NULL) energy->growth(update->dt*nevery, gflag);
+  if (monod != NULL) monod->growth(update->dt*nevery, gflag);
+
+  if (diffusion != NULL) diffusion->update_nuS();
 }
+
+/* ----------------------------------------------------------------------
+   get maximum height of biofilm
+ ------------------------------------------------------------------------- */
 
 double FixKinetics::getMaxHeight() {
 //  double minmax[6];
@@ -423,8 +416,41 @@ double FixKinetics::getMaxHeight() {
   return maxh;
 }
 
+/* ----------------------------------------------------------------------
+   reset nutrient reaction array
+ ------------------------------------------------------------------------- */
+
+void FixKinetics::reset_nuR() {
+  for (int k = 1; k < nnus+1; k++) {
+    for (int j = 0; j < bgrids; j++) {
+        nuR[k][j] = 0;
+     }
+   }
+}
+
+/* ----------------------------------------------------------------------
+   reset convergence criteria
+ ------------------------------------------------------------------------- */
+
+void FixKinetics::reset_isConv() {
+  for (int i = 1; i <= nnus; i++) {
+    if (strcmp(bio->nuName[i], "h2o") == 0)
+      nuConv[i] = true;
+    else if (strcmp(bio->nuName[i], "h") == 0)
+      nuConv[i] = true;
+    else if (bio->diffCoeff[i] == 0)
+      nuConv[i] = true;
+    else
+      nuConv[i] = false;
+  }
+}
+
+/* ----------------------------------------------------------------------
+   get index of grid containing atom i
+ ------------------------------------------------------------------------- */
+
 int FixKinetics::position(int i) {
-  // get index of grid containing i
+
   int pos = -1;
   int xpos = (atom->x[i][0] - xlo) / stepx + 1;
   int ypos = (atom->x[i][1] - ylo) / stepy + 1;

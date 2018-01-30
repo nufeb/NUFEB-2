@@ -60,6 +60,7 @@ class FixKinetics : public Fix {
   double bl;
   double zhi,bzhi,zlo, xlo, xhi, ylo, yhi;
   double stepz, stepx, stepy;
+  int gflag;                      // microbe growth flag 1 = update biomass; 0 = solve reaction only, growth is negligible
 
   int subn[2];                     // number of grids in x y axis for this proc
   double sublo[2], subhi[2];       // subdomain size trimmed to the grid
@@ -79,6 +80,8 @@ class FixKinetics : public Fix {
   void grow();
   double getMaxHeight();
   int position(int);
+  void reset_nuR();
+  void reset_isConv();
 };
 
 }
