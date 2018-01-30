@@ -24,7 +24,7 @@ class FixKineticsEnergy : public Fix {
   ~FixKineticsEnergy();
   void init();
   int setmask();
-  void growth(double);
+  void growth(double, int);
 
  private:
   char **var;
