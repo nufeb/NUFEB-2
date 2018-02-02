@@ -245,7 +245,7 @@ void FixKineticsMonod::init_param() {
 /* ----------------------------------------------------------------------
  metabolism and atom update
  ------------------------------------------------------------------------- */
-void FixKineticsMonod::growth(double dt) {
+void FixKineticsMonod::growth(double dt, int gflag) {
 
   xtype = memory->create(xtype, ntypes + 1, kinetics->bgrids, "monod:xtype");
   for (int i = 1; i <= ntypes; i++) {
@@ -380,6 +380,10 @@ void FixKineticsMonod::growth(double dt) {
     }
   }
 
+  memory->destroy(xtype);
+
+  if (!gflag) return;
+
   const double threeQuartersPI = (3.0 / (4.0 * MY_PI));
   const double fourThirdsPI = 4.0 * MY_PI / 3.0;
   const double third = 1.0 / 3.0;
@@ -406,5 +410,4 @@ void FixKineticsMonod::growth(double dt) {
     }
   }
 
-  memory->destroy(xtype);
 }

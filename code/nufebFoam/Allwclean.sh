@@ -3,7 +3,7 @@ cd ${0%/*} || exit 1 # Run from this directory
 
 # Read the information of current directory.
 # And collect information of the installation of LAMMPS from user.
-echo "Installing lammpsFoam.."
+echo "Uninstalling nufebFoam.."
 currentDir=$PWD
 echo -n "Enter the directory of your LAMMPS and press [ENTER]: "
 read lammpsDir
@@ -13,6 +13,7 @@ read lammpsDir
 if [ ! -d "$lammpsDir" ]
 then
     echo "Directory NOT found! Use default directory instead."
+    cd ..
     lammpsDir="$PWD/lammps5Nov16"
 fi
 

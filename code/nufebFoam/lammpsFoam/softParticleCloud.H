@@ -271,8 +271,8 @@ protected:
         void setPositionVeloCpuId
         (
         	std::vector<vector> &XLocal,
-			std::vector<vector> &VLocal,
-			std::vector<int> &lmpCpuIdLocal
+          std::vector<vector> &VLocal,
+          std::vector<int> &lmpCpuIdLocal
         );
 
         //- Set the particle cell index after the particles
@@ -394,10 +394,9 @@ public:
               return lmp_->update->nsteps;
             };
 
-
-            int get_lmp_cfd_steps()
+            int get_lmp_bio_steps()
             {
-              return lammps_get_cfd_steps(lmp_);
+              return lammps_get_bio_steps(lmp_);
             };
 
             int get_lmp_dem_steps()
@@ -410,9 +409,14 @@ public:
               return lammps_get_nloops(lmp_);
             };
 
-            double get_lmp_cfd_dt()
+            double get_lmp_bio_dt()
             {
-              return lammps_get_cfd_dt(lmp_);
+              return lammps_get_bio_dt(lmp_);
+            };
+
+            double get_lmp_dem_dt()
+            {
+              return lammps_get_dem_dt(lmp_);
             };
 
             double get_lmp_ntimestep()
@@ -425,14 +429,14 @@ public:
               lammps_set_timestep(lmp_, dt);
             };
 
-            int get_lmp_iscfdrun()
+            int get_lmp_demflag()
             {
-              return lammps_get_iscfdrun(lmp_);
+              return lammps_get_demflag(lmp_);
             };
 
-            void set_lmp_iscfdrun(int x)
+            void set_lmp_demflag(int x)
             {
-              lammps_set_iscfdrun(lmp_, x);
+              lammps_set_demflag(lmp_,x);
             };
 
             void lmp_step(int nstep)

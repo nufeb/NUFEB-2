@@ -32,6 +32,7 @@
 #include "update.h"
 #include "variable.h"
 #include "modify.h"
+#include "fix_bio_fluid.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -139,13 +140,22 @@ void FixDivide::init() {
       error->all(FLERR, "Variable for fix divide is invalid style");
   }
 
+
+  nufebFoam = NULL;
+
+  int nfix = modify->nfix;
+  for (int j = 0; j < nfix; j++) {
+    if (strcmp(modify->fix[j]->style, "nufebFoam") == 0) {
+      nufebFoam = static_cast<FixFluid *>(lmp->modify->fix[j]);
+      break;
+    }
+  }
 }
 
 void FixDivide::post_integrate() {
-  if (nevery == 0)
-    return;
-  if (update->ntimestep % nevery)
-    return;
+  if (nevery == 0) return;
+  if (update->ntimestep % nevery) return;
+  if (nufebFoam != NULL && nufebFoam->demflag) return;
 
   double EPSdens = input->variable->compute_equal(ivar[0]);
   double divMass = input->variable->compute_equal(ivar[1]);

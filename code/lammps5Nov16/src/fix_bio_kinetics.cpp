@@ -329,7 +329,7 @@ void FixKinetics::pre_force(int vflag) {
     return;
   if (update->ntimestep % nevery)
     return;
-  if(nufebFoam != NULL && nufebFoam->iscfdRun)
+  if(nufebFoam != NULL && nufebFoam->demflag)
     return;
 
   integration();
@@ -429,7 +429,7 @@ void FixKinetics::reset_nuR() {
 }
 
 /* ----------------------------------------------------------------------
-   reset convergence criteria
+   reset convergence status
  ------------------------------------------------------------------------- */
 
 void FixKinetics::reset_isConv() {
