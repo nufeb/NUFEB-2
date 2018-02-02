@@ -150,17 +150,12 @@ void FixDivide::init() {
       break;
     }
   }
-
 }
 
 void FixDivide::post_integrate() {
-  if (nevery == 0)
-    return;
-  if (update->ntimestep % nevery)
-    return;
-  if(nufebFoam != NULL && nufebFoam->iscfdRun)
-    return;
-
+  if (nevery == 0) return;
+  if (update->ntimestep % nevery) return;
+  if (nufebFoam != NULL && nufebFoam->demflag) return;
 
   double EPSdens = input->variable->compute_equal(ivar[0]);
   double divMass = input->variable->compute_equal(ivar[1]);

@@ -61,13 +61,14 @@ extern "C" {
   void lammps_step_stop(void* ptr, int n, int nsteps);
   void lammps_set_timestep(void* ptr, double dt_i);
   double lammps_get_timestep(void* ptr);
-  int lammps_get_iscfdrun(void *ptr);
-  void lammps_set_iscfdrun(void *ptr, int x);
+  int lammps_get_demflag(void *ptr);
+  void lammps_set_demflag(void *ptr, int x);
 
-  int lammps_get_cfd_steps(void* ptr);
+  int lammps_get_bio_steps(void* ptr);
   int lammps_get_dem_steps(void* ptr);
   int lammps_get_nloops(void* ptr);
-  double lammps_get_cfd_dt(void* ptr);
+  double lammps_get_bio_dt(void* ptr);
+  double lammps_get_dem_dt(void* ptr);
 
   void lammps_create_particle(void* ptr, int npAdd, double* position, double* tag, 
                               double diameter, double rho, int type, double* vel);

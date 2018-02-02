@@ -447,28 +447,6 @@ void lammps_set_timestep(void *ptr, double dt_i)
 
 /* ---------------------------------------------------------------------- */
 
-int lammps_get_cfd_steps(void *ptr)
-{
-   LAMMPS *lammps = (LAMMPS *) ptr;
-
-   // the pointer to the fix_fluid class
-   class FixFluid *fluid_ptr = NULL;
-
-   int i;
-   for (i = 0; i < (lammps->modify->nfix); i++) {
-     if (strcmp(lammps->modify->fix[i]->style,"nufebFoam") == 0) {
-         fluid_ptr = (FixFluid *) lammps->modify->fix[i];
-         break;
-     }
-   }
-
-   //if (fluid_ptr == NULL)  error->all(FLERR, "Cannot finid fix nufebFoam");
-
-   return fluid_ptr->cfdRun;
-}
-
-/* ---------------------------------------------------------------------- */
-
 int lammps_get_dem_steps(void *ptr)
 {
    LAMMPS *lammps = (LAMMPS *) ptr;
@@ -486,7 +464,27 @@ int lammps_get_dem_steps(void *ptr)
 
    //if (fluid_ptr == NULL)  error->all(FLERR, "Cannot finid fix nufebFoam");
 
-   return fluid_ptr->demRun;
+   return fluid_ptr->dem_steps;
+}
+
+/* ---------------------------------------------------------------------- */
+
+int lammps_get_bio_steps(void *ptr)
+{
+   LAMMPS *lammps = (LAMMPS *) ptr;
+
+   // the pointer to the fix_fluid class
+   class FixFluid *fluid_ptr = NULL;
+
+   int i;
+   for (i = 0; i < (lammps->modify->nfix); i++) {
+     if (strcmp(lammps->modify->fix[i]->style,"nufebFoam") == 0) {
+         fluid_ptr = (FixFluid *) lammps->modify->fix[i];
+         break;
+     }
+   }
+
+   return fluid_ptr->bio_steps;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -515,7 +513,7 @@ int lammps_get_nloops(void *ptr)
 
 /* ---------------------------------------------------------------------- */
 
-double lammps_get_cfd_dt(void *ptr)
+double lammps_get_bio_dt(void *ptr)
 {
    LAMMPS *lammps = (LAMMPS *) ptr;
 
@@ -532,13 +530,12 @@ double lammps_get_cfd_dt(void *ptr)
 
    //if (fluid_ptr == NULL)  error->all(FLERR, "Cannot finid fix nufebFoam");
 
-   int fluid_dt = fluid_ptr->nevery;
-   return fluid_ptr->cfdDt;
+   return fluid_ptr->bio_dt;
 }
 
 /* ---------------------------------------------------------------------- */
 
-void lammps_set_iscfdrun(void *ptr, int x)
+double lammps_get_dem_dt(void *ptr)
 {
    LAMMPS *lammps = (LAMMPS *) ptr;
 
@@ -555,12 +552,12 @@ void lammps_set_iscfdrun(void *ptr, int x)
 
    //if (fluid_ptr == NULL)  error->all(FLERR, "Cannot finid fix nufebFoam");
 
-   fluid_ptr->iscfdRun = x;
+   return fluid_ptr->dem_dt;
 }
 
 /* ---------------------------------------------------------------------- */
 
-int lammps_get_iscfdrun(void *ptr)
+void lammps_set_demflag(void *ptr, int x)
 {
    LAMMPS *lammps = (LAMMPS *) ptr;
 
@@ -577,7 +574,29 @@ int lammps_get_iscfdrun(void *ptr)
 
    //if (fluid_ptr == NULL)  error->all(FLERR, "Cannot finid fix nufebFoam");
 
-   return fluid_ptr->iscfdRun;
+   fluid_ptr->demflag = x;
+}
+
+/* ---------------------------------------------------------------------- */
+
+int lammps_get_demflag(void *ptr)
+{
+   LAMMPS *lammps = (LAMMPS *) ptr;
+
+   // the pointer to the fix_fluid class
+   class FixFluid *fluid_ptr = NULL;
+
+   int i;
+   for (i = 0; i < (lammps->modify->nfix); i++) {
+     if (strcmp(lammps->modify->fix[i]->style,"nufebFoam") == 0) {
+         fluid_ptr = (FixFluid *) lammps->modify->fix[i];
+         break;
+     }
+   }
+
+   //if (fluid_ptr == NULL)  error->all(FLERR, "Cannot finid fix nufebFoam");
+
+   return fluid_ptr->demflag;
 }
 
 /* ---------------------------------------------------------------------- */

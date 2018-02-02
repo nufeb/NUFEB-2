@@ -3,10 +3,10 @@ cd ${0%/*} || exit 1 # Run from this directory
 
 # Read the information of current directory.
 # And collect information of the installation of LAMMPS from user.
-echo "Installing lammpsFoam (for mac/linux).."
+echo "Installing nufebFoam (for mac/linux).."
 currentDir=$PWD
 echo "Enter the directory of your LAMMPS and press [ENTER] "
-echo -n "(default directory ./lammps5Nov16: "
+echo -n "(default directory ../lammps5Nov16: "
 read lammpsDir
 
 # Determine if the directory of LAMMPS exists or not.
@@ -14,6 +14,7 @@ read lammpsDir
 if [ ! -d "$lammpsDir" ]
 then
     echo "Directory NOT found! Use default directory instead."
+    cd ..
     lammpsDir="$PWD/lammps5Nov16"
 fi
 
@@ -37,12 +38,12 @@ cd $lammpsDir/src
 
 # Make packages
 make yes-GRANULAR
-make yes-KSPACE
-make yes-MANYBODY
-make yes-MOLECULE
+#make yes-KSPACE
+#make yes-MANYBODY
+#make yes-MOLECULE
 make yes-COLLOID # lubrication
-make yes-RIGID # freeze
-make yes-MISC # deposit
+#make yes-RIGID # freeze
+#make yes-MISC # deposit
 #make yes-VORONOI # ??
 
 version=`uname`

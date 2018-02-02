@@ -4,6 +4,8 @@
 	<comment></comment>
 	<projects>
 		<project>OpenFOAM-2.3.0</project>
+		<project>OpenFoam</project>
+		<project>lammps5Nov16</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
