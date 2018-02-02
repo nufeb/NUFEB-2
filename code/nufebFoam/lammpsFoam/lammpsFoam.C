@@ -70,11 +70,18 @@ int main(int argc, char *argv[])
     #include "liftDragCoeffs.H"
 
     splitTime[1] += runTime.elapsedCpuTime() - t0;
+    Foam::dimensionedScalar endTime = runTime.endTime();
 
     for (int i = 0; i < cloud.get_lmp_nloops(); i++)
     {
-        cloud.lmp_step(cloud.get_lmp_dem_steps());
-        cloud.set_lmp_iscfdrun(1);
+        // biological steps
+        cloud.set_lmp_demflag(0);
+        cloud.set_lmp_timestep(cloud.get_lmp_bio_dt());
+        cloud.lmp_step(cloud.get_lmp_bio_steps());
+
+        // dem/cfd steps
+        cloud.set_lmp_demflag(1);
+        cloud.set_lmp_timestep(cloud.get_lmp_dem_dt());
         cloud.updateParticles();
 
         while (runTime.run())
@@ -128,8 +135,7 @@ int main(int argc, char *argv[])
           }
         }
 
-        cloud.set_lmp_iscfdrun(0);
-        runTime.setTime(runTime.startTime(), runTime.startTimeIndex());
+        runTime.setEndTime(runTime.endTime()+endTime);
     }
 
     Info<< "End\n" << endl;

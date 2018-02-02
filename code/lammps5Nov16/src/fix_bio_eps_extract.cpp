@@ -31,6 +31,8 @@
 #include "update.h"
 #include "variable.h"
 #include "group.h"
+#include "fix_bio_fluid.h"
+#include "modify.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -39,8 +41,6 @@ using namespace MathConst;
 #define EPSILON 0.001
 #define DELTA 1.005
 
-// enum{PAIR,KSPACE,ATOM};
-// enum{DIAMETER,CHARGE};
 
 /* ---------------------------------------------------------------------- */
 
@@ -158,6 +158,16 @@ void FixEPSExtract::init()
   if (typeEPS == 0) {
     error->all(FLERR,"Cannot find EPS type");
   }
+
+  nufebFoam = NULL;
+
+  int nfix = modify->nfix;
+  for (int j = 0; j < nfix; j++) {
+    if (strcmp(modify->fix[j]->style, "nufebFoam") == 0) {
+      nufebFoam = static_cast<FixFluid *>(lmp->modify->fix[j]);
+      break;
+    }
+  }
 }
 
 
@@ -165,6 +175,7 @@ void FixEPSExtract::post_integrate()
 {
   if (nevery == 0) return;
   if (update->ntimestep % nevery) return;
+  if (nufebFoam != NULL && nufebFoam->demflag) return;
 
   double EPSratio = input->variable->compute_equal(ivar[0]);
   double EPSdens = input->variable->compute_equal(ivar[1]);

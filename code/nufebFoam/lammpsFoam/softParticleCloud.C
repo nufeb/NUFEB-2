@@ -792,11 +792,6 @@ void  softParticleCloud::lammpsEvolveForward
 	volVectorField &UfSmoothed_
 )
 {
-    double dem_dt = lmp_->update->dt;
-    double cfd_dt = lammps_get_cfd_dt(lmp_);
-    Info<< "Set to CFD dt = " << cfd_dt << endl;
-    lammps_set_timestep(lmp_, cfd_dt);
-
     label nprocs = Pstream::nProcs();
     label myrank = Pstream::myProcNo();
 
@@ -1006,7 +1001,7 @@ void  softParticleCloud::lammpsEvolveForward
 
     // Ask lammps to move certain steps forward
     Info<< "LAMMPS evolving.. " << endl;
-    lammps_step(lmp_, lammps_get_cfd_steps(lmp_));
+    lammps_step(lmp_, lammps_get_dem_steps(lmp_));
 
     Info<< "finished moving the particles in LAMMPS." << endl;
     cpuTimeSplit_[4] += runTime_.elapsedCpuTime() - t0;
@@ -1246,8 +1241,6 @@ void  softParticleCloud::lammpsEvolveForward
     t0 = runTime_.elapsedCpuTime();
 
     Info<< "LAMMPS evolving finished! .." << endl;
-    Info<< "Set to DEM dt =" << dem_dt << endl;
-    lammps_set_timestep(lmp_, dem_dt);
 } // Job done; Proceed to next fluid calculation step.
 
 // resize array
