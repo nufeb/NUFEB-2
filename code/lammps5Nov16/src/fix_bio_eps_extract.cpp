@@ -165,9 +165,6 @@ void FixEPSExtract::post_integrate()
 
   int nlocal = atom->nlocal;
 
-#if defined(_OPENMP)
-#pragma omp parallel for
-#endif
   for (int i = 0; i < nlocal; i++) {
     if (atom->mask[i] & groupbit) {
       if ((avec->outerRadius[i]/atom->radius[i]) > EPSratio) {
@@ -220,13 +217,8 @@ void FixEPSExtract::post_integrate()
         coord[2] = newZ;
 	
 	int n = 0;
-#if defined(_OPENMP)
-#pragma omp critical
-#endif
-	{
-	  atom->avec->create_atom(typeEPS,coord);
-	  n = atom->nlocal - 1;
-	}	
+	atom->avec->create_atom(typeEPS,coord);
+	n = atom->nlocal - 1;
 
         atom->tag[n] = 0;
         atom->mask[n] = avec->maskEPS;

@@ -121,9 +121,6 @@ void FixKineticsPH::solve_ph()
   activity = kinetics->activity;
   kEq = kinetics->kEq;
 
-#if defined(_OPENMP)
-#pragma omp parallel for
-#endif
   for (int i = 0; i < kinetics->bgrids; i++) {
     double a = 1e-14;
     int b = 1;
