@@ -226,7 +226,7 @@ void FixKineticsDiffusion::init()
   }
 
   xGrid =  memory->create(xGrid, nXYZ, 3, "diffusion:xGrid");
-  nuGrid = memory->create(nuGrid, nXYZ, nnus + 1, "diffusion:nuGrid");
+  nuGrid = memory->create(nuGrid, nnus + 1, nXYZ, "diffusion:nuGrid");
   nuPrev = memory->create(nuPrev, nnus + 1, nXYZ, "diffusion:nuPrev");
   ghost = memory->create(ghost, nXYZ, "diffusion:ghost");
   nuBS = memory->create(nuBS, nnus + 1, "diffusion:nuBS");
@@ -245,28 +245,28 @@ void FixKineticsDiffusion::init()
         for (int nu = 1; nu <= nnus; nu++) {
           if (i < kinetics->sublo[0]) {
             ghost[grid] = true;
-            nuGrid[grid][nu] = iniS[nu][1];
+            nuGrid[nu][grid] = iniS[nu][1];
           } else if (i > kinetics->subhi[0]) {
             ghost[grid] = true;
-            nuGrid[grid][nu] = iniS[nu][2];
+            nuGrid[nu][grid] = iniS[nu][2];
           } else if (j < kinetics->sublo[1]) {
             ghost[grid] = true;
-            nuGrid[grid][nu] = iniS[nu][3];
+            nuGrid[nu][grid] = iniS[nu][3];
           } else if (j > kinetics->subhi[1]) {
             ghost[grid] = true;
-            nuGrid[grid][nu] = iniS[nu][4];
+            nuGrid[nu][grid] = iniS[nu][4];
           } else if (k < kinetics->sublo[2]) {
             ghost[grid] = true;
-            nuGrid[grid][nu] = iniS[nu][5];
+            nuGrid[nu][grid] = iniS[nu][5];
           } else if (k > bzhi) {
             ghost[grid] = true;
-            nuGrid[grid][nu] = iniS[nu][6];
+            nuGrid[nu][grid] = iniS[nu][6];
           } else {
             ghost[grid] = false;
-            nuGrid[grid][nu] = iniS[nu][0];
+            nuGrid[nu][grid] = iniS[nu][0];
           }
 
-          if (unit == 0) nuGrid[grid][nu] = nuGrid[grid][nu]*1000;
+          if (unit == 0) nuGrid[nu][grid] = nuGrid[nu][grid]*1000;
           if (grid == 0 && unit == 1) nuBS[nu] =  iniS[nu][6];
           else if (grid == 0 && unit == 0) nuBS[nu] =  iniS[nu][6]*1000;
         }
@@ -318,10 +318,10 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
 
   // copy nutrient grid data to send buffer
   for (int c = 0; c < nsendcells; c++) {
-    int i = kinetics->sendcells[c];
-    double *begin = nuGrid[i] + 1;
-    double *end = begin + nnus;
-    copy(begin, end, sendbuff + c * nnus);  
+    int cell = kinetics->sendcells[c];
+    for (int n = 0; n < nnus; n++) {
+      sendbuff[c * nnus + n] = nuGrid[n][cell]; 
+    }  
   }
   // send and recv grid data
   int nrequests = 0;
@@ -339,9 +339,10 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
   MPI_Waitall(nrequests, requests, status);
   // copy received data to nuGrid
   for (int c = 0; c < nrecvcells; c++) {
-    double *begin = recvbuff + c * nnus;
-    double *end = begin + nnus;
-    copy(begin, end, &nuGrid[kinetics->recvcells[c]][1]);
+    int cell = kinetics->recvcells[c];
+    for (int n = 0; n < nnus; n++) {
+      nuGrid[n][cell] = recvbuff[c * nnus + n];
+    }
   }
 
   for (int i = 1; i <= nnus; i++) {
@@ -378,7 +379,7 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
 
 	// copy current concentrations
 	for (int grid = ifrom; grid < ito; grid++) {
-	  nuPrev[i][grid] = nuGrid[grid][i];
+	  nuPrev[i][grid] = nuGrid[i][grid];
 	}
 	
 #pragma omp barrier // make sure that all data was copied to nuPrev before any thread continues
@@ -392,21 +393,21 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
 	    int iz = floor((xGrid[grid][2] - kinetics->sublo[2])/stepz);
 	    int ind = iz * kinetics->subn[0] * kinetics->subn[1] + iy * kinetics->subn[0] + ix;
 
-	    compute_flux(diffD[i], nuGrid[grid][i], nuPrev[i], nuR[i][ind], grid);
+	    compute_flux(diffD[i], nuGrid[i][grid], nuPrev[i], nuR[i][ind], grid);
 
 	    nuR[i][ind] = 0;
 
-	    if (nuGrid[grid][i] > 0) {
-	      if (unit == 0) nuS[i][ind] = nuGrid[grid][i] / 1000;
-	      else nuS[i][ind] = nuGrid[grid][i];
+	    if (nuGrid[i][grid] > 0) {
+	      if (unit == 0) nuS[i][ind] = nuGrid[i][grid] / 1000;
+	      else nuS[i][ind] = nuGrid[i][grid];
 	    }
 	    else {
-	      nuGrid[grid][i] = 1e-20;
+	      nuGrid[i][grid] = 1e-20;
 	      nuS[i][ind] = 1e-20;
 	    }
-	  } else compute_bc(nuGrid[grid][i], nuPrev[i], grid, nuBS[i]);
+	  } else compute_bc(nuGrid[i][grid], nuPrev[i], grid, nuBS[i]);
 
-	  if (p_maxS < nuGrid[grid][i]) p_maxS = nuGrid[grid][i];
+	  if (p_maxS < nuGrid[i][grid]) p_maxS = nuGrid[i][grid];
 	}
 #pragma omp critical
 	maxS = MAX(maxS, p_maxS);
@@ -419,7 +420,7 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
 	    double ratio = 1000;
 	    if (rflag == 0) {
               double div = (maxS == 0) ? 1 : maxS; 
-	      double rate = nuGrid[grid][i] / div;
+	      double rate = nuGrid[i][grid] / div;
 	      double prevRate = nuPrev[i][grid] / div;
 	      ratio = fabs(rate - prevRate);
 	    }
