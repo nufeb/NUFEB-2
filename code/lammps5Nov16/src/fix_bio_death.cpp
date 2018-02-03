@@ -100,9 +100,6 @@ void FixDeath::death()
   int * const mask = atom->mask;
   double * const rmass = atom->rmass;
 
-#if defined(_OPENMP)
-#pragma omp parallel for
-#endif
   for (int i = 0; i < atom->nlocal; i++) {
     if ((mask[i] & groupbit) && (mask[i] != avec->maskDEAD) && (mask[i] != avec->maskEPS)) {
       if(rmass[i] < deadMass) {

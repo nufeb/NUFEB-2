@@ -44,6 +44,8 @@
 #include "group.h"
 #include "comm.h"
 
+#include "thr_omp.h"
+
 #define BUFMIN 1000
 
 using namespace LAMMPS_NS;
@@ -115,12 +117,16 @@ FixKineticsDiffusion::~FixKineticsDiffusion()
   memory->destroy(diffD);
   memory->destroy(xGrid);
   memory->destroy(nuGrid);
+  memory->destroy(nuPrev);
   memory->destroy(ghost);
   memory->destroy(nuBS);
 
   memory->destroy(recvbuff);
   memory->destroy(sendbuff);
   memory->destroy(convergences);
+
+  delete [] requests;
+  delete [] status;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -219,11 +225,13 @@ void FixKineticsDiffusion::init()
     diffD[i] = diffCoeff[i];
   }
 
-  xGrid =  memory->create(xGrid,nXYZ,3,"diffusion:xGrid");
-  nuGrid = memory->create(nuGrid,nXYZ,nnus+1,"diffusion:nuGrid");
-  ghost = memory->create(ghost,nXYZ,"diffusion:ghost");
-  nuBS = memory->create(nuBS,nnus+1,"diffusion:nuBS");
+  xGrid =  memory->create(xGrid, nXYZ, 3, "diffusion:xGrid");
+  nuGrid = memory->create(nuGrid, nXYZ, nnus + 1, "diffusion:nuGrid");
+  nuPrev = memory->create(nuPrev, nnus + 1, nXYZ, "diffusion:nuPrev");
+  ghost = memory->create(ghost, nXYZ, "diffusion:ghost");
+  nuBS = memory->create(nuBS, nnus + 1, "diffusion:nuBS");
 
+  // TODO: optimize for first-touch policy
   //initialise grids
   double i, j, k;
   int grid = 0;
@@ -295,124 +303,142 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
   int nrecvcells = kinetics->recvend[comm->nprocs - 1];
   int nsendcells = kinetics->sendend[comm->nprocs - 1];
   if (recv_buff_size < nrecvcells) {
-    recv_buff_size += (nrecvcells / BUFMIN + 1) * BUFMIN;
+    recv_buff_size += ((nrecvcells * nnus) / BUFMIN + 1) * BUFMIN;
     memory->grow(recvbuff, recv_buff_size, "diffusion::recvbuff");
   }
   if (send_buff_size < nsendcells) {
-    send_buff_size += (nsendcells / BUFMIN + 1) * BUFMIN;
+    send_buff_size += ((nsendcells * nnus) / BUFMIN + 1) * BUFMIN;
     memory->grow(sendbuff, send_buff_size, "diffusion::recvbuff");
   }
 
+  double maxS = 0;
+  bool *conv = new bool[nnus + 1];
+  for (int i = 0; i <= nnus; i++)
+    conv[i] = true;
+
+  // copy nutrient grid data to send buffer
+  for (int c = 0; c < nsendcells; c++) {
+    int i = kinetics->sendcells[c];
+    double *begin = nuGrid[i] + 1;
+    double *end = begin + nnus;
+    copy(begin, end, sendbuff + c * nnus);  
+  }
+  // send and recv grid data
+  int nrequests = 0;
+  for (int p = 0; p < comm->nprocs; p++) {
+    if (p == comm->me)
+      continue;
+    int recvn = (kinetics->recvend[p] - kinetics->recvbegin[p]) * nnus;
+    if (recvn > 0)
+      MPI_Irecv(&recvbuff[kinetics->recvbegin[p] * nnus], recvn, MPI_DOUBLE, p, 0, world, &requests[nrequests++]);
+    int sendn = (kinetics->sendend[p] - kinetics->sendbegin[p]) * nnus;
+    if (sendn > 0)
+      MPI_Isend(&sendbuff[kinetics->sendbegin[p] * nnus], sendn, MPI_DOUBLE, p, 0, world, &requests[nrequests++]);
+  }
+  // wait for all MPI requests
+  MPI_Waitall(nrequests, requests, status);
+  // copy received data to nuGrid
+  for (int c = 0; c < nrecvcells; c++) {
+    double *begin = recvbuff + c * nnus;
+    double *end = begin + nnus;
+    copy(begin, end, &nuGrid[kinetics->recvcells[c]][1]);
+  }
+
   for (int i = 1; i <= nnus; i++) {
-    if (bio->nuType[i] == 0 && !nuConv[i]) {
+    if (unit == 0) {
+      xbcm = iniS[i][1] * 1000;
+      xbcp = iniS[i][2] * 1000;
+      ybcm = iniS[i][3] * 1000;
+      ybcp = iniS[i][4] * 1000;
+      zbcm = iniS[i][5] * 1000;
+      zbcp = iniS[i][6] * 1000;
+    } else {
+      xbcm = iniS[i][1];
+      xbcp = iniS[i][2];
+      ybcm = iniS[i][3];
+      ybcp = iniS[i][4];
+      zbcm = iniS[i][5];
+      zbcp = iniS[i][6];
+    }
+    
+    if(iter == 1 && strcmp(bio->nuName[i], "o2") != 0 && q >= 0 && af >= 0) compute_bulk(i);
+  }
 
-      // copy nutrient grid data to send buffer
-      for (int c = 0; c < nsendcells; c++) {
-        sendbuff[c] = nuGrid[kinetics->sendcells[c]][i];
+#pragma omp parallel
+  {
+    int ifrom = 0;
+    int ito = 0;
+    int tid = 0;
+    loop_setup_thr(ifrom, ito, tid, nXYZ, comm->nthreads);
+
+    for (int i = 1; i <= nnus; i++) {
+      if (bio->nuType[i] == 0 && !nuConv[i]) { // checking if is liquid
+#pragma omp single nowait
+	maxS = 0;
+
+	// copy current concentrations
+	for (int grid = ifrom; grid < ito; grid++) {
+	  nuPrev[i][grid] = nuGrid[grid][i];
+	}
+	
+#pragma omp barrier // make sure that all data was copied to nuPrev before any thread continues
+	double p_maxS = 0;
+	// solve diffusion and reaction
+	for (int grid = ifrom; grid < ito; grid++) {
+	  // transform nXYZ index to nuR index
+	  if (!ghost[grid]) {
+	    int ix = floor((xGrid[grid][0] - kinetics->sublo[0])/stepx);
+	    int iy = floor((xGrid[grid][1] - kinetics->sublo[1])/stepy);
+	    int iz = floor((xGrid[grid][2] - kinetics->sublo[2])/stepz);
+	    int ind = iz * kinetics->subn[0] * kinetics->subn[1] + iy * kinetics->subn[0] + ix;
+
+	    compute_flux(diffD[i], nuGrid[grid][i], nuPrev[i], nuR[i][ind], grid);
+
+	    nuR[i][ind] = 0;
+
+	    if (nuGrid[grid][i] > 0) {
+	      if (unit == 0) nuS[i][ind] = nuGrid[grid][i] / 1000;
+	      else nuS[i][ind] = nuGrid[grid][i];
+	    }
+	    else {
+	      nuGrid[grid][i] = 1e-20;
+	      nuS[i][ind] = 1e-20;
+	    }
+	  } else compute_bc(nuGrid[grid][i], nuPrev[i], grid, nuBS[i]);
+
+	  if (p_maxS < nuGrid[grid][i]) p_maxS = nuGrid[grid][i];
+	}
+#pragma omp critical
+	maxS = MAX(maxS, p_maxS);
+
+#pragma omp barrier // make sure maxS is consistent among threads
+	bool p_conv = true;
+	// check convergence criteria
+	for (int grid = ifrom; grid < ito; grid++) {
+	  if(!ghost[grid]) {
+	    double ratio = 1000;
+	    if (rflag == 0) {
+              double div = (maxS == 0) ? 1 : maxS; 
+	      double rate = nuGrid[grid][i] / div;
+	      double prevRate = nuPrev[i][grid] / div;
+	      ratio = fabs(rate - prevRate);
+	    }
+	    p_conv &= (ratio < tol);
+	  }
+	}
+
+#pragma omp critical
+ 	conv[i] &= p_conv;
       }
-      // send and recv grid data
-      int nrequests = 0;
-      for (int p = 0; p < comm->nprocs; p++) {
-        if (p == comm->me)
-          continue;
-        int recvn = kinetics->recvend[p] - kinetics->recvbegin[p];
-        if (recvn > 0)
-          MPI_Irecv(&recvbuff[kinetics->recvbegin[p]], recvn, MPI_DOUBLE, p, 0, world, &requests[nrequests++]);
-        int sendn = kinetics->sendend[p] - kinetics->sendbegin[p];
-        if (sendn > 0)
-          MPI_Isend(&sendbuff[kinetics->sendbegin[p]], sendn, MPI_DOUBLE, p, 0, world, &requests[nrequests++]);
-      }
-      // wait for all MPI requests
-      MPI_Waitall(nrequests, requests, status);
-      // copy received data to nuGrid
-      for (int c = 0; c < nrecvcells; c++) {
-        nuGrid[kinetics->recvcells[c]][i] = recvbuff[c];
-      }
-
-      double maxS = 0;
-      double *nuPrev = memory->create(nuPrev,nXYZ,"diffusion:nuPrev");
-      // copy current concentrations
-#if defined(_OPENMP)
-#pragma omp parallel for
-#endif
-      for (int grid = 0; grid < nXYZ; grid++) {
-        nuPrev[grid] = nuGrid[grid][i];
-      }
-
-      if (unit == 0) {
-        xbcm = iniS[i][1] * 1000;
-        xbcp = iniS[i][2] * 1000;
-        ybcm = iniS[i][3] * 1000;
-        ybcp = iniS[i][4] * 1000;
-        zbcm = iniS[i][5] * 1000;
-        zbcp = iniS[i][6] * 1000;
-      } else {
-        xbcm = iniS[i][1];
-        xbcp = iniS[i][2];
-        ybcm = iniS[i][3];
-        ybcp = iniS[i][4];
-        zbcm = iniS[i][5];
-        zbcp = iniS[i][6];
-      }
-
-      if(iter == 1 && strcmp(bio->nuName[i], "o2") != 0 && q >= 0 && af >= 0) compute_bulk(i);
-
-      // solve diffusion and reaction
-#if defined(_OPENMP)
-#pragma omp parallel for reduction(max : maxS)
-#endif
-      for (int grid = 0; grid < nXYZ; grid++) {
-        // transform nXYZ index to nuR index
-        if (!ghost[grid]) {
-          int ix = floor((xGrid[grid][0] - kinetics->sublo[0])/stepx);
-          int iy = floor((xGrid[grid][1] - kinetics->sublo[1])/stepy);
-          int iz = floor((xGrid[grid][2] - kinetics->sublo[2])/stepz);
-
-          int ind = iz * kinetics->subn[0] * kinetics->subn[1] + iy * kinetics->subn[0] + ix;
-
-          compute_flux(diffD[i], nuGrid[grid][i], nuPrev, nuR[i][ind], grid);
-
-          nuR[i][ind] = 0;
-
-          if (nuGrid[grid][i] > 0) {
-            if (unit == 0) nuS[i][ind] = nuGrid[grid][i] / 1000;
-            else nuS[i][ind] = nuGrid[grid][i];
-          }
-          else {
-            nuGrid[grid][i] = 1e-20;
-            nuS[i][ind] = 1e-20;
-          }
-        } else compute_bc(nuGrid[grid][i], nuPrev, grid, nuBS[i]);
-
-        if (maxS < nuGrid[grid][i]) maxS = nuGrid[grid][i];
-      }
-      if (maxS == 0) maxS = 1;
-
-      bool conv = true;
-      // check convergence criteria
-#if defined(_OPENMP)
-#pragma omp parallel for reduction(& : conv)
-#endif
-      for (int grid = 0; grid < nXYZ; grid++) {
-        if(!ghost[grid]){
-          double ratio = 1000;
-
-          if (rflag == 0) {
-            double rate = nuGrid[grid][i]/maxS;
-            double prevRate = nuPrev[grid]/maxS;
-            ratio = fabs(rate - prevRate);
-          }
-
-	  conv &= (ratio < tol);
-        }
-      }
-
-      int intconv = conv;
-      MPI_Allreduce(&intconv, &nuConv[i], 1, MPI_INT, MPI_BAND, world);
-
-      memory->destroy(nuPrev);
     }
   }
+
+  for (int i = 1; i <= nnus; i++) {
+    int iconv = conv[i];
+    MPI_Allreduce(&iconv, &nuConv[i], 1, MPI_INT, MPI_BAND, world);    
+  }
+
+  delete [] conv;
 
   return nuConv;
 }
@@ -422,7 +448,6 @@ void FixKineticsDiffusion::update_grids(){
   bzhi = kinetics->bnz * stepz;
   nXYZ = nX * nY * (kinetics->bnz+2);
 
-  //printf("sk = %e, grid = %i \n", sk, grid);
   for (int grid = 0; grid < nXYZ; grid++) {
     if (xGrid[grid][0] < 0 || xGrid[grid][1] < 0 || xGrid[grid][2] < 0
         || xGrid[grid][0] > kinetics->subhi[0] || xGrid[grid][1] > kinetics->subhi[1] || xGrid[grid][2] > bzhi) ghost[grid] = true;
@@ -441,7 +466,6 @@ void FixKineticsDiffusion::compute_bulk(int nu) {
   nuBS[nu] = nuBS[nu] + ((q/rvol) * (zbcp - nuBS[nu]) + (af/(rvol*yhi*xhi))*sumR*stepx*stepy*stepz)*update->dt * nevery;
 }
 
-
 /* ----------------------------------------------------------------------
   update boundary condition
 ------------------------------------------------------------------------- */
@@ -452,12 +476,12 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
   //9  10 11        12 13 14       15 16 17
   //0   1  2         3  4  5        6  7  8
 
-  int lhs = grid - 1;   // x direction
-  int rhs = grid + 1;  // x direction
-  int bwd = grid - nX;  // y direction
-  int fwd = grid + nX;  // y direction
+  int lhs = grid - 1;      // x direction
+  int rhs = grid + 1;      // x direction
+  int bwd = grid - nX;     // y direction
+  int fwd = grid + nX;     // y direction
   int down = grid - nX*nY; // z direction
-  int up = grid + nX*nY;  // z dirction
+  int up = grid + nX*nY;   // z dirction
 
   // assign values to the ghost-grids according to the boundary conditions.
   // If ghostcells are Neu then take the values equal from the adjacent cells.
@@ -638,35 +662,4 @@ double FixKineticsDiffusion::getMaxHeight() {
   }
 
   return maxh;
-}
-
-void FixKineticsDiffusion::test(){
-  //test code
-  for (int i = kinetics->nz+1; i>=0; i--){
-    printf(" \n ");
-    for (int j = 0; j<nY; j++){
-      printf("  ");
-      for (int k = 0; k<nX; k++){
-        int ind = i * nX * nY + j * nX + k;
-
-//        if (!ghost[ind]) {
-//          int ix = floor(xGrid[ind][0]/stepx);
-//          int iy = floor(xGrid[ind][1]/stepy);
-//          int iz = floor(xGrid[ind][2]/stepz);
-//
-//          int ind2 = iz * nx * ny + iy * nx + ix;
-//
-//          //printf("%i ", ind2);
-//          printf("%.1e ", kinetics->nuR[1][ind2]);
-//        } else {
-//          printf("0 ");
-//        }
-        //printf("%d ", ghost[ind]);
-        //printf("%i ", ind);
-        //printf("%.1e ", xGrid[ind][1]);
-        //printf("%.5e ", nuGrid[ind][1]);
-      }
-    }
-  }
-  printf(" \n ");
 }
