@@ -107,9 +107,6 @@ void FixEPSAdh::post_force(int vflag)
   int * const * const firstneigh = list->firstneigh;
 
   // loop over neighbors of my atoms
-#if defined(_OPENMP)
-#pragma omp parallel for
-#endif
   for (int ii = 0; ii < nlocal; ii++){
     int i = ilist[ii];
     if (!(mask[i] & groupbit)) continue;
@@ -159,31 +156,13 @@ void FixEPSAdh::post_force(int vflag)
       double ccely = dely*ccel*rinv;
       double ccelz = delz*ccel*rinv;
 
-#if defined(_OPENMP)
-#pragma omp atomic
-#endif
       f[i][0] += ccelx;
-#if defined(_OPENMP)
-#pragma omp atomic
-#endif
       f[i][1] += ccely;
-#if defined(_OPENMP)
-#pragma omp atomic
-#endif
       f[i][2] += ccelz;
       
       if (newton_pair || j < nlocal) {
-#if defined(_OPENMP)
-#pragma omp atomic
-#endif
 	f[j][0] -= ccelx;
-#if defined(_OPENMP)
-#pragma omp atomic
-#endif
 	f[j][1] -= ccely;
-#if defined(_OPENMP)
-#pragma omp atomic
-#endif
 	f[j][2] -= ccelz;
       }
     }

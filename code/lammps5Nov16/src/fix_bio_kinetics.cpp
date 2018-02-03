@@ -410,10 +410,10 @@ void FixKinetics::integration() {
     }
   }
 
- printf( "number of iteration: %i \n", iteration);
+  if (comm->me == 0) printf( "number of iteration: %i \n", iteration);
 
- if (energy != NULL) energy->growth(update->dt * nevery);
- if (monod != NULL) monod->growth(update->dt * nevery);
+  if (energy != NULL) energy->growth(update->dt * nevery);
+  if (monod != NULL) monod->growth(update->dt * nevery);
 }
 
 void FixKinetics::borders() {
@@ -518,9 +518,6 @@ double FixKinetics::getMaxHeight() {
   double * const r = atom->radius;
   double maxh = 0;
 
-#if defined(_OPENMP)
-#pragma omp parallel for reduction(max : maxh)
-#endif
   for (int i=0; i < nlocal; i++) {
     if((x[i][2]+r[i]) > maxh) maxh = x[i][2]+r[i];
   }

@@ -61,11 +61,12 @@ class FixKineticsDiffusion: public Fix {
   int nX, nY, nZ;               // # of all grids in x, y and z
   int nXYZ;                   // total # of grids
   double diffT;
-  double xlo,xhi,ylo,yhi,zlo,zhi,bzhi;
+  double xlo, xhi, ylo, yhi, zlo, zhi, bzhi;
   double xbcm, xbcp, ybcm, ybcp, zbcm, zbcp; // inlet BC concentrations for each surface
 
   double **xGrid;
   double **nuGrid;
+  double **nuPrev;
   bool *ghost;
 
   int recv_buff_size;
@@ -88,8 +89,6 @@ class FixKineticsDiffusion: public Fix {
   void compute_flux(double, double &, double *, double, int);
   bool isEuqal(double, double, double);
   double getMaxHeight();
-  void test();
-  void test2();
 };
 
 }
