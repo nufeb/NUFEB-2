@@ -231,46 +231,50 @@ void FixKineticsDiffusion::init()
   ghost = memory->create(ghost, nXYZ, "diffusion:ghost");
   nuBS = memory->create(nuBS, nnus + 1, "diffusion:nuBS");
 
-  // TODO: optimize for first-touch policy
-  //initialise grids
-  double i, j, k;
-  int grid = 0;
-  for (k = kinetics->sublo[2] - (stepz/2); k < kinetics->subhi[2] + stepz; k += stepz) {
-    for (j = kinetics->sublo[1] - (stepy/2); j < kinetics->subhi[1] + stepy; j += stepy) {
-      for (i = kinetics->sublo[0] - (stepx/2); i < kinetics->subhi[0] + stepx; i += stepx) {
-        xGrid[grid][0] = i;
-        xGrid[grid][1] = j;
-        xGrid[grid][2] = k;
-        //Initialise concentration values for ghost and std grids
-        for (int nu = 1; nu <= nnus; nu++) {
-          if (i < kinetics->sublo[0]) {
-            ghost[grid] = true;
-            nuGrid[nu][grid] = iniS[nu][1];
-          } else if (i > kinetics->subhi[0]) {
-            ghost[grid] = true;
-            nuGrid[nu][grid] = iniS[nu][2];
-          } else if (j < kinetics->sublo[1]) {
-            ghost[grid] = true;
-            nuGrid[nu][grid] = iniS[nu][3];
-          } else if (j > kinetics->subhi[1]) {
-            ghost[grid] = true;
-            nuGrid[nu][grid] = iniS[nu][4];
-          } else if (k < kinetics->sublo[2]) {
-            ghost[grid] = true;
-            nuGrid[nu][grid] = iniS[nu][5];
-          } else if (k > bzhi) {
-            ghost[grid] = true;
-            nuGrid[nu][grid] = iniS[nu][6];
-          } else {
-            ghost[grid] = false;
-            nuGrid[nu][grid] = iniS[nu][0];
-          }
+  // initialize using first-touch policy
+#pragma omp parallel
+  {
+    int ifrom = 0;
+    int ito = 0;
+    int tid = 0;
+    loop_setup_thr(ifrom, ito, tid, nXYZ, comm->nthreads);
 
-          if (unit == 0) nuGrid[nu][grid] = nuGrid[nu][grid]*1000;
-          if (grid == 0 && unit == 1) nuBS[nu] =  iniS[nu][6];
-          else if (grid == 0 && unit == 0) nuBS[nu] =  iniS[nu][6]*1000;
-        }
-        grid++;
+    for (int i = ifrom; i < ito; i++) {
+      double x = kinetics->sublo[0] - stepx / 2 + (i % nX) * stepx;
+      double y = kinetics->sublo[1] - stepy / 2 + ((i / nX) % nY) * stepy;
+      double z = kinetics->sublo[2] - stepz / 2 + (i / (nX * nY)) * stepz;
+      xGrid[i][0] = x;
+      xGrid[i][1] = y;
+      xGrid[i][2] = z;
+      //Initialise concentration values for ghost and std grids
+      for (int nu = 1; nu <= nnus; nu++) {
+	if (x < kinetics->sublo[0]) {
+	  ghost[i] = true;
+	  nuGrid[nu][i] = iniS[nu][1];
+	} else if (x > kinetics->subhi[0]) {
+	  ghost[i] = true;
+	  nuGrid[nu][i] = iniS[nu][2];
+	} else if (y < kinetics->sublo[1]) {
+	  ghost[i] = true;
+	  nuGrid[nu][i] = iniS[nu][3];
+	} else if (y > kinetics->subhi[1]) {
+	  ghost[i] = true;
+	  nuGrid[nu][i] = iniS[nu][4];
+	} else if (z < kinetics->sublo[2]) {
+	  ghost[i] = true;
+	  nuGrid[nu][i] = iniS[nu][5];
+	} else if (z > bzhi) {
+	  ghost[i] = true;
+	  nuGrid[nu][i] = iniS[nu][6];
+	} else {
+	  ghost[i] = false;
+	  nuGrid[nu][i] = iniS[nu][0];
+	}
+	nuPrev[nu][i] = 0;
+
+	if (unit == 0) nuGrid[nu][i] = nuGrid[nu][i] * 1000;
+	if (i == 0 && unit == 1) nuBS[nu] = iniS[nu][6];
+	else if (i == 0 && unit == 0) nuBS[nu] = iniS[nu][6] * 1000;
       }
     }
   }
