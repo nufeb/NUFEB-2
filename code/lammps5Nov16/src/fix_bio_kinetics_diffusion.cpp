@@ -232,7 +232,9 @@ void FixKineticsDiffusion::init()
   nuBS = memory->create(nuBS, nnus + 1, "diffusion:nuBS");
 
   // initialize using first-touch policy
+#if defined(_OPENMP)
 #pragma omp parallel
+#endif
   {
     int ifrom = 0;
     int ito = 0;
@@ -369,7 +371,9 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
     if(iter == 1 && strcmp(bio->nuName[i], "o2") != 0 && q >= 0 && af >= 0) compute_bulk(i);
   }
 
+#if defined(_OPENMP)
 #pragma omp parallel
+#endif
   {
     int ifrom = 0;
     int ito = 0;
@@ -378,15 +382,19 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
 
     for (int i = 1; i <= nnus; i++) {
       if (bio->nuType[i] == 0 && !nuConv[i]) { // checking if is liquid
+#if defined(_OPENMP)
 #pragma omp single nowait
+#endif
 	maxS = 0;
 
 	// copy current concentrations
 	for (int grid = ifrom; grid < ito; grid++) {
 	  nuPrev[i][grid] = nuGrid[i][grid];
 	}
-	
+
+#if defined(_OPENMP)	
 #pragma omp barrier // make sure that all data was copied to nuPrev before any thread continues
+#endif
 	double p_maxS = 0;
 	// solve diffusion and reaction
 	for (int grid = ifrom; grid < ito; grid++) {
@@ -413,10 +421,14 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
 
 	  if (p_maxS < nuGrid[i][grid]) p_maxS = nuGrid[i][grid];
 	}
+#if defined(_OPENMP)
 #pragma omp critical
+#endif
 	maxS = MAX(maxS, p_maxS);
 
+#if defined(_OPENMP)
 #pragma omp barrier // make sure maxS is consistent among threads
+#endif
 	bool p_conv = true;
 	// check convergence criteria
 	for (int grid = ifrom; grid < ito; grid++) {
@@ -432,7 +444,9 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
 	  }
 	}
 
+#if defined(_OPENMP)
 #pragma omp critical
+#endif
  	conv[i] &= p_conv;
       }
     }
