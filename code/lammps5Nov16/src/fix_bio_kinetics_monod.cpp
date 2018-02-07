@@ -198,7 +198,6 @@ void FixKineticsMonod::init_param() {
       ino3 = nu;
     else
       error->all(FLERR, "unknow nutrient in fix_kinetics/kinetics/monod");
-
   }
 
   if (isub == 0)
@@ -238,6 +237,7 @@ void FixKineticsMonod::init_param() {
       delete[] name;
     }
   }
+
   if (ieps == 0)
     (error->warning(FLERR, "EPS is not defined in fix_kinetics/kinetics/monod"));
 }

@@ -105,13 +105,13 @@ void softParticleCloud::initLammps()
         MPI_Bcast(line,n,MPI_CHAR,0,MPI_COMM_WORLD);
         lmp_->input->one(line);
 
-//        string inputLine = line;
-//        if (inputLine.find("timestep",0) != string::npos)
-//        {
-//            Info<< "Timestep specified in Lammps input as follows: \n"
-//                << " --- " << line << " --- ";
-//            adjustLampTimestep();
-//        }
+        string inputLine = line;
+        if (inputLine.find("timestep",0) != string::npos)
+        {
+            Info<< "Timestep specified in Lammps input as follows: \n"
+                << " --- " << line << " --- ";
+            adjustLampTimestep();
+        }
     }
 
     Info<< "Finished reading Lammps inputfile." << endl;
@@ -206,6 +206,7 @@ void softParticleCloud::initLammps()
 
     delete [] npArray;
     delete [] lmpLocalBox;
+    delete [] lmpInputScript;
 }
 
 void softParticleCloud::updateParticles()
@@ -981,7 +982,7 @@ void  softParticleCloud::lammpsEvolveForward
             toLmpDuDtLocalArray_,
             toLmpFoamCpuIdLocalArray_,
             toLmpTagLocalArray_,
-			toLmpCellPUArray_
+            toLmpCellPUArray_
         );
 
         delete [] toLmpFLocalArray_;
@@ -1000,8 +1001,15 @@ void  softParticleCloud::lammpsEvolveForward
     t0 = runTime_.elapsedCpuTime();
 
     // Ask lammps to move certain steps forward
-    Info<< "LAMMPS evolving.. " << endl;
-    lammps_step(lmp_, lammps_get_dem_steps(lmp_));
+    int dem_steps = lammps_get_dem_steps(lmp_);
+
+    if (dem_steps >= 0) {
+      Info<< "LAMMPS evolving for "<< dem_steps <<" steps..."<< endl;
+      lammps_step(lmp_, dem_steps);
+    } else {
+      Info<< "LAMMPS evolving for "<< nstep << " steps..."<< endl;
+      lammps_step(lmp_, nstep);
+    }
 
     Info<< "finished moving the particles in LAMMPS." << endl;
     cpuTimeSplit_[4] += runTime_.elapsedCpuTime() - t0;
@@ -1034,9 +1042,9 @@ void  softParticleCloud::lammpsEvolveForward
         fromLmpFoamCpuIdArrayLocal,
         fromLmpLmpCpuIdArrayLocal,
         fromLmpTagArrayLocal,
-		fromLmpMArrayLocal,
-		fromLmpDArrayLocal,
-		fromLmpTypeArrayLocal
+        fromLmpMArrayLocal,
+        fromLmpDArrayLocal,
+        fromLmpTypeArrayLocal
     );
 
     // Transform the data obtained from lammps to openfoam format

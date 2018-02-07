@@ -140,7 +140,6 @@ void FixDivide::init() {
       error->all(FLERR, "Variable for fix divide is invalid style");
   }
 
-
   nufebFoam = NULL;
 
   int nfix = modify->nfix;

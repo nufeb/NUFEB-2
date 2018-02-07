@@ -62,9 +62,12 @@ FixFluidDrag::FixFluidDrag(LAMMPS *lmp, int narg, char **arg) :
   // unregister callbacks to this fix from Atom class
   atom->delete_callback(id,0);
 
-  delete [] foamCpuId;
-  delete [] vOld;
-  delete [] DuDt;
+//  delete [] foamCpuId;
+//  delete [] vOld;
+//  delete [] DuDt;
+  memory->destroy(foamCpuId);
+  memory->destroy(vOld);
+  memory->destroy(DuDt);
   memory->destroy(ffluiddrag);
 }
 
