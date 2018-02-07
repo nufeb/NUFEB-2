@@ -373,21 +373,23 @@ void lammps_put_local_info(void* ptr, int nLocalIn, double* fdrag,
   }
 
 //  printf("bgrid = %i \n", kinetics_ptr->bgrids);
-  for (int i = 0; i < kinetics_ptr->bgrids; i++) {
-	  double x = gridPU[i*6];
-	  double y = gridPU[i*6 + 1];
-	  double z = gridPU[i*6 + 2];
+  if (kinetics_ptr != NULL) {
+    for (int i = 0; i < kinetics_ptr->bgrids; i++) {
+      double x = gridPU[i*6];
+      double y = gridPU[i*6 + 1];
+      double z = gridPU[i*6 + 2];
 
-	  int ix = floor(x/kinetics_ptr->stepx);
-	  int iy = floor(y/kinetics_ptr->stepy);
-	  int iz = floor(z/kinetics_ptr->stepz);
+      int ix = floor(x/kinetics_ptr->stepx);
+      int iy = floor(y/kinetics_ptr->stepy);
+      int iz = floor(z/kinetics_ptr->stepz);
 
-	  //printf("%i, %i, %i, %e \n", ix, iy, iz, kinetics_ptr->stepz);
-      int ind = iz * kinetics_ptr->nx * kinetics_ptr->ny + iy * kinetics_ptr->nx + ix;
+      //printf("%i, %i, %i, %e \n", ix, iy, iz, kinetics_ptr->stepz);
+        int ind = iz * kinetics_ptr->nx * kinetics_ptr->ny + iy * kinetics_ptr->nx + ix;
 
-      kinetics_ptr->fV[0][ind] = gridPU[i*6 + 3];
-      kinetics_ptr->fV[1][ind] = gridPU[i*6 + 4];
-      kinetics_ptr->fV[2][ind] = gridPU[i*6 + 5];
+        kinetics_ptr->fV[0][ind] = gridPU[i*6 + 3];
+        kinetics_ptr->fV[1][ind] = gridPU[i*6 + 4];
+        kinetics_ptr->fV[2][ind] = gridPU[i*6 + 5];
+    }
   }
 }
 

@@ -38,6 +38,10 @@ class FixFluid : public Fix {
   int nloops;
   int demflag;            // 0 = biological run; 1 = DEM run
 
+ private:
+  char **var;
+  int *ivar;
+
 };
 
 }

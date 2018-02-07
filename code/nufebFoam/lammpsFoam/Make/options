@@ -1,4 +1,5 @@
 LAMMPS_DIR =/home/bowen/Workspace/nufeb/code/lammps5Nov16/src
+LAMMPS_DIR =/home/bowen/Workspace/nufeb/code/lammps5Nov16/src
 
 EXE_INC = \
     -I$lammpsFoamTurbulenceModels/include \
