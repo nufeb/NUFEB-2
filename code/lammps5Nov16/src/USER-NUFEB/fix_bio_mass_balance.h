@@ -13,7 +13,7 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(mbalance,FixMassBalance)
+FixStyle(mbalance,FixVerify)
 
 #else
 
@@ -24,10 +24,10 @@ FixStyle(mbalance,FixMassBalance)
 
 namespace LAMMPS_NS {
 
-class FixMassBalance : public Fix {
+class FixVerify : public Fix {
  public:
-  FixMassBalance(class LAMMPS *, int, char **);
- ~FixMassBalance();
+  FixVerify(class LAMMPS *, int, char **);
+ ~FixVerify();
   void init();
   int setmask();
   void end_of_step();
@@ -58,7 +58,7 @@ class FixMassBalance : public Fix {
   class BIO *bio;
 
   void c_element_check();
-  void n_element_check();
+  void nitrogen_mass_balance();
   void mass_check();
 
 };

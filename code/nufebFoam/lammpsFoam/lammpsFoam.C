@@ -74,11 +74,13 @@ int main(int argc, char *argv[])
 
     for (int i = 0; i < cloud.get_lmp_nloops(); i++)
     {
+        Info<< "\nStarting biological steps \n" << endl;
         // biological steps
         cloud.set_lmp_demflag(0);
         cloud.set_lmp_timestep(cloud.get_lmp_bio_dt());
         cloud.lmp_step(cloud.get_lmp_bio_steps());
 
+        Info<< "\nStarting DEM/CFD steps \n" << endl;
         // dem/cfd steps
         cloud.set_lmp_demflag(1);
         cloud.set_lmp_timestep(cloud.get_lmp_dem_dt());

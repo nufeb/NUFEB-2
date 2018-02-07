@@ -38,11 +38,11 @@ cd $lammpsDir/src
 
 # Make packages
 make yes-GRANULAR
-#make yes-KSPACE
-#make yes-MANYBODY
-#make yes-MOLECULE
+make yes-KSPACE
+make yes-MANYBODY
+make yes-MOLECULE
 make yes-COLLOID # lubrication
-#make yes-RIGID # freeze
+make yes-RIGID # freeze
 #make yes-MISC # deposit
 #make yes-VORONOI # ??
 

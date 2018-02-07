@@ -729,7 +729,7 @@ void enhancedCloud::evolve()
         std::vector<vector> VLocal;
         std::vector<int> lmpCpuIdLocal;
 
-        int nstep = 0;
+        int nstep = subSteps_;
 
         // here, Ur (relative velocity is called)
         updateParticleUr();

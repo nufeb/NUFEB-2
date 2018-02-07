@@ -34,7 +34,7 @@ using namespace FixConst;
 
 /* ---------------------------------------------------------------------- */
 
-FixMassBalance::FixMassBalance(LAMMPS *lmp, int narg, char **arg) :
+FixVerify::FixVerify(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
   if (narg > 7) error->all(FLERR,"Illegal fix mbalance command");
@@ -53,11 +53,11 @@ FixMassBalance::FixMassBalance(LAMMPS *lmp, int narg, char **arg) :
 
 }
 
-FixMassBalance::~FixMassBalance()
+FixVerify::~FixVerify()
 {
 }
 
-void FixMassBalance::init()
+void FixVerify::init()
 {
   // register fix kinetics with this class
   co2_carbon = pre_co2_carbon = 0;
@@ -88,7 +88,7 @@ void FixMassBalance::init()
 
 /* ---------------------------------------------------------------------- */
 
-int FixMassBalance::setmask()
+int FixVerify::setmask()
 {
   int mask = 0;
   mask |= END_OF_STEP;
@@ -96,7 +96,7 @@ int FixMassBalance::setmask()
 }
 
 
-void FixMassBalance::end_of_step() {
+void FixVerify::end_of_step() {
   if (update->ntimestep % nevery) return;
 
   nlocal = atom->nlocal;
@@ -119,7 +119,7 @@ void FixMassBalance::end_of_step() {
   }
 
   if (cflag == 1) c_element_check();
-  if (nflag == 1) n_element_check();
+  if (nflag == 1) nitrogen_mass_balance();
   if (mflag == 1) mass_check();
 
   pre_total_bmass = total_bmass;
@@ -130,7 +130,7 @@ void FixMassBalance::end_of_step() {
  mass balance check for Carbon
  ------------------------------------------------------------------------- */
 
-void FixMassBalance::c_element_check() {
+void FixVerify::c_element_check() {
 //  for (int i = 0; i < kinetics->bgrids; i++) {
 //    for (int nu = 1; nu <= nnus; nu++) {
 //      if (strcmp(bio->nuName[nu], "co2") == 0) {
@@ -153,7 +153,7 @@ void FixMassBalance::c_element_check() {
  mass balance check for Nitrogen
  ------------------------------------------------------------------------- */
 
-void FixMassBalance::n_element_check() {
+void FixVerify::nitrogen_mass_balance() {
 
   int bgrids = kinetics->bgrids;
 
@@ -184,6 +184,6 @@ void FixMassBalance::n_element_check() {
   no2_nitrogen = 0;
 }
 
-void FixMassBalance::mass_check() {
+void FixVerify::mass_check() {
 
 }
