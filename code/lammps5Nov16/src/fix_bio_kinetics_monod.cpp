@@ -45,6 +45,11 @@
 #include "variable.h"
 #include "group.h"
 
+#if defined(_OPENMP)
+#include "comm.h"
+#include "thr_omp.h"
+#endif
+
 using namespace LAMMPS_NS;
 using namespace FixConst;
 using namespace MathConst;
@@ -236,7 +241,7 @@ void FixKineticsMonod::init_param()
 void FixKineticsMonod::growth(double dt)
 {
   // create density array
-  double **xtype = memory->create(xtype, ntypes+1, kinetics->bgrids,"monod:xtype");
+  double **xtype = memory->create(xtype, ntypes+1, kinetics->bgrids, "monod:xtype");
 
   for (int i = 1; i <= ntypes; i++) {
     for (int grid = 0; grid < kinetics->bgrids; grid++){
@@ -266,105 +271,137 @@ void FixKineticsMonod::growth(double dt)
   bool * const nuConv = kinetics->nuConv;
   double yieldEPS = 0;
   if (ieps != 0) yieldEPS = yield[ieps];
-  
-  for (int i = 0; i < nlocal; i++) {
-    if (mask[i] & groupbit) {
-      int pos = kinetics->position(i);
-      int t = type[i];
-      double rmassCellVol = rmass[i] / vol;
-      xtype[t][pos] += rmassCellVol;
-    }
-  }
 
-  for (int grid = 0; grid < kinetics->bgrids; grid++) {
+#if defined(_OPENMP)
+#pragma omp parallel
+#endif
+  {
+    int gridfrom = 0;
+    int gridto = 0;
+    int tid = 0;
+    loop_setup_thr(gridfrom, gridto, tid, kinetics->bgrids, comm->nthreads);
+
+    int atomfrom = 0;
+    int atomto = 0;
+    loop_setup_thr(atomfrom, atomto, tid, nlocal, comm->nthreads);
+
     for (int i = 1; i <= ntypes; i++) {
-      int spec = species[i];
-      
-      // HET monod model
-      if (spec == 1) {
-        double R1 = mu[i] * (nuS[isub][grid] / (ks[i][isub] + nuS[isub][grid])) * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
-        double R4 = etaHET * mu[i] * (nuS[isub][grid] / (ks[i][isub] + nuS[isub][grid])) *
-            (nuS[ino3][grid] / (ks[i][ino3] + nuS[ino3][grid])) * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
-        double R5 = etaHET * mu[i] * (nuS[isub][grid] / (ks[i][isub] + nuS[isub][grid])) *
-            (nuS[ino2][grid] / (ks[i][ino2] + nuS[ino2][grid])) * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
-        double R6 = decay[i];
-
-        double R10 = maintain[i] * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
-        double R13 = (1 / 2.86) * maintain[i] * etaHET * (nuS[ino3][grid] / (ks[i][ino3] + nuS[ino3][grid]))
-            * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
-        double R14 = (1 / 1.71) * maintain[i] * etaHET * (nuS[ino2][grid] / (ks[i][ino2] + nuS[ino2][grid]))
-            * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
-
-        if (!nuConv[isub]) nuR[isub][grid] +=  ((-1 / yield[i]) * ((R1 + R4 + R5) * xtype[i][grid]));
-        //if (xtype[i][grid] != 0) printf("nuR = %e \n", xtype[i][grid]);
-        if (!nuConv[io2]) nuR[io2][grid] +=  (-((1 - yield[i] - yieldEPS) / yield[i]) * R1 * xtype[i][grid]);
-        if (!nuConv[ino2]) nuR[ino2][grid] +=  -(((1 - yield[i] - yieldEPS) / (1.17 * yield[i])) * R5 * xtype[i][grid]);
-        if (!nuConv[ino3]) nuR[ino3][grid] +=  -(((1 - yield[i] - yieldEPS) / (2.86 * yield[i])) * R4 * xtype[i][grid]);
-        if (!nuConv[io2]) nuR[io2][grid] += -(R10 * xtype[i][grid]);
-        if (!nuConv[ino2]) nuR[ino2][grid] += -(R14 * xtype[i][grid]);
-        if (!nuConv[ino3]) nuR[ino3][grid] += -(R13 * xtype[i][grid]);
-
-        growrate[i][0][grid] = dt * (R1 + R4 + R5 - R6 - R10 - R13 - R14);
-        growrate[i][1][grid] = dt * (yieldEPS / yield[i]) * (R1 + R4 + R5);
-      } else if (spec == 2) {
-        // AOB monod model
-        double R2 = mu[i] * (nuS[inh4][grid] / (ks[i][inh4] + nuS[inh4][grid])) * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
-        double R7 = decay[i];
-        double R11 = maintain[i] * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
-
-        if (!nuConv[io2]) nuR[io2][grid] +=  -(((3.42 - yield[i]) / yield[i]) * R2 * xtype[i][grid]);
-        if (!nuConv[inh4]) nuR[inh4][grid] +=  -(1 / yield[i]) * R2 * xtype[i][grid];
-        if (!nuConv[ino2]) nuR[ino2][grid] +=  (1 / yield[i]) * R2 * xtype[i][grid];
-        if (!nuConv[io2]) nuR[io2][grid] += -(R11 * xtype[i][grid]);
-
-        growrate[i][0][grid] = dt * (R2 - R7 - R11);
-      } else if (spec == 3) {
-        // NOB monod model
-        double R3 = mu[i] * (nuS[ino2][grid] / (ks[i][ino2] + nuS[ino2][grid])) * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
-        double R8 = decay[i];
-        double R12 = maintain[i] * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
-
-        if (!nuConv[io2]) nuR[io2][grid] +=  - (((1.15 - yield[i]) / yield[i]) * R3 * xtype[i][grid]);
-        if (!nuConv[ino2]) nuR[ino2][grid] +=  (1 / yield[i]) * R3 * xtype[i][grid];
-        if (!nuConv[ino3]) nuR[ino3][grid] +=  -(1 / yield[i]) * R3 * xtype[i][grid];
-        if (!nuConv[io2]) nuR[io2][grid] += -(R12 * xtype[i][grid]);
-
-        growrate[i][0][grid] = dt * (R3 - R8 - R12);
-      } else if (spec == 4) {
-        // EPS monod model
-        double R9 = decay[i];
-
-        if (!nuConv[isub]) nuR[isub][grid] += R9 * xtype[i][grid];
-        growrate[i][0][grid] = dt * -decay[i];
-      } else if (spec == 5) {
-        // DEAD monod model
-        if (!nuConv[isub]) nuR[isub][grid] += (decay[i] * xtype[i][grid]);
-        growrate[i][0][grid] = dt * -decay[i];
+      for (int grid = gridfrom; grid < gridto; grid++){
+	xtype[i][grid] = 0;
       }
     }
-  }
 
-  const double threeQuartersPI = (3.0 / (4.0 * MY_PI));
-  const double fourThirdsPI = 4.0 * MY_PI / 3.0;
-  const double third = 1.0 / 3.0;
+#if defined(_OPENMP)
+#pragma omp barrier
+#endif
+    for (int c = gridfrom; c < gridto; c++) {
+      int i = kinetics->cellbegin[c];
+      while (i >= 0) {
+	if (mask[i] & groupbit) {
+	  int t = type[i];
+	  double rmassCellVol = rmass[i] / vol;
+	  xtype[t][c] += rmassCellVol;
+	}
+	i = kinetics->next[i];
+      }
+    }
 
-  for (int i = 0; i < nlocal; i++) {
-    if (mask[i] & groupbit) {
-      int t = type[i];
-      int pos = kinetics->position(i);
-      double density = rmass[i] / (fourThirdsPI * radius[i] * radius[i] * radius[i]);
-      rmass[i] = rmass[i] * (1 + growrate[t][0][pos]);
+#if defined(_OPENMP)
+#pragma omp barrier
+#endif
+    for (int grid = gridfrom; grid < gridto; grid++) {
+      for (int i = 1; i <= ntypes; i++) {
+	int spec = species[i];
+      
+	// HET monod model
+	if (spec == 1) {
+	  double R1 = mu[i] * (nuS[isub][grid] / (ks[i][isub] + nuS[isub][grid])) * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
+	  double R4 = etaHET * mu[i] * (nuS[isub][grid] / (ks[i][isub] + nuS[isub][grid])) *
+            (nuS[ino3][grid] / (ks[i][ino3] + nuS[ino3][grid])) * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
+	  double R5 = etaHET * mu[i] * (nuS[isub][grid] / (ks[i][isub] + nuS[isub][grid])) *
+            (nuS[ino2][grid] / (ks[i][ino2] + nuS[ino2][grid])) * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
+	  double R6 = decay[i];
 
-      if (species[t] == 1) {
-	outerMass[i] = fourThirdsPI * (outerRadius[i] * outerRadius[i] * outerRadius[i]
-				       - radius[i] * radius[i] * radius[i]) * EPSdens + growrate[t][1][pos] * rmass[i];
+	  double R10 = maintain[i] * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
+	  double R13 = (1 / 2.86) * maintain[i] * etaHET * (nuS[ino3][grid] / (ks[i][ino3] + nuS[ino3][grid]))
+            * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
+	  double R14 = (1 / 1.71) * maintain[i] * etaHET * (nuS[ino2][grid] / (ks[i][ino2] + nuS[ino2][grid]))
+            * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
 
-	outerRadius[i] = pow(threeQuartersPI * (rmass[i] / density + outerMass[i] / EPSdens), third);
-	radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
-      } else {
-	radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
-	outerMass[i] = 0.0;
-	outerRadius[i] = radius[i];
+	  if (!nuConv[isub]) nuR[isub][grid] +=  ((-1 / yield[i]) * ((R1 + R4 + R5) * xtype[i][grid]));
+	  //if (xtype[i][grid] != 0) printf("nuR = %e \n", xtype[i][grid]);
+	  if (!nuConv[io2]) nuR[io2][grid] +=  (-((1 - yield[i] - yieldEPS) / yield[i]) * R1 * xtype[i][grid]);
+	  if (!nuConv[ino2]) nuR[ino2][grid] +=  -(((1 - yield[i] - yieldEPS) / (1.17 * yield[i])) * R5 * xtype[i][grid]);
+	  if (!nuConv[ino3]) nuR[ino3][grid] +=  -(((1 - yield[i] - yieldEPS) / (2.86 * yield[i])) * R4 * xtype[i][grid]);
+	  if (!nuConv[io2]) nuR[io2][grid] += -(R10 * xtype[i][grid]);
+	  if (!nuConv[ino2]) nuR[ino2][grid] += -(R14 * xtype[i][grid]);
+	  if (!nuConv[ino3]) nuR[ino3][grid] += -(R13 * xtype[i][grid]);
+
+	  growrate[i][0][grid] = dt * (R1 + R4 + R5 - R6 - R10 - R13 - R14);
+	  growrate[i][1][grid] = dt * (yieldEPS / yield[i]) * (R1 + R4 + R5);
+	} else if (spec == 2) {
+	  // AOB monod model
+	  double R2 = mu[i] * (nuS[inh4][grid] / (ks[i][inh4] + nuS[inh4][grid])) * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
+	  double R7 = decay[i];
+	  double R11 = maintain[i] * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
+
+	  if (!nuConv[io2]) nuR[io2][grid] +=  -(((3.42 - yield[i]) / yield[i]) * R2 * xtype[i][grid]);
+	  if (!nuConv[inh4]) nuR[inh4][grid] +=  -(1 / yield[i]) * R2 * xtype[i][grid];
+	  if (!nuConv[ino2]) nuR[ino2][grid] +=  (1 / yield[i]) * R2 * xtype[i][grid];
+	  if (!nuConv[io2]) nuR[io2][grid] += -(R11 * xtype[i][grid]);
+
+	  growrate[i][0][grid] = dt * (R2 - R7 - R11);
+	} else if (spec == 3) {
+	  // NOB monod model
+	  double R3 = mu[i] * (nuS[ino2][grid] / (ks[i][ino2] + nuS[ino2][grid])) * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
+	  double R8 = decay[i];
+	  double R12 = maintain[i] * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
+
+	  if (!nuConv[io2]) nuR[io2][grid] +=  - (((1.15 - yield[i]) / yield[i]) * R3 * xtype[i][grid]);
+	  if (!nuConv[ino2]) nuR[ino2][grid] +=  (1 / yield[i]) * R3 * xtype[i][grid];
+	  if (!nuConv[ino3]) nuR[ino3][grid] +=  -(1 / yield[i]) * R3 * xtype[i][grid];
+	  if (!nuConv[io2]) nuR[io2][grid] += -(R12 * xtype[i][grid]);
+
+	  growrate[i][0][grid] = dt * (R3 - R8 - R12);
+	} else if (spec == 4) {
+	  // EPS monod model
+	  double R9 = decay[i];
+
+	  if (!nuConv[isub]) nuR[isub][grid] += R9 * xtype[i][grid];
+	  growrate[i][0][grid] = dt * -decay[i];
+	} else if (spec == 5) {
+	  // DEAD monod model
+	  if (!nuConv[isub]) nuR[isub][grid] += (decay[i] * xtype[i][grid]);
+	  growrate[i][0][grid] = dt * -decay[i];
+	}
+      }
+    }
+
+    const double threeQuartersPI = (3.0 / (4.0 * MY_PI));
+    const double fourThirdsPI = 4.0 * MY_PI / 3.0;
+    const double third = 1.0 / 3.0;
+
+#if defined(_OPENMP)
+#pragma omp barrier
+#endif
+    for (int i = atomfrom; i < atomto; i++) {
+      if (mask[i] & groupbit) {
+	int t = type[i];
+	int pos = kinetics->position(i);
+	double density = rmass[i] / (fourThirdsPI * radius[i] * radius[i] * radius[i]);
+	rmass[i] = rmass[i] * (1 + growrate[t][0][pos]);
+
+	if (species[t] == 1) {
+	  outerMass[i] = fourThirdsPI * (outerRadius[i] * outerRadius[i] * outerRadius[i]
+					 - radius[i] * radius[i] * radius[i]) * EPSdens + growrate[t][1][pos] * rmass[i];
+
+	  outerRadius[i] = pow(threeQuartersPI * (rmass[i] / density + outerMass[i] / EPSdens), third);
+	  radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
+	} else {
+	  radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
+	  outerMass[i] = 0.0;
+	  outerRadius[i] = radius[i];
+	}
       }
     }
   }

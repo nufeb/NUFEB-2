@@ -219,7 +219,7 @@ void FixEPSExtract::post_integrate()
 	int n = 0;
 	atom->avec->create_atom(typeEPS,coord);
 	n = atom->nlocal - 1;
-
+	
         atom->tag[n] = 0;
         atom->mask[n] = avec->maskEPS;
 
