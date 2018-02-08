@@ -102,8 +102,9 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg
     subhi[i] = subnhi[i] * stepz;
     subn[i] = subnhi[i] - subnlo[i];
   }
-}
 
+  atom->add_callback(0);
+}
 
 /* ---------------------------------------------------------------------- */
 
@@ -125,7 +126,7 @@ FixKinetics::~FixKinetics()
   memory->destroy(DRGAn);
   memory->destroy(kEq);
   memory->destroy(Sh);
-  delete[] nuConv;
+  delete [] nuConv;
 
   memory->destroy(recvcells);
   memory->destroy(sendcells);
@@ -133,6 +134,9 @@ FixKinetics::~FixKinetics()
   memory->destroy(recvend);
   memory->destroy(sendbegin);
   memory->destroy(sendend);
+
+  memory->destroy(cellbegin);
+  memory->destroy(next);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -268,6 +272,69 @@ void FixKinetics::init()
   domain->set_local_box();
 
   borders();
+
+  memory->create(cellbegin, ngrids, "kinetics::cellbegin");
+  memory->create(next, atom->nmax, "kinetics::next");
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixKinetics::grow_arrays(int nmax)
+{
+  memory->grow(next, nmax, "kinetics::next");
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixKinetics::borders()
+{
+  if (comm->nprocs < 2) return;
+
+  // communicate grid extent
+  int *gridlo = memory->create(gridlo, 3 * comm->nprocs, "kinetics::grids");
+  MPI_Allgather(&subnlo[0], 3, MPI_INT, gridlo, 3, MPI_INT, world);
+  int *gridhi = memory->create(gridhi, 3 * comm->nprocs, "kinetics::grids");
+  MPI_Allgather(&subnhi[0], 3, MPI_INT, gridhi, 3, MPI_INT, world);
+
+  int nrecv = 0;
+  int nsend = 0;
+  // look for intersections
+  Grid grid(subnlo, subnhi);
+  Grid extgrid = extend(grid);
+  for (int p = 0; p < comm->nprocs; p++) {
+    recvbegin[p] = nrecv;
+    sendbegin[p] = nsend;
+    Grid other(&gridlo[3 * p], &gridhi[3 * p]);
+    if (p != comm->me) {
+      // identify which cell we are going to receive
+      send_recv_cells(extgrid, grid, other, nsend, nrecv);
+      // check for periodic boundary conditions
+      // TODO: check if diffusion is NULL
+      if (extgrid.lower[0] < 0 && diffusion->xbcflag == 0) {
+	send_recv_cells(extgrid, grid, translate(other, -nx, 0, 0), nsend, nrecv);
+      }
+      if (extgrid.upper[0] > nx && diffusion->xbcflag == 0) {      
+	send_recv_cells(extgrid, grid, translate(other, nx, 0, 0), nsend, nrecv);
+      }
+      if (extgrid.lower[1] < 0 && diffusion->ybcflag == 0) {
+	send_recv_cells(extgrid, grid, translate(other, 0, -ny, 0), nsend, nrecv);
+      }
+      if (extgrid.upper[1] > ny && diffusion->ybcflag == 0) {      
+	send_recv_cells(extgrid, grid, translate(other, 0, ny, 0), nsend, nrecv);
+      }
+      if (extgrid.lower[2] < 0 && diffusion->zbcflag == 0) {
+	send_recv_cells(extgrid, grid, translate(other, 0, 0, -nz), nsend, nrecv);
+      }
+      if (extgrid.upper[2] > nz && diffusion->zbcflag == 0) {      
+	send_recv_cells(extgrid, grid, translate(other, 0, 0, nz), nsend, nrecv);
+      }
+    }
+    recvend[p] = nrecv;
+    sendend[p] = nsend;
+  }
+
+  memory->destroy(gridlo);
+  memory->destroy(gridhi);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -375,6 +442,8 @@ void FixKinetics::integration() {
     bgrids = subn[0] * subn[1] * bnz;
   }
 
+  fix_cell_arrays();
+
   while (!isConv) {
     iteration++;
     isConv = true;
@@ -416,102 +485,6 @@ void FixKinetics::integration() {
   if (monod != NULL) monod->growth(update->dt * nevery);
 }
 
-void FixKinetics::borders() {
-  if (comm->nprocs < 2) return;
-
-  // communicate grid extent
-  int *gridlo = memory->create(gridlo, 3 * comm->nprocs, "kinetics::grids");
-  MPI_Allgather(&subnlo[0], 3, MPI_INT, gridlo, 3, MPI_INT, world);
-  int *gridhi = memory->create(gridhi, 3 * comm->nprocs, "kinetics::grids");
-  MPI_Allgather(&subnhi[0], 3, MPI_INT, gridhi, 3, MPI_INT, world);
-
-  int nrecv = 0;
-  int nsend = 0;
-  // look for intersections
-  Grid grid(subnlo, subnhi);
-  Grid extgrid = extend(grid);
-  if (comm->nprocs > 1) {
-    for (int p = 0; p < comm->nprocs; p++) {
-      recvbegin[p] = nrecv;
-      sendbegin[p] = nsend;
-      Grid other(&gridlo[3 * p], &gridhi[3 * p]);
-      // identify which cell we are going to receive
-      if (p != comm->me) {
-	send_recv_cells(extgrid, grid, other, nsend, nrecv);
-  	if (extgrid.lower[0] < 0 && diffusion->xbcflag == 0) {
-  	  send_recv_cells(extgrid, grid, translate(other, -nx, 0, 0), nsend, nrecv);
-  	}
-  	if (extgrid.upper[0] > nx && diffusion->xbcflag == 0) {      
-  	  send_recv_cells(extgrid, grid, translate(other, nx, 0, 0), nsend, nrecv);
-  	}
-  	if (extgrid.lower[1] < 0 && diffusion->ybcflag == 0) {
-  	  send_recv_cells(extgrid, grid, translate(other, 0, -ny, 0), nsend, nrecv);
-  	}
-  	if (extgrid.upper[1] > ny && diffusion->ybcflag == 0) {      
-  	  send_recv_cells(extgrid, grid, translate(other, 0, ny, 0), nsend, nrecv);
-  	}
-  	if (extgrid.lower[2] < 0 && diffusion->zbcflag == 0) {
-  	  send_recv_cells(extgrid, grid, translate(other, 0, 0, -nz), nsend, nrecv);
-  	}
-  	if (extgrid.upper[2] > nz && diffusion->zbcflag == 0) {      
-  	  send_recv_cells(extgrid, grid, translate(other, 0, 0, nz), nsend, nrecv);
-  	}
-      }
-      recvend[p] = nrecv;
-      sendend[p] = nsend;
-    }
-  }
-
-#ifdef DUMP_RECV_SEND_CELLS
-  if (comm->me == 0)
-  {
-    fprintf(stderr, "number of receiving cells: %d\n", recvend[comm->nprocs - 1]);
-    for (int i = 0; i < recvend[comm->nprocs - 1]; i++)
-      fprintf(stderr, "%d ", recvcells[i]);
-    fprintf(stderr, "\n");
-    for (int i = 0; i < comm->nprocs; i++)
-      fprintf(stderr, "%d ", recvbegin[i]);
-    fprintf(stderr, "\n");
-    for (int i = 0; i < comm->nprocs; i++)
-      fprintf(stderr, "%d ", recvend[i]);
-    fprintf(stderr, "\n");
-    fprintf(stderr, "number of sending cells: %d\n", sendend[comm->nprocs - 1]);
-    for (int i = 0; i < sendend[comm->nprocs - 1]; i++)
-      fprintf(stderr, "%d ", sendcells[i]);
-    fprintf(stderr, "\n");
-    for (int i = 0; i < comm->nprocs; i++)
-      fprintf(stderr, "%d ", sendbegin[i]);
-    fprintf(stderr, "\n");
-    for (int i = 0; i < comm->nprocs; i++)
-      fprintf(stderr, "%d ", sendend[i]);
-    fprintf(stderr, "\n");
-    fprintf(stderr, "number of receiving boundary cells: %d\n", recvend[2 * comm->nprocs - 1] - recvend[comm->nprocs - 1]);
-    for (int i = recvend[comm->nprocs - 1]; i < recvend[2 * comm->nprocs - 1]; i++)
-      fprintf(stderr, "%d ", recvcells[i]);
-    fprintf(stderr, "\n");
-    for (int i = comm->nprocs; i < 2 * comm->nprocs; i++)
-      fprintf(stderr, "%d ", recvbegin[i]);
-    fprintf(stderr, "\n");
-    for (int i = comm->nprocs; i < 2 * comm->nprocs; i++)
-      fprintf(stderr, "%d ", recvend[i]);
-    fprintf(stderr, "\n");
-    fprintf(stderr, "number of sending boundary cells: %d\n", sendend[2 * comm->nprocs - 1] - sendend[comm->nprocs - 1]);
-    for (int i = sendend[comm->nprocs - 1]; i < sendend[2 * comm->nprocs - 1]; i++)
-      fprintf(stderr, "%d ", sendcells[i]);
-    fprintf(stderr, "\n");
-    for (int i = comm->nprocs; i < 2 * comm->nprocs; i++)
-      fprintf(stderr, "%d ", sendbegin[i]);
-    fprintf(stderr, "\n");
-    for (int i = comm->nprocs; i < 2 * comm->nprocs; i++)
-      fprintf(stderr, "%d ", sendend[i]);
-    fprintf(stderr, "\n");
-  }
-#endif
-
-  memory->destroy(gridlo);
-  memory->destroy(gridhi);
-}
-
 double FixKinetics::getMaxHeight() {
   const int nlocal = atom->nlocal;
   double * const * const x = atom->x;
@@ -519,7 +492,7 @@ double FixKinetics::getMaxHeight() {
   double maxh = 0;
 
   for (int i=0; i < nlocal; i++) {
-    if((x[i][2]+r[i]) > maxh) maxh = x[i][2]+r[i];
+    if((x[i][2] + r[i]) > maxh) maxh = x[i][2] + r[i];
   }
 
   double global_max;
@@ -598,5 +571,25 @@ void FixKinetics::send_recv_cells(const Grid &basegrid, const Grid &grid, const 
   if (is_intesection_valid(sendgrid)) {
     add_cells(basegrid, sendgrid, sendcells, nsend);
     nsend += n;
+  }
+}
+
+void FixKinetics::fix_cell_arrays()
+{
+  for (int i = 0; i < bgrids; i++) cellbegin[i] = -1;
+
+  for (int i = atom->nlocal-1; i >= 0; i--) {
+    int ix = static_cast<int> ((atom->x[i][0] - sublo[0]) / stepz);
+    int iy = static_cast<int> ((atom->x[i][1] - sublo[1]) / stepz);
+    int iz = static_cast<int> ((atom->x[i][2] - sublo[2]) / stepz);
+    ix = MAX(ix, 0);
+    iy = MAX(iy, 0);
+    iz = MAX(iz, 0);
+    ix = MIN(ix, subn[0] - 1);
+    iy = MIN(iy, subn[1] - 1);
+    iz = MIN(iz, subn[2] - 1);
+    int ibin = iz * subn[0] * subn[1] + iy * subn[0] + ix;
+    next[i] = cellbegin[ibin];
+    cellbegin[ibin] = i;
   }
 }
