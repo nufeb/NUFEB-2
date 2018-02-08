@@ -986,7 +986,7 @@ void ReadDataBIO::header(int firstpass)
      "BondBond Coeffs","BondAngle Coeffs","MiddleBondTorsion Coeffs",
      "EndBondTorsion Coeffs","AngleTorsion Coeffs",
      "AngleAngleTorsion Coeffs","BondBond13 Coeffs","AngleAngle Coeffs",
-     "Growth Rate","Ks","Yield Coeffs","Nutrient","Diffusion Coeffs","Catabolism Coeffs",
+     "Growth Rate","Ks","Yield Coeffs","Nutrients","Diffusion Coeffs","Catabolism Coeffs",
      "Anabolism Coeffs","Nutrient Activity Coeffs","Type Activity Coeffs", "Dissipation", "Charge Number",
      "Maintenance", "Decay Rate", "Decay Coeffs", "Electron Donor", "Mass transfer coefficient",
      "Consumption Rate"};

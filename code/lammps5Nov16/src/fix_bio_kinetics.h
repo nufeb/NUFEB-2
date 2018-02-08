@@ -68,7 +68,6 @@ class FixKinetics : public Fix {
   int subn[3];                     // number of grids in x y axis for this proc
   int subnlo[3],subnhi[3];         // cell index of the subdomain lower and upper bound for each axis
   double sublo[3],subhi[3];        // subdomain lower and upper bound trimmed to the grid
-  int ncells;
 
   int recv_buff_size;
   int send_buff_size;
