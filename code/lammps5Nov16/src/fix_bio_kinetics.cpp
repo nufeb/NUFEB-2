@@ -379,7 +379,7 @@ void FixKinetics::integration() {
       }
     }
 
-    if (iteration >= 10) isConv = true;
+    if (iteration >= 10000) isConv = true;
   }
 
   printf("number of iteration: %i \n", iteration);
