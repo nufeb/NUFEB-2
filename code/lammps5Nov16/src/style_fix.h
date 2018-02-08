@@ -21,6 +21,7 @@
 #include "fix_bio_kinetics_thermo.h"
 #include "fix_bio_nve_sphere.h"
 #include "fix_bio_shear.h"
+#include "fix_bio_spring.h"
 #include "fix_bio_utilities.h"
 #include "fix_bio_verify.h"
 #include "fix_bio_walladh.h"

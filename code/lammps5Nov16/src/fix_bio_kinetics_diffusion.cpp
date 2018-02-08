@@ -185,8 +185,7 @@ void FixKineticsDiffusion::init() {
   tol = input->variable->compute_equal(ivar[1]);
   q = input->variable->compute_equal(ivar[2]);
   rvol = input->variable->compute_equal(ivar[3]);
-  if (rvol <= 0)
-    lmp->error->all(FLERR, "Reactor volume cannot be equal or less than 0");
+  if (rvol <= 0) lmp->error->all(FLERR, "Reactor volume cannot be equal or less than 0");
   af = input->variable->compute_equal(ivar[4]);
 
   //set diffusion grid size
@@ -411,11 +410,15 @@ void FixKineticsDiffusion::update_grids() {
 
 void FixKineticsDiffusion::compute_bulk(int nu) {
   double sumR = 0;
+  double vol = stepx * stepy * stepz;
+
   for (int i = 0; i < nx * ny * kinetics->nz; i++) {
-    sumR += nuR[nu][i];
+    if (unit == 0) sumR += nuR[nu][i] * vol * 1000;
+    else sumR += nuR[nu][i] * vol;
   }
 
-  nuBS[nu] = nuBS[nu] + ((q / rvol) * (zbcp - nuBS[nu]) + (af / (rvol * yhi * xhi)) * sumR * stepx * stepy * stepz) * update->dt * nevery;
+  nuBS[nu] = nuBS[nu] + ((q / rvol) * (zbcp - nuBS[nu]) + (af / (rvol * yhi * xhi)) * sumR) * update->dt * nevery;
+  printf("bulk liquid = %e \n", nuBS[nu]);
 }
 
 /* ----------------------------------------------------------------------
@@ -607,7 +610,7 @@ void FixKineticsDiffusion::compute_flux(double cellDNu, double &nuCell, double *
 
 bool FixKineticsDiffusion::isEuqal(double a, double b, double c) {
   double epsilon = 1e-10;
-  if ((fabs(a - b) > epsilon) || (fabs(a - b) > epsilon) || (fabs(a - b) > epsilon))
+  if ((fabs(a - b) > epsilon) || (fabs(a - c) > epsilon) || (fabs(b - c) > epsilon))
     return false;
 
   return true;
