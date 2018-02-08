@@ -44,7 +44,9 @@
 #include "group.h"
 #include "comm.h"
 
+#if defined(_OPENMP)
 #include "thr_omp.h"
+#endif
 
 #define BUFMIN 1000
 
@@ -424,6 +426,7 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT)
 #if defined(_OPENMP)
 #pragma omp critical
 #endif
+	// TODO: MPI_Allreduce for global maxS 
 	maxS = MAX(maxS, p_maxS);
 
 #if defined(_OPENMP)
@@ -479,9 +482,11 @@ void FixKineticsDiffusion::update_grids(){
 ------------------------------------------------------------------------- */
 
 void FixKineticsDiffusion::compute_bulk(int nu) {
-  double sumR = 0;
-  for (int i = 0; i < nx*ny*kinetics->nz; i++) sumR += nuR[nu][i];
+  double local_sumR = 0;
+  for (int i = 0; i < nx*ny*kinetics->nz; i++) local_sumR += nuR[nu][i];
 
+  double sumR = 0;
+  MPI_Allreduce(&local_sumR, &sumR, 1, MPI_DOUBLE, MPI_SUM, world); 
   nuBS[nu] = nuBS[nu] + ((q/rvol) * (zbcp - nuBS[nu]) + (af/(rvol*yhi*xhi))*sumR*stepx*stepy*stepz)*update->dt * nevery;
 }
 

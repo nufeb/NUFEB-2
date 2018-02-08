@@ -35,6 +35,8 @@ class FixKinetics : public Fix {
   int setmask();
   virtual void pre_force(int);
   void init();
+  void grow_arrays(int);
+  void borders();
 
  private:
   char **var;
@@ -64,8 +66,9 @@ class FixKinetics : public Fix {
   double stepz;
 
   int subn[3];                     // number of grids in x y axis for this proc
-  int subnlo[3],subnhi[3];         // cell index of the lower and upper boundaries for each axis
-  double sublo[3],subhi[3];        // subdomain size trimmed to the grid
+  int subnlo[3],subnhi[3];         // cell index of the subdomain lower and upper bound for each axis
+  double sublo[3],subhi[3];        // subdomain lower and upper bound trimmed to the grid
+  int ncells;
 
   int recv_buff_size;
   int send_buff_size;
@@ -73,6 +76,9 @@ class FixKinetics : public Fix {
   int *sendcells;
   int *recvbegin, *recvend;
   int *sendbegin, *sendend;
+
+  int *cellbegin;                  // first atom index for each cell
+  int *next;                       // points to the next atom index lying in the same cell
 
   class AtomVecBio *avec;
   class BIO *bio;
@@ -85,14 +91,15 @@ class FixKinetics : public Fix {
   void init_activity();
   void init_keq();
   void integration();
-  void borders();
   void grow();
   double getMaxHeight();
   bool is_inside(int);
   int position(int);
   void add_cells(const Grid &, const Grid &, int *, int);
   bool is_intesection_valid(const Grid &);
-  void send_recv_cells(const Grid &, const Grid &, const Grid &, int &, int &);
+  void send_recv_cells(const Grid &, const Grid &, const Grid &, int &, int &
+);
+  void fix_cell_arrays();
 };
 
 }
