@@ -1,0 +1,110 @@
+# 2D particle pipe simulation
+
+atom_style	bio
+atom_modify	map array sort 100 5.0e-7
+boundary	ff ff ff
+newton		off
+processors  1 1 1
+
+comm_modify	vel yes
+read_data_bio atom.in
+
+group HET type 1
+group AOB type 2
+group NOB type 3
+group EPS type 4
+group DEAD type 5
+
+
+neighbor	5.0e-4 bin
+neigh_modify	delay 0 one 5000
+
+
+# pair_style  none
+pair_style  gran/hooke/history 1e-2 NULL 1e8 NULL 0.1 0
+pair_coeff  * *
+timestep	1e-8
+
+velocity    all set 0.0 0.0 0.0 units box
+
+fix nve1 all nve/limit 1e-8
+#fix nve1 all bio/nve/sphere
+fix		2 all gravity 0.0 vector 0 -1 0 # spherical 90.0 -180.0    
+fix fv all viscous 1e-5
+fix     3 all fdrag
+
+
+
+fix xw all wall/gran hooke/history 5000.0 NULL 11200 NULL 0.1 0 xplane 0.00 0.0001
+fix yw all wall/gran hooke/history 5000.0 NULL 11200 NULL 0.1 0 yplane 0.00 0.0001
+fix zw all wall/gran hooke/history 5000.0 NULL 11200 NULL 0.1 0 zplane 0.00 0.00001
+
+variable kanc equal 50
+
+fix xwa all walladh v_kanc xplane  0.0  0.0001
+fix ywa all walladh v_kanc yplane  0.0  0.0001
+fix zwa all walladh v_kanc zplane  0.0  0.00001
+
+##############Ibm Variable Definitions##############
+
+#Defining EPS density and ratio variables
+variable EPSdens equal 30
+variable EPSratio equal 1.25
+variable divMass equal 2e-16
+
+variable ke equal 5e+10
+
+#Defining kinetics variables
+variable temp equal 298.15
+variable gasTran equal 0.08205746
+variable gvol equal 8e-14
+variable rth equal 0.0083144
+variable pressure equal 1
+variable ph equal 7.0
+variable etaHET equal 0.6
+
+#Defining diffusion variables
+variable diffT equal 1e-4
+variable tol equal 1e-6
+variable bl equal -1
+variable Q equal -1
+variable rvol equal 1
+variable Af equal -1
+variable shearRate equal 0.0
+
+#Defining critical diameter of death
+variable deadMass equal 6e-17
+
+#Defining nufebFoam variables
+variable demSteps equal 1
+variable bioSteps equal 0
+variable bioDt equal 60
+variable nloops equal 1
+
+##############Ibm functions##############
+
+fix k1 all kinetics 1 10 10 1 v_temp v_rth v_gvol v_gasTran v_ph v_diffT v_bl 
+#fix kgm all kinetics/growth/monod v_EPSdens v_etaHET
+#fix g1 all kinetics/diffusion v_shearRate v_tol v_Q v_rvol v_Af pp pp nd kg
+#fix d1 all divide 1 v_EPSdens v_divMass 31231
+
+#fix e1 HET eps_extract 100 v_EPSratio v_EPSdens 12425
+#fix j1 all epsadh 1 v_ke 1
+#fix d5 all death 100 v_deadMass
+
+fix cfd1 all nufebFoam v_demSteps v_bioSteps v_bioDt v_nloops
+
+
+##############Ibm compute##############
+
+compute myNtypes all ntypes
+
+dump		id all custom 200 snapshot.bubblemd id type diameter x y z 
+
+
+#thermo_style  granular # not work. syntax change?
+thermo_style    custom step cpu atoms biomass c_myNtypes[*] 
+thermo		1
+thermo_modify	lost warn
+#restart		1000000  restart.*.bubblemd
+

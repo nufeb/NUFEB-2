@@ -6,17 +6,17 @@
  */
 
 /* ----------------------------------------------------------------------
-   LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
-   http://lammps.sandia.gov, Sandia National Laboratories
-   Steve Plimpton, sjplimp@sandia.gov
+ LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
+ http://lammps.sandia.gov, Sandia National Laboratories
+ Steve Plimpton, sjplimp@sandia.gov
 
-   Copyright (2003) Sandia Corporation.  Under the terms of Contract
-   DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under
-   the GNU General Public License.
+ Copyright (2003) Sandia Corporation.  Under the terms of Contract
+ DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+ certain rights in this software.  This software is distributed under
+ the GNU General Public License.
 
-   See the README file in the top-level LAMMPS directory.
-------------------------------------------------------------------------- */
+ See the README file in the top-level LAMMPS directory.
+ ------------------------------------------------------------------------- */
 
 #include "fix_bio_kinetics_ph.h"
 
@@ -43,77 +43,71 @@
 #include "variable.h"
 #include "update.h"
 
-
 using namespace LAMMPS_NS;
 using namespace FixConst;
 
 using namespace std;
 
-
 /* ---------------------------------------------------------------------- */
 
-FixKineticsPH::FixKineticsPH(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
-{
-  if (narg != 3) error->all(FLERR,"Not enough arguments in fix kinetics/ph command");
+FixKineticsPH::FixKineticsPH(LAMMPS *lmp, int narg, char **arg) :
+    Fix(lmp, narg, arg) {
+  if (narg != 3)
+    error->all(FLERR, "Not enough arguments in fix kinetics/ph command");
 }
 
 /* ---------------------------------------------------------------------- */
 
-FixKineticsPH::~FixKineticsPH()
-{
+FixKineticsPH::~FixKineticsPH() {
 }
 
 /* ---------------------------------------------------------------------- */
 
-void FixKineticsPH::init()
-{
+void FixKineticsPH::init() {
   // register fix kinetics with this class
   kinetics = NULL;
   int nfix = modify->nfix;
   for (int j = 0; j < nfix; j++) {
-    if (strcmp(modify->fix[j]->style,"kinetics") == 0) {
+    if (strcmp(modify->fix[j]->style, "kinetics") == 0) {
       kinetics = static_cast<FixKinetics *>(lmp->modify->fix[j]);
       break;
     }
   }
 
   if (kinetics == NULL)
-    lmp->error->all(FLERR,"The fix kinetics command is required for kinetics/ph styles");
+    lmp->error->all(FLERR, "The fix kinetics command is required for kinetics/ph styles");
 
   bio = kinetics->bio;
 
   if (bio->nnus == 0)
-    error->all(FLERR,"fix_kinetics requires # of Nutrients inputs");
+    error->all(FLERR, "fix_kinetics requires # of Nutrients inputs");
   else if (bio->nuChr == NULL)
-    error->all(FLERR,"fix_kinetics requires Nutrient Charge inputs");
+    error->all(FLERR, "fix_kinetics requires Nutrient Charge inputs");
 
   nnus = bio->nnus;
   nuChr = bio->nuChr;
 }
 
-
 /* ---------------------------------------------------------------------- */
 
-int FixKineticsPH::setmask()
-{
+int FixKineticsPH::setmask() {
   int mask = 0;
   mask |= PRE_FORCE;
   return mask;
 }
 
 /* ----------------------------------------------------------------------
-  ph calculation
-------------------------------------------------------------------------- */
-void FixKineticsPH::solve_ph()
-{
+ ph calculation
+ ------------------------------------------------------------------------- */
+void FixKineticsPH::solve_ph() {
   int w = 1;
 
   double tol = 5e-15;
   int maxIter = 20;
 
-  double *denm = memory->create(denm,nnus+1,"kinetics/ph:denm");
-  double *dDenm = memory->create(dDenm,nnus+1,"kinetics/ph:denm");
-  double *aux = memory->create(aux,nnus+1,"kinetics/ph:aux");
+  double *denm = memory->create(denm, nnus + 1, "kinetics/ph:denm");
+  double *dDenm = memory->create(dDenm, nnus + 1, "kinetics/ph:denm");
+  double *aux = memory->create(aux, nnus + 1, "kinetics/ph:aux");
 
   nuS = kinetics->nuS;
   temp = kinetics->temp;
@@ -135,15 +129,18 @@ void FixKineticsPH::solve_ph()
 
     for (int j = 0; j < 2; j++) {
       sumActivity = 0.0;
-      if (j == 0) gSh = a;
-      else gSh = b;
-      for (int k = 1; k < nnus+1; k++) {
-        denm[k] = (1 + kEq[k][0]/w) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][3] * gSh + kEq[k][3] * kEq[k][2] * kEq[k][1];
+      if (j == 0)
+        gSh = a;
+      else
+        gSh = b;
+      for (int k = 1; k < nnus + 1; k++) {
+        denm[k] = (1 + kEq[k][0] / w) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][3] * gSh
+            + kEq[k][3] * kEq[k][2] * kEq[k][1];
         if (denm[k] == 0) {
-          lmp->error->all(FLERR,"denm returns a zero value");
+          lmp->error->all(FLERR, "denm returns a zero value");
         }
         // not hydrated form acitivity
-        activity[k][0][i] = kEq[k][0]/w * nuS[k][i] * gSh * gSh * gSh / denm[k];
+        activity[k][0][i] = kEq[k][0] / w * nuS[k][i] * gSh * gSh * gSh / denm[k];
         // fully protonated form activity
         activity[k][1][i] = nuS[k][i] * gSh * gSh * gSh / denm[k];
         // 1st deprotonated form activity
@@ -160,14 +157,16 @@ void FixKineticsPH::solve_ph()
         sumActivity += nuChr[k][4] * activity[k][4][i];
       }
 
-      if (j == 0) fa = gSh + sumActivity;
-      else fb = gSh + sumActivity;
+      if (j == 0)
+        fa = gSh + sumActivity;
+      else
+        fb = gSh + sumActivity;
     }
 
     double ff = fa * fb;
 
     if (ff > 0) {
-      lmp->error->all(FLERR,"The sum of charges returns a wrong value");
+      lmp->error->all(FLERR, "The sum of charges returns a wrong value");
     }
 
     //Newton-Raphson method
@@ -175,14 +174,15 @@ void FixKineticsPH::solve_ph()
 
     while (ipH <= maxIter) {
       sumActivity = 0.0;
-      for (int k = 1; k < nnus+1; k++) {
-        denm[k] = (1 + kEq[k][0]/w) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][1] * gSh + kEq[k][3] * kEq[k][2] * kEq[k][1] ;
+      for (int k = 1; k < nnus + 1; k++) {
+        denm[k] = (1 + kEq[k][0] / w) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][1] * gSh
+            + kEq[k][3] * kEq[k][2] * kEq[k][1];
 
-        activity[k][0][i] = kEq[k][0]/w * nuS[k][i] * gSh * gSh * gSh / denm[k];
+        activity[k][0][i] = kEq[k][0] / w * nuS[k][i] * gSh * gSh * gSh / denm[k];
         activity[k][1][i] = nuS[k][i] * gSh * gSh * gSh / denm[k];
         activity[k][2][i] = nuS[k][i] * gSh * gSh * kEq[k][1] / denm[k];
         activity[k][3][i] = nuS[k][i] * gSh * kEq[k][1] * kEq[k][2] / denm[k];
-        activity[k][4][i] = nuS[k][i] * kEq[k][1] * kEq[k][2] * kEq[k][3] / denm[k] ;
+        activity[k][4][i] = nuS[k][i] * kEq[k][1] * kEq[k][2] * kEq[k][3] / denm[k];
 
         sumActivity += nuChr[k][0] * activity[k][0][i];
         sumActivity += nuChr[k][1] * activity[k][1][i];
@@ -194,19 +194,24 @@ void FixKineticsPH::solve_ph()
       fun = gSh + sumActivity;
 
       sumActivity = 0.0;
-      for (int k = 1; k < nnus+1; k++) {
+      for (int k = 1; k < nnus + 1; k++) {
         dDenm[k] = pow(denm[k], 2);
-        aux[k] = 3 * gSh * gSh * (kEq[k][0]/w + 1) + 2 * gSh * kEq[k][1] + kEq[k][1] * kEq[k][2];
+        aux[k] = 3 * gSh * gSh * (kEq[k][0] / w + 1) + 2 * gSh * kEq[k][1] + kEq[k][1] * kEq[k][2];
 
-        sumActivity += nuChr[k][0] * ((3 * gSh * gSh * kEq[k][0] * nuS[k][i]) / (w * denm[k]) - (kEq[k][0] * nuS[k][i] * gSh * gSh * gSh * aux[k]) / (w * dDenm[k]));
+        sumActivity +=
+            nuChr[k][0]
+                * ((3 * gSh * gSh * kEq[k][0] * nuS[k][i]) / (w * denm[k])
+                    - (kEq[k][0] * nuS[k][i] * gSh * gSh * gSh * aux[k]) / (w * dDenm[k]));
         sumActivity += nuChr[k][1] * ((3 * gSh * gSh * nuS[k][i]) / denm[k] - (nuS[k][i] * gSh * gSh * gSh * aux[k]) / dDenm[k]);
-        sumActivity += nuChr[k][2] * ((2 * gSh * kEq[k][1] * nuS[k][i]) / denm[k] - (kEq[k][1] * nuS[k][i] * gSh * gSh * aux[k]) / dDenm[k]);
-        sumActivity += nuChr[k][3] * ((kEq[k][1] * kEq[k][2] * nuS[k][i]) / denm[k] - (kEq[k][1] * kEq[k][2] * nuS[k][i] * gSh * aux[k]) / dDenm[k]);
+        sumActivity += nuChr[k][2]
+            * ((2 * gSh * kEq[k][1] * nuS[k][i]) / denm[k] - (kEq[k][1] * nuS[k][i] * gSh * gSh * aux[k]) / dDenm[k]);
+        sumActivity += nuChr[k][3]
+            * ((kEq[k][1] * kEq[k][2] * nuS[k][i]) / denm[k] - (kEq[k][1] * kEq[k][2] * nuS[k][i] * gSh * aux[k]) / dDenm[k]);
         sumActivity += nuChr[k][4] * (-(kEq[k][1] * kEq[k][2] * kEq[k][3] * nuS[k][i] * aux[k]) / dDenm[k]);
       }
       // evaluation of the charge balance for the current Sh value, dF(Sh)
       dF = 1 + sumActivity;
-      err = fun/dF;
+      err = fun / dF;
       gSh = gSh - err;
 
       if ((abs(err) < 1e-14) && (abs(fun) < tol)) {
@@ -222,10 +227,11 @@ void FixKineticsPH::solve_ph()
           while (ipH < maxIter) {
             gSh = (fa * a - fa * b) / (fb - fa);
             sumActivity = 0.0;
-            for (int k = 1; k < nnus+1; k++) {
-              denm[k] = (1 + kEq[k][0]/w) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][1] * gSh + kEq[k][3] * kEq[k][2] * kEq[k][1];
+            for (int k = 1; k < nnus + 1; k++) {
+              denm[k] = (1 + kEq[k][0] / w) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][1] * gSh
+                  + kEq[k][3] * kEq[k][2] * kEq[k][1];
 
-              activity[k][0][i] = kEq[k][0]/w * nuS[k][i] * gSh * gSh * gSh / denm[k];
+              activity[k][0][i] = kEq[k][0] / w * nuS[k][i] * gSh * gSh * gSh / denm[k];
               activity[k][1][i] = nuS[k][i] * gSh * gSh * gSh / denm[k];
               activity[k][2][i] = nuS[k][i] * gSh * gSh * kEq[k][1] / denm[k];
               activity[k][3][i] = nuS[k][i] * gSh * kEq[k][1] * kEq[k][2] / denm[k];
@@ -269,7 +275,7 @@ void FixKineticsPH::solve_ph()
     }
     kinetics->Sh[i] = gSh;
 
-    for (int k = 1; k < nnus+1; k++) {
+    for (int k = 1; k < nnus + 1; k++) {
       if (strcmp(bio->nuName[k], "h") == 0) {
         activity[k][1][i] = gSh;
         break;

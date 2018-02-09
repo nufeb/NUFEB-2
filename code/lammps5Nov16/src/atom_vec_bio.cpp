@@ -114,59 +114,13 @@ void AtomVecBio::data_atom(double *coord, imageint imagetmp, char **values)
   AtomVecSphere::data_atom(coord, imagetmp, values);
 
   outerRadius[nlocal] = 0.5 * atof(values[7]);
-  // outerRadius[nlocal] = 0.5 * atof(values[7]);
-  // if (type[nlocal] != 1 && outerRadius[nlocal] != radius[nlocal]) {
-  //   error->one(FLERR,"Outer radius must be equal to radius for all AOB, NOB, EPS, and inert particles");
-  // }
+
   if (outerRadius[nlocal] < radius[nlocal]) {
     error->one(FLERR,"Outer radius must be greater than or equal to radius");
   }
 
   outerMass[nlocal] = (4.0*MY_PI/3.0)*((outerRadius[nlocal]*outerRadius[nlocal]*outerRadius[nlocal])
       -(radius[nlocal]*radius[nlocal]*radius[nlocal])) * 30;
-
-  // double aa = 0.1367e-15;
-  // printf("diameter = %e, \n", cbrt((aa*3)/(290*4*MY_PI)) * 2);
-
-  // convert kg to mol
-  // rmass[nlocal] = rmass[nlocal]/2.46e-2;
-  // outerMass[nlocal] = outerMass[nlocal]/2.46e-2;
-
-  // char *name;
-  // int type = atom->type[nlocal];
-
-  // int n = strlen(values[8]) + 1;
-  // name = new char[n];
-  // strcpy(name,values[8]);
-
-  // for (int i = 0; i < n-1; i++)
-  //   if (!isalnum(name[i]) && name[i] != '_')
-  //     error->all(FLERR,"Type name must be "
-  //                "alphanumeric or underscore characters");
-
-  // for (int i = 0; i < ntypes+1; i++)
-  //   if (typeName[i] != NULL)
-  //       if((strcmp(typeName[i], name) == 0) && (i != type)){
-  //     error->one(FLERR,"Repeat type names");
-  //   }
-
-  // if (typeName[type] == NULL){
-  //   typeName[type] = new char[n];
-  // }
-  // else if (strcmp(typeName[type], name) != 0){
-  //   error->one(FLERR,"Incompatible type names");
-  // }
-
-  // if (strcmp(name,"eps") == 0) {
-  //   typeEPS = type;
-  // } else if (strcmp(name,"dead") == 0) {
-  //   typeDEAD = type;
-  // }
-
-  // strcpy(typeName[type],name);
-
-  // delete[] name;
-  // printf("name = %s type = %i \n", typeName[type], type);
 }
 
 void AtomVecBio::copy(int i, int j, int delflag)

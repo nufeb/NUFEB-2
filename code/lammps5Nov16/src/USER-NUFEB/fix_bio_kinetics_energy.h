@@ -24,7 +24,7 @@ class FixKineticsEnergy : public Fix {
   ~FixKineticsEnergy();
   void init();
   int setmask();
-  void growth(double);
+  void growth(double, int);
 
  private:
   char **var;
@@ -72,8 +72,6 @@ class FixKineticsEnergy : public Fix {
   double grid_monod(int, int, int);
   void bio_update(double, int);
   double  biomass(int);
-  int position(int);
-
 };
 
 }

@@ -30,6 +30,8 @@
 #include "random_park.h"
 #include "update.h"
 #include "variable.h"
+#include "modify.h"
+#include "fix_bio_fluid.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -132,12 +134,23 @@ void FixDivide::init()
     if (!input->variable->equalstyle(ivar[n]))
       error->all(FLERR,"Variable for fix divide is invalid style");
   }
+
+  nufebFoam = NULL;
+
+  int nfix = modify->nfix;
+  for (int j = 0; j < nfix; j++) {
+    if (strcmp(modify->fix[j]->style, "nufebFoam") == 0) {
+      nufebFoam = static_cast<FixFluid *>(lmp->modify->fix[j]);
+      break;
+    }
+  }
 }
 
 void FixDivide::post_integrate()
 {
   if (nevery == 0) return;
   if (update->ntimestep % nevery) return;
+  if (nufebFoam != NULL && nufebFoam->demflag) return;
 
   double EPSdens = input->variable->compute_equal(ivar[0]);
   double divMass = input->variable->compute_equal(ivar[1]);
@@ -273,6 +286,12 @@ void FixDivide::post_integrate()
         atom->radius[n] = childRadius;
         avec->outerRadius[n] = childOuterRadius;
 
+        for (int j = 0; j < modify->nfix; j++) {
+          if (modify->fix[j]->create_attribute) {
+            modify->fix[j]->set_arrays(n);
+          }
+        }
+
         delete[] coord;
       }
     }
@@ -295,6 +314,3 @@ void FixDivide::post_integrate()
   // trigger immediate reneighboring
   next_reneighbor = update->ntimestep;
 }
-
-
-

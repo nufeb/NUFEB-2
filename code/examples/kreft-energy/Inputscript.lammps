@@ -65,7 +65,7 @@ variable shearRate equal 0.0
 fix k1 all kinetics 400 30 12 30 v_temp v_rth v_gvol v_gasTran v_ph v_diffT v_bl 
 fix ki2 all kinetics/thermo fix open v_pressure
 fix ki1 all kinetics/growth/energy v_EPSdens	
-fix g1 all kinetics/diffusion v_shearRate v_tol v_Q v_rvol v_Af pp pp nd mol
+fix g1 all kinetics/diffusion v_shearRate v_tol v_Q v_rvol v_Af pp pp nn mol
 fix d1 all divide 400 v_EPSdens v_divMass 31231
 
 ##############Ibm compute##############
