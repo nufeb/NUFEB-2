@@ -27,7 +27,6 @@
 #include "math_const.h"
 #include "pointers.h"
 #include "random_park.h"
-//#include "STUBS/mpi.h"
 #include "update.h"
 #include "variable.h"
 #include "group.h"
@@ -41,6 +40,8 @@ using namespace MathConst;
 #define EPSILON 0.001
 #define DELTA 1.005
 
+// enum{PAIR,KSPACE,ATOM};
+// enum{DIAMETER,CHARGE};
 
 /* ---------------------------------------------------------------------- */
 
@@ -68,12 +69,8 @@ FixEPSExtract::FixEPSExtract(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg,
 
   if (seed <= 0) error->all(FLERR,"Illegal fix eps extract command: seed should be greater than 0");
 
-  // preExchangeCalled = false;
-
   // Random number generator, same for all procs
   random = new RanPark(lmp,seed);  
-
-  find_maxid();
 
   if (domain->triclinic == 0) {
     xlo = domain->boxlo[0];
@@ -96,7 +93,6 @@ FixEPSExtract::FixEPSExtract(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg,
  
   force_reneighbor = 1;
   next_reneighbor = update->ntimestep + 1;
-  
 }
 
 /* ---------------------------------------------------------------------- */
@@ -124,7 +120,6 @@ int FixEPSExtract::setmask()
 /* ----------------------------------------------------------------------
    if need to restore per-atom quantities, create new fix STORE styles
 ------------------------------------------------------------------------- */
-
 
 void FixEPSExtract::init()
 {
@@ -170,7 +165,6 @@ void FixEPSExtract::init()
   }
 }
 
-
 void FixEPSExtract::post_integrate()
 {
   if (nevery == 0) return;
@@ -181,23 +175,9 @@ void FixEPSExtract::post_integrate()
   double EPSdens = input->variable->compute_equal(ivar[1]);
 
   int nlocal = atom->nlocal;
-  int nall = nlocal + atom->nghost;
-  int i;
 
-  double *sublo,*subhi;
-  if (domain->triclinic == 0) {
-    sublo = domain->sublo;
-    subhi = domain->subhi;
-  } else {
-    sublo = domain->sublo_lamda;
-    subhi = domain->subhi_lamda;
-  }
-
-  for (i = 0; i < nall; i++) {
-    if ((atom->mask[i] & groupbit) && atom->x[i][0] >= sublo[0] && atom->x[i][0] < subhi[0] &&
-          atom->x[i][1] >= sublo[1] && atom->x[i][1] < subhi[1] &&
-          atom->x[i][2] >= sublo[2] && atom->x[i][2] < subhi[2]) {
-      // fprintf(stdout, "outerRadius/radius = %e\n", (outerRadius[i]/radius[i]));
+  for (int i = 0; i < nlocal; i++) {
+    if (atom->mask[i] & groupbit) {
       if ((avec->outerRadius[i]/atom->radius[i]) > EPSratio) {
         avec->outerMass[i] = (4.0*MY_PI/3.0)*(( avec->outerRadius[i] * avec->outerRadius[i]* avec->outerRadius[i])
       	    - (atom->radius[i]*atom->radius[i]*atom->radius[i]))*EPSdens;
@@ -209,8 +189,7 @@ void FixEPSExtract::post_integrate()
 
         avec->outerMass[i] = newOuterMass;
 
-        double density = atom->rmass[i] / (4.0*MY_PI/3.0 *
-        								 atom->radius[i]*atom->radius[i]*atom->radius[i]);
+        double density = atom->rmass[i] / (4.0*MY_PI/3.0 * atom->radius[i]*atom->radius[i]*atom->radius[i]);
         avec->outerRadius[i] = pow((3.0/(4.0*MY_PI))*((atom->rmass[i]/density)+( avec->outerMass[i]/EPSdens)),(1.0/3.0));
 
         double thetaD = random->uniform() * 2*MY_PI;
@@ -247,11 +226,12 @@ void FixEPSExtract::post_integrate()
         coord[0] = newX;
         coord[1] = newY;
         coord[2] = newZ;
-        find_maxid();
-        atom->avec->create_atom(typeEPS,coord);
-        // fprintf(stdout, "Created atom\n");
-        int n = atom->nlocal - 1;
-        atom->tag[n] = maxtag_all + 1;
+	
+	int n = 0;
+	atom->avec->create_atom(typeEPS,coord);
+	n = atom->nlocal - 1;
+	
+        atom->tag[n] = 0;
         atom->mask[n] = avec->maskEPS;
 
         atom->v[n][0] = atom->v[i][0];
@@ -272,15 +252,19 @@ void FixEPSExtract::post_integrate()
         atom->torque[n][2] = atom->torque[i][2];
         atom->radius[n] = childRadius;
         avec->outerRadius[n] = childRadius;
-        //avec->atom_q[n] = 0;
-
-        atom->natoms++;
 
         delete[] coord;
       }
     }
   }
-  //fprintf(stdout, "Divided: %i\n", divided);
+
+  bigint nblocal = atom->nlocal;
+  MPI_Allreduce(&nblocal, &atom->natoms, 1, MPI_LMP_BIGINT, MPI_SUM, world);
+  if (atom->natoms < 0 || atom->natoms >= MAXBIGINT)
+    error->all(FLERR,"Too many total atoms");
+
+  if (atom->tag_enable) atom->tag_extend();
+  atom->tag_check();
 
   if (atom->map_style) {
     atom->nghost = 0;
@@ -291,25 +275,3 @@ void FixEPSExtract::post_integrate()
   // trigger immediate reneighboring
   next_reneighbor = update->ntimestep;
 }
-
-
-/* ----------------------------------------------------------------------
-   maxtag_all = current max atom ID for all atoms
-------------------------------------------------------------------------- */
-
-
-void FixEPSExtract::find_maxid()
-{
-  tagint *tag = atom->tag;
-  tagint *molecule = atom->molecule;
-  int nlocal = atom->nlocal;
-
-  tagint max = 0;
-  for (int i = 0; i < nlocal; i++) max = MAX(max,tag[i]);
-  maxtag_all = max;
-  //MPI_Allreduce(&max,&maxtag_all,1,MPI_LMP_TAGINT,MPI_MAX,world);
-}
-
-
-
-

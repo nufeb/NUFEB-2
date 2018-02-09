@@ -102,10 +102,10 @@ double ComputeNufebHeight::compute_scalar()
 int ComputeNufebHeight::position(int i) {
 
   // get index of grid containing i
-  int xpos = (atom->x[i][0] - xlo) / stepx + 1;
-  int ypos = (atom->x[i][1] - ylo) / stepy + 1;
+  int xpos = (atom->x[i][0] - xlo) / stepx;
+  int ypos = (atom->x[i][1] - ylo) / stepy;
 
-  int pos = (xpos - 1) + (ypos - 1) * ny;
+  int pos = xpos + ypos * ny;
 
   if (pos >= nxy) {
      printf("Too big! pos=%d   size = %i\n", pos, nxy);

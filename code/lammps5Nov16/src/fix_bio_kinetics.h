@@ -15,6 +15,7 @@ FixStyle(kinetics,FixKinetics)
 #define SRC_FIX_KINETICS_H
 
 #include "fix.h"
+#include "grid.h"
 
 namespace LAMMPS_NS {
 
@@ -26,6 +27,7 @@ class FixKinetics : public Fix {
   friend class FixKineticsPH;
   friend class FixImmigration;
   friend class DumpBio;
+  friend class FixKineticsBalance;
 
  public:
   FixKinetics(class LAMMPS *, int, char **);
@@ -33,6 +35,7 @@ class FixKinetics : public Fix {
   int setmask();
   virtual void pre_force(int);
   void init();
+  void borders();
 
   char **var;
   int *ivar;
@@ -56,14 +59,25 @@ class FixKinetics : public Fix {
   double **kEq;                    // equilibrium constants [nutrient][4]
   double *Sh;
   bool *nuConv;
-  double diffT;                    // diffsuion timestep
+  double diffT;                    // diffusion timestep
   double bl;
   double zhi,bzhi,zlo, xlo, xhi, ylo, yhi;
   double stepz, stepx, stepy;
   int gflag;                      // microbe growth flag 1 = update biomass; 0 = solve reaction only, growth is negligible
 
-  int subn[2];                     // number of grids in x y axis for this proc
-  double sublo[2], subhi[2];       // subdomain size trimmed to the grid
+  int subn[3];                     // number of grids in x y axis for this proc
+  int subnlo[3],subnhi[3];         // cell index of the subdomain lower and upper bound for each axis
+  double sublo[3],subhi[3];        // subdomain lower and upper bound trimmed to the grid
+
+  int recv_buff_size;
+  int send_buff_size;
+  int *recvcells;
+  int *sendcells;
+  int *recvbegin, *recvend;
+  int *sendbegin, *sendend;
+
+  int *cellbegin;                  // first atom index for each cell
+  int *next;                       // points to the next atom index lying in the same cell
 
   class AtomVecBio *avec;
   class BIO *bio;
@@ -79,7 +93,12 @@ class FixKinetics : public Fix {
   void integration();
   void grow();
   double getMaxHeight();
+  void update_bgrids();
+  bool is_inside(int);
   int position(int);
+  void add_cells(const Grid &, const Grid &, int *, int);
+  bool is_intesection_valid(const Grid &);
+  void send_recv_cells(const Grid &, const Grid &, const Grid &, int &, int &);
   void reset_nuR();
   void reset_isConv();
 };

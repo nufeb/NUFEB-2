@@ -540,9 +540,16 @@ void DumpBio::openfile()
   filecurrent = new char[strlen(filestar) + 16];
   char *ptr = strchr(filestar,'*');
   *ptr = '\0';
-
-  sprintf(filecurrent,"%s" BIGINT_FORMAT "%s",
-          filestar,update->ntimestep,ptr+1);
+  if (nprocs > 1)
+  {
+    sprintf(filecurrent,"%s_%d_" BIGINT_FORMAT "%s",
+            filestar,me,update->ntimestep,ptr+1);
+  }
+  else
+  {
+    sprintf(filecurrent,"%s" BIGINT_FORMAT "%s",
+            filestar,update->ntimestep,ptr+1);
+  }
   *ptr = '*';
   fp = fopen(filecurrent,"w");
   delete [] filecurrent;
@@ -561,12 +568,12 @@ void DumpBio::write_concentration_data(int nuID)
   fprintf(fp, ",x,y,z,scalar,1,1,1,0.5\n");
 
   for(int i = 0; i < kinetics->ngrids; i++){
-    int zpos = i/(nx * ny) + 1;
-    int ypos = (i - (zpos - 1) * (nx * ny)) / nx + 1;
-    int xpos = i - (zpos - 1) * (nx * ny) - (ypos - 1) * nx + 1;
+    int zpos = i/(kinetics->subn[0] * kinetics->subn[1]) + 1;
+    int ypos = (i - (zpos - 1) * (kinetics->subn[0] * kinetics->subn[1])) / kinetics->subn[0] + 1;
+    int xpos = i - (zpos - 1) * (kinetics->subn[0] * kinetics->subn[1]) - (ypos - 1) * kinetics->subn[0] + 1;
 
-    double x = xpos * stepx - stepx/2;
-    double y = ypos * stepy - stepy/2;
+    double x = kinetics->sublo[0] + xpos * stepx - stepx/2;
+    double y = kinetics->sublo[1] + ypos * stepy - stepy/2;
     double z = zpos * stepz - stepz/2;
 
     fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%e\n",i, x, y, z, kinetics->nuS[nuID][i]);
@@ -580,12 +587,12 @@ void DumpBio::write_DGRCat_data(int typeID)
   fprintf(fp, ",x,y,z,scalar,1,1,1,0.5\n");
 
   for(int i = 0; i < kinetics->ngrids; i++){
-    int zpos = i/(nx * ny) + 1;
-    int ypos = (i - (zpos - 1) * (nx * ny)) / nx + 1;
-    int xpos = i - (zpos - 1) * (nx * ny) - (ypos - 1) * nx + 1;
+    int zpos = i/(kinetics->subn[0] * kinetics->subn[1]) + 1;
+    int ypos = (i - (zpos - 1) * (kinetics->subn[0] * kinetics->subn[1])) / kinetics->subn[0] + 1;
+    int xpos = i - (zpos - 1) * (kinetics->subn[0] * kinetics->subn[1]) - (ypos - 1) * kinetics->subn[0] + 1;
 
-    double x = xpos * stepx - stepx/2;
-    double y = ypos * stepy - stepy/2;
+    double x = kinetics->sublo[0] + xpos * stepx - stepx/2;
+    double y = kinetics->sublo[1] + ypos * stepy - stepy/2;
     double z = zpos * stepz - stepz/2;
 
     //average += kinetics->DRGCat[2][i];
@@ -601,12 +608,12 @@ void DumpBio::write_yield_data(int typeID)
   fprintf(fp, ",x,y,z,scalar,1,1,1,0.5\n");
 
   for(int i = 0; i < kinetics->ngrids; i++){
-    int zpos = i/(nx * ny) + 1;
-    int ypos = (i - (zpos - 1) * (nx * ny)) / nx + 1;
-    int xpos = i - (zpos - 1) * (nx * ny) - (ypos - 1) * nx + 1;
+    int zpos = i/(kinetics->subn[0] * kinetics->subn[1]) + 1;
+    int ypos = (i - (zpos - 1) * (kinetics->subn[0] * kinetics->subn[1])) / kinetics->subn[0] + 1;
+    int xpos = i - (zpos - 1) * (kinetics->subn[0] * kinetics->subn[1]) - (ypos - 1) * kinetics->subn[0] + 1;
 
-    double x = xpos * stepx - stepx/2;
-    double y = ypos * stepy - stepy/2;
+    double x = kinetics->sublo[0] + xpos * stepx - stepx/2;
+    double y = kinetics->sublo[1] + ypos * stepy - stepy/2;
     double z = zpos * stepz - stepz/2;
 
     //average += kinetics->DRGCat[2][i];
@@ -622,12 +629,12 @@ void DumpBio::write_DGRAn_data(int typeID)
   fprintf(fp, ",x,y,z,scalar,1,1,1,0.5\n");
 
   for(int i = 0; i < kinetics->ngrids; i++){
-    int zpos = i/(nx * ny) + 1;
-    int ypos = (i - (zpos - 1) * (nx * ny)) / nx + 1;
-    int xpos = i - (zpos - 1) * (nx * ny) - (ypos - 1) * nx + 1;
+    int zpos = i/(kinetics->subn[0] * kinetics->subn[1]) + 1;
+    int ypos = (i - (zpos - 1) * (kinetics->subn[0] * kinetics->subn[1])) / kinetics->subn[0] + 1;
+    int xpos = i - (zpos - 1) * (kinetics->subn[0] * kinetics->subn[1]) - (ypos - 1) * kinetics->subn[0] + 1;
 
-    double x = xpos * stepx - stepx/2;
-    double y = ypos * stepy - stepy/2;
+    double x = kinetics->sublo[0] + xpos * stepx - stepx/2;
+    double y = kinetics->sublo[1] + ypos * stepy - stepy/2;
     double z = zpos * stepz - stepz/2;
 
     //average += kinetics->DRGCat[2][i];
@@ -643,12 +650,12 @@ void DumpBio::write_pH_data()
   fprintf(fp, ",x,y,z,scalar,1,1,1,0.5\n");
 
   for(int i = 0; i < kinetics->ngrids; i++){
-    int zpos = i/(nx * ny) + 1;
-    int ypos = (i - (zpos - 1) * (nx * ny)) / nx + 1;
-    int xpos = i - (zpos - 1) * (nx * ny) - (ypos - 1) * nx + 1;
+    int zpos = i/(kinetics->subn[0] * kinetics->subn[1]) + 1;
+    int ypos = (i - (zpos - 1) * (kinetics->subn[0] * kinetics->subn[1])) / kinetics->subn[0] + 1;
+    int xpos = i - (zpos - 1) * (kinetics->subn[0] * kinetics->subn[1]) - (ypos - 1) * kinetics->subn[0] + 1;
 
-    double x = xpos * stepx - stepx/2;
-    double y = ypos * stepy - stepy/2;
+    double x = kinetics->sublo[0] + xpos * stepx - stepx/2;
+    double y = kinetics->sublo[1] + ypos * stepy - stepy/2;
     double z = zpos * stepz - stepz/2;
 
     //average += kinetics->DRGCat[2][i];
@@ -809,12 +816,12 @@ void DumpBio::write_gas_data(int nuID)
   fprintf(fp, ",x,y,z,scalar,1,1,1,0.5\n");
 
   for(int i = 0; i < kinetics->ngrids; i++){
-    int zpos = i/(nx * ny) + 1;
-    int ypos = (i - (zpos - 1) * (nx * ny)) / nx + 1;
-    int xpos = i - (zpos - 1) * (nx * ny) - (ypos - 1) * nx + 1;
+    int zpos = i/(kinetics->subn[0] * kinetics->subn[1]) + 1;
+    int ypos = (i - (zpos - 1) * (kinetics->subn[0] * kinetics->subn[1])) / kinetics->subn[0] + 1;
+    int xpos = i - (zpos - 1) * (kinetics->subn[0] * kinetics->subn[1]) - (ypos - 1) * kinetics->subn[0] + 1;
 
-    double x = xpos * stepx - stepx/2;
-    double y = ypos * stepy - stepy/2;
+    double x = kinetics->sublo[0] + xpos * stepx - stepx/2;
+    double y = kinetics->sublo[1] + ypos * stepy - stepy/2;
     double z = zpos * stepz - stepz/2;
 
     fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%e\n",i, x, y, z, kinetics->qGas[nuID][i]);

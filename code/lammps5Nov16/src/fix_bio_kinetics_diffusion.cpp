@@ -42,6 +42,11 @@
 #include "update.h"
 #include "variable.h"
 #include "group.h"
+#include "comm.h"
+
+#include "thr_omp.h"
+
+#define BUFMIN 1000
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -135,8 +140,16 @@ FixKineticsDiffusion::~FixKineticsDiffusion() {
   memory->destroy(diffD);
   memory->destroy(xGrid);
   memory->destroy(nuGrid);
+  memory->destroy(nuPrev);
   memory->destroy(ghost);
   memory->destroy(nuBS);
+
+  memory->destroy(recvbuff);
+  memory->destroy(sendbuff);
+  memory->destroy(convergences);
+
+  delete [] requests;
+  delete [] status;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -224,9 +237,9 @@ void FixKineticsDiffusion::init() {
   if (!isEuqal(stepx, stepy, stepz))
     error->all(FLERR, "Grid is not cubic");
 
-  nX = nx + 2;
-  nY = ny + 2;
-  nZ = nz + 2;
+  nX = kinetics->subn[0] + 2;
+  nY = kinetics->subn[1] + 2;
+  nZ = kinetics->subn[2] + 2;
 
   nXYZ = nX * nY * nZ;
 
@@ -236,43 +249,45 @@ void FixKineticsDiffusion::init() {
     diffD[i] = diffCoeff[i];
   }
 
-  xGrid = memory->create(xGrid, nXYZ, 3, "diffusion:xGrid");
-  nuGrid = memory->create(nuGrid, nXYZ, nnus + 1, "diffusion:nuGrid");
+  xGrid =  memory->create(xGrid, nXYZ, 3, "diffusion:xGrid");
+  nuGrid = memory->create(nuGrid, nnus + 1, nXYZ, "diffusion:nuGrid");
+  nuPrev = memory->create(nuPrev, nXYZ, "diffusion:nuPrev");
   ghost = memory->create(ghost, nXYZ, "diffusion:ghost");
   nuBS = memory->create(nuBS, nnus + 1, "diffusion:nuBS");
 
+  // TODO: optimize for first-touch policy
   //initialise grids
   double i, j, k;
   int grid = 0;
-  for (k = zlo - (stepz / 2); k < zhi + stepz; k += stepz) {
-    for (j = kinetics->ylo - (stepy / 2); j < kinetics->yhi + stepy; j += stepy) {
-      for (i = kinetics->xlo - (stepx / 2); i < kinetics->xhi + stepx; i += stepx) {
+  for (k = kinetics->sublo[2] - (stepz/2); k < kinetics->subhi[2] + stepz; k += stepz) {
+    for (j = kinetics->sublo[1] - (stepy/2); j < kinetics->subhi[1] + stepy; j += stepy) {
+      for (i = kinetics->sublo[0] - (stepx/2); i < kinetics->subhi[0] + stepx; i += stepx) {
         xGrid[grid][0] = i;
         xGrid[grid][1] = j;
         xGrid[grid][2] = k;
         //Initialise concentration values for ghost and std grids
         for (int nu = 1; nu <= nnus; nu++) {
-          if (i < xlo) {
+          if (i < kinetics->sublo[0]) {
             ghost[grid] = true;
-            nuGrid[grid][nu] = iniS[nu][1];
-          } else if (i > xhi) {
+            nuGrid[nu][grid] = iniS[nu][1];
+          } else if (i > kinetics->subhi[0]) {
             ghost[grid] = true;
-            nuGrid[grid][nu] = iniS[nu][2];
-          } else if (j < ylo) {
+            nuGrid[nu][grid] = iniS[nu][2];
+          } else if (j < kinetics->sublo[1]) {
             ghost[grid] = true;
-            nuGrid[grid][nu] = iniS[nu][3];
-          } else if (j > yhi) {
+            nuGrid[nu][grid] = iniS[nu][3];
+          } else if (j > kinetics->subhi[1]) {
             ghost[grid] = true;
-            nuGrid[grid][nu] = iniS[nu][4];
-          } else if (k < zlo) {
+            nuGrid[nu][grid] = iniS[nu][4];
+          } else if (k < kinetics->sublo[2]) {
             ghost[grid] = true;
-            nuGrid[grid][nu] = iniS[nu][5];
+            nuGrid[nu][grid] = iniS[nu][5];
           } else if (k > bzhi) {
             ghost[grid] = true;
-            nuGrid[grid][nu] = iniS[nu][6];
+            nuGrid[nu][grid] = iniS[nu][6];
           } else {
             ghost[grid] = false;
-            nuGrid[grid][nu] = iniS[nu][0];
+            nuGrid[nu][grid] = iniS[nu][0];
           }
 
           if (unit == 0)
@@ -286,6 +301,17 @@ void FixKineticsDiffusion::init() {
       }
     }
   }
+
+  // create send and recv buffers
+  recv_buff_size = BUFMIN;
+  recvbuff = memory->create(recvbuff, recv_buff_size, "diffusion::recvbuff");
+  send_buff_size = BUFMIN;
+  sendbuff = memory->create(sendbuff, send_buff_size, "diffusion::sendbuff");
+  convergences = memory->create(convergences, comm->nprocs, "diffusion::convergences");
+
+  // create request vector
+  requests = new MPI_Request[MAX(comm->nprocs, nnus + 1)];
+  status = new MPI_Status[MAX(comm->nprocs, nnus + 1)];
 }
 
 /* ----------------------------------------------------------------------
@@ -300,91 +326,133 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT) {
   nuS = kinetics->nuS;
   nuR = kinetics->nuR;
 
-  //nRES = new double[nXYZ]();
+  int nrecvcells = kinetics->recvend[comm->nprocs - 1];
+  int nsendcells = kinetics->sendend[comm->nprocs - 1];
+  if (recv_buff_size < nrecvcells) {
+    recv_buff_size += ((nrecvcells * nnus) / BUFMIN + 1) * BUFMIN;
+    memory->grow(recvbuff, recv_buff_size, "diffusion::recvbuff");
+  }
+  if (send_buff_size < nsendcells) {
+    send_buff_size += ((nsendcells * nnus) / BUFMIN + 1) * BUFMIN;
+    memory->grow(sendbuff, send_buff_size, "diffusion::recvbuff");
+  }
+
+  // copy nutrient grid data to send buffer
+  for (int c = 0; c < nsendcells; c++) {
+    int cell = kinetics->sendcells[c];
+    for (int n = 0; n < nnus; n++) {
+      sendbuff[c * nnus + n] = nuGrid[n][cell]; 
+    }  
+  }
+  // send and recv grid data
+  int nrequests = 0;
+  for (int p = 0; p < comm->nprocs; p++) {
+    if (p == comm->me)
+      continue;
+    int recvn = (kinetics->recvend[p] - kinetics->recvbegin[p]) * nnus;
+    if (recvn > 0)
+      MPI_Irecv(&recvbuff[kinetics->recvbegin[p] * nnus], recvn, MPI_DOUBLE, p, 0, world, &requests[nrequests++]);
+    int sendn = (kinetics->sendend[p] - kinetics->sendbegin[p]) * nnus;
+    if (sendn > 0)
+      MPI_Isend(&sendbuff[kinetics->sendbegin[p] * nnus], sendn, MPI_DOUBLE, p, 0, world, &requests[nrequests++]);
+  }
+  // wait for all MPI requests
+  MPI_Waitall(nrequests, requests, status);
+  // copy received data to nuGrid
+  for (int c = 0; c < nrecvcells; c++) {
+    int cell = kinetics->recvcells[c];
+    for (int n = 0; n < nnus; n++) {
+      nuGrid[n][cell] = recvbuff[c * nnus + n];
+    }
+  }
 
   for (int i = 1; i <= nnus; i++) {
-    if (bio->nuType[i] == 0 && !nuConv[i]) {
-      double maxS = 0;
-      double *nuPrev = memory->create(nuPrev, nXYZ, "diffusion:nuPrev");
+    if (unit == 0) {
+      xbcm = iniS[i][1] * 1000;
+      xbcp = iniS[i][2] * 1000;
+      ybcm = iniS[i][3] * 1000;
+      ybcp = iniS[i][4] * 1000;
+      zbcm = iniS[i][5] * 1000;
+      zbcp = iniS[i][6] * 1000;
+    } else {
+      xbcm = iniS[i][1];
+      xbcp = iniS[i][2];
+      ybcm = iniS[i][3];
+      ybcp = iniS[i][4];
+      zbcm = iniS[i][5];
+      zbcp = iniS[i][6];
+    }
+    
+    if(iter == 1 && strcmp(bio->nuName[i], "o2") != 0 && q >= 0 && af >= 0) compute_bulk(i);
+  }
+
+  double *maxS = new double[nnus + 1];
+  for (int i = 1; i <= nnus; i++) {
+    if (bio->nuType[i] == 0 && !nuConv[i]) { // checking if is liquid
       // copy current concentrations
       for (int grid = 0; grid < nXYZ; grid++) {
-        nuPrev[grid] = nuGrid[grid][i];
+	nuPrev[grid] = nuGrid[i][grid];
       }
-
-      if (unit == 0) {
-        xbcm = iniS[i][1] * 1000;
-        xbcp = iniS[i][2] * 1000;
-        ybcm = iniS[i][3] * 1000;
-        ybcp = iniS[i][4] * 1000;
-        zbcm = iniS[i][5] * 1000;
-        zbcp = iniS[i][6] * 1000;
-      } else {
-        xbcm = iniS[i][1];
-        xbcp = iniS[i][2];
-        ybcm = iniS[i][3];
-        ybcp = iniS[i][4];
-        zbcm = iniS[i][5];
-        zbcp = iniS[i][6];
-      }
-
-      if (iter == 1 && strcmp(bio->nuName[i], "o2") != 0 && q >= 0 && af >= 0)
-        compute_bulk(i);
-
+	
+      maxS[i] = 0;
       // solve diffusion and reaction
       for (int grid = 0; grid < nXYZ; grid++) {
-        // transform nXYZ index to nuR index
-        if (!ghost[grid]) {
-          int ind = get_index(grid);
-          // convert from mol/L to mol/m3
+	// transform nXYZ index to nuR index
+	if (!ghost[grid]) {
+	  int ix = floor((xGrid[grid][0] - kinetics->sublo[0])/stepx);
+	  int iy = floor((xGrid[grid][1] - kinetics->sublo[1])/stepy);
+	  int iz = floor((xGrid[grid][2] - kinetics->sublo[2])/stepz);
+	  int ind = iz * kinetics->subn[0] * kinetics->subn[1] + iy * kinetics->subn[0] + ix;
+
           double r;
           if (unit == 0) r = nuR[i][ind] * 1000;
           else r = nuR[i][ind];
 
-          compute_flux(diffD[i], nuGrid[grid][i], nuPrev, r, grid);
+	  compute_flux(diffD[i], nuGrid[i][grid], nuPrev, r, grid);
 
-          nuR[i][ind] = 0;
+	  nuR[i][ind] = 0;
 
-          if (nuGrid[grid][i] > 0) {
-            if (unit == 0)
-              nuS[i][ind] = nuGrid[grid][i] / 1000;
-            else
-              nuS[i][ind] = nuGrid[grid][i];
-          } else {
-            nuGrid[grid][i] = 1e-20;
-            nuS[i][ind] = 1e-20;
-          }
-        } else {
-          compute_bc(nuGrid[grid][i], nuPrev, grid, nuBS[i]);
-        }
+	  if (nuGrid[i][grid] > 0) {
+	    if (unit == 0) nuS[i][ind] = nuGrid[i][grid] / 1000;
+	    else nuS[i][ind] = nuGrid[i][grid];
+	  }
+	  else {
+	    nuGrid[i][grid] = 1e-20;
+	    nuS[i][ind] = 1e-20;
+	  }
+	} else compute_bc(nuGrid[i][grid], nuPrev, grid, nuBS[i]);
 
-        if (maxS < nuGrid[grid][i])
-          maxS = nuGrid[grid][i];
+	if (maxS[i] < nuGrid[i][grid]) maxS[i] = nuGrid[i][grid];
       }
-
-      bool conv = true;
-      // check convergence criteria
-      for (int grid = 0; grid < nXYZ; grid++) {
-        if (!ghost[grid]) {
-          double ratio = 1000;
-          if (maxS == 0) maxS = 1;
-
-          double rate = nuGrid[grid][i] / maxS;
-          double prevRate = nuPrev[grid] / maxS;
-          ratio = fabs(rate - prevRate);
-
-          if (ratio >= tol) {
-            conv = false;
-            break;
-          }
-        }
-      }
-
-      nuConv[i] = conv;
-      memory->destroy(nuPrev);
+      MPI_Iallreduce(MPI_IN_PLACE, &maxS[i], 1, MPI_DOUBLE, MPI_MAX, world, &requests[i]);
     }
   }
 
-  //delete[] nRES;
+  nrequests = 0;
+  for (int i = 1; i <= nnus; i++) {
+    if (bio->nuType[i] == 0 && !nuConv[i]) { // checking if is liquid
+      MPI_Wait(&requests[i], &status[i]);
+      // check convergence criteria
+      nuConv[i] = true;
+      for (int grid = 0; grid < nXYZ; grid++) {
+	if(!ghost[grid]) {
+	  double ratio = 1000;
+	  double div = (maxS[i] == 0) ? 1 : maxS[i]; 
+	  double rate = nuGrid[i][grid] / div;
+	  double prevRate = nuPrev[grid] / div;
+	  ratio = fabs(rate - prevRate);
+
+	  nuConv[i] &= (ratio < tol);
+	  if (!nuConv[i]) break;
+	}
+      }
+      MPI_Iallreduce(MPI_IN_PLACE, &nuConv[i], 1, MPI_INT, MPI_BAND, world, &requests[nrequests++]);
+    }
+  }
+  MPI_Waitall(nrequests, requests, status);
+
+  delete [] maxS;
+
   return nuConv;
 }
 
@@ -393,14 +461,12 @@ void FixKineticsDiffusion::update_grids() {
   bzhi = kinetics->bnz * stepz;
   nXYZ = nX * nY * (kinetics->bnz + 2);
 
-  //printf("sk = %e, grid = %i \n", sk, grid);
   for (int grid = 0; grid < nXYZ; grid++) {
-    if (xGrid[grid][0] < 0 || xGrid[grid][1] < 0 || xGrid[grid][2] < 0 || xGrid[grid][0] > xhi || xGrid[grid][1] > yhi
-        || xGrid[grid][2] > bzhi) {
+    if (xGrid[grid][0] < 0 || xGrid[grid][1] < 0 || xGrid[grid][2] < 0
+        || xGrid[grid][0] > kinetics->subhi[0] || xGrid[grid][1] > kinetics->subhi[1] || xGrid[grid][2] > bzhi)
       ghost[grid] = true;
-    } else {
+    else
       ghost[grid] = false;
-    }
   }
 }
 
@@ -455,12 +521,14 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
   // If ghostcells are Neu then take the values equal from the adjacent cells.
   // if ghostcells are dirich then take the values equal to negative of the adjacent cells.
   // if ghostcells are mixed then zlo ghost cells are nuemann, zhi ghost cells are dirichlet, other four surfaces are periodic BC.
-  // Low-z surface
+  // low-z surface
   if (xGrid[grid][2] < zlo && !ghost[up]) {
     //0=PERIODIC-PERIODIC,  1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
     if (zbcflag == 0) {
-      int zhiGrid = grid + nX * nY * nz;
-      nuCell = nuPrev[zhiGrid];
+      if (comm->nprocs < 2) { // periodic boundary conditions are already handled by cell communications for cases with more than 1 process 
+	int zhiGrid = grid + nX * nY * nz;
+	nuCell = nuPrev[zhiGrid];
+      }
     } else if (zbcflag == 1) {
       nuCell = 2 * zbcm - nuPrev[up];
     } else if (zbcflag == 2) {
@@ -474,8 +542,10 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
   // high-z surface
   else if (xGrid[grid][2] > zhi && !ghost[down]) {
     if (zbcflag == 0) {
-      int zloGrid = grid - nX * nY * nz;
-      nuCell = nuPrev[zloGrid];
+      if (comm->nprocs < 2) {
+	int zloGrid = grid - nX * nY * nz;
+	nuCell = nuPrev[zloGrid];
+      }
     } else if (zbcflag == 1) {
       nuCell = 2 * bulk - nuPrev[down];
     } else if (zbcflag == 2) {
@@ -489,8 +559,10 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
   // low-y surface
   else if (xGrid[grid][1] < ylo && !ghost[fwd]) {
     if (ybcflag == 0) {
-      int yhiGrid = grid + nX * ny;
-      nuCell = nuPrev[yhiGrid];
+      if (comm->nprocs < 2) {
+	int yhiGrid = grid + nX * ny;
+	nuCell = nuPrev[yhiGrid];
+      }
     } else if (ybcflag == 1) {
       nuCell = 2 * ybcm - nuPrev[fwd];
     } else if (ybcflag == 2) {
@@ -504,8 +576,10 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
   // high-y surface
   else if (xGrid[grid][1] > yhi && !ghost[bwd]) {
     if (ybcflag == 0) {
-      int yloGrid = grid - nX * ny;
-      nuCell = nuPrev[yloGrid];
+      if (comm->nprocs < 2) {
+	int yloGrid = grid - nX * ny;
+	nuCell = nuPrev[yloGrid];
+      }
     } else if (ybcflag == 1) {
       nuCell = 2 * ybcp - nuPrev[bwd];
     } else if (ybcflag == 2) {
@@ -519,8 +593,10 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
   // low-x surface
   else if (xGrid[grid][0] < xlo && !ghost[rhs]) {
     if (xbcflag == 0) {
-      int xhiGrid = grid + nx;
-      nuCell = nuPrev[xhiGrid];
+      if (comm->nprocs < 2) {
+	int xhiGrid = grid + nx;
+	nuCell = nuPrev[xhiGrid];
+      }
     } else if (xbcflag == 1) {
       nuCell = 2 * xbcm - nuPrev[rhs];
     } else if (xbcflag == 2) {
@@ -534,8 +610,10 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
   // high-x surface
   else if (xGrid[grid][0] > xhi && !ghost[lhs]) {
     if (xbcflag == 0) {
-      int xloGrid = grid - nx;
-      nuCell = nuPrev[xloGrid];
+      if (comm->nprocs < 2) {
+	int xloGrid = grid - nx;
+	nuCell = nuPrev[xloGrid];
+      }
     } else if (xbcflag == 1) {
       nuCell = 2 * xbcp - nuPrev[lhs];
     } else if (xbcflag == 2) {
@@ -599,7 +677,6 @@ void FixKineticsDiffusion::compute_flux(double cellDNu, double &nuCell, double *
     res = (jX + jY + jZ + rateNu) * diffT;
   }
 
-  //nRES[grid] += res;
   //Updating the value: Ratesub*diffT + nuCell[cell](previous)
   nuCell = nuPrev[grid] + res;
 }
@@ -650,35 +727,4 @@ void FixKineticsDiffusion::update_nuS(){
       }
     }
   }
-}
-
-void FixKineticsDiffusion::test() {
-  //test code
-  for (int i = kinetics->nz + 1; i >= 0; i--) {
-    printf(" \n ");
-    for (int j = 0; j < nY; j++) {
-      printf("  ");
-      for (int k = 0; k < nX; k++) {
-        int ind = i * nX * nY + j * nX + k;
-
-//        if (!ghost[ind]) {
-//          int ix = floor(xGrid[ind][0]/stepx);
-//          int iy = floor(xGrid[ind][1]/stepy);
-//          int iz = floor(xGrid[ind][2]/stepz);
-//
-//          int ind2 = iz * nx * ny + iy * nx + ix;
-//
-//          //printf("%i ", ind2);
-//          printf("%.1e ", kinetics->nuR[1][ind2]);
-//        } else {
-//          printf("0 ");
-//        }
-        //printf("%d ", ghost[ind]);
-        //printf("%i ", ind);
-        //printf("%.1e ", xGrid[ind][1]);
-        printf("%.1e ", nuGrid[ind][1]);
-      }
-    }
-  }
-  printf(" \n ");
 }
