@@ -118,7 +118,7 @@
      hety 0.000381111
      hetr 0.001524167
 
- Yield Coeffs
+ Yield
     
      hety 0.0598373984
      hetr 0.0299186992
@@ -133,7 +133,7 @@
      hety 0
      hetr 0
 
- Decay Rate
+ Decay
 
      hety 0
      hetr 0
@@ -153,13 +153,13 @@
      hety 0 0 0
      hetr 0 0 0
  
- Nutrient Activity Coeffs
+ Nutrient Energy
 
     o2 inf 16.4 inf inf inf 2
     h2o inf -237.18 -157.3 inf inf 2
     h inf 0 inf inf inf 2
 
- Type Activity Coeffs
+ Type Energy
 
      hety inf -68 inf inf inf 2 
      hetr inf -67 inf inf inf 2

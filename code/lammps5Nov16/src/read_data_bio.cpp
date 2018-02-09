@@ -555,7 +555,8 @@ void ReadDataBIO::command(int narg, char **arg)
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) ks();
         else skip_lines(atom->ntypes);
-      } else if (strcmp(keyword,"Yield Coeffs") == 0) {
+      } else if (strcmp(keyword,"Yield") == 0) {
+        if (tnflag == 0) error->all(FLERR,"Must read Type Name before Lines");
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) yield();
         else skip_lines(atom->ntypes);
@@ -569,7 +570,8 @@ void ReadDataBIO::command(int narg, char **arg)
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) maintain();
         else skip_lines(atom->ntypes);
-      } else if (strcmp(keyword,"Decay Rate") == 0) {
+      } else if (strcmp(keyword,"Decay") == 0) {
+        if (tnflag == 0) error->all(FLERR,"Must read Type Name before Lines");
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) decay();
         else skip_lines(atom->ntypes);
@@ -598,15 +600,15 @@ void ReadDataBIO::command(int narg, char **arg)
         if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
         if (firstpass) decayCoeff();
         else skip_lines(atom->ntypes);
-      } else if (strcmp(keyword,"Nutrient Activity Coeffs") == 0) {
+      } else if (strcmp(keyword,"Nutrient Energy") == 0) {
         if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
         if (firstpass) nuGCoeff();
         else skip_lines(bio->nnus);
-      } else if (strcmp(keyword,"Type Activity Coeffs") == 0) {
+      } else if (strcmp(keyword,"Type Energy") == 0) {
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) typeGCoeff();
         else skip_lines(atom->ntypes);
-      } else if (strcmp(keyword,"Charge Number") == 0) {
+      } else if (strcmp(keyword,"Nutrient Charge") == 0) {
         if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
         if (firstpass) nuChr();
         else skip_lines(bio->nnus);
@@ -615,7 +617,7 @@ void ReadDataBIO::command(int narg, char **arg)
         if (tnflag == 0) error->all(FLERR,"Must read Type Name before Lines");
         if (firstpass) typeChr();
         else skip_lines(atom->ntypes);
-      } else if (strcmp(keyword,"Mass Transfer Coeffs") == 0) {
+      } else if (strcmp(keyword,"KLa") == 0) {
         if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
         if (firstpass) kLa();
         else skip_lines(bio->nnus);
@@ -986,10 +988,9 @@ void ReadDataBIO::header(int firstpass)
      "BondBond Coeffs","BondAngle Coeffs","MiddleBondTorsion Coeffs",
      "EndBondTorsion Coeffs","AngleTorsion Coeffs",
      "AngleAngleTorsion Coeffs","BondBond13 Coeffs","AngleAngle Coeffs",
-     "Growth Rate","Ks","Yield Coeffs","Nutrients","Diffusion Coeffs","Catabolism Coeffs",
-     "Anabolism Coeffs","Nutrient Activity Coeffs","Type Activity Coeffs", "Dissipation", "Charge Number",
-     "Maintenance", "Decay Rate", "Decay Coeffs", "Electron Donor", "Mass transfer coefficient",
-     "Consumption Rate"};
+     "Growth","Ks","Yield","Nutrients","Diffusion Coeffs","Catabolism Coeffs",
+     "Anabolism Coeffs","Nutrient Energy","Type Energy", "Dissipation", "Nutrient Charge",
+     "Type Charge", "Maintenance", "Decay", "Decay Coeffs", "eD", "kLa"};
 
   // skip 1st line of file
 

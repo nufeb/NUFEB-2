@@ -173,7 +173,7 @@
      eps 0
      dead 0
 
- Yield Coeffs
+ Yield
     
      het 0.61
      aob 0.33
@@ -189,7 +189,7 @@
      eps 0
      dead 0
 
- Decay Rate
+ Decay
 
      het 0.00000462962
      aob 0.00000127314

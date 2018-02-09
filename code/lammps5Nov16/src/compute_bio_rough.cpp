@@ -94,7 +94,7 @@ double ComputeNufebRough::compute_scalar()
   for (int i = 0; i < nxy; i++) {
     height += maxh[i] * stepx * stepy;
   }
-  height = height/(xhi*yhi);
+  height = height/nxy;
 
   for (int i = 0; i < nxy; i++) {
     scalar = scalar + ((maxh[i] - height) * (maxh[i] - height));

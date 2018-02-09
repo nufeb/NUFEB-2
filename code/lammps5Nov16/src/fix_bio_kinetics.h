@@ -37,7 +37,6 @@ class FixKinetics : public Fix {
   void init();
   void borders();
 
- private:
   char **var;
   int *ivar;
 
@@ -49,6 +48,7 @@ class FixKinetics : public Fix {
 
   double **nuS;                    // nutrient concentration [nutrient][grid]
   double **nuR;                    // nutrient consumption [nutrient][grid]
+  double **fV;                     // velocity field [velo][grid]
   double **qGas;                   // gas chemicals [nutrient][grid]
   double **gYield;                 // inverse yield [type][grid]
   double ***activity;              // activities of chemical species [nutrient][5 charges][grid]
@@ -61,8 +61,12 @@ class FixKinetics : public Fix {
   bool *nuConv;
   double diffT;                    // diffusion timestep
   double bl;
-  double zhi,bzhi,zlo;
-  double stepz;
+  double zhi,bzhi,zlo, xlo, xhi, ylo, yhi;
+  double stepz, stepx, stepy;
+  int gflag;                      // microbe growth flag 1 = update biomass; 0 = solve reaction only, growth is negligible
+
+  int subn[2];                     // number of grids in x y axis for this proc
+  double sublo[2], subhi[2];       // subdomain size trimmed to the grid
 
   int subn[3];                     // number of grids in x y axis for this proc
   int subnlo[3],subnhi[3];         // cell index of the subdomain lower and upper bound for each axis
@@ -85,6 +89,7 @@ class FixKinetics : public Fix {
   class FixKineticsMonod *monod;
   class FixKineticsPH *ph;
   class FixKineticsThermo *thermo;
+  class FixFluid *nufebFoam;
 
   void init_activity();
   void init_keq();
@@ -96,6 +101,8 @@ class FixKinetics : public Fix {
   void add_cells(const Grid &, const Grid &, int *, int);
   bool is_intesection_valid(const Grid &);
   void send_recv_cells(const Grid &, const Grid &, const Grid &, int &, int &);
+  void reset_nuR();
+  void reset_isConv();
 };
 
 }

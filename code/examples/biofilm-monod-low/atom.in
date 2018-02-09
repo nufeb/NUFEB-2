@@ -56,7 +56,7 @@
      44 5 1.0e-8 150 8.8e-5 3.5e-5 1e-6 1.0e-8
 
  Nutrients
- # nutrient-id, liquid(l)/gas(g), domain-inlet-concentration, bc-inlet-concentration
+
      1 sub l 1e-4 1e-4 1e-4 1e-4 1e-4 1e-4 1e-4
      2 o2 l 1e-4 1e-4 1e-4 1e-4 1e-4 1e-4 1e-4
      3 no2 l 1e-4 1e-4 1e-4 1e-4 1e-4 1e-4 1e-4
@@ -95,7 +95,7 @@ Growth Rate
      eps 0
      dead 0
 
- Yield Coeffs
+ Yield
     
      het 0.61
      aob 0.33
@@ -111,7 +111,7 @@ Growth Rate
      eps 0
      dead 0
 
- Decay Rate
+ Decay
 
      het 0.000003694
      aob 0.00000127314

@@ -24,7 +24,7 @@ class FixKineticsMonod : public Fix {
   ~FixKineticsMonod();
   void init();
   int setmask();
-  void growth(double);
+  void growth(double, int);
 
  private:
   char **var;
@@ -51,7 +51,6 @@ class FixKineticsMonod : public Fix {
   class FixKinetics *kinetics;
   class BIO *bio;
 
-  int position(int);
   void init_param();
 
 };

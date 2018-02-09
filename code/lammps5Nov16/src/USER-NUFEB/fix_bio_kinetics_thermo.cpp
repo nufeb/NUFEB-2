@@ -6,17 +6,17 @@
  */
 
 /* ----------------------------------------------------------------------
-   LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
-   http://lammps.sandia.gov, Sandia National Laboratories
-   Steve Plimpton, sjplimp@sandia.gov
+ LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
+ http://lammps.sandia.gov, Sandia National Laboratories
+ Steve Plimpton, sjplimp@sandia.gov
 
-   Copyright (2003) Sandia Corporation.  Under the terms of Contract
-   DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under
-   the GNU General Public License.
+ Copyright (2003) Sandia Corporation.  Under the terms of Contract
+ DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+ certain rights in this software.  This software is distributed under
+ the GNU General Public License.
 
-   See the README file in the top-level LAMMPS directory.
-------------------------------------------------------------------------- */
+ See the README file in the top-level LAMMPS directory.
+ ------------------------------------------------------------------------- */
 
 #include "fix_bio_kinetics_thermo.h"
 
@@ -46,72 +46,76 @@ using namespace FixConst;
 
 using namespace std;
 
-
 /* ---------------------------------------------------------------------- */
 
-FixKineticsThermo::FixKineticsThermo(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
-{
-  if (narg != 6) error->all(FLERR,"Not enough arguments in fix kinetics/thermo command");
+FixKineticsThermo::FixKineticsThermo(LAMMPS *lmp, int narg, char **arg) :
+    Fix(lmp, narg, arg) {
+  if (narg != 6)
+    error->all(FLERR, "Not enough arguments in fix kinetics/thermo command");
 
   fixY = 0;
   closeR = 0;
 
-  if (strcmp(arg[3], "unfix") == 0) fixY = 1;
-  else if (strcmp(arg[3], "fix") == 0) fixY = 0;
-  else error->all(FLERR,"Illegal fix kinetics/thermo command: specify 'fix' or 'unfix' yield");
+  if (strcmp(arg[3], "unfix") == 0)
+    fixY = 1;
+  else if (strcmp(arg[3], "fix") == 0)
+    fixY = 0;
+  else
+    error->all(FLERR, "Illegal fix kinetics/thermo command: specify 'fix' or 'unfix' yield");
 
-  if (strcmp(arg[4], "close") == 0) closeR = 1;
-  else if (strcmp(arg[4], "open") == 0) closeR = 0;
-  else error->all(FLERR,"Illegal fix kinetics/thermo command: specify 'open' or 'close' reactor");
+  if (strcmp(arg[4], "close") == 0)
+    closeR = 1;
+  else if (strcmp(arg[4], "open") == 0)
+    closeR = 0;
+  else
+    error->all(FLERR, "Illegal fix kinetics/thermo command: specify 'open' or 'close' reactor");
 
   var = new char*[1];
   ivar = new int[1];
 
   for (int i = 0; i < 1; i++) {
-    int n = strlen(&arg[5+i][2]) + 1;
+    int n = strlen(&arg[5 + i][2]) + 1;
     var[i] = new char[n];
-    strcpy(var[i],&arg[5+i][2]);
+    strcpy(var[i], &arg[5 + i][2]);
   }
 }
 
 /* ---------------------------------------------------------------------- */
 
-FixKineticsThermo::~FixKineticsThermo()
-{
+FixKineticsThermo::~FixKineticsThermo() {
   memory->destroy(khV);
   memory->destroy(liq2Gas);
   memory->destroy(dG0);
 
   for (int i = 0; i < 1; i++) {
-    delete [] var[i];
+    delete[] var[i];
   }
-  delete [] var;
-  delete [] ivar;
+  delete[] var;
+  delete[] ivar;
 }
 
 /* ---------------------------------------------------------------------- */
 
-void FixKineticsThermo::init()
-{
+void FixKineticsThermo::init() {
   // register fix kinetics with this class
   kinetics = NULL;
   int nfix = modify->nfix;
   for (int j = 0; j < nfix; j++) {
-    if (strcmp(modify->fix[j]->style,"kinetics") == 0) {
+    if (strcmp(modify->fix[j]->style, "kinetics") == 0) {
       kinetics = static_cast<FixKinetics *>(lmp->modify->fix[j]);
       break;
     }
   }
 
   if (kinetics == NULL)
-    lmp->error->all(FLERR,"The fix kinetics command is required for kinetics/thermo styles");
+    lmp->error->all(FLERR, "The fix kinetics command is required for kinetics/thermo styles");
 
   for (int n = 0; n < 1; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
-      error->all(FLERR,"Variable name for fix kinetics/thermo does not exist");
+      error->all(FLERR, "Variable name for fix kinetics/thermo does not exist");
     if (!input->variable->equalstyle(ivar[n]))
-      error->all(FLERR,"Variable for fix kinetics/thermo is invalid style");
+      error->all(FLERR, "Variable for fix kinetics/thermo is invalid style");
   }
 
   pressure = input->variable->compute_equal(ivar[0]);
@@ -119,19 +123,19 @@ void FixKineticsThermo::init()
   bio = kinetics->bio;
 
   if (bio->catCoeff == NULL)
-    error->all(FLERR,"fix_kinetics/thermo requires Catabolism Coeffs input");
+    error->all(FLERR, "fix_kinetics/thermo requires Catabolism Coeffs input");
   else if (bio->anabCoeff == NULL)
-    error->all(FLERR,"fix_kinetics/thermo requires Anabolism Coeffs input");
+    error->all(FLERR, "fix_kinetics/thermo requires Anabolism Coeffs input");
   else if (bio->nuGCoeff == NULL)
-    error->all(FLERR,"fix_kinetics/thermo requires Nutrient Energy input");
+    error->all(FLERR, "fix_kinetics/thermo requires Nutrient Energy input");
   else if (bio->typeGCoeff == NULL)
-    error->all(FLERR,"fix_kinetics/thermo requires Type Energy input");
+    error->all(FLERR, "fix_kinetics/thermo requires Type Energy input");
   else if (fixY == 1 && bio->dissipation == NULL)
-    error->all(FLERR,"fix_kinetics/thermo requires Dissipation inputs for unfix yield");
+    error->all(FLERR, "fix_kinetics/thermo requires Dissipation inputs for unfix yield");
   else if (closeR == 1 && bio->kLa == NULL)
-    error->all(FLERR,"fix_kinetics/thermo requires KLa input for closed reactor");
+    error->all(FLERR, "fix_kinetics/thermo requires KLa input for closed reactor");
   else if (fixY == 1 && bio->eD == NULL)
-    error->all(FLERR,"fix_kinetics/thermo requires eD input for unfix yield");
+    error->all(FLERR, "fix_kinetics/thermo requires eD input for unfix yield");
 
   temp = kinetics->temp;
   rth = kinetics->rth;
@@ -140,9 +144,9 @@ void FixKineticsThermo::init()
   kLa = bio->kLa;
   nuGCoeff = bio->nuGCoeff;
 
-  khV = memory->create(khV,nnus+1,"kinetics/thermo:khV");
-  liq2Gas = memory->create(liq2Gas,nnus+1,"kinetics/thermo:liq2Gas");
-  dG0 = memory->create(dG0,atom->ntypes+1,2,"kinetics/thermo:dG0");
+  khV = memory->create(khV, nnus + 1, "kinetics/thermo:khV");
+  liq2Gas = memory->create(liq2Gas, nnus + 1, "kinetics/thermo:liq2Gas");
+  dG0 = memory->create(dG0, atom->ntypes + 1, 2, "kinetics/thermo:dG0");
 
   init_KhV();
 
@@ -154,8 +158,7 @@ void FixKineticsThermo::init()
     yhi = domain->boxhi[1];
     zlo = domain->boxlo[2];
     zhi = domain->boxhi[2];
-  }
-  else {
+  } else {
     xlo = domain->boxlo_bound[0];
     xhi = domain->boxhi_bound[0];
     ylo = domain->boxlo_bound[1];
@@ -173,8 +176,7 @@ void FixKineticsThermo::init()
 
 /* ----------------------------------------------------------------------*/
 
-void FixKineticsThermo::init_dG0()
-{
+void FixKineticsThermo::init_dG0() {
   int *ngflag = bio->ngflag;
   int *tgflag = bio->tgflag;
 
@@ -197,8 +199,7 @@ void FixKineticsThermo::init_dG0()
 
 /* ----------------------------------------------------------------------*/
 
-void FixKineticsThermo::init_KhV()
-{
+void FixKineticsThermo::init_KhV() {
   for (int i = 1; i < nnus + 1; i++) {
     khV[i] = 0;
     liq2Gas[i] = 0;
@@ -210,7 +211,7 @@ void FixKineticsThermo::init_KhV()
 
     if (bio->nuType[i] == 1) {
       char *lName = new char[strlen(nName)];     // corresponding liquid
-      strncpy(lName, nName+1, strlen(nName));
+      strncpy(lName, nName + 1, strlen(nName));
 
       for (int j = 1; j < nnus + 1; j++) {
         char *nName2;     // nutrient name
@@ -225,25 +226,23 @@ void FixKineticsThermo::init_KhV()
           break;
         }
       }
-      delete [] lName;
+      delete[] lName;
     }
   }
 }
 
 /* ---------------------------------------------------------------------- */
 
-int FixKineticsThermo::setmask()
-{
+int FixKineticsThermo::setmask() {
   int mask = 0;
   mask |= PRE_FORCE;
   return mask;
 }
 
 /* ----------------------------------------------------------------------
-  thermodynamics
-------------------------------------------------------------------------- */
-void FixKineticsThermo::thermo()
-{
+ thermodynamics
+ ------------------------------------------------------------------------- */
+void FixKineticsThermo::thermo() {
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
   int nall = nlocal + atom->nghost;
@@ -263,7 +262,7 @@ void FixKineticsThermo::thermo()
   typeGCoeff = bio->typeGCoeff;
   diss = bio->dissipation;
 
-  dG0 = memory->grow(dG0,ntypes+1,2,"kinetics/thermo:dG0");
+  dG0 = memory->grow(dG0, ntypes + 1, 2, "kinetics/thermo:dG0");
 
   init_dG0();
 
@@ -281,7 +280,7 @@ void FixKineticsThermo::thermo()
 
   for (int i = 0; i < kinetics->bgrids; i++) {
     // gas transfer
-    if (closeR == 1){
+    if (closeR == 1) {
       for (int j = 1; j <= nnus; j++) {
         nuR[j][i] = 0;
         qGas[j][i] = 0;
@@ -305,7 +304,8 @@ void FixKineticsThermo::thermo()
             //update gas concentration
             nuS[j][i] += nuR[j][i];
             qGas[j][i] = nuR[j][i] * kinetics->gasTrans * temp / pressure;
-            if (nuS[j][i] < 0) nuS[j][i] = 0;
+            if (nuS[j][i] < 0)
+              nuS[j][i] = 0;
           }
         }
       }
@@ -322,24 +322,26 @@ void FixKineticsThermo::thermo()
         if (nuGCoeff[k][1] < 1e4) {
           double value = 0;
           int flag = bio->ngflag[k];
-          if (activity[k][flag][i] == 0) value = 1e-20;
-          else value = activity[k][flag][i];
+          if (activity[k][flag][i] == 0)
+            value = 1e-20;
+          else
+            value = activity[k][flag][i];
 
           double dgr = rthT * log(value);
-         // printf ("%e ",  value);
+          // printf ("%e ",  value);
           DRGCat[j][i] += catCoeff[j][k] * dgr;
           DRGAn[j][i] += anabCoeff[j][k] * dgr;
-         //if (k ==1 && j==7)printf("%e %s %e %s\n", DRGCat[j][i], bio->typeName[j], catCoeff[j][k], bio->nuName[k]);
+          //if (k ==1 && j==7)printf("%e %s %e %s\n", DRGCat[j][i], bio->typeName[j], catCoeff[j][k], bio->nuName[k]);
         } else {
-          error->all(FLERR,"nuGCoeff[1] is inf value");
+          error->all(FLERR, "nuGCoeff[1] is inf value");
         }
       }
-     // printf("\n");
+      // printf("\n");
 //      printf("DRGAn[%i][%i][0] = %e \n", i,j, DRGAn[j][i]);
 //      printf("DRGCat[%i][%i][1] = %e \n", i,j, DRGCat[j][i]);
 
       //use catabolic and anabolic energy values to derive catabolic reaction equation
-      if (fixY == 1){
+      if (fixY == 1) {
         if (DRGCat[j][i] < 0) {
           gYield[j][i] = -(DRGAn[j][i] + diss[j]) / DRGCat[j][i] + bio->eD[j];
           if (gYield[j][i] != 0)
