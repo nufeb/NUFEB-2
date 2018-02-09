@@ -107,9 +107,8 @@ void FixShear::post_force(int vflag)
   //printf("nevery=%i, tmin=%i, tmax=%i, viscosity=%f, rate=%f, height = %f\n", nevery, tmin, tmax, viscosity, shearRate, height);
 
   int nlocal = atom->nlocal;
-  int nall = nlocal + atom->nghost;
 
-  for (int i = 0; i < nall; i++) {
+  for (int i = 0; i < nlocal; i++) {
   double diameter = 2 * radius[i];
   if (dflag == 1) {
     f[i][0] += MY_3PI * viscosity * diameter * (shearRate * (x[i][2] - height)-v[i][0]);

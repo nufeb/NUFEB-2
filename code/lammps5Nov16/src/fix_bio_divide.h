@@ -41,9 +41,6 @@ class FixDivide : public Fix {
   tagint maxtag_all;
   double xlo,xhi,ylo,yhi,zlo,zhi;
 
-  void find_maxid();
-  int overlap();
-
   class RanPark *random;
   class AtomVecBio *avec;
   class BIO *bio;
