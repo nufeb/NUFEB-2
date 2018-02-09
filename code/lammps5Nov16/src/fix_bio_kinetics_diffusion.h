@@ -26,6 +26,7 @@ class FixKineticsDiffusion: public Fix {
   int setmask();
   void init();
   bool* diffusion(bool*, int, double);
+  void update_nuS();
 
   int xbcflag, ybcflag, zbcflag;             // 0=PERIODIC-PERIODIC, 1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
 
@@ -39,14 +40,15 @@ class FixKineticsDiffusion: public Fix {
   int ntypes;                       // # of species
   int *mask;
   int *type;
+  int shearflag, dragflag;
 
   double shearRate;
   double **iniS;                // inlet concentrations of nutrients
   double *diffCoeff;            // diffusion coefficients of nutrients
   double *mw;                   // molecular weights of nutrients
   double tol;                   // tolerance for convergence criteria for nutrient balance equation
-  int rstep;                    // steps skipped between Si+n-Si
-  int rflag;
+ // int rstep;                    // steps skipped between Si+n-Si
+ // int rflag;
   double **nuR;
   double **nuS;
   double *diffD;
@@ -64,8 +66,8 @@ class FixKineticsDiffusion: public Fix {
   double xlo, xhi, ylo, yhi, zlo, zhi, bzhi;
   double xbcm, xbcp, ybcm, ybcp, zbcm, zbcp; // inlet BC concentrations for each surface
 
-  double **xGrid;
-  double **nuGrid;
+  double **xGrid;                     // grid coordinate
+  double **nuGrid;                    // nutrient concentration in ghost mesh [grid][nutrient]
   double *nuPrev;
   bool *ghost;
 
@@ -88,7 +90,7 @@ class FixKineticsDiffusion: public Fix {
   void compute_bl();
   void compute_flux(double, double &, double *, double, int);
   bool isEuqal(double, double, double);
-  double getMaxHeight();
+  int get_index(int);
 };
 
 }

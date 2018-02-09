@@ -11,6 +11,8 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
+#include <stdlib.h> // atoi
+
 #include "compute_bio_height.h"
 
 #include "atom.h"

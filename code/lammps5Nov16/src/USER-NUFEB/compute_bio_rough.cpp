@@ -12,6 +12,7 @@
 ------------------------------------------------------------------------- */
 
 #include <math.h>
+#include <stdlib.h> // atoi
 
 #include "atom.h"
 #include "error.h"

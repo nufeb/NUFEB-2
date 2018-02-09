@@ -115,6 +115,7 @@ class ReadDataBIO : protected Pointers {
   void type_memory();
   void nutrient_memory();
 
+  void typeName();
   void nutrients();
 
   void consumption();
