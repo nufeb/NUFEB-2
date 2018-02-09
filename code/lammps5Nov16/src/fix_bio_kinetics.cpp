@@ -206,7 +206,6 @@ void FixKinetics::init() {
   else if (bio->iniS == NULL)
     error->all(FLERR, "fix_kinetics requires Nutrients inputs");
 
-  bgrids = subn[0] * subn[1] * subn[2];
   ngrids = subn[0] * subn[1] * subn[2];
 
   nnus = bio->nnus;
@@ -221,19 +220,19 @@ void FixKinetics::init() {
   bl = input->variable->compute_equal(ivar[6]);
 
   nuConv = new bool[nnus + 1]();
-  nuS = memory->create(nuS, nnus + 1, bgrids, "kinetics:nuS");
-  nuR = memory->create(nuR, nnus + 1, bgrids, "kinetics:nuR");
-  qGas = memory->create(qGas, nnus + 1, bgrids, "kinetics:nuGas");
-  gYield = memory->create(gYield, ntypes + 1, bgrids, "kinetic:gYield");
-  activity = memory->create(activity, nnus + 1, 5, bgrids, "kinetics:activity");
-  DRGCat = memory->create(DRGCat, ntypes + 1, bgrids, "kinetics:DRGCat");
-  DRGAn = memory->create(DRGAn, ntypes + 1, bgrids, "kinetics:DRGAn");
+  nuS = memory->create(nuS, nnus + 1, ngrids, "kinetics:nuS");
+  nuR = memory->create(nuR, nnus + 1, ngrids, "kinetics:nuR");
+  qGas = memory->create(qGas, nnus + 1, ngrids, "kinetics:nuGas");
+  gYield = memory->create(gYield, ntypes + 1, ngrids, "kinetic:gYield");
+  activity = memory->create(activity, nnus + 1, 5, ngrids, "kinetics:activity");
+  DRGCat = memory->create(DRGCat, ntypes + 1, ngrids, "kinetics:DRGCat");
+  DRGAn = memory->create(DRGAn, ntypes + 1, ngrids, "kinetics:DRGAn");
   kEq = memory->create(kEq, nnus + 1, 4, "kinetics:kEq");
-  Sh = memory->create(Sh, bgrids, "kinetics:Sh");
-  fV = memory->create(fV, 3, bgrids, "kinetcis:fV");
+  Sh = memory->create(Sh, ngrids, "kinetics:Sh");
+  fV = memory->create(fV, 3, ngrids, "kinetcis:fV");
 
   //initialize grid yield, inlet concentration, consumption
-  for (int j = 0; j < bgrids; j++) {
+  for (int j = 0; j < ngrids; j++) {
     fV[0][j] = 0;
     fV[1][j] = 0;
     fV[2][j] = 0;
@@ -256,12 +255,7 @@ void FixKinetics::init() {
 
   reset_isConv();
 
-  //update ngrids
-  if (bl > 0) {
-    double height = getMaxHeight();
-    bnz = ceil((bl + height)/stepz);
-    if (bnz > subn[2]) bnz = subn[2];
-  }
+  update_bgrids();
 
   recv_buff_size = BUFMIN;
   send_buff_size = BUFMIN;
@@ -353,22 +347,6 @@ void FixKinetics::borders()
 
 /* ---------------------------------------------------------------------- */
 
-void FixKinetics::grow() {
-  int ntypes = atom->ntypes;
-
-  gYield = memory->grow(gYield, ntypes + 1, bgrids, "kinetic:gYield");
-  DRGCat = memory->grow(DRGCat, ntypes + 1, bgrids, "kinetics:DRGCat");
-  DRGAn = memory->grow(DRGAn, ntypes + 1, bgrids, "kinetics:DRGAn");
-
-  for (int j = 0; j < bgrids; j++) {
-    for (int i = 1; i <= ntypes; i++) {
-      gYield[i][j] = bio->yield[i];
-    }
-  }
-}
-
-/* ---------------------------------------------------------------------- */
-
 void FixKinetics::init_keq() {
   // water Kj/mol
   double dG0H2O = -237.18;
@@ -449,13 +427,7 @@ void FixKinetics::integration() {
   bool isConv = false;
   reset_nuR();
 
-  //update ngrids
-  if (bl > 0) {
-    double height = getMaxHeight();
-    bnz = ceil((bl + height)/stepz);
-    if (bnz > subn[2]) bnz = subn[2];
-    bgrids = subn[0] * subn[1] * bnz;
-  }
+  update_bgrids();
 
   while (!isConv) {
     iteration++;
@@ -515,6 +487,18 @@ double FixKinetics::getMaxHeight() {
   MPI_Allreduce(&maxh, &global_max, 1, MPI_DOUBLE, MPI_MAX, world);
 
   return global_max;
+}
+
+void FixKinetics::update_bgrids() {
+  if (bl > 0) {
+    double height = getMaxHeight();
+    bnz = ceil((bl + height)/stepz);
+    bnz = MIN(subn[2], MAX(0, bnz - subnlo[2]));
+    bgrids = subn[0] * subn[1] * bnz;
+  }
+  else {
+    bgrids = subn[0] * subn[1] * subn[2];
+  }
 }
 
 bool FixKinetics::is_inside(int i) {
@@ -619,21 +603,3 @@ void FixKinetics::reset_isConv() {
   }
 }
 
-/* ----------------------------------------------------------------------
-   get index of grid containing atom i
- ------------------------------------------------------------------------- */
-
-int FixKinetics::position(int i) {
-
-  int pos = -1;
-  int xpos = (atom->x[i][0] - xlo) / stepx + 1;
-  int ypos = (atom->x[i][1] - ylo) / stepy + 1;
-  int zpos = (atom->x[i][2] - zlo) / stepz + 1;
-
-  pos = (xpos - 1) + (ypos - 1) * nx + (zpos - 1) * (nx * ny);
-
-  if (pos >= bgrids)
-    return -1;
-
-  return pos;
-}
