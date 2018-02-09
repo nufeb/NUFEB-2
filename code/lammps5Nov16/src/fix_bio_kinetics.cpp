@@ -239,7 +239,7 @@ void FixKinetics::init() {
   reset_isConv();
 
   //update ngrids
-  if (bl > 0) {
+  if (bl >= 0) {
     double height = getMaxHeight();
     bnz = ceil((bl + height) / stepz);
     if (bnz > nz)
@@ -346,7 +346,7 @@ void FixKinetics::integration() {
   reset_nuR();
 
   //update ngrids
-  if (bl > 0) {
+  if (bl >= 0) {
     double height = getMaxHeight();
 
     bnz = ceil((bl + height) / stepz);

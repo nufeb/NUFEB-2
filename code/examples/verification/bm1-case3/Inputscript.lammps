@@ -1,0 +1,95 @@
+# NUFEB simulation
+
+atom_style	bio
+atom_modify	map array sort 100 5.0e-7
+boundary	pp pp ff
+newton		off
+#processors  2 1 1
+
+comm_modify	vel yes
+
+read_data_bio atom.in
+
+#region box block 0 1e-4 0 4e-5 0 1e-6
+#create_atoms 1 random 500 38790 box
+
+group HET type 1
+
+#set type 1 density 10
+#set type 1 diameter 1e-6
+#set type 1 mass 1e-16
+
+neighbor	5e-7 bin
+neigh_modify	delay 0 one 2000
+
+#pair_style none
+pair_style  gran/hooke/history 1.e-4 NULL 1.e-5 NULL 0.0 1
+
+pair_coeff  * *
+timestep 5
+
+fix 1 all nve/limit 1e-7
+
+fix fv all viscous 1e-5
+
+fix zw all wall/gran hooke/history 2000 NULL 500.0 NULL 1.5 0 zplane  0.0   1.0e-04
+
+variable kanc equal 50
+
+fix zwa all walladh v_kanc zplane  0.0   1.0e-04
+
+##############Ibm Variable Definitions##############
+
+#Defining EPS density and ratio variables
+variable EPSdens equal 30
+variable EPSratio equal 1.25
+variable divMass equal 2e-16
+
+variable ke equal 5e+10
+
+#Defining kinetics variables
+variable temp equal 298.15
+variable gasTran equal 0.08205746
+variable gvol equal 8e-14
+variable rth equal 0.0083144
+variable pressure equal 1
+variable ph equal 7.0
+variable etaHET equal 0.6
+
+#Defining diffusion variables
+variable diffT equal 1e-4
+variable tol equal 1e-6
+variable blThick equal 0
+variable Q equal 0.000000231
+variable rvol equal 1.25e-3
+variable Af equal 0.1
+variable shearRate equal 0.0
+
+#Defining critical diameter of death
+variable deadMass equal 6e-17
+
+##############Ibm functions##############
+
+fix k1 all kinetics 200 30 12 30 v_temp v_rth v_gvol v_gasTran v_ph v_diffT v_blThick 
+fix kgm all kinetics/growth/monod v_EPSdens v_etaHET
+fix g1 all kinetics/diffusion v_shearRate v_tol v_Q v_rvol v_Af pp pp nd kg
+fix d1 all divide 200 v_EPSdens v_divMass 31231
+
+fix j1 all epsadh 1 v_ke 1
+
+##############Ibm compute##############
+
+compute myNtypes all ntypes
+compute myHeight all ave_height 50 50
+#compute myRough all roughness 25 25
+
+##############Simulation outputs##############
+
+dump		id all custom 1000 snapshot.bubblemd id type diameter x y z
+#dump            d0 all bio 1000 concentration
+thermo_style    custom step cpu atoms biomass c_myNtypes[*] c_myHeight
+thermo		200
+thermo_modify	lost ignore
+
+run 4000000
+
