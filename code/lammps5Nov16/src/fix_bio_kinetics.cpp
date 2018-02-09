@@ -102,8 +102,6 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg
     subhi[i] = subnhi[i] * stepz;
     subn[i] = subnhi[i] - subnlo[i];
   }
-
-  atom->add_callback(0);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -134,9 +132,6 @@ FixKinetics::~FixKinetics()
   memory->destroy(recvend);
   memory->destroy(sendbegin);
   memory->destroy(sendend);
-
-  memory->destroy(cellbegin);
-  memory->destroy(next);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -244,10 +239,10 @@ void FixKinetics::init()
   send_buff_size = BUFMIN;
   recvcells = memory->create(recvcells, recv_buff_size, "kinetics::recvcells");
   sendcells = memory->create(sendcells, send_buff_size, "kinetics::sendcells");
-  recvbegin = memory->create(recvbegin, 2 * comm->nprocs, "kinetics::recvbegin");
-  recvend = memory->create(recvend, 2 * comm->nprocs, "kinetics::recvend");
-  sendbegin = memory->create(sendbegin, 2 * comm->nprocs, "kinetics::sendbegin");
-  sendend = memory->create(sendend, 2 * comm->nprocs, "kinetics::sendend");
+  recvbegin = memory->create(recvbegin, comm->nprocs, "kinetics::recvbegin");
+  recvend = memory->create(recvend, comm->nprocs, "kinetics::recvend");
+  sendbegin = memory->create(sendbegin, comm->nprocs, "kinetics::sendbegin");
+  sendend = memory->create(sendend, comm->nprocs, "kinetics::sendend");
 
   for (int i = 0; i < comm->nprocs; i++)
   {
@@ -257,6 +252,7 @@ void FixKinetics::init()
     sendend[i] = 0;
   }
 
+  // Fitting initial domain decomposition to the grid 
   for (int i = 0; i < comm->procgrid[0]; i++) {
     int n = nx * i * 1.0 / comm->procgrid[0];
     comm->xsplit[i] = (double)n / nx;
@@ -272,16 +268,6 @@ void FixKinetics::init()
   domain->set_local_box();
 
   borders();
-
-  memory->create(cellbegin, ngrids, "kinetics::cellbegin");
-  memory->create(next, atom->nmax, "kinetics::next");
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixKinetics::grow_arrays(int nmax)
-{
-  memory->grow(next, nmax, "kinetics::next");
 }
 
 /* ---------------------------------------------------------------------- */
@@ -442,8 +428,6 @@ void FixKinetics::integration() {
     bgrids = subn[0] * subn[1] * bnz;
   }
 
-  fix_cell_arrays();
-
   while (!isConv) {
     iteration++;
     isConv = true;
@@ -571,25 +555,5 @@ void FixKinetics::send_recv_cells(const Grid &basegrid, const Grid &grid, const 
   if (is_intesection_valid(sendgrid)) {
     add_cells(basegrid, sendgrid, sendcells, nsend);
     nsend += n;
-  }
-}
-
-void FixKinetics::fix_cell_arrays()
-{
-  for (int i = 0; i < bgrids; i++) cellbegin[i] = -1;
-
-  for (int i = atom->nlocal-1; i >= 0; i--) {
-    int ix = static_cast<int> ((atom->x[i][0] - sublo[0]) / stepz);
-    int iy = static_cast<int> ((atom->x[i][1] - sublo[1]) / stepz);
-    int iz = static_cast<int> ((atom->x[i][2] - sublo[2]) / stepz);
-    ix = MAX(ix, 0);
-    iy = MAX(iy, 0);
-    iz = MAX(iz, 0);
-    ix = MIN(ix, subn[0] - 1);
-    iy = MIN(iy, subn[1] - 1);
-    iz = MIN(iz, subn[2] - 1);
-    int ibin = iz * subn[0] * subn[1] + iy * subn[0] + ix;
-    next[i] = cellbegin[ibin];
-    cellbegin[ibin] = i;
   }
 }
