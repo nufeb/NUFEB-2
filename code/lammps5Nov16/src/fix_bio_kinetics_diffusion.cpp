@@ -293,7 +293,7 @@ void FixKineticsDiffusion::init() {
  ------------------------------------------------------------------------- */
 
 bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT) {
-  if (iter == 1 && kinetics->bl > 0)
+  if (iter == 1 && kinetics->bl >= 0)
     update_grids();
 
   this->diffT = diffT;
@@ -350,8 +350,8 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT) {
             else
               nuS[i][ind] = nuGrid[grid][i];
           } else {
-            nuGrid[grid][i] = 0;
-            nuS[i][ind] = 0;
+            nuGrid[grid][i] = 1e-20;
+            nuS[i][ind] = 1e-20;
           }
         } else {
           compute_bc(nuGrid[grid][i], nuPrev, grid, nuBS[i]);
@@ -417,8 +417,8 @@ void FixKineticsDiffusion::compute_bulk(int nu) {
     else sumR += nuR[nu][i] * vol;
   }
 
-  nuBS[nu] = nuBS[nu] + ((q / rvol) * (zbcp - nuBS[nu]) + (af / (rvol * yhi * xhi)) * sumR) * update->dt * nevery;
-  printf("bulk liquid = %e \n", nuBS[nu]);
+  nuBS[nu] = nuBS[nu] + ((q / rvol) * (zbcp - nuBS[nu]) + (af / (rvol * yhi * xhi)) * sumR) * update->dt * kinetics->nevery;
+  printf("bulk liquid = %e, %e \n", nuBS[nu], ((q / rvol) * (zbcp - nuBS[nu]) + (af / (rvol * yhi * xhi)) * sumR) * update->dt * kinetics->nevery);
 }
 
 /* ----------------------------------------------------------------------
@@ -639,8 +639,8 @@ void FixKineticsDiffusion::update_nuS(){
 
           nuGrid[grid][nu] += r;
 
-          if (nuGrid[grid][nu] < 0)
-            nuGrid[grid][nu] = 0;
+          if (nuGrid[grid][nu] <= 0)
+            nuGrid[grid][nu] = 1e-20;
 
           if (unit == 0)
             nuS[nu][ind] = nuGrid[grid][nu] / 1000;
