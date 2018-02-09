@@ -92,5 +92,5 @@ thermo_style    custom step cpu atoms biomass c_myNtypes[*]
 thermo		100
 thermo_modify	lost ignore
 
-run 40000
+run 400
 
