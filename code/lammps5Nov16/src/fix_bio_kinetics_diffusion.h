@@ -66,7 +66,7 @@ class FixKineticsDiffusion: public Fix {
 
   double **xGrid;
   double **nuGrid;
-  double **nuPrev;
+  double *nuPrev;
   bool *ghost;
 
   int recv_buff_size;

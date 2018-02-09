@@ -35,7 +35,6 @@ class FixKinetics : public Fix {
   int setmask();
   virtual void pre_force(int);
   void init();
-  void grow_arrays(int);
   void borders();
 
  private:
@@ -96,9 +95,7 @@ class FixKinetics : public Fix {
   int position(int);
   void add_cells(const Grid &, const Grid &, int *, int);
   bool is_intesection_valid(const Grid &);
-  void send_recv_cells(const Grid &, const Grid &, const Grid &, int &, int &
-);
-  void fix_cell_arrays();
+  void send_recv_cells(const Grid &, const Grid &, const Grid &, int &, int &);
 };
 
 }
