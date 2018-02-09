@@ -65,9 +65,6 @@ class FixKinetics : public Fix {
   double stepz, stepx, stepy;
   int gflag;                      // microbe growth flag 1 = update biomass; 0 = solve reaction only, growth is negligible
 
-  int subn[2];                     // number of grids in x y axis for this proc
-  double sublo[2], subhi[2];       // subdomain size trimmed to the grid
-
   int subn[3];                     // number of grids in x y axis for this proc
   int subnlo[3],subnhi[3];         // cell index of the subdomain lower and upper bound for each axis
   double sublo[3],subhi[3];        // subdomain lower and upper bound trimmed to the grid
@@ -96,6 +93,7 @@ class FixKinetics : public Fix {
   void integration();
   void grow();
   double getMaxHeight();
+  void update_bgrids();
   bool is_inside(int);
   int position(int);
   void add_cells(const Grid &, const Grid &, int *, int);

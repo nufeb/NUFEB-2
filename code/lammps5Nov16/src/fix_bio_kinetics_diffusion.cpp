@@ -393,7 +393,6 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT) {
       for (int grid = 0; grid < nXYZ; grid++) {
 	nuPrev[grid] = nuGrid[i][grid];
       }
-<<<<<<< HEAD
 	
       maxS[i] = 0;
       // solve diffusion and reaction

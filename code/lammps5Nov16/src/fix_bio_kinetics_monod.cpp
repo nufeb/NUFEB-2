@@ -243,10 +243,9 @@ void FixKineticsMonod::init_param() {
 }
 
 /* ----------------------------------------------------------------------
-<<<<<<< HEAD
   metabolism and atom update
 ------------------------------------------------------------------------- */
-void FixKineticsMonod::growth(double dt)
+void FixKineticsMonod::growth(double dt, int gflag)
 {
   // create density array
   double **xtype = memory->create(xtype, ntypes+1, kinetics->bgrids,"monod:xtype");
