@@ -310,8 +310,8 @@ void FixKineticsDiffusion::init() {
   convergences = memory->create(convergences, comm->nprocs, "diffusion::convergences");
 
   // create request vector
-  requests = new MPI_Request[MAX(comm->nprocs, nnus + 1)];
-  status = new MPI_Status[MAX(comm->nprocs, nnus + 1)];
+  requests = new MPI_Request[MAX(2 * comm->nprocs, nnus + 1)];
+  status = new MPI_Status[MAX(2 * comm->nprocs, nnus + 1)];
 }
 
 /* ----------------------------------------------------------------------
