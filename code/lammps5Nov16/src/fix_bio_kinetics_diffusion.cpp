@@ -44,8 +44,6 @@
 #include "group.h"
 #include "comm.h"
 
-#include "thr_omp.h"
-
 #define BUFMIN 1000
 
 using namespace LAMMPS_NS;
@@ -310,8 +308,8 @@ void FixKineticsDiffusion::init() {
   convergences = memory->create(convergences, comm->nprocs, "diffusion::convergences");
 
   // create request vector
-  requests = new MPI_Request[MAX(comm->nprocs, nnus + 1)];
-  status = new MPI_Status[MAX(comm->nprocs, nnus + 1)];
+  requests = new MPI_Request[MAX(2 * comm->nprocs, nnus + 1)];
+  status = new MPI_Status[MAX(2 * comm->nprocs, nnus + 1)];
 }
 
 /* ----------------------------------------------------------------------
@@ -424,14 +422,20 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT) {
 
 	if (maxS[i] < nuGrid[i][grid]) maxS[i] = nuGrid[i][grid];
       }
+#if MPI_VERSION >= 3
       MPI_Iallreduce(MPI_IN_PLACE, &maxS[i], 1, MPI_DOUBLE, MPI_MAX, world, &requests[i]);
+#else
+      MPI_Allreduce(MPI_IN_PLACE, &maxS[i], 1, MPI_DOUBLE, MPI_MAX, world);
+#endif
     }
   }
 
   nrequests = 0;
   for (int i = 1; i <= nnus; i++) {
     if (bio->nuType[i] == 0 && !nuConv[i]) { // checking if is liquid
+#if MPI_VERSION >= 3
       MPI_Wait(&requests[i], &status[i]);
+#endif
       // check convergence criteria
       nuConv[i] = true;
       for (int grid = 0; grid < nXYZ; grid++) {
@@ -446,10 +450,16 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT) {
 	  if (!nuConv[i]) break;
 	}
       }
+#if MPI_VERSION >= 3
       MPI_Iallreduce(MPI_IN_PLACE, &nuConv[i], 1, MPI_INT, MPI_BAND, world, &requests[nrequests++]);
+#else
+      MPI_Allreduce(MPI_IN_PLACE, &nuConv[i], 1, MPI_INT, MPI_BAND, world);
+#endif
     }
   }
+#if MPI_VERSION >= 3
   MPI_Waitall(nrequests, requests, status);
+#endif
 
   delete [] maxS;
 
