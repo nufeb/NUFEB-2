@@ -1,5 +1,8 @@
 #include "improper_cvff.h"
+#include "improper_cvff_omp.h"
 #include "improper_harmonic.h"
+#include "improper_harmonic_omp.h"
 #include "improper_hybrid.h"
 #include "improper_umbrella.h"
+#include "improper_umbrella_omp.h"
 #include "improper_zero.h"
