@@ -44,8 +44,6 @@
 #include "group.h"
 #include "comm.h"
 
-#include "thr_omp.h"
-
 #define BUFMIN 1000
 
 using namespace LAMMPS_NS;
@@ -319,7 +317,7 @@ void FixKineticsDiffusion::init() {
  ------------------------------------------------------------------------- */
 
 bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT) {
-  if (iter == 1 && kinetics->bl > 0)
+  if (iter == 1 && kinetics->bl >= 0)
     update_grids();
 
   this->diffT = diffT;
@@ -424,14 +422,20 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT) {
 
 	if (maxS[i] < nuGrid[i][grid]) maxS[i] = nuGrid[i][grid];
       }
+#if MPI_VERSION >= 3
       MPI_Iallreduce(MPI_IN_PLACE, &maxS[i], 1, MPI_DOUBLE, MPI_MAX, world, &requests[i]);
+#else
+      MPI_Allreduce(MPI_IN_PLACE, &maxS[i], 1, MPI_DOUBLE, MPI_MAX, world);
+#endif
     }
   }
 
   nrequests = 0;
   for (int i = 1; i <= nnus; i++) {
     if (bio->nuType[i] == 0 && !nuConv[i]) { // checking if is liquid
+#if MPI_VERSION >= 3
       MPI_Wait(&requests[i], &status[i]);
+#endif
       // check convergence criteria
       nuConv[i] = true;
       for (int grid = 0; grid < nXYZ; grid++) {
@@ -446,10 +450,16 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT) {
 	  if (!nuConv[i]) break;
 	}
       }
+#if MPI_VERSION >= 3
       MPI_Iallreduce(MPI_IN_PLACE, &nuConv[i], 1, MPI_INT, MPI_BAND, world, &requests[nrequests++]);
+#else
+      MPI_Allreduce(MPI_IN_PLACE, &nuConv[i], 1, MPI_INT, MPI_BAND, world);
+#endif
     }
   }
+#if MPI_VERSION >= 3
   MPI_Waitall(nrequests, requests, status);
+#endif
 
   delete [] maxS;
 
@@ -483,8 +493,8 @@ void FixKineticsDiffusion::compute_bulk(int nu) {
     else sumR += nuR[nu][i] * vol;
   }
 
-  nuBS[nu] = nuBS[nu] + ((q / rvol) * (zbcp - nuBS[nu]) + (af / (rvol * yhi * xhi)) * sumR) * update->dt * nevery;
-  printf("bulk liquid = %e \n", nuBS[nu]);
+  nuBS[nu] = nuBS[nu] + ((q / rvol) * (zbcp - nuBS[nu]) + (af / (rvol * yhi * xhi)) * sumR) * update->dt * kinetics->nevery;
+  printf("bulk liquid = %e, %e \n", nuBS[nu], ((q / rvol) * (zbcp - nuBS[nu]) + (af / (rvol * yhi * xhi)) * sumR) * update->dt * kinetics->nevery);
 }
 
 /* ----------------------------------------------------------------------
@@ -716,8 +726,8 @@ void FixKineticsDiffusion::update_nuS(){
 
           nuGrid[grid][nu] += r;
 
-          if (nuGrid[grid][nu] < 0)
-            nuGrid[grid][nu] = 0;
+          if (nuGrid[grid][nu] <= 0)
+            nuGrid[grid][nu] = 1e-20;
 
           if (unit == 0)
             nuS[nu][ind] = nuGrid[grid][nu] / 1000;
