@@ -296,7 +296,7 @@ void FixKinetics::init() {
 
 void FixKinetics::borders()
 {
-  if (comm->nprocs < 2) return;
+  if (comm->nprocs < 2 || diffusion == NULL) return;
 
   // communicate grid extent
   int *gridlo = memory->create(gridlo, 3 * comm->nprocs, "kinetics::grids");
