@@ -192,8 +192,6 @@ void FixKineticsThermo::init_dG0() {
 
     int flag = tgflag[i];
     dG0[i][1] += typeGCoeff[i][flag];
-//    printf("dG0[%i][0] = %e \n", i, dG0[i][0]);
-//    printf("dG0[%i][1] = %e \n", i, dG0[i][1]);
   }
 }
 
@@ -244,8 +242,6 @@ int FixKineticsThermo::setmask() {
  ------------------------------------------------------------------------- */
 void FixKineticsThermo::thermo() {
   int *mask = atom->mask;
-  int nlocal = atom->nlocal;
-  int nall = nlocal + atom->nghost;
   int *type = atom->type;
   ntypes = atom->ntypes;
 
@@ -328,17 +324,13 @@ void FixKineticsThermo::thermo() {
             value = activity[k][flag][i];
 
           double dgr = rthT * log(value);
-          // printf ("%e ",  value);
+
           DRGCat[j][i] += catCoeff[j][k] * dgr;
           DRGAn[j][i] += anabCoeff[j][k] * dgr;
-          //if (k ==1 && j==7)printf("%e %s %e %s\n", DRGCat[j][i], bio->typeName[j], catCoeff[j][k], bio->nuName[k]);
         } else {
           error->all(FLERR, "nuGCoeff[1] is inf value");
         }
       }
-      // printf("\n");
-//      printf("DRGAn[%i][%i][0] = %e \n", i,j, DRGAn[j][i]);
-//      printf("DRGCat[%i][%i][1] = %e \n", i,j, DRGCat[j][i]);
 
       //use catabolic and anabolic energy values to derive catabolic reaction equation
       if (fixY == 1) {

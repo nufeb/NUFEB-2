@@ -93,89 +93,78 @@ void FixEPSAdh::post_force(int vflag)
 {
   double ke = input->variable->compute_equal(ivar);
 
-  int i,ii=0,j=0,jj=0,*numneigh,inum,**firstneigh;
-  int jnum;
-  double xtmp,ytmp,ztmp,delx,dely,delz;
-  double outerRadi,outerRadj,radsum,rsq,r, rinv;
-  double ccel,ccelx ,ccely,ccelz;
-  int *jlist,*ilist;
-  double del;
-  double **f = atom->f;
-  double **x = atom->x;
-  double *outerRadius = avec->outerRadius;
-  double *outerMass = avec->outerMass;
-  double *rmass = atom->rmass;
-  int *type = atom->type;
-  int nlocal = atom->nlocal;
-  int newton_pair = force->newton_pair;
-  int *mask = atom->mask;
-  double epsMassi, epsMassj, massSum;
-
-  inum = list->inum;
-  ilist = list->ilist;
-  numneigh = list->numneigh;
-  firstneigh = list->firstneigh;
+  double * const * const f = atom->f;
+  double * const * const x = atom->x;
+  double * const outerRadius = avec->outerRadius;
+  double * const outerMass = avec->outerMass;
+  double * const rmass = atom->rmass;
+  int * const type = atom->type;
+  const int nlocal = atom->nlocal;
+  const int newton_pair = force->newton_pair;
+  int * const mask = atom->mask;
+  int * const ilist = list->ilist;
+  int * const numneigh = list->numneigh;
+  int * const * const firstneigh = list->firstneigh;
 
   // loop over neighbors of my atoms
-  
-  for (ii = 0; ii < nlocal; ii++){
-	  i = ilist[ii];
-	  if (!(mask[i] & groupbit)) continue;
-	  xtmp = x[i][0];
-	  ytmp = x[i][1];
-	  ztmp = x[i][2];
+  for (int ii = 0; ii < nlocal; ii++){
+    int i = ilist[ii];
+    if (!(mask[i] & groupbit)) continue;
+    double xtmp = x[i][0];
+    double ytmp = x[i][1];
+    double ztmp = x[i][2];
 
-	  outerRadi = outerRadius[i];
-	  jlist = firstneigh[i];
-	  jnum = numneigh[i];
+    double outerRadi = outerRadius[i];
+    int * const jlist = firstneigh[i];
+    int jnum = numneigh[i];
 
+    double epsMassi = 0;
     if (atom->mask[i] == avec->maskEPS) epsMassi = rmass[i];
     else epsMassi = outerMass[i];
 
-	  for (jj = 0; jj < jnum; jj++) {
-		  j = jlist[jj];
-		  delx = xtmp - x[j][0];
-		  dely = ytmp - x[j][1];
-		  delz = ztmp - x[j][2];
-		  rsq = delx*delx + dely*dely + delz*delz;
+    for (int jj = 0; jj < jnum; jj++) {
+      int j = jlist[jj];
+      double delx = xtmp - x[j][0];
+      double dely = ytmp - x[j][1];
+      double delz = ztmp - x[j][2];
+      double rsq = delx*delx + dely*dely + delz*delz;
 
-		  outerRadj = outerRadius[j];
+      double outerRadj = outerRadius[j];
 
-		  if (atom->mask[j] == avec->maskEPS) epsMassj = rmass[j];
+      double epsMassj = 0;
+      if (atom->mask[j] == avec->maskEPS) epsMassj = rmass[j];
       else epsMassj = outerMass[j];
 
-      radsum = outerRadi + outerRadj;
-      massSum = epsMassi + epsMassj;
+      double radsum = outerRadi + outerRadj;
+      double massSum = epsMassi + epsMassj;
+      double r = sqrt(rsq);
+      double del = r - radsum;
+      double rinv = 1/ r;
 
+      double ccel = 0;
       if(flag == 1){
       	if (rsq < 4 * radsum * radsum) {
-  				r = sqrt(rsq);
-  				del = r - radsum;
-  				rinv = 1/r;
-  				ccel = -massSum*ke*del;
+	  ccel = -massSum*ke*del;
       	}
       }else if(flag == 2){
       	if ((rsq < 4 * radsum * ke) && (rsq > radsum)){
-  				r = sqrt(rsq);
-  				del = r - radsum;
-  				rinv = 1/r;
-  				ccel = -massSum*ke*(radsum/r)*(radsum/r);
+	  ccel = -massSum*ke*(radsum/r)*(radsum/r);
       	}
       }
 
-  		ccelx = delx*ccel*rinv ;
-  		ccely = dely*ccel*rinv ;
-  		ccelz = delz*ccel*rinv ;
+      double ccelx = delx*ccel*rinv;
+      double ccely = dely*ccel*rinv;
+      double ccelz = delz*ccel*rinv;
 
-			f[i][0] += ccelx;
-			f[i][1] += ccely;
-			f[i][2] += ccelz;
-
-			if (newton_pair || j < nlocal) {
-				f[j][0] -= ccelx;
-				f[j][1] -= ccely;
-				f[j][2] -= ccelz;
-			}
-	  }
+      f[i][0] += ccelx;
+      f[i][1] += ccely;
+      f[i][2] += ccelz;
+      
+      if (newton_pair || j < nlocal) {
+	f[j][0] -= ccelx;
+	f[j][1] -= ccely;
+	f[j][2] -= ccelz;
+      }
+    }
   }
 }

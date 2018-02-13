@@ -12,3 +12,5 @@ log.*
 *.exe
 .*.swp
 *.orig
+lmp_*
+style_*

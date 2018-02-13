@@ -42,7 +42,6 @@ class FixEPSExtract : public Fix {
   int typeEPS;
   tagint maxtag_all;
   double xlo,xhi,ylo,yhi,zlo,zhi;
-  void find_maxid();
 
   class RanPark *random;
   class AtomVecBio *avec;
