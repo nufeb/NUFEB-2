@@ -38,7 +38,6 @@ class FixKineticsEnergy : public Fix {
   int *mask;
   int *type;
   int nlocal;
-  int nall;
 
   int nnus;                         // # of nutrients
   int ntypes;                       // # of species
