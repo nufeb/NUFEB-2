@@ -45,6 +45,7 @@
 #include "update.h"
 #include "variable.h"
 #include "group.h"
+#include "comm.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -181,7 +182,6 @@ void FixKineticsEnergy::init() {
 void FixKineticsEnergy::growth(double dt, int gflag) {
   mask = atom->mask;
   nlocal = atom->nlocal;
-  nall = nlocal + atom->nghost;
   type = atom->type;
   ntypes = atom->ntypes;
 
@@ -210,7 +210,7 @@ void FixKineticsEnergy::growth(double dt, int gflag) {
     }
   }
 
-  for (int i = 0; i < nall; i++) {
+  for (int i = 0; i < nlocal; i++) {
     //get new growth rate based on new nutrients
     double mass = biomass(i) * dt;
     //update bacteria mass, radius etc
@@ -220,8 +220,7 @@ void FixKineticsEnergy::growth(double dt, int gflag) {
   memory->destroy(gMonod);
 }
 
-double FixKineticsEnergy::biomass(int i) {
-
+inline double FixKineticsEnergy::biomass(int i) {
   int t = type[i];
   int pos = kinetics->position(i);
 

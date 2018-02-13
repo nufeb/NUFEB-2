@@ -198,7 +198,6 @@ void FixKineticsMonod::init_param() {
       ino3 = nu;
     else
       error->all(FLERR, "unknow nutrient in fix_kinetics/kinetics/monod");
-
   }
 
   if (isub == 0)
@@ -238,16 +237,18 @@ void FixKineticsMonod::init_param() {
       delete[] name;
     }
   }
+
   if (ieps == 0)
     (error->warning(FLERR, "EPS is not defined in fix_kinetics/kinetics/monod"));
 }
 
 /* ----------------------------------------------------------------------
- metabolism and atom update
- ------------------------------------------------------------------------- */
-void FixKineticsMonod::growth(double dt, int gflag) {
-
-  xtype = memory->create(xtype, ntypes + 1, kinetics->bgrids, "monod:xtype");
+  metabolism and atom update
+------------------------------------------------------------------------- */
+void FixKineticsMonod::growth(double dt, int gflag)
+{
+  // create density array
+  double **xtype = memory->create(xtype, ntypes+1, kinetics->bgrids,"monod:xtype");
   for (int i = 1; i <= ntypes; i++) {
     for (int grid = 0; grid < kinetics->bgrids; grid++) {
       xtype[i][grid] = 0;
@@ -275,30 +276,23 @@ void FixKineticsMonod::growth(double dt, int gflag) {
 
   bool *nuConv = kinetics->nuConv;
   double yieldEPS = 0;
-  int out = 0;
+
   if (ieps != 0)
     yieldEPS = yield[ieps];
-
+  
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
       int pos = kinetics->position(i);
       int t = type[i];
       double rmassCellVol = rmass[i] / vol;
-
-      if (pos != -1)
-        xtype[t][pos] += rmassCellVol;
-      else
-        out = 1;
+      xtype[t][pos] += rmassCellVol;
     }
   }
-
-  if (out)
-    error->warning(FLERR, "Cross-boundary particles reported in ");
 
   for (int grid = 0; grid < kinetics->bgrids; grid++) {
     for (int i = 1; i <= ntypes; i++) {
       int spec = species[i];
-
+      
       // HET monod model
       if (spec == 1) {
         double R1 = mu[i] * (nuS[isub][grid] / (ks[i][isub] + nuS[isub][grid])) * (nuS[io2][grid] / (ks[i][io2] + nuS[io2][grid]));
@@ -400,14 +394,13 @@ void FixKineticsMonod::growth(double dt, int gflag) {
         outerMass[i] = fourThirdsPI * (outerRadius[i] * outerRadius[i] * outerRadius[i] - radius[i] * radius[i] * radius[i]) * EPSdens
             + growrate[t][1][pos] * rmass[i];
 
-        outerRadius[i] = pow(threeQuartersPI * (rmass[i] / density + outerMass[i] / EPSdens), third);
-        radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
+	outerRadius[i] = pow(threeQuartersPI * (rmass[i] / density + outerMass[i] / EPSdens), third);
+	radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
       } else {
-        radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
-        outerMass[i] = 0.0;
-        outerRadius[i] = radius[i];
+	radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
+	outerMass[i] = 0.0;
+	outerRadius[i] = radius[i];
       }
     }
   }
-
 }

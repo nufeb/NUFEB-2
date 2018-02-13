@@ -28,14 +28,14 @@ class FixKineticsDiffusion: public Fix {
   bool* diffusion(bool*, int, double);
   void update_nuS();
 
+  int xbcflag, ybcflag, zbcflag;             // 0=PERIODIC-PERIODIC, 1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
+
  private:
   char **var;
   int *ivar;
   int nnus;                     // # of nutrients
   double stepx, stepy, stepz;
 
-  int nlocal;
-  int nall;
   double *rmass;
   int ntypes;                       // # of species
   int *mask;
@@ -63,13 +63,22 @@ class FixKineticsDiffusion: public Fix {
   int nX, nY, nZ;               // # of all grids in x, y and z
   int nXYZ;                   // total # of grids
   double diffT;
-  double xlo,xhi,ylo,yhi,zlo,zhi,bzhi;
-  int xbcflag, ybcflag, zbcflag;             // 0=PERIODIC-PERIODIC, 1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
+  double xlo, xhi, ylo, yhi, zlo, zhi, bzhi;
   double xbcm, xbcp, ybcm, ybcp, zbcm, zbcp; // inlet BC concentrations for each surface
 
   double **xGrid;                     // grid coordinate
   double **nuGrid;                    // nutrient concentration in ghost mesh [grid][nutrient]
+  double *nuPrev;
   bool *ghost;
+
+  int recv_buff_size;
+  int send_buff_size;
+  double *recvbuff;
+  double *sendbuff;
+  int *convergences;
+
+  MPI_Request *requests;
+  MPI_Status *status;
 
   class FixKinetics *kinetics;
   class BIO *bio;
@@ -82,7 +91,6 @@ class FixKineticsDiffusion: public Fix {
   void compute_flux(double, double &, double *, double, int);
   bool isEuqal(double, double, double);
   int get_index(int);
-  void test();
 };
 
 }
