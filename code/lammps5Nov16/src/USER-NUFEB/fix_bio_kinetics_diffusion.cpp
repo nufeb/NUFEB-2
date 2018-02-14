@@ -326,11 +326,11 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT) {
 
   int nrecvcells = kinetics->recvend[comm->nprocs - 1];
   int nsendcells = kinetics->sendend[comm->nprocs - 1];
-  if (recv_buff_size < nrecvcells) {
+  if (recv_buff_size < nrecvcells * nnus) {
     recv_buff_size += ((nrecvcells * nnus) / BUFMIN + 1) * BUFMIN;
     memory->grow(recvbuff, recv_buff_size, "diffusion::recvbuff");
   }
-  if (send_buff_size < nsendcells) {
+  if (send_buff_size < nsendcells * nnus) {
     send_buff_size += ((nsendcells * nnus) / BUFMIN + 1) * BUFMIN;
     memory->grow(sendbuff, send_buff_size, "diffusion::recvbuff");
   }
