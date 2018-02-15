@@ -680,10 +680,10 @@ void DumpBio::write_aveconcentration_data()
 
   for(int i = 1; i < kinetics->nnus+1; i++){
     double s = 0;
-    for(int j = 0; j < kinetics->bgrids; j++){
+    for(int j = 0; j < kinetics->ngrids; j++){
       s += kinetics->nuS[i][j];
     }
-    s = s/kinetics->bgrids;
+    s = s/kinetics->ngrids;
     fprintf(fp, "%e,\t", s);
   }
   fprintf(fp, "\n");
