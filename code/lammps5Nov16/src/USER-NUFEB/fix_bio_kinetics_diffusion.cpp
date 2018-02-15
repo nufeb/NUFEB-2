@@ -488,7 +488,7 @@ void FixKineticsDiffusion::compute_bulk(int nu) {
   double sumR = 0;
   double vol = stepx * stepy * stepz;
 
-  for (int i = 0; i < nx * ny * kinetics->nz; i++) {
+  for (int i = 0; i < kinetics->bgrids; i++) {
     if (unit == 0) sumR += nuR[nu][i] * vol * 1000;
     else sumR += nuR[nu][i] * vol;
   }
