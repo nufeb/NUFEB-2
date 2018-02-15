@@ -534,11 +534,9 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
   // low-z surface
   if (xGrid[grid][2] < zlo && !ghost[up]) {
     //0=PERIODIC-PERIODIC,  1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
-    if (zbcflag == 0) {
+    if (zbcflag == 0 && kinetics->nz == kinetics->subn[2]) {
       int zhiGrid = grid + nX * nY * nz;
-      if (xGrid[zhiGrid][2] < kinetics->subhi[2]) { // periodic boundary conditions are already handled by cell communications for cases with more than 1 process 
-	nuCell = nuPrev[zhiGrid];
-      }
+      nuCell = nuPrev[zhiGrid];
     } else if (zbcflag == 1) {
       nuCell = 2 * zbcm - nuPrev[up];
     } else if (zbcflag == 2) {
@@ -551,11 +549,9 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
   }
   // high-z surface
   else if (xGrid[grid][2] > zhi && !ghost[down]) {
-    if (zbcflag == 0) {
+    if (zbcflag == 0 && kinetics->nz == kinetics->subn[2]) {
       int zloGrid = grid - nX * nY * nz;
-      if (xGrid[zloGrid][2] > kinetics->sublo[2]) {
-	nuCell = nuPrev[zloGrid];
-      }
+      nuCell = nuPrev[zloGrid];
     } else if (zbcflag == 1) {
       nuCell = 2 * bulk - nuPrev[down];
     } else if (zbcflag == 2) {
@@ -568,11 +564,9 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
   }
   // low-y surface
   else if (xGrid[grid][1] < ylo && !ghost[fwd]) {
-    if (ybcflag == 0) {
+    if (ybcflag == 0 && kinetics->ny == kinetics->subn[1]) {
       int yhiGrid = grid + nX * ny;
-      if (xGrid[yhiGrid][1] < kinetics->subhi[1]) {
-	nuCell = nuPrev[yhiGrid];
-      }
+      nuCell = nuPrev[yhiGrid];
     } else if (ybcflag == 1) {
       nuCell = 2 * ybcm - nuPrev[fwd];
     } else if (ybcflag == 2) {
@@ -585,11 +579,9 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
   }
   // high-y surface
   else if (xGrid[grid][1] > yhi && !ghost[bwd]) {
-    if (ybcflag == 0) {
+    if (ybcflag == 0 && kinetics->ny == kinetics->subn[1]) {
       int yloGrid = grid - nX * ny;
-      if (xGrid[yloGrid][1] > kinetics->sublo[1]) {
-	nuCell = nuPrev[yloGrid];
-      }
+      nuCell = nuPrev[yloGrid];
     } else if (ybcflag == 1) {
       nuCell = 2 * ybcp - nuPrev[bwd];
     } else if (ybcflag == 2) {
@@ -602,11 +594,9 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
   }
   // low-x surface
   else if (xGrid[grid][0] < xlo && !ghost[rhs]) {
-    if (xbcflag == 0) {
+    if (xbcflag == 0 && kinetics->nx == kinetics->subn[0]) {
       int xhiGrid = grid + nx;
-      if (xGrid[xhiGrid][0] < kinetics->subhi[0]) {
-	nuCell = nuPrev[xhiGrid];
-      }
+      nuCell = nuPrev[xhiGrid];
     } else if (xbcflag == 1) {
       nuCell = 2 * xbcm - nuPrev[rhs];
     } else if (xbcflag == 2) {
@@ -619,11 +609,9 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
   }
   // high-x surface
   else if (xGrid[grid][0] > xhi && !ghost[lhs]) {
-    if (xbcflag == 0) {
+    if (xbcflag == 0 && kinetics->nx == kinetics->subn[0]) {
       int xloGrid = grid - nx;
-      if (xGrid[xloGrid][0] > kinetics->sublo[0]) {
-	nuCell = nuPrev[xloGrid];
-      }
+      nuCell = nuPrev[xloGrid];
     } else if (xbcflag == 1) {
       nuCell = 2 * xbcp - nuPrev[lhs];
     } else if (xbcflag == 2) {
