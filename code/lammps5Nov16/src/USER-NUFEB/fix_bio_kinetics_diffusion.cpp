@@ -355,7 +355,7 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT) {
       MPI_Isend(&sendbuff[kinetics->sendbegin[p] * nnus], sendn, MPI_DOUBLE, p, 0, world, &requests[nrequests++]);
   }
   // wait for all MPI requests
-  MPI_Waitall(nrequests, requests, status);
+  if (comm->nprocs > 1) MPI_Waitall(nrequests, requests, status);
   // copy received data to nuGrid
   for (int c = 0; c < nrecvcells; c++) {
     int cell = kinetics->recvcells[c];
