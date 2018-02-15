@@ -107,11 +107,12 @@ void AtomVecBio::data_atom(double *coord, imageint imagetmp, char **values)
 {
   int nlocal = atom->nlocal;
   int ntypes = atom->ntypes;
+
+  AtomVecSphere::data_atom(coord, imagetmp, values);
+
   char **typeName  = bio->typeName;;
   double *radius = atom->radius;
   double *rmass = atom->rmass;
-
-  AtomVecSphere::data_atom(coord, imagetmp, values);
 
   outerRadius[nlocal] = 0.5 * atof(values[7]);
 
