@@ -79,6 +79,10 @@ void AtomVecBio::init()
 {
   AtomVec::init();
   set_group_mask();
+  for (int i = 0; i < atom->nlocal; i++) {
+    outerRadius[i] = atom->radius[i];
+    outerMass[i] = atom->rmass[i];
+  }
 }
 
 /* ----------------------------------------------------------------------
