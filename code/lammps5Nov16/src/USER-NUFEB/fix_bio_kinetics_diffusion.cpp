@@ -282,7 +282,7 @@ void FixKineticsDiffusion::init() {
 
   xGrid = memory->create(xGrid, nXYZ, 3, "diffusion:xGrid");
   nuGrid = memory->create(nuGrid, nnus + 1, nXYZ, "diffusion:nuGrid");
-  nuPrev = memory->create(nuPrev, nXYZ, "diffusion:nuPrev");
+  nuPrev = memory->create(nuPrev, nnus + 1, nXYZ, "diffusion:nuPrev");
   ghost = memory->create(ghost, nXYZ, "diffusion:ghost");
   nuBS = memory->create(nuBS, nnus + 1, "diffusion:nuBS");
 
@@ -316,7 +316,7 @@ void FixKineticsDiffusion::init() {
           } else if (k < kinetics->sublo[2]) {
             ghost[grid] = true;
             nuGrid[nu][grid] = iniS[nu][5];
-          } else if (k > bzhi) {
+          } else if (k > MIN(bzhi, kinetics->subhi[2])) {
             ghost[grid] = true;
             nuGrid[nu][grid] = iniS[nu][6];
           } else {
@@ -335,7 +335,7 @@ void FixKineticsDiffusion::init() {
       }
     }
   }
-
+  
   // create send and recv buffers
   recv_buff_size = BUFMIN;
   recvbuff = memory->create(recvbuff, recv_buff_size, "diffusion::recvbuff");
@@ -433,7 +433,7 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT) {
     if (bio->nuType[i] == 0 && !nuConv[i]) { // checking if is liquid
       // copy current concentrations
       for (int grid = 0; grid < nXYZ; grid++) {
-        nuPrev[grid] = nuGrid[i][grid];
+	nuPrev[i][grid] = nuGrid[i][grid];
       }
 
       maxS[i] = 0;
@@ -453,21 +453,19 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT) {
           else
             r = nuR[i][ind];
 
-          compute_flux(diffD[i], nuGrid[i][grid], nuPrev, r, grid);
+	  compute_flux(diffD[i], nuGrid[i][grid], nuPrev[i], r, grid);
 
           nuR[i][ind] = 0;
 
-          if (nuGrid[i][grid] > 0) {
-            if (unit == 0)
-              nuS[i][ind] = nuGrid[i][grid] / 1000;
-            else
-              nuS[i][ind] = nuGrid[i][grid];
-          } else {
-            nuGrid[i][grid] = 1e-20;
-            nuS[i][ind] = 1e-20;
-          }
-        } else
-          compute_bc(nuGrid[i][grid], nuPrev, grid, nuBS[i]);
+	  if (nuGrid[i][grid] > 0) {
+	    if (unit == 0) nuS[i][ind] = nuGrid[i][grid] / 1000;
+	    else nuS[i][ind] = nuGrid[i][grid];
+	  }
+	  else {
+	    nuGrid[i][grid] = 1e-20;
+	    nuS[i][ind] = 1e-20;
+	  }
+	} else compute_bc(nuGrid[i][grid], nuPrev[i], grid, nuBS[i]);
 
         if (maxS[i] < nuGrid[i][grid])
           maxS[i] = nuGrid[i][grid];
@@ -489,17 +487,17 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT) {
       // check convergence criteria
       nuConv[i] = true;
       for (int grid = 0; grid < nXYZ; grid++) {
-        if (!ghost[grid]) {
-          double ratio = 1000;
-          double div = (maxS[i] == 0) ? 1 : maxS[i];
-          double rate = nuGrid[i][grid] / div;
-          double prevRate = nuPrev[grid] / div;
-          ratio = fabs(rate - prevRate);
+	if(!ghost[grid]) {
+	  double ratio = 1000;
+	  double div = (maxS[i] == 0) ? 1 : maxS[i]; 
+	  double rate = nuGrid[i][grid] / div;
+	  double prevRate = nuPrev[i][grid] / div;
+	  ratio = fabs(rate - prevRate);
 
-          nuConv[i] &= (ratio < tol);
-          if (!nuConv[i])
-            break;
-        }
+	  nuConv[i] &= (ratio < tol);
+	  if (!nuConv[i])
+	    break;
+	}
       }
 #if MPI_VERSION >= 3
       MPI_Iallreduce(MPI_IN_PLACE, &nuConv[i], 1, MPI_INT, MPI_BAND, world, &requests[nrequests++]);
@@ -520,12 +518,14 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT) {
 void FixKineticsDiffusion::update_grids() {
   //update grids
   bzhi = kinetics->bnz * stepz;
-  nXYZ = nX * nY * (kinetics->bnz + 2);
+  if (kinetics->bgrids == 0)
+    nXYZ = 0;
+  else
+    nXYZ = nX * nY * (MIN(kinetics->subn[2], MAX(0, kinetics->bnz - kinetics->subnlo[2])) + 2);
 
   for (int grid = 0; grid < nXYZ; grid++) {
-    if (xGrid[grid][0] < 0 || xGrid[grid][1] < 0 || xGrid[grid][2] < 0
-        || xGrid[grid][0] > kinetics->subhi[0]
-        || xGrid[grid][1] > kinetics->subhi[1] || xGrid[grid][2] > bzhi)
+    if (xGrid[grid][0] < kinetics->sublo[0] || xGrid[grid][1] < kinetics->sublo[1] || xGrid[grid][2] < kinetics->sublo[2]
+        || xGrid[grid][0] > kinetics->subhi[0] || xGrid[grid][1] > kinetics->subhi[1] || xGrid[grid][2] > MIN(bzhi, kinetics->subhi[2]))
       ghost[grid] = true;
     else
       ghost[grid] = false;
