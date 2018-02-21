@@ -68,7 +68,7 @@ class FixKineticsDiffusion: public Fix {
 
   double **xGrid;                     // grid coordinate
   double **nuGrid;                    // nutrient concentration in ghost mesh [grid][nutrient]
-  double *nuPrev;
+  double **nuPrev;
   bool *ghost;
 
   int recv_buff_size;
