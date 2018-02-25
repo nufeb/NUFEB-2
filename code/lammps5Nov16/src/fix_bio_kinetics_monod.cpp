@@ -201,7 +201,7 @@ void FixKineticsMonod::init_param() {
   }
 
   if (isub == 0)
-    error->all(FLERR, "fix_kinetics/kinetics/monod requires nutrient substrate");
+    error->all(FLERR, "fix_kinetics/kinetics/monod requires nutrient sub (substrate)");
   if (io2 == 0)
     error->all(FLERR, "fix_kinetics/kinetics/monod requires nutrient o2");
   if (inh4 == 0)
@@ -279,7 +279,7 @@ void FixKineticsMonod::growth(double dt, int gflag)
 
   if (ieps != 0)
     yieldEPS = yield[ieps];
-  
+
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
       int pos = kinetics->position(i);

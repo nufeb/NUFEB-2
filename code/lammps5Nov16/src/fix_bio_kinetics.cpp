@@ -78,8 +78,6 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
   ny = atoi(arg[5]);
   nz = atoi(arg[6]);
 
-  bnz = nz;
-
   //Get computational domain size
   if (domain->triclinic == 0) {
     xlo = domain->boxlo[0];
@@ -107,21 +105,17 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
     strcpy(var[i], &arg[7 + i][2]);
   }
 
-  for (int i = 0; i < 2; i++) {
-    // considering that the grid will always have a cubic cell (i.e. stepx = stepy = stepz)
-    subn[i] = floor(domain->subhi[i] / stepz) - floor(domain->sublo[i] / stepz);
-    sublo[i] = floor(domain->sublo[i] / stepz) * stepz;
-    subhi[i] = floor(domain->subhi[i] / stepz) * stepz;
-  }
-
   for (int i = 0; i < 3; i++) {
     // considering that the grid will always have a cubic cell (i.e. stepx = stepy = stepz)
-    subnlo[i] = floor(domain->sublo[i] / stepz);
-    subnhi[i] = floor(domain->subhi[i] / stepz);
+    subnlo[i] = domain->sublo[i] / stepz;
+    subnhi[i] = domain->subhi[i] / stepz;
     sublo[i] = subnlo[i] * stepz;
     subhi[i] = subnhi[i] * stepz;
     subn[i] = subnhi[i] - subnlo[i];
   }
+
+  bnz = domain->boxhi[2] / stepz + 1;
+  maxheight = domain->boxhi[2];
 }
 
 /* ---------------------------------------------------------------------- */
@@ -299,9 +293,9 @@ void FixKinetics::borders()
   if (comm->nprocs < 2 || diffusion == NULL) return;
 
   // communicate grid extent
-  int *gridlo = memory->create(gridlo, 3 * comm->nprocs, "kinetics::grids");
+  int *gridlo = new int[3 * comm->nprocs];
   MPI_Allgather(&subnlo[0], 3, MPI_INT, gridlo, 3, MPI_INT, world);
-  int *gridhi = memory->create(gridhi, 3 * comm->nprocs, "kinetics::grids");
+  int *gridhi = new int[3 * comm->nprocs];
   MPI_Allgather(&subnhi[0], 3, MPI_INT, gridhi, 3, MPI_INT, world);
 
   int nrecv = 0;
@@ -341,8 +335,8 @@ void FixKinetics::borders()
     sendend[p] = nsend;
   }
 
-  memory->destroy(gridlo);
-  memory->destroy(gridhi);
+  delete [] gridlo;
+  delete [] gridhi;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -490,11 +484,10 @@ double FixKinetics::getMaxHeight() {
 }
 
 void FixKinetics::update_bgrids() {
-  if (bl >= 0) {
-    double height = getMaxHeight();
-    bnz = ceil((bl + height)/stepz);
-    bnz = MIN(subn[2], MAX(0, bnz - subnlo[2]));
-    bgrids = subn[0] * subn[1] * bnz;
+  if (bl > 0) {
+    maxheight = getMaxHeight();
+    bnz = (int)((bl + maxheight) / stepz) + 1;
+    bgrids = subn[0] * subn[1] * MIN(subn[2], MAX(0, bnz - subnlo[2]));
   }
   else {
     bgrids = subn[0] * subn[1] * subn[2];
@@ -534,7 +527,7 @@ void FixKinetics::add_cells(const Grid &basegrid, const Grid &grid, int *cells, 
   }
 }
 
-bool FixKinetics::is_intesection_valid(const Grid &g)
+bool FixKinetics::is_intersection_valid(const Grid &g)
 {
   // check if the intersection is empty
   if (is_empty(g))
@@ -557,7 +550,7 @@ void FixKinetics::send_recv_cells(const Grid &basegrid, const Grid &grid, const 
     recv_buff_size += (n / BUFMIN + 1) * BUFMIN;
     memory->grow(recvcells, recv_buff_size, "kinetics::recvcells");
   }
-  if (is_intesection_valid(recvgrid)) {
+  if (is_intersection_valid(recvgrid)) {
     add_cells(basegrid, recvgrid, recvcells, nrecv);
     nrecv += n;
   }
@@ -568,7 +561,7 @@ void FixKinetics::send_recv_cells(const Grid &basegrid, const Grid &grid, const 
     send_buff_size += (n / BUFMIN + 1) * BUFMIN;
     memory->grow(sendcells, send_buff_size, "kinetics::sendcells");
   }
-  if (is_intesection_valid(sendgrid)) {
+  if (is_intersection_valid(sendgrid)) {
     add_cells(basegrid, sendgrid, sendcells, nsend);
     nsend += n;
   }

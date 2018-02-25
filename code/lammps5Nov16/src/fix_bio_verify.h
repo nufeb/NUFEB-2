@@ -55,9 +55,13 @@ class FixVerify : public Fix {
 
   class FixKinetics *kinetics;
   class BIO *bio;
+  class FixKineticsDiffusion *diffusion;
+  class ComputeNufebHeight *cheight;
 
   void nitrogen_mass_balance();
   void benchmark_one();
+  double get_ave_s_sub_base();
+  double get_ave_s_o2_base();
   void benchmark_two();
   void benchmark_three();
 
