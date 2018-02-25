@@ -10,14 +10,7 @@ comm_modify	vel yes
 
 read_data_bio atom.in
 
-#region box block 0 1e-4 0 4e-5 0 1e-6
-#create_atoms 1 random 500 38790 box
-
 group HET type 1
-
-#set type 1 density 10
-#set type 1 diameter 1e-6
-#set type 1 mass 1e-16
 
 neighbor	5e-7 bin
 neigh_modify	delay 0 one 2000
@@ -47,8 +40,7 @@ fix zwa all walladh v_kanc zplane  0.0   1.0e-04
 #Defining EPS density and ratio variables
 variable EPSdens equal 30
 variable EPSratio equal 1.25
-#variable divMass equal 1e-17
-variable divMass equal 3e-16
+variable divMass equal 2.3e-16
 
 variable ke equal 5e+10
 
@@ -59,11 +51,11 @@ variable gvol equal 8e-14
 variable rth equal 0.0083144
 variable pressure equal 1
 variable ph equal 7.0
-variable etaHET equal 0.6
+variable etaHET equal 0.0
 
 #Defining diffusion variables
 variable diffT equal 1e-4
-variable tol equal 1e-7
+variable tol equal 1e-6
 variable blThick equal 0
 variable Q equal 0.000000231
 variable rvol equal 1.25e-3
@@ -75,13 +67,13 @@ variable deadMass equal 6e-17
 
 ##############Ibm functions##############
 
-fix k1 all kinetics 1000 60 24 60 v_temp v_rth v_gvol v_gasTran v_ph v_diffT v_blThick 
+fix k1 all kinetics 1000 45 18 45 v_temp v_rth v_gvol v_gasTran v_ph v_diffT v_blThick 
 fix kgm all kinetics/growth/monod v_EPSdens v_etaHET 1
 fix g1 all kinetics/diffusion v_shearRate v_tol pp pp nd kg bulk v_Q v_rvol v_Af
 fix d1 all divide 1000 v_EPSdens v_divMass 31231
 fix j1 all epsadh 1 v_ke 1
 
-fix vf1 all verify 200 bm1 3
+fix vf1 all verify 1000 bm1 3
 
 ##############Ibm compute##############
 
