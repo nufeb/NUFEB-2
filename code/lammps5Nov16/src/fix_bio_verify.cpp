@@ -73,12 +73,23 @@ void FixVerify::init()
   total_bmass = pre_total_bmass = 0;
 
   kinetics = NULL;
+  diffusion = NULL;
 
   // register fix kinetics with this class
   int nfix = modify->nfix;
   for (int j = 0; j < nfix; j++) {
     if (strcmp(modify->fix[j]->style, "kinetics") == 0) {
       kinetics = static_cast<FixKinetics *>(lmp->modify->fix[j]);
+    } else if (strcmp(modify->fix[j]->style, "kinetics/diffusion") == 0) {
+      diffusion = static_cast<FixKineticsDiffusion *>(lmp->modify->fix[j]);
+    }
+  }
+
+  int ncompute = modify->ncompute;
+
+  for (int j = 0; j < ncompute; j++) {
+    if (strcmp(modify->compute[j]->style, "ave_height") == 0) {
+      cheight = static_cast<ComputeNufebHeight *>(lmp->modify->compute[j]);
       break;
     }
   }
@@ -171,30 +182,84 @@ void FixVerify::nitrogen_mass_balance() {
 
 void FixVerify::benchmark_one() {
   // register compute with this class
-  class ComputeNufebHeight *cheight;
-  int ncompute = modify->ncompute;
-  int nfix = modify->nfix;
 
-  for (int j = 0; j < ncompute; j++) {
-    if (strcmp(modify->compute[j]->style, "ave_height") == 0) {
-      cheight = static_cast<ComputeNufebHeight *>(lmp->modify->compute[j]);
-      break;
-    }
+  // get biomass concentration (mol/L)
+  for (int i = 0; i < nlocal; i++) {
+    total_bmass += atom->rmass[i];
   }
 
   // case 3, average biofilm thickness: Lf = 20 μm
   if (bm1cflag == 3) {
     // solve mass balance in bulk liquid
     double ave_height = cheight->compute_scalar();
-
-    if (ave_height > 0.2e-4) {
-      kinetics->diffusion->bulkflag = 1;
-    }
-
+    kinetics->diffusion->bulkflag = 1;
     // cease growth and division
-    if (ave_height > 0.145e-4) {
+    if (total_bmass > 8e-13) {
       kinetics->monod->external_gflag = 0;
+
+       if (ave_height > 2e-5) {
+       // kinetics->diffusion = this->diffusion;
+        kinetics->diffusion->bulkflag = 1;
+
+        // Output result
+        for (int nu = 1; nu <= nnus; nu++) {
+          if (strcmp(bio->nuName[nu], "sub") == 0) {
+            printf("S-sub-bulk = %e\n", kinetics->diffusion->nuBS[nu]);
+            double s = get_ave_s_sub_base();
+            printf("S-sub-base = %e\n\n", s);
+          }
+
+          if (strcmp(bio->nuName[nu], "o2") == 0) {
+            printf("S-o2-bulk = %e\n", kinetics->diffusion->nuBS[nu]);
+            double s = get_ave_s_o2_base();
+            printf("S-o2-base = %e\n", s);
+          }
+        }
+      }
+    } else {
+     // kinetics->diffusion = NULL;
     }
   }
+
+  total_bmass = 0;
 }
 
+double FixVerify::get_ave_s_sub_base() {
+  double ave_sub_s = 0;
+
+  int nX = kinetics->nx + 2;
+  int nY = kinetics->ny + 2;
+
+  for (int grid = 0; grid < kinetics->bgrids; grid++) {
+    for (int nu = 1; nu <= nnus; nu++) {
+      if (strcmp(bio->nuName[nu], "sub") == 0) {
+        int up = grid + nX * nY;
+
+        if (kinetics->diffusion->xGrid[grid][2] < kinetics->zlo && !kinetics->diffusion->ghost[up]) {
+          ave_sub_s += kinetics->diffusion->nuGrid[nu][grid];
+        }
+      }
+    }
+  }
+  return ave_sub_s/(kinetics->nx * kinetics->ny);
+}
+
+double FixVerify::get_ave_s_o2_base() {
+  double ave_o2_s = 0;
+
+  int nX = kinetics->nx + 2;
+  int nY = kinetics->ny + 2;
+
+  for (int grid = 0; grid < kinetics->bgrids; grid++) {
+    for (int nu = 1; nu <= nnus; nu++) {
+      if (strcmp(bio->nuName[nu], "o2") == 0) {
+        int up = grid + nX * nY;
+
+        if (kinetics->diffusion->xGrid[grid][2] < kinetics->zlo && !kinetics->diffusion->ghost[up]) {
+          ave_o2_s += kinetics->diffusion->nuGrid[nu][grid];
+        }
+      }
+    }
+  }
+  return ave_o2_s/(kinetics->nx * kinetics->ny);
+}
