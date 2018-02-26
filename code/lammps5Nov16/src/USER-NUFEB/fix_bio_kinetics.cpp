@@ -371,7 +371,7 @@ void FixKinetics::init_activity() {
   double gSh = pow(10, -iph);
 
   for (int k = 1; k < nnus + 1; k++) {
-    for (int j = 0; j < bgrids; j++) {
+    for (int j = 0; j < ngrids; j++) {
       double iniNuS = bio->iniS[k][0];
       Sh[j] = gSh;
       denm[k] = (1 + kEq[k][0]) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][3] * gSh + kEq[k][3] * kEq[k][2] * kEq[k][1];
