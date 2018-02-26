@@ -57,7 +57,7 @@ class FixKineticsEnergy : public Fix {
   double **anabCoeff;                // anabolism  coefficients of species
   double **gYield;                   // yield coefficients
   double **gMonod;
-  bool *nuConv;
+  int *nuConv;
   //double **minCatMonod;
 
   double **nuS;                    // nutrient concentration for all grids
