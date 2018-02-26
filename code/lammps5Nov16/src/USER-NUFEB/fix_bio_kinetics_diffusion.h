@@ -25,7 +25,7 @@ class FixKineticsDiffusion: public Fix {
   ~FixKineticsDiffusion();
   int setmask();
   void init();
-  bool* diffusion(bool*, int, double);
+  int *diffusion(int*, int, double);
   void update_nuS();
 
   int xbcflag, ybcflag, zbcflag;             // 0=PERIODIC-PERIODIC, 1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
