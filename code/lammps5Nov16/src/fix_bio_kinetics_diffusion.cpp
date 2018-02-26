@@ -228,8 +228,6 @@ void FixKineticsDiffusion::init() {
       lmp->error->all(FLERR, "Biofilm surface area (Af) cannot be negative");
   }
 
-  if (q >= 0 && af >= 0)
-    bulkflag = 1;
   //set diffusion grid size
   nx = kinetics->nx;
   ny = kinetics->ny;
@@ -320,7 +318,7 @@ void FixKineticsDiffusion::init() {
           }
 
           if (unit == 0)
-            nuGrid[grid][nu] = nuGrid[grid][nu] * 1000;
+            nuGrid[nu][grid] = nuGrid[nu][grid] * 1000;
           if (grid == 0 && unit == 1)
             nuBS[nu] = iniS[nu][6];
           else if (grid == 0 && unit == 0)
@@ -756,15 +754,15 @@ void FixKineticsDiffusion::update_nuS() {
           else
             r = nuR[nu][ind] * update->dt * kinetics->nevery;
 
-          nuGrid[grid][nu] += r;
+          nuGrid[nu][grid] += r;
 
-          if (nuGrid[grid][nu] <= 0)
-            nuGrid[grid][nu] = 1e-20;
+          if (nuGrid[nu][grid] <= 0)
+            nuGrid[nu][grid] = 1e-20;
 
           if (unit == 0)
-            nuS[nu][ind] = nuGrid[grid][nu] / 1000;
+            nuS[nu][ind] = nuGrid[nu][grid] / 1000;
           else
-            nuS[nu][ind] = nuGrid[grid][nu];
+            nuS[nu][ind] = nuGrid[nu][grid];
         }
       }
     }

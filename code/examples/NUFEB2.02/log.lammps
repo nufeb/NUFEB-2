@@ -1,0 +1,185 @@
+LAMMPS (5 Nov 2016)
+# NUFEB simulation
+
+atom_style	bio
+atom_modify	map array sort 100 5.0e-7
+boundary	ff ff ff
+newton		off
+#processors  2 1 1
+
+comm_modify	vel yes
+read_data_bio atom.in
+  orthogonal box = (0 0 0) to (0.000136 0.000136 0.000136)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+  82 atoms
+  5 nutrients
+
+group HET type 1
+40 atoms in group HET
+group AOB type 2
+40 atoms in group AOB
+#group DEAD type 3
+#group NOB type 3
+group EPS type 3
+1 atoms in group EPS
+group DEAD type 4
+1 atoms in group DEAD
+
+neighbor	5e-7 bin
+neigh_modify	delay 0 one 5000
+
+#pair_style none
+pair_style  gran/hooke/history 1.e-4 NULL 1.e-5 NULL 0.0 1
+
+pair_coeff  * *
+timestep 10
+
+fix 1 all nve/limit 1e-7
+
+fix fv all viscous 1e-5
+
+fix xw all wall/gran hooke/history 2000 NULL 500.0 NULL 1.5 0 xplane  0.0   1.36e-04
+fix yw all wall/gran hooke/history 2000 NULL 500.0 NULL 1.5 0 yplane  0.0   1.36e-04
+fix zw all wall/gran hooke/history 2000 NULL 500.0 NULL 1.5 0 zplane  0.0   1.36e-04
+
+variable kanc equal 50
+
+fix xwa all walladh v_kanc xplane  0.0   1.36e-04
+fix ywa all walladh v_kanc yplane  0.0   1.36e-04
+fix zwa all walladh v_kanc zplane  0.0   1.36e-04
+
+##############Ibm Variable Definitions##############
+
+#Defining EPS density and ratio variables
+variable EPSdens equal 30
+variable EPSratio equal 1.25
+variable divMass equal 2e-16
+
+variable ke equal 5e+10
+
+#Defining kinetics variables
+variable temp equal 298.15
+variable gasTran equal 0.08205746
+variable gvol equal 8e-14
+variable rth equal 0.0083144
+variable pressure equal 1
+variable ph equal 7.0
+variable etaHET equal 0.6
+
+#Defining diffusion variables
+variable diffT equal 1e-4
+variable tol equal 1e-6
+#variable bl equal 5e-5
+#variable Q equal 2.314815e-07
+#variable rvol equal 1.25e-03
+#variable Af equal 0.1
+#variable shearRate equal 0.0
+
+variable bl equal 5e-5
+variable Q equal -1
+variable rvol equal 1
+variable Af equal -1
+variable shearRate equal 0.0
+
+
+#Defining critical diameter of death
+variable deadMass equal 5e-17
+
+#Defining compute variables
+variable cutoff equal 9.66e-7
+
+##############Ibm functions##############
+#fix k1 all kinetics 100 17 17 17 v_temp v_rth v_gvol v_gasTran v_ph v_diffT v_bl
+fix k1 all kinetics 100 10 10 10 v_temp v_rth v_gvol v_gasTran v_ph v_diffT v_bl
+fix kgm all kinetics/growth/monod v_EPSdens v_etaHET
+fix g1 all kinetics/diffusion v_shearRate v_tol v_Q v_rvol v_Af pp pp nd kg
+fix d1 all divide 100 v_EPSdens v_divMass 31231
+fix e1 HET eps_extract 100 v_EPSratio v_EPSdens 12425
+fix j1 all epsadh 1 v_ke 1
+fix d5 all death 100 v_deadMass
+
+##############Ibm compute##############
+
+compute myNtypes all ntypes
+compute myMass all biomass
+compute myDia all diameter
+compute myDimen all dimension
+compute myDiver all diversity
+compute myHeight all ave_height 50 50
+compute myRough all roughness 50 50
+compute mySeg all segregation v_cutoff
+
+##############Simulation outputs##############
+
+dump		id all custom 1000 snapshot.bubblemd id type diameter x y z
+#dump            d0 all bio 1000 biomass ntypes diameter dimension diversity ave_height roughness segregation
+dump            d0 all bio 100 biomass
+thermo_style    custom step cpu atoms biomass c_myNtypes[*]
+thermo		100
+thermo_modify	lost ignore
+
+run 40000
+Neighbor list info ...
+  3 neighbor list requests
+  update every 1 steps, delay 0 steps, check yes
+  max neighbors/atom: 5000, page size: 100000
+  master list distance cutoff = 1.5e-06
+  ghost atom cutoff = 1.5e-06
+  binsize = 7.5e-07 -> bins = 182 182 182
+Memory usage per processor = 34.1471 Mbytes
+Step CPU Atoms biomass c_myNtypes[1] c_myNtypes[2] c_myNtypes[3] c_myNtypes[4] 
+       0            0       82 6.2831855e-15           40           40            1            1 
+     100   0.09284997       82 6.7290948e-15           40           40            1            1 
+     200   0.14135695       82 7.2294532e-15           40           40            1            1 
+     300   0.19095087       82 7.7913926e-15           40           40            1            1 
+     400   0.24479604       82 8.4229504e-15           40           40            1            1 
+     500   0.29540086       82 9.1332198e-15           40           40            1            1 
+     600   0.34725285       82 9.9324869e-15           40           40            1            1 
+     700   0.40254784       82 1.0832388e-14           40           40            1            1 
+     800   0.45903397       82 1.1846086e-14           40           40            1            1 
+     900    0.5198729      122 1.2988469e-14           80           40            1            1 
+    1000   0.59508586      122 1.427639e-14           80           40            1            1 
+    1100   0.66707397      122 1.5728905e-14           80           40            1            1 
+    1200   0.75491786      122 1.7367572e-14           80           40            1            1 
+    1300   0.84079003      132 1.9216779e-14           90           40            1            1 
+    1400   0.95781994      158 2.130412e-14          116           40            1            1 
+    1500    1.0872889      179 2.3660796e-14          137           40            1            1 
+    1600    1.2404358      202 2.6322129e-14          160           40            1            1 
+    1700    1.4027629      202 2.9328055e-14          160           40            1            1 
+    1800     1.552352      212 3.272378e-14          170           40            1            1 
+    1900    1.7367718      247 3.6560418e-14          205           40            1            1 
+    2000    1.9578989      287 4.0895824e-14          245           40            1            1 
+    2100    2.2193489      324 4.5795426e-14          282           40            1            1 
+    2200    2.4925969      358 5.1333246e-14          316           40            1            1 
+    2300     2.824297      377 5.759301e-14          335           40            1            1 
+    2400    3.1913059      413 6.4669464e-14          371           40            1            1 
+    2500     3.593359      484 7.2669786e-14          442           40            1            1 
+    2600     4.182519      555 8.1715636e-14          513           40            1            1 
+    2700    4.8853099      627 9.1943971e-14          585           40            1            1 
+    2800    5.6772468      682 1.0350986e-13          640           40            1            1 
+    2900    6.6576328      743 1.1658897e-13          701           40            1            1 
+    3000    7.7141528      844 1.313799e-13          802           40            1            1 
+    3100     8.958463      973 1.4810734e-13          931           40            1            1 
+    3200    10.456051     1117 1.6702554e-13         1075           40            1            1 
+    3300    12.222138     1244 1.8842202e-13         1202           40            1            1 
+    3400    14.296667     1367 2.1262211e-13         1325           40            1            1 
+    3500    16.724078     1531 2.3999374e-13         1489           40            1            1 
+    3600    19.737175     1748 2.7095305e-13         1706           40            1            1 
+    3700     23.27488     1986 3.0597061e-13         1944           40            1            1 
+    3800    27.498047     2253 3.4557876e-13         2211           40            1            1 
+    3900    32.667163     2535 3.9037938e-13         2493           40            1            1 
+    4000     38.94378     2841 4.4105288e-13         2799           40            1            1 
+    4100    46.419469     3210 4.983689e-13         3168           40            1            1 
+    4200    54.821289     3642 5.6319236e-13         3600           40            1            1 
+    4300    64.117404     4138 6.3650254e-13         4096           40            1            1 
+    4400    74.554965     4656 7.1940609e-13         4614           40            1            1 
+    4500     86.35872     5250 8.1315264e-13         5208           40            1            1 
+    4600    99.571544     5919 9.1915286e-13         5877           40            1            1 
+    4700    114.43143     6680 1.0389982e-12         6638           40            1            1 
+    4800    131.06743     7585 1.1744829e-12         7543           40            1            1 
+    4900     149.6498     8583 1.3276298e-12         8541           40            1            1 
+    5000     170.4867     9663 1.5007156e-12         9621           40            1            1 
+    5100    194.30409    10895 1.6963056e-12        10853           40            1            1 
+    5200    221.22825    12336 1.9172838e-12        12294           40            1            1 
+    5300    250.53418    13960         -nan        13918           40            1            1 
