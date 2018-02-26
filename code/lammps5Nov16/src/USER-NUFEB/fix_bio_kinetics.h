@@ -103,8 +103,10 @@ class FixKinetics : public Fix {
   void send_recv_cells(const Grid &, const Grid &, const Grid &, int &, int &);
   void reset_nuR();
   void reset_isConv();
+#ifdef OUTPUT_GRID
   void output_nutrient_info(int);
   void output_bacteria_info(int);
+#endif
 };
 
 }
