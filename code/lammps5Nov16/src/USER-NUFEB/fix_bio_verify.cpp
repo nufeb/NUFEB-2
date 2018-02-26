@@ -30,6 +30,7 @@
 #include "update.h"
 #include <stdio.h>
 #include <math.h>
+#include "comm.h"
 
 
 using namespace LAMMPS_NS;
@@ -66,19 +67,32 @@ FixVerify::~FixVerify()
 
 void FixVerify::init()
 {
-  nh3_nitrogen = pre_nh3_nitrogen = 0;
-  no2_nitrogen = pre_no2_nitrogen = 0;
-  no3_nitrogen = pre_no3_nitrogen = 0;
-
-  total_bmass = pre_total_bmass = 0;
+  // get overall concentration
+  global_no2 = 0;
+  global_nh3 = 0;
+  global_pre_no2 = 0;
+  global_pre_nh3 = 0;
+  global_smass = 0;
+  global_pre_smass = 0;
 
   kinetics = NULL;
+  diffusion = NULL;
 
   // register fix kinetics with this class
   int nfix = modify->nfix;
   for (int j = 0; j < nfix; j++) {
     if (strcmp(modify->fix[j]->style, "kinetics") == 0) {
       kinetics = static_cast<FixKinetics *>(lmp->modify->fix[j]);
+    } else if (strcmp(modify->fix[j]->style, "kinetics/diffusion") == 0) {
+      diffusion = static_cast<FixKineticsDiffusion *>(lmp->modify->fix[j]);
+    }
+  }
+
+  int ncompute = modify->ncompute;
+
+  for (int j = 0; j < ncompute; j++) {
+    if (strcmp(modify->compute[j]->style, "ave_height") == 0) {
+      cheight = static_cast<ComputeNufebHeight *>(lmp->modify->compute[j]);
       break;
     }
   }
@@ -123,14 +137,29 @@ void FixVerify::end_of_step() {
  ------------------------------------------------------------------------- */
 
 void FixVerify::nitrogen_mass_balance() {
+  double smass, pre_smass;
+  double nh3_nitrogen, pre_nh3_nitrogen;
+  double no2_nitrogen, pre_no2_nitrogen;
+  double no3_nitrogen, pre_no3_nitrogen;
+  int ngrids;
+
+  nh3_nitrogen = pre_nh3_nitrogen = 0;
+  no2_nitrogen = pre_no2_nitrogen = 0;
+  no3_nitrogen = pre_no3_nitrogen = 0;
+
+  smass = 0;
+
   // get biomass concentration (mol/L)
   for (int i = 0; i < nlocal; i++) {
     int pos = kinetics->position(i);
     double rmassCellVol = atom->rmass[i] / vol;
     rmassCellVol /= 24.6;
 
-    if (pos != -1) total_bmass += rmassCellVol;
+    if (pos != -1) smass += rmassCellVol;
   }
+
+  // get overall biamass concentration
+  MPI_Allreduce(&smass,&global_smass,1,MPI_DOUBLE,MPI_SUM,world);
 
   // get nitrogen concentration
   int bgrids = kinetics->bgrids;
@@ -145,24 +174,29 @@ void FixVerify::nitrogen_mass_balance() {
     }
   }
 
-  double diff_mass = ((total_bmass - pre_total_bmass) * 0.2) / bgrids;
-  double diff_no2 = (no2_nitrogen - pre_no2_nitrogen) / bgrids;
-  double diff_nh3 = (nh3_nitrogen - pre_nh3_nitrogen) / bgrids;
+  no2_nitrogen /= bgrids;
+  nh3_nitrogen /= bgrids;
+
+  MPI_Allreduce(&no2_nitrogen,&global_no2,1,MPI_DOUBLE,MPI_SUM,world);
+  MPI_Allreduce(&nh3_nitrogen,&global_nh3,1,MPI_DOUBLE,MPI_SUM,world);
+
+  double diff_mass = ((global_smass - global_pre_smass) * 0.2) / (kinetics->nx * kinetics->ny * kinetics->nz);
+  double diff_no2 = (global_no2 - global_pre_no2) / comm->nprocs;
+  double diff_nh3 = (global_nh3 - global_pre_nh3) / comm->nprocs;
 
   double left = fabs(diff_mass) + fabs(diff_no2);
   double right = fabs(diff_nh3);
 
-  printf("(N) Diff = %e, Biomass = %e, NO2 = %e, NH3  = %e \n",
+  if (comm->me == 0) printf("(N) Diff = %e, Biomass = %e, NO2 = %e, NH3  = %e \n",
       left-right, diff_mass, diff_no2, diff_nh3);
 
-  pre_nh3_nitrogen = nh3_nitrogen;
-  pre_no2_nitrogen = no2_nitrogen;
+  global_pre_nh3 = global_nh3;
+  global_pre_no2 = global_no2;
+  global_pre_smass = global_smass;
 
-  nh3_nitrogen = 0;
-  no2_nitrogen = 0;
-
-  pre_total_bmass = total_bmass;
-  total_bmass = 0;
+  global_nh3 = 0;
+  global_no2 = 0;
+  global_smass = 0;
 }
 
 /* ----------------------------------------------------------------------
@@ -170,31 +204,94 @@ void FixVerify::nitrogen_mass_balance() {
  ------------------------------------------------------------------------- */
 
 void FixVerify::benchmark_one() {
-  // register compute with this class
-  class ComputeNufebHeight *cheight;
-  int ncompute = modify->ncompute;
-  int nfix = modify->nfix;
+  double global_tmass;
+  double tmass = 0;
 
-  for (int j = 0; j < ncompute; j++) {
-    if (strcmp(modify->compute[j]->style, "ave_height") == 0) {
-      cheight = static_cast<ComputeNufebHeight *>(lmp->modify->compute[j]);
-      break;
-    }
+  // get biomass concentration (mol/L)
+  for (int i = 0; i < nlocal; i++) {
+    tmass += atom->rmass[i];
   }
+
+  MPI_Allreduce(&tmass,&global_tmass,1,MPI_DOUBLE,MPI_SUM,world);
 
   // case 3, average biofilm thickness: Lf = 20 μm
   if (bm1cflag == 3) {
     // solve mass balance in bulk liquid
     double ave_height = cheight->compute_scalar();
-
-    if (ave_height > 0.2e-4) {
-      kinetics->diffusion->bulkflag = 1;
-    }
-
+    kinetics->diffusion->bulkflag = 1;
     // cease growth and division
-    if (ave_height > 0.145e-4) {
+    if (global_tmass > 8e-13) {
       kinetics->monod->external_gflag = 0;
+
+       if (ave_height > 2e-5) {
+       // kinetics->diffusion = this->diffusion;
+        kinetics->diffusion->bulkflag = 1;
+
+        // Output result
+        for (int nu = 1; nu <= nnus; nu++) {
+          if (strcmp(bio->nuName[nu], "sub") == 0) {
+            printf("S-sub-bulk = %e\n", kinetics->diffusion->nuBS[nu]);
+            double s = get_ave_s_sub_base();
+            printf("S-sub-base = %e\n\n", s);
+          }
+
+          if (strcmp(bio->nuName[nu], "o2") == 0) {
+            printf("S-o2-bulk = %e\n", kinetics->diffusion->nuBS[nu]);
+            double s = get_ave_s_o2_base();
+            printf("S-o2-base = %e\n", s);
+          }
+        }
+      }
+    } else {
+     // kinetics->diffusion = NULL;
     }
   }
 }
 
+double FixVerify::get_ave_s_sub_base() {
+  double ave_sub_s = 0;
+  double global_ave_sub_s = 0;
+
+  int nX = kinetics->subn[0] + 2;
+  int nY = kinetics->subn[1] + 2;
+
+  for (int grid = 0; grid < kinetics->bgrids; grid++) {
+    for (int nu = 1; nu <= nnus; nu++) {
+      if (strcmp(bio->nuName[nu], "sub") == 0) {
+        int up = grid + nX * nY;
+
+        if (kinetics->diffusion->xGrid[grid][2] < kinetics->zlo && !kinetics->diffusion->ghost[up]) {
+          ave_sub_s += kinetics->diffusion->nuGrid[nu][grid];
+        }
+      }
+    }
+  }
+
+  MPI_Allreduce(&ave_sub_s,&global_ave_sub_s,1,MPI_DOUBLE,MPI_SUM,world);
+
+  return global_ave_sub_s/(kinetics->nx * kinetics->ny);
+}
+
+double FixVerify::get_ave_s_o2_base() {
+  double ave_o2_s = 0;
+  double global_ave_o2_s = 0;
+
+  int nX = kinetics->subn[0] + 2;
+  int nY = kinetics->subn[1] + 2;
+
+  for (int grid = 0; grid < kinetics->bgrids; grid++) {
+    for (int nu = 1; nu <= nnus; nu++) {
+      if (strcmp(bio->nuName[nu], "o2") == 0) {
+        int up = grid + nX * nY;
+
+        if (kinetics->diffusion->xGrid[grid][2] < kinetics->zlo && !kinetics->diffusion->ghost[up]) {
+          ave_o2_s += kinetics->diffusion->nuGrid[nu][grid];
+        }
+      }
+    }
+  }
+
+  MPI_Allreduce(&ave_o2_s,&global_ave_o2_s,1,MPI_DOUBLE,MPI_SUM,world);
+
+  return ave_o2_s/(kinetics->nx * kinetics->ny);
+}
