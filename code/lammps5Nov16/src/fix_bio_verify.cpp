@@ -250,9 +250,10 @@ void FixVerify::benchmark_one() {
 
 double FixVerify::get_ave_s_sub_base() {
   double ave_sub_s = 0;
+  double global_ave_sub_s = 0;
 
-  int nX = kinetics->nx + 2;
-  int nY = kinetics->ny + 2;
+  int nX = kinetics->subn[0] + 2;
+  int nY = kinetics->subn[1] + 2;
 
   for (int grid = 0; grid < kinetics->bgrids; grid++) {
     for (int nu = 1; nu <= nnus; nu++) {
@@ -265,14 +266,18 @@ double FixVerify::get_ave_s_sub_base() {
       }
     }
   }
-  return ave_sub_s/(kinetics->nx * kinetics->ny);
+
+  MPI_Allreduce(&ave_sub_s,&global_ave_sub_s,1,MPI_DOUBLE,MPI_SUM,world);
+
+  return global_ave_sub_s/(kinetics->nx * kinetics->ny);
 }
 
 double FixVerify::get_ave_s_o2_base() {
   double ave_o2_s = 0;
+  double global_ave_o2_s = 0;
 
-  int nX = kinetics->nx + 2;
-  int nY = kinetics->ny + 2;
+  int nX = kinetics->subn[0] + 2;
+  int nY = kinetics->subn[1] + 2;
 
   for (int grid = 0; grid < kinetics->bgrids; grid++) {
     for (int nu = 1; nu <= nnus; nu++) {
@@ -285,5 +290,8 @@ double FixVerify::get_ave_s_o2_base() {
       }
     }
   }
+
+  MPI_Allreduce(&ave_o2_s,&global_ave_o2_s,1,MPI_DOUBLE,MPI_SUM,world);
+
   return ave_o2_s/(kinetics->nx * kinetics->ny);
 }
