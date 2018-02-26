@@ -274,7 +274,7 @@ void FixKineticsMonod::growth(double dt, int gflag)
   double **nuS = kinetics->nuS;
   double **nuR = kinetics->nuR;
 
-  bool *nuConv = kinetics->nuConv;
+  int *nuConv = kinetics->nuConv;
   double yieldEPS = 0;
 
   if (ieps != 0)

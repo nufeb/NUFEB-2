@@ -58,7 +58,7 @@ class FixKinetics : public Fix {
   double **DRGAn;                  // Gibbs free energy of anabolism [type][grid]
   double **kEq;                    // equilibrium constants [nutrient][4]
   double *Sh;
-  bool *nuConv;
+  int *nuConv;
   double diffT;                    // diffusion timestep
   double bl;
   double zhi,bzhi,zlo, xlo, xhi, ylo, yhi;
