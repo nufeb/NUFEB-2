@@ -47,12 +47,14 @@
 #include "comm.h"
 #include "fix_bio_fluid.h"
 
+#ifdef OUTPUT_GRID
 #include <vtkCellData.h>
 #include <vtkDataArray.h>
 #include <vtkDoubleArray.h>
 #include <vtkImageData.h>
 #include <vtkSmartPointer.h>
 #include <vtkXMLImageDataWriter.h>
+#endif
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -423,6 +425,7 @@ void FixKinetics::pre_force(int vflag) {
   if (flag)
     integration();
 
+#ifdef OUTPUT_GRID
   if (update->ntimestep % nout == 0) {
     for (int i = 1; i <= nnus; i++)
       output_nutrient_info(i);
@@ -431,6 +434,7 @@ void FixKinetics::pre_force(int vflag) {
 	output_bacteria_info(i);
     }
   }
+#endif
 }
 
 /* ----------------------------------------------------------------------
@@ -618,6 +622,7 @@ void FixKinetics::reset_isConv() {
   }
 }
 
+#ifdef OUTPUT_GRID
 void FixKinetics::output_nutrient_info(int nutrient) {
   if (nutrient < 1 || nutrient > nnus)
     return;
@@ -731,3 +736,4 @@ void FixKinetics::output_bacteria_info(int type) {
 
   delete [] filename;
 }
+#endif // OUTPUT_GRID
