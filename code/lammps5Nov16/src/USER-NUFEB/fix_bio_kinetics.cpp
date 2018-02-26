@@ -47,6 +47,13 @@
 #include "comm.h"
 #include "fix_bio_fluid.h"
 
+#include <vtkCellData.h>
+#include <vtkDataArray.h>
+#include <vtkDoubleArray.h>
+#include <vtkImageData.h>
+#include <vtkSmartPointer.h>
+#include <vtkXMLImageDataWriter.h>
+
 using namespace LAMMPS_NS;
 using namespace FixConst;
 
@@ -64,7 +71,7 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
 
   bio = avec->bio;
 
-  if (narg != 14)
+  if (narg < 14)
     error->all(FLERR, "Not enough arguments in fix kinetics command");
 
   nevery = force->inumeric(FLERR, arg[3]);
@@ -77,6 +84,11 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
   nx = atoi(arg[4]);
   ny = atoi(arg[5]);
   nz = atoi(arg[6]);
+
+  nout = 0;
+  if (narg > 14) { // grid output
+    nout = force->inumeric(FLERR, arg[14]);
+  }
 
   //Get computational domain size
   if (domain->triclinic == 0) {
@@ -213,7 +225,7 @@ void FixKinetics::init() {
   diffT = input->variable->compute_equal(ivar[5]);
   bl = input->variable->compute_equal(ivar[6]);
 
-  nuConv = new bool[nnus + 1]();
+  nuConv = new int[nnus + 1]();
   nuS = memory->create(nuS, nnus + 1, ngrids, "kinetics:nuS");
   nuR = memory->create(nuR, nnus + 1, ngrids, "kinetics:nuR");
   qGas = memory->create(qGas, nnus + 1, ngrids, "kinetics:nuGas");
@@ -243,7 +255,6 @@ void FixKinetics::init() {
   }
 
   reset_isConv();
-
   update_bgrids();
 
   if (energy != NULL) {
@@ -371,7 +382,7 @@ void FixKinetics::init_activity() {
   double gSh = pow(10, -iph);
 
   for (int k = 1; k < nnus + 1; k++) {
-    for (int j = 0; j < bgrids; j++) {
+    for (int j = 0; j < ngrids; j++) {
       double iniNuS = bio->iniS[k][0];
       Sh[j] = gSh;
       denm[k] = (1 + kEq[k][0]) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][3] * gSh + kEq[k][3] * kEq[k][2] * kEq[k][1];
@@ -401,14 +412,25 @@ void FixKinetics::init_activity() {
 /* ---------------------------------------------------------------------- */
 
 void FixKinetics::pre_force(int vflag) {
+  bool flag = true;
   if (nevery == 0)
-    return;
+    flag = false;
   if (update->ntimestep % nevery)
-    return;
+    flag = false;
   if(nufebFoam != NULL && nufebFoam->demflag)
-    return;
+    flag = false;
 
-  integration();
+  if (flag)
+    integration();
+
+  if (update->ntimestep % nout == 0) {
+    for (int i = 1; i <= nnus; i++)
+      output_nutrient_info(i);
+    if (energy != NULL) {
+      for (int i = 1; i <= atom->ntypes; i++)
+	output_bacteria_info(i);
+    }
+  }
 }
 
 /* ----------------------------------------------------------------------
@@ -596,3 +618,116 @@ void FixKinetics::reset_isConv() {
   }
 }
 
+void FixKinetics::output_nutrient_info(int nutrient) {
+  if (nutrient < 1 || nutrient > nnus)
+    return;
+
+  vtkSmartPointer<vtkImageData> image = vtkSmartPointer<vtkImageData>::New();
+  image->SetDimensions(subn[0] + 1, subn[1] + 1, subn[2] + 1);
+  image->SetOrigin(sublo[0], sublo[1], sublo[2]);
+  image->SetSpacing(stepx, stepy, stepz);
+
+  vtkSmartPointer<vtkDoubleArray> concentration = vtkSmartPointer<vtkDoubleArray>::New();
+  concentration->SetName("Concentration");
+  concentration->SetNumberOfComponents(1);
+
+  vtkSmartPointer<vtkDoubleArray> uptake = vtkSmartPointer<vtkDoubleArray>::New();
+  uptake->SetName("Uptake");
+  uptake->SetNumberOfComponents(1);
+  
+  vtkSmartPointer<vtkDoubleArray> gas;
+  vtkSmartPointer<vtkDoubleArray> act;
+
+  if (energy != NULL) {
+    gas = vtkSmartPointer<vtkDoubleArray>::New();
+    gas->SetName("Gas");
+    gas->SetNumberOfComponents(1);
+
+    act = vtkSmartPointer<vtkDoubleArray>::New();
+    act->SetName("Activity");
+    act->SetNumberOfComponents(5);
+  }
+
+  int index = 0;
+  for (int z = 0; z < subn[2]; z++) {
+    for (int y = 0; y < subn[1]; y++) {
+      for (int x = 0; x < subn[0]; x++, index++) {
+	concentration->InsertNextTuple1(nuS[nutrient][index]);
+	uptake->InsertNextTuple1(nuR[nutrient][index]);
+	if (energy != NULL) {
+	  gas->InsertNextTuple1(qGas[nutrient][index]);
+	  double tuple[5];
+	  for (int i = 0; i < 5; i++)
+	    tuple[i] = activity[nutrient][i][index];
+	  act->InsertNextTuple(tuple);
+	}
+      }
+    }
+  }
+
+  image->GetCellData()->AddArray(concentration);
+  image->GetCellData()->AddArray(uptake);
+  if (energy != NULL) {
+    image->GetCellData()->AddArray(gas);
+    image->GetCellData()->AddArray(act);
+  }
+
+  const int maxsize = 256; 
+  char *filename = new char[maxsize];
+  sprintf(filename, "%s_%d_%ld.vti", bio->nuName[nutrient], comm->me, update->ntimestep);
+
+  vtkSmartPointer<vtkXMLImageDataWriter> writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
+  writer->SetFileName(filename);
+  writer->SetInputData(image);
+  writer->Write();
+
+  delete [] filename;
+}
+
+void FixKinetics::output_bacteria_info(int type) {
+  if (type < 1 || type > atom->ntypes)
+    return;
+
+  vtkSmartPointer<vtkImageData> image = vtkSmartPointer<vtkImageData>::New();
+  image->SetDimensions(subn[0] + 1, subn[1] + 1, subn[2] + 1);
+  image->SetOrigin(sublo[0], sublo[1], sublo[2]);
+  image->SetSpacing(stepx, stepy, stepz);
+
+  vtkSmartPointer<vtkDoubleArray> yield = vtkSmartPointer<vtkDoubleArray>::New();
+  yield->SetName("Yield");
+  yield->SetNumberOfComponents(1);
+
+  vtkSmartPointer<vtkDoubleArray> cat = vtkSmartPointer<vtkDoubleArray>::New();
+  cat->SetName("Uptake");
+  cat->SetNumberOfComponents(1);
+
+  vtkSmartPointer<vtkDoubleArray> ana = vtkSmartPointer<vtkDoubleArray>::New();
+  ana->SetName("Uptake");
+  ana->SetNumberOfComponents(1);
+
+  int index = 0;
+  for (int z = 0; z < subn[2]; z++) {
+    for (int y = 0; y < subn[1]; y++) {
+      for (int x = 0; x < subn[0]; x++, index++) {
+	yield->InsertNextTuple1(gYield[type][index]);
+	cat->InsertNextTuple1(DRGCat[type][index]);
+	ana->InsertNextTuple1(DRGAn[type][index]);
+      }
+    }
+  }
+
+  image->GetCellData()->AddArray(yield);
+  image->GetCellData()->AddArray(cat);
+  image->GetCellData()->AddArray(ana);
+
+  const int maxsize = 256; 
+  char *filename = new char[maxsize];
+  sprintf(filename, "%s_%d_%ld.vti", bio->typeName[type], comm->me, update->ntimestep);
+
+  vtkSmartPointer<vtkXMLImageDataWriter> writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
+  writer->SetFileName(filename);
+  writer->SetInputData(image);
+  writer->Write();
+
+  delete [] filename;
+}

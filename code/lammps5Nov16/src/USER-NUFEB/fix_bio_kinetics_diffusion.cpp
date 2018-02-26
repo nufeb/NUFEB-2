@@ -345,7 +345,7 @@ void FixKineticsDiffusion::init() {
  solve diffusion and reaction
  ------------------------------------------------------------------------- */
 
-bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT) {
+int *FixKineticsDiffusion::diffusion(int *nuConv, int iter, double diffT) {
   if (iter == 1 && kinetics->bl >= 0)
     update_grids();
 
@@ -429,11 +429,7 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT) {
       for (int grid = 0; grid < nXYZ; grid++) {
         // transform nXYZ index to nuR index
         if (!ghost[grid]) {
-          int ix = floor((xGrid[grid][0] - kinetics->sublo[0]) / stepx);
-          int iy = floor((xGrid[grid][1] - kinetics->sublo[1]) / stepy);
-          int iz = floor((xGrid[grid][2] - kinetics->sublo[2]) / stepz);
-          int ind = iz * kinetics->subn[0] * kinetics->subn[1] + iy * kinetics->subn[0] + ix;
-
+          int ind = get_index(grid);
           double r;
           if (unit == 0)
             r = nuR[i][ind] * 1000;
@@ -483,7 +479,7 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT) {
           double prevRate = nuPrev[i][grid] / div;
           ratio = fabs(rate - prevRate);
 
-          nuConv[i] &= (ratio < tol);
+          nuConv[i] &= ratio < tol;
           if (!nuConv[i])
             break;
         }
@@ -537,7 +533,7 @@ void FixKineticsDiffusion::compute_bulk(int nu) {
       sumR += nuR[nu][i] * vol;
   }
 
-  MPI_Allreduce(&sumR,&global_sumR,1,MPI_DOUBLE,MPI_SUM,world);
+  MPI_Allreduce(&sumR, &global_sumR, 1, MPI_DOUBLE, MPI_SUM, world);
 
   nuBS[nu] = nuBS[nu] + ((q / rvol) * (zbcp - nuBS[nu]) + ((af * global_sumR) / (rvol * yhi * xhi))) * update->dt * kinetics->nevery;
 }
@@ -546,11 +542,11 @@ void FixKineticsDiffusion::compute_bulk(int nu) {
  get index of non-ghost mesh grid
  ------------------------------------------------------------------------- */
 int FixKineticsDiffusion::get_index(int grid) {
-  int ix = floor(xGrid[grid][0] / stepx);
-  int iy = floor(xGrid[grid][1] / stepy);
-  int iz = floor(xGrid[grid][2] / stepz);
+  int ix = (xGrid[grid][0] - kinetics->sublo[0]) / stepx;
+  int iy = (xGrid[grid][1] - kinetics->sublo[1]) / stepy;
+  int iz = (xGrid[grid][2] - kinetics->sublo[2]) / stepz;
 
-  int ind = iz * kinetics->nx * kinetics->ny + iy * kinetics->nx + ix;
+  int ind = iz * kinetics->subn[0] * kinetics->subn[1] + iy * kinetics->subn[0] + ix;
 
   return ind;
 }
