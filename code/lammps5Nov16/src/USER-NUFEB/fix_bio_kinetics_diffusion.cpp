@@ -316,7 +316,7 @@ void FixKineticsDiffusion::init() {
  solve diffusion and reaction
  ------------------------------------------------------------------------- */
 
-bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT) {
+int *FixKineticsDiffusion::diffusion(int *nuConv, int iter, double diffT) {
   if (iter == 1 && kinetics->bl >= 0)
     update_grids();
 

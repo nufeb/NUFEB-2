@@ -225,7 +225,7 @@ void FixKinetics::init() {
   diffT = input->variable->compute_equal(ivar[5]);
   bl = input->variable->compute_equal(ivar[6]);
 
-  nuConv = new bool[nnus + 1]();
+  nuConv = new int[nnus + 1]();
   nuS = memory->create(nuS, nnus + 1, ngrids, "kinetics:nuS");
   nuR = memory->create(nuR, nnus + 1, ngrids, "kinetics:nuR");
   qGas = memory->create(qGas, nnus + 1, ngrids, "kinetics:nuGas");
