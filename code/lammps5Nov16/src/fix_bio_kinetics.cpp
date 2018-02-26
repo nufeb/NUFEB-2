@@ -242,14 +242,14 @@ void FixKinetics::init() {
     }
   }
 
+  reset_isConv();
+
+  update_bgrids();
+
   if (energy != NULL) {
     init_keq();
     init_activity();
   }
-
-  reset_isConv();
-
-  update_bgrids();
 
   recv_buff_size = BUFMIN;
   send_buff_size = BUFMIN;
