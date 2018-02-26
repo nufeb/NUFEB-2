@@ -289,7 +289,7 @@ void FixKineticsDiffusion::init() {
           }
 
           if (unit == 0)
-            nuGrid[grid][nu] = nuGrid[grid][nu] * 1000;
+            nuGrid[nu][grid] = nuGrid[nu][grid] * 1000;
           if (grid == 0 && unit == 1)
             nuBS[nu] = iniS[nu][6];
           else if (grid == 0 && unit == 0)
@@ -397,10 +397,7 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT) {
       for (int grid = 0; grid < nXYZ; grid++) {
 	// transform nXYZ index to nuR index
 	if (!ghost[grid]) {
-	  int ix = floor((xGrid[grid][0] - kinetics->sublo[0])/stepx);
-	  int iy = floor((xGrid[grid][1] - kinetics->sublo[1])/stepy);
-	  int iz = floor((xGrid[grid][2] - kinetics->sublo[2])/stepz);
-	  int ind = iz * kinetics->subn[0] * kinetics->subn[1] + iy * kinetics->subn[0] + ix;
+	  int ind = get_index(grid);
 
           double r;
           if (unit == 0) r = nuR[i][ind] * 1000;
@@ -446,8 +443,8 @@ bool* FixKineticsDiffusion::diffusion(bool *nuConv, int iter, double diffT) {
 	  double prevRate = nuPrev[i][grid] / div;
 	  ratio = fabs(rate - prevRate);
 
-	  nuConv[i] &= (ratio < tol);
-	  if (!nuConv[i])
+	  nuConv[i] &= ratio < tol;
+	  if (!nuConv[i]) 
 	    break;
 	}
       }
@@ -505,11 +502,11 @@ void FixKineticsDiffusion::compute_bulk(int nu) {
   get index of non-ghost mesh grid
  ------------------------------------------------------------------------- */
 int FixKineticsDiffusion::get_index(int grid) {
-  int ix = floor(xGrid[grid][0] / stepx);
-  int iy = floor(xGrid[grid][1] / stepy);
-  int iz = floor(xGrid[grid][2] / stepz);
+  int ix = (xGrid[grid][0] - kinetics->sublo[0]) / stepx;
+  int iy = (xGrid[grid][1] - kinetics->sublo[1]) / stepy;
+  int iz = (xGrid[grid][2] - kinetics->sublo[2]) / stepz;
 
-  int ind = iz * kinetics->nx * kinetics->ny + iy * kinetics->nx + ix;
+  int ind = iz * kinetics->subn[0] * kinetics->subn[1] + iy * kinetics->subn[0] + ix;
 
   return ind;
 }
@@ -716,15 +713,15 @@ void FixKineticsDiffusion::update_nuS(){
           else
             r = nuR[nu][ind] * update->dt * kinetics->nevery;
 
-          nuGrid[grid][nu] += r;
+          nuGrid[nu][grid] += r;
 
-          if (nuGrid[grid][nu] <= 0)
-            nuGrid[grid][nu] = 1e-20;
+          if (nuGrid[nu][grid] <= 0)
+            nuGrid[nu][grid] = 1e-20;
 
           if (unit == 0)
-            nuS[nu][ind] = nuGrid[grid][nu] / 1000;
+            nuS[nu][ind] = nuGrid[nu][grid] / 1000;
           else
-            nuS[nu][ind] = nuGrid[grid][nu];
+            nuS[nu][ind] = nuGrid[nu][grid];
         }
       }
     }
