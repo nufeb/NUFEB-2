@@ -42,16 +42,15 @@ class FixVerify : public Fix {
   int bm1flag, bm2flag, bm3flag, mflag;
   int bm1cflag;
 
-  double total_bmass, pre_total_bmass;
-  double nh3_nitrogen, pre_nh3_nitrogen;
-  double no2_nitrogen, pre_no2_nitrogen;
-  double no3_nitrogen, pre_no3_nitrogen;
-
   double **nuS;                    // nutrient concentration for all grids
   double **catCoeff;                 // catabolism coefficients of species
   double **anabCoeff;                // anabolism  coefficients of species
   double **gYield;                   // yield coefficients
   double vol;
+
+  double global_no2, global_pre_no2;
+  double global_nh3, global_pre_nh3;
+  double global_smass, global_pre_smass;
 
   class FixKinetics *kinetics;
   class BIO *bio;

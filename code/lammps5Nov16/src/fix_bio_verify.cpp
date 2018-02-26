@@ -30,6 +30,7 @@
 #include "update.h"
 #include <stdio.h>
 #include <math.h>
+#include "comm.h"
 
 
 using namespace LAMMPS_NS;
@@ -66,11 +67,13 @@ FixVerify::~FixVerify()
 
 void FixVerify::init()
 {
-  nh3_nitrogen = pre_nh3_nitrogen = 0;
-  no2_nitrogen = pre_no2_nitrogen = 0;
-  no3_nitrogen = pre_no3_nitrogen = 0;
-
-  total_bmass = pre_total_bmass = 0;
+  // get overall concentration
+  global_no2 = 0;
+  global_nh3 = 0;
+  global_pre_no2 = 0;
+  global_pre_nh3 = 0;
+  global_smass = 0;
+  global_pre_smass = 0;
 
   kinetics = NULL;
   diffusion = NULL;
@@ -134,14 +137,29 @@ void FixVerify::end_of_step() {
  ------------------------------------------------------------------------- */
 
 void FixVerify::nitrogen_mass_balance() {
+  double smass, pre_smass;
+  double nh3_nitrogen, pre_nh3_nitrogen;
+  double no2_nitrogen, pre_no2_nitrogen;
+  double no3_nitrogen, pre_no3_nitrogen;
+  int ngrids;
+
+  nh3_nitrogen = pre_nh3_nitrogen = 0;
+  no2_nitrogen = pre_no2_nitrogen = 0;
+  no3_nitrogen = pre_no3_nitrogen = 0;
+
+  smass = 0;
+
   // get biomass concentration (mol/L)
   for (int i = 0; i < nlocal; i++) {
     int pos = kinetics->position(i);
     double rmassCellVol = atom->rmass[i] / vol;
     rmassCellVol /= 24.6;
 
-    if (pos != -1) total_bmass += rmassCellVol;
+    if (pos != -1) smass += rmassCellVol;
   }
+
+  // get overall biamass concentration
+  MPI_Allreduce(&smass,&global_smass,1,MPI_DOUBLE,MPI_SUM,world);
 
   // get nitrogen concentration
   int bgrids = kinetics->bgrids;
@@ -156,24 +174,29 @@ void FixVerify::nitrogen_mass_balance() {
     }
   }
 
-  double diff_mass = ((total_bmass - pre_total_bmass) * 0.2) / bgrids;
-  double diff_no2 = (no2_nitrogen - pre_no2_nitrogen) / bgrids;
-  double diff_nh3 = (nh3_nitrogen - pre_nh3_nitrogen) / bgrids;
+  no2_nitrogen /= bgrids;
+  nh3_nitrogen /= bgrids;
+
+  MPI_Allreduce(&no2_nitrogen,&global_no2,1,MPI_DOUBLE,MPI_SUM,world);
+  MPI_Allreduce(&nh3_nitrogen,&global_nh3,1,MPI_DOUBLE,MPI_SUM,world);
+
+  double diff_mass = ((global_smass - global_pre_smass) * 0.2) / (kinetics->nx * kinetics->ny * kinetics->nz);
+  double diff_no2 = (global_no2 - global_pre_no2) / comm->nprocs;
+  double diff_nh3 = (global_nh3 - global_pre_nh3) / comm->nprocs;
 
   double left = fabs(diff_mass) + fabs(diff_no2);
   double right = fabs(diff_nh3);
 
-  printf("(N) Diff = %e, Biomass = %e, NO2 = %e, NH3  = %e \n",
+  if (comm->me == 0) printf("(N) Diff = %e, Biomass = %e, NO2 = %e, NH3  = %e \n",
       left-right, diff_mass, diff_no2, diff_nh3);
 
-  pre_nh3_nitrogen = nh3_nitrogen;
-  pre_no2_nitrogen = no2_nitrogen;
+  global_pre_nh3 = global_nh3;
+  global_pre_no2 = global_no2;
+  global_pre_smass = global_smass;
 
-  nh3_nitrogen = 0;
-  no2_nitrogen = 0;
-
-  pre_total_bmass = total_bmass;
-  total_bmass = 0;
+  global_nh3 = 0;
+  global_no2 = 0;
+  global_smass = 0;
 }
 
 /* ----------------------------------------------------------------------
@@ -181,12 +204,15 @@ void FixVerify::nitrogen_mass_balance() {
  ------------------------------------------------------------------------- */
 
 void FixVerify::benchmark_one() {
-  // register compute with this class
+  double global_tmass;
+  double tmass = 0;
 
   // get biomass concentration (mol/L)
   for (int i = 0; i < nlocal; i++) {
-    total_bmass += atom->rmass[i];
+    tmass += atom->rmass[i];
   }
+
+  MPI_Allreduce(&tmass,&global_tmass,1,MPI_DOUBLE,MPI_SUM,world);
 
   // case 3, average biofilm thickness: Lf = 20 μm
   if (bm1cflag == 3) {
@@ -194,7 +220,7 @@ void FixVerify::benchmark_one() {
     double ave_height = cheight->compute_scalar();
     kinetics->diffusion->bulkflag = 1;
     // cease growth and division
-    if (total_bmass > 8e-13) {
+    if (global_tmass > 8e-13) {
       kinetics->monod->external_gflag = 0;
 
        if (ave_height > 2e-5) {
@@ -220,8 +246,6 @@ void FixVerify::benchmark_one() {
      // kinetics->diffusion = NULL;
     }
   }
-
-  total_bmass = 0;
 }
 
 double FixVerify::get_ave_s_sub_base() {
