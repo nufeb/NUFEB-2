@@ -527,6 +527,7 @@ void FixKineticsDiffusion::update_grids() {
 
 void FixKineticsDiffusion::compute_bulk(int nu) {
   double sumR = 0;
+  double global_sumR = 0;
   double vol = stepx * stepy * stepz;
 
   for (int i = 0; i < kinetics->bgrids; i++) {
@@ -536,7 +537,9 @@ void FixKineticsDiffusion::compute_bulk(int nu) {
       sumR += nuR[nu][i] * vol;
   }
 
-  nuBS[nu] = nuBS[nu] + ((q / rvol) * (zbcp - nuBS[nu]) + ((af * sumR) / (rvol * yhi * xhi))) * update->dt * kinetics->nevery;
+  MPI_Allreduce(&sumR,&global_sumR,1,MPI_DOUBLE,MPI_SUM,world);
+
+  nuBS[nu] = nuBS[nu] + ((q / rvol) * (zbcp - nuBS[nu]) + ((af * global_sumR) / (rvol * yhi * xhi))) * update->dt * kinetics->nevery;
 }
 
 /* ----------------------------------------------------------------------
