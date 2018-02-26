@@ -703,11 +703,11 @@ void FixKinetics::output_bacteria_info(int type) {
   yield->SetNumberOfComponents(1);
 
   vtkSmartPointer<vtkDoubleArray> cat = vtkSmartPointer<vtkDoubleArray>::New();
-  cat->SetName("Uptake");
+  cat->SetName("Catabolism");
   cat->SetNumberOfComponents(1);
 
   vtkSmartPointer<vtkDoubleArray> ana = vtkSmartPointer<vtkDoubleArray>::New();
-  ana->SetName("Uptake");
+  ana->SetName("Anabolism");
   ana->SetNumberOfComponents(1);
 
   int index = 0;
