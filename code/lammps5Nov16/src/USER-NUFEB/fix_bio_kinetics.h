@@ -98,9 +98,9 @@ class FixKinetics : public Fix {
   void update_bgrids();
   bool is_inside(int);
   int position(int);
-  void add_cells(const Grid &, const Grid &, int *, int);
-  bool is_intersection_valid(const Grid &);
-  void send_recv_cells(const Grid &, const Grid &, const Grid &, int &, int &);
+  void add_cells(const Grid<int, 3> &, const Grid<int, 3> &, int *, int);
+  bool is_intersection_valid(const Grid<int, 3> &);
+  void send_recv_cells(const Grid<int, 3> &, const Grid<int, 3> &, const Grid<int, 3> &, int &, int &);
   void reset_nuR();
   void reset_isConv();
 #ifdef OUTPUT_GRID
