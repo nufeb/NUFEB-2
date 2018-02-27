@@ -1,48 +1,52 @@
 #ifndef SRC_GRID_H
 #define SRC_GRID_H
 
+#include <array>
+
 namespace LAMMPS_NS {
 
-struct Grid
-{
+template <typename T, std::size_t N>
+struct Grid {
   Grid() {
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < N; i++) {
       lower[i] = 0;
       upper[i] = 0; 
     }    
   }
   Grid(int *l, int *u) {
-  	for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < N; i++) {
       lower[i] = l[i];
       upper[i] = u[i]; 
-  	}
+    }
   }
 
-  int lower[3];
-  int upper[3];	
+  T lower[N];
+  T upper[N];	
 };
 
-inline Grid intersect(const Grid &g0, const Grid &g1)
-{
-  Grid ret;
-  for (int i = 0; i < 3; i++) {
+template <typename T, std::size_t N>
+inline Grid<T, N> intersect(const Grid<T, N> &g0, const Grid<T, N> &g1) {
+  Grid<T, N> ret;
+  for (int i = 0; i < N; i++) {
     ret.lower[i] = g0.lower[i] > g1.lower[i] ? g0.lower[i] : g1.lower[i];
     ret.upper[i] = g0.upper[i] < g1.upper[i] ? g0.upper[i] : g1.upper[i];
   }
   return ret;
 }
 
-inline Grid extend(const Grid &g)
+template <typename T, std::size_t N>
+inline Grid<T, N> extend(const Grid<T, N> &g, T n = T(1))
 {
-	Grid ret;
- 	for (int i = 0; i < 3; i++) {
- 	  ret.lower[i] = g.lower[i] - 1;
-    ret.upper[i] = g.upper[i] + 1;
+  Grid<T, N> ret;
+  for (int i = 0; i < N; i++) {
+    ret.lower[i] = g.lower[i] - n;
+    ret.upper[i] = g.upper[i] + n;
   }
   return ret;
 }
 
-inline bool is_empty(const Grid &g)
+template <typename T, std::size_t N>
+inline bool is_empty(const Grid<T, N> &g)
 {
   for (int i = 0; i < 3; i++) {
     if (g.lower[i] >= g.upper[i])
@@ -51,29 +55,35 @@ inline bool is_empty(const Grid &g)
   return false;
 }
 
-inline int get_linear_index(const Grid &g, int i, int j, int k)
+template <typename T, std::size_t N>
+inline T get_linear_index(const Grid<T, N> &g, std::array<T, N> cell)
 {
-  int nx = g.upper[0] - g.lower[0];
-  int ny = g.upper[1] - g.lower[1];
-  return i - g.lower[0] + (j - g.lower[1]) * nx + (k - g.lower[2]) * nx * ny;
+  T n = T(1);
+  T result = T(0);
+  for (int i = 0; i < N; i++) {
+    result += (cell[i] - g.lower[i]) * n;
+    n *= g.upper[i] - g.lower[i];
+  }
+  return result;
 }
 
-inline int cell_count(const Grid &g)
+template <typename T, std::size_t N>
+inline int cell_count(const Grid<T, N> &g)
 {
-  int nx = g.upper[0] - g.lower[0];
-  int ny = g.upper[1] - g.lower[1];
-  int nz = g.upper[2] - g.lower[2];
-  return nx * ny * nz; 
+  T result = T(1);
+  for(int i = 0; i < N; i++) {
+    result *= g.upper[i] - g.lower[i];
+  }
+  return result;
 }
 
-inline Grid translate(const Grid &g, int x, int y, int z) {
-  Grid ret(g);
-  ret.lower[0] += x;
-  ret.lower[1] += y;
-  ret.lower[2] += z;
-  ret.upper[0] += x;
-  ret.upper[1] += y;
-  ret.upper[2] += z;
+template <typename T, std::size_t N>
+inline Grid<T, N> translate(const Grid<T, N> &g, std::array<T, N> d) {
+  Grid<T, N> ret(g);
+  for (int i = 0; i < N; i++) {
+    ret.lower[i] += d[i];
+    ret.upper[i] += d[i];
+  }
   return ret;
 }
 
