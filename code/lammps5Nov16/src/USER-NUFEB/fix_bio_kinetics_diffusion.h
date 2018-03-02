@@ -82,7 +82,7 @@ class FixKineticsDiffusion: public Fix {
 
   int setmask();
   void init();
-  bool* diffusion(bool*, int, double);
+  int *diffusion(int*, int, double);
   void update_nuS();
   void update_grids();
   void compute_bc(double &, double *, int, double);

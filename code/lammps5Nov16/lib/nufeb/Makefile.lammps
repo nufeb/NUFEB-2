@@ -7,6 +7,8 @@
 #
 # $ sudo apt-get install libvtk6-dev
 #
-nufeb_SYSINC = -I/usr/include/vtk-6.1 -DOUTPUT_GRID
-nufeb_SYSLIB = -lvtkCommonCore-6.1 -lvtkIOCore-6.1 -lvtkIOXML-6.1 -lvtkIOLegacy-6.1 -lvtkCommonDataModel-6.1
+#nufeb_SYSINC = -I/usr/include/vtk-6.1 -DOUTPUT_GRID
+#nufeb_SYSLIB = -lvtkCommonCore-6.1 -lvtkIOCore-6.1 -lvtkIOXML-6.1 -lvtkIOLegacy-6.1 -lvtkCommonDataModel-6.1
+nufeb_SYSINC =
+nufeb_SYSLIB =
 nufeb_SYSPATH =

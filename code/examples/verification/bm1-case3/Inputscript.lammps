@@ -4,7 +4,7 @@ atom_style	bio
 atom_modify	map array sort 100 5.0e-7
 boundary	pp pp ff
 newton		off
-processors  1 1 1
+processors  4 1 1
 
 comm_modify	vel yes
 
@@ -40,7 +40,7 @@ fix zwa all walladh v_kanc zplane  0.0   1.0e-04
 #Defining EPS density and ratio variables
 variable EPSdens equal 30
 variable EPSratio equal 1.25
-variable divMass equal 2.3e-16
+variable divMass equal 4e-16
 
 variable ke equal 5e+10
 
@@ -67,7 +67,7 @@ variable deadMass equal 6e-17
 
 ##############Ibm functions##############
 
-fix k1 all kinetics 1000 45 18 45 v_temp v_rth v_gvol v_gasTran v_ph v_diffT v_blThick 
+fix k1 all kinetics 1000 30 12 30 v_temp v_rth v_gvol v_gasTran v_ph v_diffT v_blThick 
 fix kgm all kinetics/growth/monod v_EPSdens v_etaHET 1
 fix g1 all kinetics/diffusion v_shearRate v_tol pp pp nd kg bulk v_Q v_rvol v_Af
 fix d1 all divide 1000 v_EPSdens v_divMass 31231
@@ -82,11 +82,11 @@ compute myHeight all ave_height 50 50
 
 ##############Simulation outputs##############
 
-dump		id all custom 5000 snapshot.bubblemd id type diameter x y z
+dump		id all custom 20000 snapshot.bubblemd id type diameter x y z
 #dump            d0 all bio 5000 concentration
-thermo_style    custom step cpu atoms biomass c_myNtypes[*] c_myHeight
+thermo_style    custom step cpu atoms biomass c_myNtypes[*] 
 thermo		1000
 thermo_modify	lost ignore
 
-run 4000000
+run 200000
 

@@ -56,16 +56,13 @@ variable etaHET equal 0.0
 variable diffT equal 5e-4
 variable tol equal 1e-6
 variable bl equal -1
-variable Q equal -1
-variable rvol equal 1
-variable Af equal -1
 variable shearRate equal 0.0
 
 ##############Ibm functions##############
 
 fix k1 all kinetics 400 30 12 30 v_temp v_rth v_gvol v_gasTran v_ph v_diffT v_bl 
-fix kgm all kinetics/growth/monod v_EPSdens v_etaHET
-fix g1 all kinetics/diffusion v_shearRate v_tol v_Q v_rvol v_Af pp pp nd kg
+fix kgm all kinetics/growth/monod v_EPSdens v_etaHET 1
+fix g1 all kinetics/diffusion v_shearRate v_tol pp pp nd kg
 fix d1 all divide 400 v_EPSdens v_divMass 31231
 
 ##############Ibm compute##############

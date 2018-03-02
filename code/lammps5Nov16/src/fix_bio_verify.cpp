@@ -164,7 +164,7 @@ void FixVerify::nitrogen_mass_balance() {
   // get nitrogen concentration
   int bgrids = kinetics->bgrids;
 
-  for (int i = 0; i < kinetics->bgrids; i++) {
+  for (int i = 0; i < bgrids; i++) {
     for (int nu = 1; nu <= nnus; nu++) {
       if (strcmp(bio->nuName[nu], "no2") == 0) {
         no2_nitrogen += kinetics->nuS[nu][i];
@@ -206,6 +206,9 @@ void FixVerify::nitrogen_mass_balance() {
 void FixVerify::benchmark_one() {
   double global_tmass;
   double tmass = 0;
+  double ave_height;
+  double height = kinetics->getMaxHeight();
+  if (comm->me == 0) printf("max height = %e \n", height);
 
   // get biomass concentration (mol/L)
   for (int i = 0; i < nlocal; i++) {
@@ -213,37 +216,75 @@ void FixVerify::benchmark_one() {
   }
 
   MPI_Allreduce(&tmass,&global_tmass,1,MPI_DOUBLE,MPI_SUM,world);
+  //ave_height = cheight->compute_scalar();
 
-  // case 3, average biofilm thickness: Lf = 20 μm
-  if (bm1cflag == 3) {
-    // solve mass balance in bulk liquid
-    double ave_height = cheight->compute_scalar();
-    kinetics->diffusion->bulkflag = 1;
-    // cease growth and division
-    if (global_tmass > 8e-13) {
+  if (bm1cflag == 1) {
+    if (global_tmass > 2e-11) {
+      // cease growth and division
       kinetics->monod->external_gflag = 0;
 
-       if (ave_height > 2e-5) {
-       // kinetics->diffusion = this->diffusion;
+      if (height > 5e-4) {
+        kinetics->diffusion = this->diffusion;
+        // solve mass balance in bulk liquid
         kinetics->diffusion->bulkflag = 1;
 
-        // Output result
-        for (int nu = 1; nu <= nnus; nu++) {
-          if (strcmp(bio->nuName[nu], "sub") == 0) {
-            printf("S-sub-bulk = %e\n", kinetics->diffusion->nuBS[nu]);
-            double s = get_ave_s_sub_base();
-            printf("S-sub-base = %e\n\n", s);
+        while(1) {
+          kinetics->integration();
+          for (int i = 1; i <= nnus; i++) {
+            if (strcmp(bio->nuName[i], "o2") != 0) {
+              diffusion->compute_bulk(i);
+              // Output result
+            }
           }
-
-          if (strcmp(bio->nuName[nu], "o2") == 0) {
-            printf("S-o2-bulk = %e\n", kinetics->diffusion->nuBS[nu]);
-            double s = get_ave_s_o2_base();
-            printf("S-o2-base = %e\n", s);
-          }
+          bm1_output();
         }
       }
     } else {
-     // kinetics->diffusion = NULL;
+      kinetics->diffusion = NULL;
+    }
+  }
+
+  // case 3, average biofilm thickness: Lf = 20 μm
+  if (bm1cflag == 3) {
+    if (global_tmass > 8e-13) {
+      // cease growth and division
+      kinetics->monod->external_gflag = 0;
+
+      if (height > 2e-5) {
+        kinetics->diffusion = this->diffusion;
+        // solve mass balance in bulk liquid
+        kinetics->diffusion->bulkflag = 1;
+
+        while(1) {
+          kinetics->integration();
+          for (int i = 1; i <= nnus; i++) {
+            if (strcmp(bio->nuName[i], "o2") != 0) {
+
+              diffusion->compute_bulk(i);
+              // Output result
+            }
+          }
+          bm1_output();
+        }
+      }
+    } else {
+      kinetics->diffusion = NULL;
+    }
+  }
+}
+
+void FixVerify::bm1_output() {
+  for (int nu = 1; nu <= nnus; nu++) {
+    if (strcmp(bio->nuName[nu], "sub") == 0) {
+      if (comm->me == 0) printf("S-sub-bulk = %e\n", kinetics->diffusion->nuBS[nu]);
+      double s = get_ave_s_sub_base();
+      if (comm->me == 0) printf("S-sub-base = %e\n", s);
+    }
+
+    if (strcmp(bio->nuName[nu], "o2") == 0) {
+      if (comm->me == 0) printf("S-o2-bulk = %e\n", kinetics->diffusion->nuBS[nu]);
+      double s = get_ave_s_o2_base();
+      if (comm->me == 0) printf("S-o2-base = %e\n\n", s);
     }
   }
 }
@@ -255,7 +296,7 @@ double FixVerify::get_ave_s_sub_base() {
   int nX = kinetics->subn[0] + 2;
   int nY = kinetics->subn[1] + 2;
 
-  for (int grid = 0; grid < kinetics->bgrids; grid++) {
+  for (int grid = 0; grid < kinetics->diffusion->nXYZ; grid++) {
     for (int nu = 1; nu <= nnus; nu++) {
       if (strcmp(bio->nuName[nu], "sub") == 0) {
         int up = grid + nX * nY;
@@ -279,7 +320,7 @@ double FixVerify::get_ave_s_o2_base() {
   int nX = kinetics->subn[0] + 2;
   int nY = kinetics->subn[1] + 2;
 
-  for (int grid = 0; grid < kinetics->bgrids; grid++) {
+  for (int grid = 0; grid < kinetics->diffusion->nXYZ; grid++) {
     for (int nu = 1; nu <= nnus; nu++) {
       if (strcmp(bio->nuName[nu], "o2") == 0) {
         int up = grid + nX * nY;
@@ -293,5 +334,5 @@ double FixVerify::get_ave_s_o2_base() {
 
   MPI_Allreduce(&ave_o2_s,&global_ave_o2_s,1,MPI_DOUBLE,MPI_SUM,world);
 
-  return ave_o2_s/(kinetics->nx * kinetics->ny);
+  return global_ave_o2_s/(kinetics->nx * kinetics->ny);
 }
