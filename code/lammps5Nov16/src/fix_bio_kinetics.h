@@ -58,13 +58,14 @@ class FixKinetics : public Fix {
   double **DRGAn;                  // Gibbs free energy of anabolism [type][grid]
   double **kEq;                    // equilibrium constants [nutrient][4]
   double *Sh;
-  bool *nuConv;
+  int *nuConv;
   double diffT;                    // diffusion timestep
   double bl;
   double zhi,bzhi,zlo, xlo, xhi, ylo, yhi;
   double stepz, stepx, stepy;
   int gflag;                      // microbe growth flag 1 = update biomass; 0 = solve reaction only, growth is negligible
   double maxheight;
+  int nout;
 
   int subn[3];                     // number of grids in x y axis for this proc
   int subnlo[3],subnhi[3];         // cell index of the subdomain lower and upper bound for each axis
@@ -102,6 +103,10 @@ class FixKinetics : public Fix {
   void send_recv_cells(const Grid &, const Grid &, const Grid &, int &, int &);
   void reset_nuR();
   void reset_isConv();
+#ifdef OUTPUT_GRID
+  void output_nutrient_info(int);
+  void output_bacteria_info(int);
+#endif
 };
 
 }

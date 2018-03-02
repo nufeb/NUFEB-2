@@ -4,7 +4,7 @@ atom_style	bio
 atom_modify	map array sort 100 5.0e-7
 boundary	ff ff ff
 newton		off
-processors  2 1 1
+processors  4 1 1
 
 comm_modify	vel yes
 read_data_bio atom.in
@@ -68,7 +68,7 @@ fix ki1 all kinetics/growth/energy v_EPSdens
 fix g1 all kinetics/diffusion v_shearRate v_tol pp pp nn mol
 fix d1 all divide 400 v_EPSdens v_divMass 31231
 #fix ki3 all kinetics/ph
-#fix vf1 all verify 400 mb
+fix vf1 all verify 400 mb
 
 ##############Ibm compute##############
 
@@ -81,6 +81,5 @@ thermo_style    custom step cpu atoms biomass c_myNtypes[*]
 thermo		400
 thermo_modify	lost ignore
 
-#run 192000
 run 10000
 

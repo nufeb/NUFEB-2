@@ -61,6 +61,7 @@ class FixVerify : public Fix {
   void benchmark_one();
   double get_ave_s_sub_base();
   double get_ave_s_o2_base();
+  void bm1_output();
   void benchmark_two();
   void benchmark_three();
 

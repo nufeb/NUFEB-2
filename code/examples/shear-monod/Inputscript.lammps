@@ -43,9 +43,6 @@ variable etaHET equal 0.0
 variable diffT equal 5e-4
 variable tol equal 1e-6
 variable bl equal -1
-variable Q equal -1
-variable rvol equal 1
-variable Af equal -1
 
 #Defining shear force parameters
 variable viscosity equal 0.001
@@ -91,8 +88,8 @@ fix zwa all walladh v_kanc zplane  0.000000e-04 1.000000e-04
 
 ##############Ibm functions##############
 fix k1 all kinetics 100 60 12 30 v_temp v_rth v_gvol v_gasTran v_ph v_diffT v_bl 
-fix kgm all kinetics/growth/monod v_EPSdens v_etaHET
-fix g1 all kinetics/diffusion v_shearRate v_tol v_Q v_rvol v_Af pp pp nd kg
+fix kgm all kinetics/growth/monod v_EPSdens v_etaHET 1
+fix g1 all kinetics/diffusion v_shearRate v_tol pp pp nd kg
 fix j1 all epsadh 1 v_ke 1
 fix d1 all divide 100 v_EPSdens v_divMass 31233
 fix e1 HET eps_extract 100 v_EPSratio v_EPSdens 12422423
