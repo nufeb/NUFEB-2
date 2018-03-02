@@ -105,7 +105,7 @@ int ComputeNufebHeight::position(int i) {
   int xpos = (atom->x[i][0] - xlo) / stepx;
   int ypos = (atom->x[i][1] - ylo) / stepy;
 
-  int pos = xpos + ypos * ny;
+  int pos = xpos + ypos * nx;
 
   if (pos >= nxy) {
     pos = nxy-1;

@@ -26,6 +26,8 @@ class FixKineticsDiffusion: public Fix {
 
   char **var;
   int *ivar;
+  int nvar;
+
   int nnus;                     // # of nutrients
   double stepx, stepy, stepz;
 
@@ -82,7 +84,7 @@ class FixKineticsDiffusion: public Fix {
 
   int setmask();
   void init();
-  bool* diffusion(bool*, int, double);
+  int *diffusion(int*, int, double);
   void update_nuS();
   void update_grids();
   void compute_bc(double &, double *, int, double);
