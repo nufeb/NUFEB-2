@@ -35,7 +35,6 @@ class FixKinetics : public Fix {
   int setmask();
   virtual void pre_force(int);
   void init();
-  void borders();
 
   char **var;
   int *ivar;
@@ -71,16 +70,6 @@ class FixKinetics : public Fix {
   int subnlo[3],subnhi[3];         // cell index of the subdomain lower and upper bound for each axis
   double sublo[3],subhi[3];        // subdomain lower and upper bound trimmed to the grid
 
-  int recv_buff_size;
-  int send_buff_size;
-  int *recvcells;
-  int *sendcells;
-  int *recvbegin, *recvend;
-  int *sendbegin, *sendend;
-
-  int *cellbegin;                  // first atom index for each cell
-  int *next;                       // points to the next atom index lying in the same cell
-
   class AtomVecBio *avec;
   class BIO *bio;
   class FixKineticsDiffusion *diffusion;
@@ -98,9 +87,6 @@ class FixKinetics : public Fix {
   void update_bgrids();
   bool is_inside(int);
   int position(int);
-  void add_cells(const Grid<int, 3> &, const Grid<int, 3> &, int *, int);
-  bool is_intersection_valid(const Grid<int, 3> &);
-  void send_recv_cells(const Grid<int, 3> &, const Grid<int, 3> &, const Grid<int, 3> &, int &, int &);
   void reset_nuR();
   void reset_isConv();
 #ifdef OUTPUT_GRID

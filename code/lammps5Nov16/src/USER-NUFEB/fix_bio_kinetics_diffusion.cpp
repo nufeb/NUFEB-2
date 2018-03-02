@@ -142,12 +142,7 @@ FixKineticsDiffusion::~FixKineticsDiffusion() {
   memory->destroy(ghost);
   memory->destroy(nuBS);
 
-  memory->destroy(recvbuff);
-  memory->destroy(sendbuff);
-  memory->destroy(convergences);
-
   delete [] requests;
-  delete [] status;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -256,60 +251,56 @@ void FixKineticsDiffusion::init() {
   // TODO: optimize for first-touch policy
   //initialise grids
   double i, j, k;
-  int grid = 0;
+  int cell = 0;
   for (k = kinetics->sublo[2] - (stepz/2); k < kinetics->subhi[2] + stepz; k += stepz) {
     for (j = kinetics->sublo[1] - (stepy/2); j < kinetics->subhi[1] + stepy; j += stepy) {
       for (i = kinetics->sublo[0] - (stepx/2); i < kinetics->subhi[0] + stepx; i += stepx) {
-        xGrid[grid][0] = i;
-        xGrid[grid][1] = j;
-        xGrid[grid][2] = k;
+        xGrid[cell][0] = i;
+        xGrid[cell][1] = j;
+        xGrid[cell][2] = k;
         //Initialise concentration values for ghost and std grids
         for (int nu = 1; nu <= nnus; nu++) {
           if (i < kinetics->sublo[0]) {
-            ghost[grid] = true;
-            nuGrid[nu][grid] = iniS[nu][1];
+            ghost[cell] = true;
+            nuGrid[nu][cell] = iniS[nu][1];
           } else if (i > kinetics->subhi[0]) {
-            ghost[grid] = true;
-            nuGrid[nu][grid] = iniS[nu][2];
+            ghost[cell] = true;
+            nuGrid[nu][cell] = iniS[nu][2];
           } else if (j < kinetics->sublo[1]) {
-            ghost[grid] = true;
-            nuGrid[nu][grid] = iniS[nu][3];
+            ghost[cell] = true;
+            nuGrid[nu][cell] = iniS[nu][3];
           } else if (j > kinetics->subhi[1]) {
-            ghost[grid] = true;
-            nuGrid[nu][grid] = iniS[nu][4];
+            ghost[cell] = true;
+            nuGrid[nu][cell] = iniS[nu][4];
           } else if (k < kinetics->sublo[2]) {
-            ghost[grid] = true;
-            nuGrid[nu][grid] = iniS[nu][5];
+            ghost[cell] = true;
+            nuGrid[nu][cell] = iniS[nu][5];
           } else if (k > MIN(bzhi, kinetics->subhi[2])) {
-            ghost[grid] = true;
-            nuGrid[nu][grid] = iniS[nu][6];
+            ghost[cell] = true;
+            nuGrid[nu][cell] = iniS[nu][6];
           } else {
-            ghost[grid] = false;
-            nuGrid[nu][grid] = iniS[nu][0];
+            ghost[cell] = false;
+            nuGrid[nu][cell] = iniS[nu][0];
           }
 
           if (unit == 0)
-            nuGrid[nu][grid] = nuGrid[nu][grid] * 1000;
-          if (grid == 0 && unit == 1)
+            nuGrid[nu][cell] = nuGrid[nu][cell] * 1000;
+          if (cell == 0 && unit == 1)
             nuBS[nu] = iniS[nu][6];
-          else if (grid == 0 && unit == 0)
+          else if (cell == 0 && unit == 0)
             nuBS[nu] = iniS[nu][6] * 1000;
         }
-        grid++;
+        cell++;
       }
     }
   }
   
-  // create send and recv buffers
-  recv_buff_size = BUFMIN;
-  recvbuff = memory->create(recvbuff, recv_buff_size, "diffusion::recvbuff");
-  send_buff_size = BUFMIN;
-  sendbuff = memory->create(sendbuff, send_buff_size, "diffusion::sendbuff");
-  convergences = memory->create(convergences, comm->nprocs, "diffusion::convergences");
-
   // create request vector
   requests = new MPI_Request[MAX(2 * comm->nprocs, nnus + 1)];
-  status = new MPI_Status[MAX(2 * comm->nprocs, nnus + 1)];
+
+  grid = Grid<double, 3>(Box<double, 3>(domain->boxlo, domain->boxhi), {kinetics->nx, kinetics->ny, kinetics->nz});
+  subgrid = grid.get_sub_grid(Box<double, 3>(domain->sublo, domain->subhi));
+  DecompGrid<FixKineticsDiffusion>::setup();
 }
 
 /* ----------------------------------------------------------------------
@@ -324,45 +315,7 @@ int *FixKineticsDiffusion::diffusion(int *nuConv, int iter, double diffT) {
   nuS = kinetics->nuS;
   nuR = kinetics->nuR;
 
-  int nrecvcells = kinetics->recvend[comm->nprocs - 1];
-  int nsendcells = kinetics->sendend[comm->nprocs - 1];
-  if (recv_buff_size < nrecvcells * nnus) {
-    recv_buff_size += ((nrecvcells * nnus) / BUFMIN + 1) * BUFMIN;
-    memory->grow(recvbuff, recv_buff_size, "diffusion::recvbuff");
-  }
-  if (send_buff_size < nsendcells * nnus) {
-    send_buff_size += ((nsendcells * nnus) / BUFMIN + 1) * BUFMIN;
-    memory->grow(sendbuff, send_buff_size, "diffusion::recvbuff");
-  }
-
-  // copy nutrient grid data to send buffer
-  for (int c = 0; c < nsendcells; c++) {
-    int cell = kinetics->sendcells[c];
-    for (int n = 0; n < nnus; n++) {
-      sendbuff[c * nnus + n] = nuGrid[n][cell]; 
-    }  
-  }
-  // send and recv grid data
-  int nrequests = 0;
-  for (int p = 0; p < comm->nprocs; p++) {
-    if (p == comm->me)
-      continue;
-    int recvn = (kinetics->recvend[p] - kinetics->recvbegin[p]) * nnus;
-    if (recvn > 0)
-      MPI_Irecv(&recvbuff[kinetics->recvbegin[p] * nnus], recvn, MPI_DOUBLE, p, 0, world, &requests[nrequests++]);
-    int sendn = (kinetics->sendend[p] - kinetics->sendbegin[p]) * nnus;
-    if (sendn > 0)
-      MPI_Isend(&sendbuff[kinetics->sendbegin[p] * nnus], sendn, MPI_DOUBLE, p, 0, world, &requests[nrequests++]);
-  }
-  // wait for all MPI requests
-  if (comm->nprocs > 1) MPI_Waitall(nrequests, requests, status);
-  // copy received data to nuGrid
-  for (int c = 0; c < nrecvcells; c++) {
-    int cell = kinetics->recvcells[c];
-    for (int n = 0; n < nnus; n++) {
-      nuGrid[n][cell] = recvbuff[c * nnus + n];
-    }
-  }
+  DecompGrid<FixKineticsDiffusion>::exchange();
 
   for (int i = 1; i <= nnus; i++) {
     if (unit == 0) {
@@ -427,11 +380,11 @@ int *FixKineticsDiffusion::diffusion(int *nuConv, int iter, double diffT) {
     }
   }
 
-  nrequests = 0;
+  int nrequests = 0;
   for (int i = 1; i <= nnus; i++) {
     if (bio->nuType[i] == 0 && !nuConv[i]) { // checking if is liquid
 #if MPI_VERSION >= 3
-      MPI_Wait(&requests[i], &status[i]);
+      MPI_Wait(&requests[i], MPI_STATUS_IGNORE);
 #endif
       // check convergence criteria
       nuConv[i] = true;
@@ -456,7 +409,7 @@ int *FixKineticsDiffusion::diffusion(int *nuConv, int iter, double diffT) {
     }
   }
 #if MPI_VERSION >= 3
-  MPI_Waitall(nrequests, requests, status);
+  MPI_Waitall(nrequests, requests, MPI_STATUS_IGNORE);
 #endif
 
   delete [] maxS;
@@ -726,4 +679,20 @@ void FixKineticsDiffusion::update_nuS(){
       }
     }
   }
+}
+
+Grid<double, 3> FixKineticsDiffusion::get_grid() const {
+  return grid;
+}
+
+Box<int, 3> FixKineticsDiffusion::get_subgrid() const {
+  return subgrid;
+}
+
+std::array<bool, 3> FixKineticsDiffusion::get_periodic_boundary() const {
+  return {xbcflag == 0, ybcflag == 0, zbcflag == 0};
+}
+
+int FixKineticsDiffusion::get_cell_data_size(int n) {
+  return bio->nnus * n;
 }
