@@ -339,8 +339,7 @@ void FixKineticsBalance::rebalance()
 
   pending = 1;
 
-  // call fix_kinetics borders() to recompute sending and receiving cells
-  kinetics->borders();
+  // TODO: call decomp_grid::setup
 }
 
 /* ----------------------------------------------------------------------
