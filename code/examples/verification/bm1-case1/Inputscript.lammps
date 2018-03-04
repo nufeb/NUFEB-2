@@ -64,7 +64,7 @@ variable deadMass equal 6e-17
 
 ##############Ibm functions##############
 
-fix k1 all kinetics 1000 30 12 300 v_temp v_rth v_gvol v_gasTran v_ph v_diffT v_blThick 
+fix k1 all kinetics 1000 10 10 120 v_temp v_rth v_gvol v_gasTran v_ph v_diffT v_blThick 
 fix kgm all kinetics/growth/monod v_EPSdens v_etaHET 1
 fix g1 all kinetics/diffusion v_shearRate v_tol pp pp nd kg bulk v_Q v_rvol v_Af
 fix d1 all divide 1000 v_EPSdens v_divMass 31231

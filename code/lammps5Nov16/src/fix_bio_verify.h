@@ -64,6 +64,8 @@ class FixVerify : public Fix {
   void bm1_output();
   void benchmark_two();
   void benchmark_three();
+  void remove_atom(double);
+  int reachHeight(double);
 
 };
 
