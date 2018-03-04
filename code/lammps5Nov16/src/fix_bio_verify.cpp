@@ -17,6 +17,7 @@
 #include <cstring>
 
 #include "atom.h"
+#include "atom_vec_bio.h"
 #include "bio.h"
 #include "error.h"
 #include "fix_bio_kinetics.h"
@@ -219,25 +220,24 @@ void FixVerify::benchmark_one() {
   //ave_height = cheight->compute_scalar();
 
   if (bm1cflag == 1) {
-    if (global_tmass > 2e-11) {
-      // cease growth and division
+    if (global_tmass > 2e-12) {
+      if (comm->me == 0) printf("tmass = %e \n\n", global_tmass);
+
       kinetics->monod->external_gflag = 0;
+      kinetics->diffusion = this->diffusion;
+      // solve mass balance in bulk liquid
+      kinetics->diffusion->bulkflag = 1;
 
-      if (height > 5e-4) {
-        kinetics->diffusion = this->diffusion;
-        // solve mass balance in bulk liquid
-        kinetics->diffusion->bulkflag = 1;
-
-        while(1) {
-          kinetics->integration();
-          for (int i = 1; i <= nnus; i++) {
-            if (strcmp(bio->nuName[i], "o2") != 0) {
-              diffusion->compute_bulk(i);
-              // Output result
-            }
+      int k = 0;
+      while(k < 100) {
+        kinetics->integration();
+        for (int i = 1; i <= nnus; i++) {
+          if (strcmp(bio->nuName[i], "o2") != 0) {
+            diffusion->compute_bulk(i);
           }
-          bm1_output();
         }
+        bm1_output();
+        k++;
       }
     } else {
       kinetics->diffusion = NULL;
@@ -246,26 +246,24 @@ void FixVerify::benchmark_one() {
 
   // case 3, average biofilm thickness: Lf = 20 μm
   if (bm1cflag == 3) {
-    if (global_tmass > 8e-13) {
-      // cease growth and division
+    if (global_tmass > 7.9e-14) {
+      if (comm->me == 0) printf("tmass = %e \n\n", global_tmass);
+
       kinetics->monod->external_gflag = 0;
+      kinetics->diffusion = this->diffusion;
+      // solve mass balance in bulk liquid
+      kinetics->diffusion->bulkflag = 1;
 
-      if (height > 2e-5) {
-        kinetics->diffusion = this->diffusion;
-        // solve mass balance in bulk liquid
-        kinetics->diffusion->bulkflag = 1;
-
-        while(1) {
-          kinetics->integration();
-          for (int i = 1; i <= nnus; i++) {
-            if (strcmp(bio->nuName[i], "o2") != 0) {
-
-              diffusion->compute_bulk(i);
-              // Output result
-            }
+      int k = 0;
+      while(k < 100) {
+        kinetics->integration();
+        for (int i = 1; i <= nnus; i++) {
+          if (strcmp(bio->nuName[i], "o2") != 0) {
+            diffusion->compute_bulk(i);
           }
-          bm1_output();
         }
+        bm1_output();
+        k++;
       }
     } else {
       kinetics->diffusion = NULL;
@@ -335,4 +333,35 @@ double FixVerify::get_ave_s_o2_base() {
   MPI_Allreduce(&ave_o2_s,&global_ave_o2_s,1,MPI_DOUBLE,MPI_SUM,world);
 
   return global_ave_o2_s/(kinetics->nx * kinetics->ny);
+}
+
+void FixVerify::remove_atom(double height) {
+  AtomVecBio *avec = (AtomVecBio *) atom->style_match("bio");
+
+  int i = 0;
+  while (i < nlocal) {
+    if (atom->x[i][2]+atom->radius[i] > height) {
+      avec->copy(nlocal-1,i,1);
+      nlocal--;
+    } else {
+      i++;
+    }
+  }
+}
+
+int FixVerify::reachHeight(double height) {
+  const int nlocal = atom->nlocal;
+  double * const * const x = atom->x;
+  double * const r = atom->radius;
+  int cout = 0;
+
+  for (int i=0; i < nlocal; i++) {
+    if((x[i][2] + r[i]) > height)
+      cout ++;
+  }
+
+  int global_max;
+  MPI_Allreduce(&cout, &global_max, 1, MPI_DOUBLE, MPI_MAX, world);
+
+  return cout > 10 ? 1 : 0;
 }
