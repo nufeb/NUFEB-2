@@ -246,14 +246,6 @@ void FixKineticsMonod::init_param() {
  metabolism and atom update
  ------------------------------------------------------------------------- */
 void FixKineticsMonod::growth(double dt, int gflag) {
-  // create density array
-  double **xtype = memory->create(xtype, ntypes + 1, kinetics->bgrids, "monod:xtype");
-  for (int i = 1; i <= ntypes; i++) {
-    for (int grid = 0; grid < kinetics->bgrids; grid++) {
-      xtype[i][grid] = 0;
-    }
-  }
-
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
   int *type = atom->type;
@@ -275,6 +267,14 @@ void FixKineticsMonod::growth(double dt, int gflag) {
 
   int *nuConv = kinetics->nuConv;
   double yieldEPS = 0;
+
+  // create density array
+  double **xtype = memory->create(xtype, ntypes + 1, kinetics->bgrids, "monod:xtype");
+  for (int i = 1; i <= ntypes; i++) {
+    for (int grid = 0; grid < kinetics->bgrids; grid++) {
+      xtype[i][grid] = 0;
+    }
+  }
 
   if (ieps != 0)
     yieldEPS = yield[ieps];
