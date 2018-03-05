@@ -48,6 +48,7 @@ class FixKinetics : public Fix {
 
   double **nuS;                    // nutrient concentration [nutrient][grid]
   double **nuR;                    // nutrient consumption [nutrient][grid]
+  double *nuBS;                    // concentration in boundary layer [nutrient]
   double **fV;                     // velocity field [velo][grid]
   double **qGas;                   // gas chemicals [nutrient][grid]
   double **gYield;                 // inverse yield [type][grid]

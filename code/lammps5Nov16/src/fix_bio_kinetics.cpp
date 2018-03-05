@@ -146,6 +146,7 @@ FixKinetics::~FixKinetics() {
   memory->destroy(activity);
   memory->destroy(nuR);
   memory->destroy(nuS);
+  memory->destroy(nuBS);
   memory->destroy(qGas);
   memory->destroy(DRGCat);
   memory->destroy(DRGAn);
@@ -189,7 +190,7 @@ void FixKinetics::init() {
   thermo = NULL;
   monod = NULL;
   nufebFoam = NULL;
-
+  printf("init!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
   int nfix = modify->nfix;
   for (int j = 0; j < nfix; j++) {
     if (strcmp(modify->fix[j]->style, "kinetics/growth/energy") == 0) {
@@ -230,6 +231,7 @@ void FixKinetics::init() {
   nuConv = new int[nnus + 1]();
   nuS = memory->create(nuS, nnus + 1, ngrids, "kinetics:nuS");
   nuR = memory->create(nuR, nnus + 1, ngrids, "kinetics:nuR");
+  nuBS = memory->create(nuBS, nnus + 1, "kinetics:nuBS");
   qGas = memory->create(qGas, nnus + 1, ngrids, "kinetics:nuGas");
   gYield = memory->create(gYield, ntypes + 1, ngrids, "kinetic:gYield");
   activity = memory->create(activity, nnus + 1, 5, ngrids, "kinetics:activity");
@@ -442,6 +444,12 @@ void FixKinetics::pre_force(int vflag) {
  ------------------------------------------------------------------------- */
 
 void FixKinetics::integration() {
+  if (diffusion != NULL) printf("nuBS = %e \n", nuBS[1]);
+  double sumR = 0;
+  for (int i = 0; i < bgrids; i++) {
+    sumR += nuR[1][i];
+  }
+  if (diffusion != NULL) printf("sumR = %e \n", sumR);
 
   int iteration = 0;
   bool isConv = false;
@@ -481,10 +489,10 @@ void FixKinetics::integration() {
       }
     }
 
-//    if (iteration >= 100000) isConv = true;
+    if (iteration >= 100000) isConv = true;
   }
 
-  if (comm->me == 0) printf( "number of iteration: %i \n", iteration);
+  //if (comm->me == 0) printf( "number of iteration: %i \n", iteration);
 
   gflag = 1;
   reset_isConv();
