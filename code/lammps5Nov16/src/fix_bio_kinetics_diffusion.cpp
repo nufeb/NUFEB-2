@@ -157,7 +157,6 @@ FixKineticsDiffusion::~FixKineticsDiffusion() {
   memory->destroy(nuGrid);
   memory->destroy(nuPrev);
   memory->destroy(ghost);
-  memory->destroy(nuBS);
 
   memory->destroy(recvbuff);
   memory->destroy(sendbuff);
@@ -228,6 +227,9 @@ void FixKineticsDiffusion::init() {
   nx = kinetics->nx;
   ny = kinetics->ny;
   nz = kinetics->nz;
+  nuR = kinetics->nuR;
+  nuS = kinetics->nuS;
+  nuBS = kinetics->nuBS;
 
   nnus = bio->nnus;
   iniS = bio->iniS;
@@ -276,7 +278,6 @@ void FixKineticsDiffusion::init() {
   nuGrid = memory->create(nuGrid, nnus + 1, nXYZ, "diffusion:nuGrid");
   nuPrev = memory->create(nuPrev, nnus + 1, nXYZ, "diffusion:nuPrev");
   ghost = memory->create(ghost, nXYZ, "diffusion:ghost");
-  nuBS = memory->create(nuBS, nnus + 1, "diffusion:nuBS");
 
   // TODO: optimize for first-touch policy
   //initialise grids
@@ -346,11 +347,10 @@ int *FixKineticsDiffusion::diffusion(int *nuConv, int iter, double diffT) {
     update_grids();
 
   this->diffT = diffT;
-  nuS = kinetics->nuS;
-  nuR = kinetics->nuR;
 
   int nrecvcells = kinetics->recvend[comm->nprocs - 1];
   int nsendcells = kinetics->sendend[comm->nprocs - 1];
+
   if (recv_buff_size < nrecvcells * nnus) {
     recv_buff_size += ((nrecvcells * nnus) / BUFMIN + 1) * BUFMIN;
     memory->grow(recvbuff, recv_buff_size, "diffusion::recvbuff");
@@ -508,7 +508,6 @@ void FixKineticsDiffusion::compute_bulk(int nu) {
   double global_sumR = 0;
   double vol = stepx * stepy * stepz;
   double iniBC = (unit == 1) ? iniBC = iniS[nu][6] : iniBC = iniS[nu][6] * 1000;
-  nuR = kinetics->nuR;
 
   for (int i = 0; i < kinetics->bgrids; i++) {
     (unit == 1) ? (sumR += nuR[nu][i] * vol) : (sumR += nuR[nu][i] * vol * 1000);

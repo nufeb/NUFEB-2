@@ -103,7 +103,7 @@ void FixVerify::init()
 
   bio = kinetics->bio;
   vol = kinetics->stepx * kinetics->stepy * kinetics->stepz;
-  kinetics->diffusion->bulkflag = 0;
+ // kinetics->diffusion->bulkflag = 0;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -210,7 +210,7 @@ void FixVerify::benchmark_one() {
   double ave_height;
   double height = kinetics->getMaxHeight();
   if (comm->me == 0) printf("max height = %e \n", height);
-
+  bm1_output();
   // get biomass concentration (mol/L)
   for (int i = 0; i < nlocal; i++) {
     tmass += atom->rmass[i];
@@ -226,10 +226,10 @@ void FixVerify::benchmark_one() {
       kinetics->monod->external_gflag = 0;
       kinetics->diffusion = this->diffusion;
       // solve mass balance in bulk liquid
-      kinetics->diffusion->bulkflag = 1;
+      //kinetics->diffusion->bulkflag = 1;
 
       int k = 0;
-      while(k < 100) {
+      while(k < 10000) {
         kinetics->integration();
         for (int i = 1; i <= nnus; i++) {
           if (strcmp(bio->nuName[i], "o2") != 0) {
@@ -239,8 +239,6 @@ void FixVerify::benchmark_one() {
         bm1_output();
         k++;
       }
-    } else {
-      kinetics->diffusion = NULL;
     }
   }
 
@@ -255,7 +253,7 @@ void FixVerify::benchmark_one() {
       kinetics->diffusion->bulkflag = 1;
 
       int k = 0;
-      while(k < 100) {
+      while(k < 1000) {
         kinetics->integration();
         for (int i = 1; i <= nnus; i++) {
           if (strcmp(bio->nuName[i], "o2") != 0) {

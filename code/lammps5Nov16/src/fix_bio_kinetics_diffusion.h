@@ -48,7 +48,7 @@ class FixKineticsDiffusion: public Fix {
 
   double **nuR;
   double **nuS;
-  double *nuBS;                           // concentration in boundary layer [nutrient]
+  double *nuBS;                       // concentration in boundary layer [nutrient]
   double **nuGrid;                    // nutrient concentration in ghost mesh [nutrient][grid]
   double **xGrid;                     // grid coordinate [gird][3]
   bool *ghost;
