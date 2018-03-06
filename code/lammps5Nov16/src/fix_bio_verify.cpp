@@ -49,6 +49,7 @@ FixVerify::FixVerify(LAMMPS *lmp, int narg, char **arg) :
   int nkeywords = narg - 4;
   bm1flag = bm2flag = bm3flag = mflag = 0;
   bm1cflag = 0;
+  demflag = 0;
 
   for (int i = 0; i < nkeywords; i++) {
     if (strcmp(arg[4+i], "bm1") == 0) {
@@ -58,8 +59,12 @@ FixVerify::FixVerify(LAMMPS *lmp, int narg, char **arg) :
     else if (strcmp(arg[4+i], "bm2") == 0) bm2flag = 1;
     else if (strcmp(arg[4+i], "mb") == 0) mflag = 1;
     else if (strcmp(arg[4+i], "bm3") == 0) bm3flag = 1;
+    else if (strcmp(arg[4+i], "demflag") == 0) {
+      if (strcmp(arg[5+i],"no") == 0) demflag = 0;
+      else if (strcmp(arg[5+i],"yes") == 0) demflag = 1;
+      else error->all(FLERR,"Illegal demflag parameter (yes or no)");
+    }
   }
-
 }
 
 FixVerify::~FixVerify()
@@ -118,6 +123,7 @@ int FixVerify::setmask()
 
 void FixVerify::end_of_step() {
   if (update->ntimestep % nevery) return;
+  if (demflag) return;
 
   nlocal = atom->nlocal;
   nall = nlocal + atom->nghost;
@@ -331,6 +337,20 @@ double FixVerify::get_ave_s_o2_base() {
   MPI_Allreduce(&ave_o2_s,&global_ave_o2_s,1,MPI_DOUBLE,MPI_SUM,world);
 
   return global_ave_o2_s/(kinetics->nx * kinetics->ny);
+}
+
+/* ---------------------------------------------------------------------- */
+
+int FixVerify::modify_param(int narg, char **arg)
+{
+  if (strcmp(arg[0],"demflag") == 0) {
+    if (narg != 2) error->all(FLERR,"Illegal fix_modify command");
+    if (strcmp(arg[1],"no") == 0) demflag = 0;
+    else if (strcmp(arg[1],"yes") == 0) demflag = 1;
+    else error->all(FLERR,"Illegal demflag parameter (yes or no)");
+    return 2;
+  }
+  return 0;
 }
 
 void FixVerify::remove_atom(double height) {

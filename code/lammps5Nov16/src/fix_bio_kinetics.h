@@ -36,6 +36,7 @@ class FixKinetics : public Fix {
   virtual void pre_force(int);
   void init();
   void borders();
+  int modify_param(int, char **);
 
   char **var;
   int *ivar;
@@ -65,6 +66,7 @@ class FixKinetics : public Fix {
   double zhi,bzhi,zlo, xlo, xhi, ylo, yhi;
   double stepz, stepx, stepy;
   int gflag;                      // microbe growth flag 1 = update biomass; 0 = solve reaction only, growth is negligible
+  int demflag;                     // flag for DEM run
   double maxheight;
   int nout;
 

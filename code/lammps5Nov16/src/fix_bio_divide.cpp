@@ -50,7 +50,7 @@ FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
   avec = (AtomVecBio *) atom->style_match("bio");
   if (!avec) error->all(FLERR,"Fix kinetics requires atom style bio");
 
-  if (narg != 7) error->all(FLERR,"Illegal fix divide command: Missing arguments");
+  if (narg != 9) error->all(FLERR,"Illegal fix divide command: Missing arguments");
 
   nevery = force->inumeric(FLERR,arg[3]);
   if (nevery < 0) error->all(FLERR,"Illegal fix divide command: calling steps should be positive integer");
@@ -65,6 +65,10 @@ FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
   }
 
   seed = atoi(arg[6]);
+
+  if (strcmp(arg[8],"no") == 0) demflag = 0;
+  else if (strcmp(arg[8],"yes") == 0) demflag = 1;
+  else error->all(FLERR,"Illegal demflag parameter (yes or no)");
 
   if (seed <= 0) error->all(FLERR,"Illegal fix divide command: seed should be greater than 0");
 
@@ -150,7 +154,8 @@ void FixDivide::post_integrate()
 {
   if (nevery == 0) return;
   if (update->ntimestep % nevery) return;
-  if (nufebFoam != NULL && nufebFoam->demflag) return;
+  if (nufebFoam != NULL) demflag = demflag | nufebFoam->demflag;
+  if (demflag) return;
 
   double EPSdens = input->variable->compute_equal(ivar[0]);
   double divMass = input->variable->compute_equal(ivar[1]);
@@ -313,4 +318,18 @@ void FixDivide::post_integrate()
 
   // trigger immediate reneighboring
   next_reneighbor = update->ntimestep;
+}
+
+/* ---------------------------------------------------------------------- */
+
+int FixDivide::modify_param(int narg, char **arg)
+{
+  if (strcmp(arg[0],"demflag") == 0) {
+    if (narg != 2) error->all(FLERR,"Illegal fix_modify command");
+    if (strcmp(arg[1],"no") == 0) demflag = 0;
+    else if (strcmp(arg[1],"yes") == 0) demflag = 1;
+    else error->all(FLERR,"Illegal demflag parameter (yes or no)");
+    return 2;
+  }
+  return 0;
 }
