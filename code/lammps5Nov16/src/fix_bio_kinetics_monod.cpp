@@ -59,7 +59,7 @@ FixKineticsMonod::FixKineticsMonod(LAMMPS *lmp, int narg, char **arg) :
   if (!avec)
     error->all(FLERR, "Fix kinetics requires atom style bio");
 
-  if (narg != 6)
+  if (narg < 5)
     error->all(FLERR, "Not enough arguments in fix kinetics/growth/monod command");
 
   var = new char*[2];
@@ -70,8 +70,21 @@ FixKineticsMonod::FixKineticsMonod(LAMMPS *lmp, int narg, char **arg) :
     var[i] = new char[n];
     strcpy(var[i], &arg[3 + i][2]);
   }
-  external_gflag = force->inumeric(FLERR, arg[5]);
+
   kinetics = NULL;
+
+  external_gflag = 0;
+
+  int iarg = 5;
+  while (iarg < narg){
+    if (strcmp(arg[iarg],"gflag") == 0) {
+      external_gflag = force->inumeric(FLERR, arg[iarg+1]);
+      if (external_gflag != 0 && external_gflag != 1)
+        error->all(FLERR, "Illegal fix kinetics/growth/monod command: gflag");
+      iarg += 2;
+    } else
+      error->all(FLERR, "Illegal fix kinetics/growth/monod command");
+  }
 }
 
 /* ---------------------------------------------------------------------- */

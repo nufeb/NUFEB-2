@@ -273,7 +273,7 @@ void FixKineticsPH::solve_ph() {
       }
       ipH += ipH;
     }
-    kinetics->Sh[i] = gSh;
+    kinetics->sh[i] = gSh;
 
     for (int k = 1; k < nnus + 1; k++) {
       if (strcmp(bio->nuName[k], "h") == 0) {

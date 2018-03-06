@@ -26,7 +26,6 @@ class FixKineticsDiffusion: public Fix {
 
   char **var;
   int *ivar;
-  int nvar;
 
   int nnus;                     // # of nutrients
   double stepx, stepy, stepz;
@@ -40,7 +39,7 @@ class FixKineticsDiffusion: public Fix {
   int *type;
   int shearflag, dragflag;
 
-  double shearRate;
+  double srate;                 // shear rate
   double **iniS;                // inlet concentrations of nutrients
   double *diffCoeff;            // diffusion coefficients of nutrients
   double *mw;                   // molecular weights of nutrients

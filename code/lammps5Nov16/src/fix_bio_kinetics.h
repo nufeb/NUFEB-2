@@ -54,15 +54,15 @@ class FixKinetics : public Fix {
   double **qGas;                   // gas chemicals [nutrient][grid]
   double **gYield;                 // inverse yield [type][grid]
   double ***activity;              // activities of chemical species [nutrient][5 charges][grid]
-  double gVol, gasTrans;           // gas volume and gas transfer constant
+  double gvol, rg;           // gas volume and gas transfer constant
   double temp, rth;                // uiversal gas constant (thermodynamics) and temperature
   double **DRGCat;                 // Gibbs free energy of catabolism [type][grid]
   double **DRGAn;                  // Gibbs free energy of anabolism [type][grid]
   double **kEq;                    // equilibrium constants [nutrient][4]
-  double *Sh;
+  double *sh;
   int *nuConv;
   double diffT;                    // diffusion timestep
-  double bl;
+  double blayer;
   double zhi,bzhi,zlo, xlo, xhi, ylo, yhi;
   double stepz, stepx, stepy;
   int gflag;                      // microbe growth flag 1 = update biomass; 0 = solve reaction only, growth is negligible
