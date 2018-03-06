@@ -56,96 +56,100 @@ using namespace std;
 FixKineticsDiffusion::FixKineticsDiffusion(LAMMPS *lmp, int narg, char **arg) :
     Fix(lmp, narg, arg) {
 
-  if (narg > 13)
-    error->all(FLERR, " Illegal fix diffusion command");
-  if (narg < 9)
+  if (narg < 8)
     error->all(FLERR, "Not enough arguments in fix diffusion command");
 
   shearflag = dragflag = 0;
   bulkflag = 0;
+  srate = 0;
 
-  int nkeywords = narg - 3;
-  for (int i = 0; i < nkeywords; i++) {
-    if (strcmp(arg[3 + i], "bulk") == 0) {
-      bulkflag = 1;
-    }
-  }
+  var = new char*[1];
+  ivar = new int[1];
 
-  if (bulkflag) nvar = 5;
-  else nvar = 2;
-
-  var = new char*[nvar];
-  ivar = new int[nvar];
-
-  for (int i = 0; i < nvar; i++) {
-    if (i <= 1) {
-      int n = strlen(&arg[3 + i][2]) + 1;
-      var[i] = new char[n];
-      strcpy(var[i], &arg[3 + i][2]);
-    } else if (bulkflag && i > 1) {
-    // parameters for bulk mass balance
-      int n = strlen(&arg[8 + i][2]) + 1;
-      var[i] = new char[n];
-      strcpy(var[i], &arg[8 + i][2]);
-    }
+  for (int i = 0; i < 1; i++) {
+    int n = strlen(&arg[3 + i][2]) + 1;
+    var[i] = new char[n];
+    strcpy(var[i], &arg[3 + i][2]);
   }
 
   //set boundary condition flag:
   //0=PERIODIC-PERIODIC,  1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
-  if (strcmp(arg[5], "pp") == 0)
+  if (strcmp(arg[4], "pp") == 0)
     xbcflag = 0;
-  else if (strcmp(arg[5], "dd") == 0)
+  else if (strcmp(arg[4], "dd") == 0)
     xbcflag = 1;
-  else if (strcmp(arg[5], "nd") == 0)
+  else if (strcmp(arg[4], "nd") == 0)
     xbcflag = 2;
-  else if (strcmp(arg[5], "nn") == 0)
+  else if (strcmp(arg[4], "nn") == 0)
     xbcflag = 3;
-  else if (strcmp(arg[5], "dn") == 0)
+  else if (strcmp(arg[4], "dn") == 0)
     xbcflag = 4;
   else
     error->all(FLERR, "Illegal x-axis boundary condition command");
 
-  if (strcmp(arg[6], "pp") == 0)
+  if (strcmp(arg[5], "pp") == 0)
     ybcflag = 0;
-  else if (strcmp(arg[6], "dd") == 0)
+  else if (strcmp(arg[5], "dd") == 0)
     ybcflag = 1;
-  else if (strcmp(arg[6], "nd") == 0)
+  else if (strcmp(arg[5], "nd") == 0)
     ybcflag = 2;
-  else if (strcmp(arg[6], "nn") == 0)
+  else if (strcmp(arg[5], "nn") == 0)
     ybcflag = 3;
-  else if (strcmp(arg[6], "dn") == 0)
+  else if (strcmp(arg[5], "dn") == 0)
     ybcflag = 4;
   else
     error->all(FLERR, "Illegal y-axis boundary condition command");
 
-  if (strcmp(arg[7], "pp") == 0)
+  if (strcmp(arg[6], "pp") == 0)
     zbcflag = 0;
-  else if (strcmp(arg[7], "dd") == 0)
+  else if (strcmp(arg[6], "dd") == 0)
     zbcflag = 1;
-  else if (strcmp(arg[7], "nd") == 0)
+  else if (strcmp(arg[6], "nd") == 0)
     zbcflag = 2;
-  else if (strcmp(arg[7], "nn") == 0)
+  else if (strcmp(arg[6], "nn") == 0)
     zbcflag = 3;
-  else if (strcmp(arg[7], "dn") == 0)
+  else if (strcmp(arg[6], "dn") == 0)
     zbcflag = 4;
-  else if (strcmp(arg[7], "db") == 0)
-    zbcflag = 5;
   else
     error->all(FLERR, "Illegal z-axis boundary condition command");
 
-  if (strcmp(arg[8], "kg") == 0)
+  if (strcmp(arg[7], "kg") == 0)
     unit = 1;
-  else if (strcmp(arg[8], "mol") == 0)
+  else if (strcmp(arg[7], "mol") == 0)
     unit = 0;
   else
     error->all(FLERR, "Illegal unit in fix kinetics/diffusionS command: specify 'kg' or 'mol'");
+
+  int iarg = 8;
+  while (iarg < narg){
+    if (strcmp(arg[iarg],"srate") == 0) {
+      srate = force->numeric(FLERR, arg[iarg+1]);
+      if (srate < 0)
+        error->all(FLERR, "Illegal fix kinetics/diffusion command: srate");
+      iarg += 2;
+    } else if (strcmp(arg[iarg],"bulk") == 0) {
+      bulkflag = 1;
+      q = force->numeric(FLERR, arg[iarg+1]);
+      if (q < 0)
+        error->all(FLERR, "Flow rate (frate) cannot be negative");
+      rvol = force->numeric(FLERR, arg[iarg+2]);
+      if (rvol <= 0)
+        error->all(FLERR, "Reactor volume (rvol) cannot be equal or less than 0");
+      af = force->numeric(FLERR, arg[iarg+3]);
+      if (af < 0)
+        lmp->error->all(FLERR, "Biofilm surface area (Af) cannot be negative");
+      iarg += 4;
+    }
+    else
+      error->all(FLERR, "Illegal fix kinetics/growth/monod command");
+  }
 }
 
 /* ---------------------------------------------------------------------- */
 
 FixKineticsDiffusion::~FixKineticsDiffusion() {
   int i;
-  for (i = 0; i < nvar; i++) {
+  for (i = 0; i < 1; i++) {
     delete[] var[i];
   }
 
@@ -184,7 +188,7 @@ void FixKineticsDiffusion::init() {
   if (!atom->radius_flag)
     error->all(FLERR, "Fix requires atom attribute diameter");
 
-  for (int n = 0; n < nvar; n++) {
+  for (int n = 0; n < 1; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
       error->all(FLERR, "Variable name for fix diffusion does not exist");
@@ -208,20 +212,7 @@ void FixKineticsDiffusion::init() {
     lmp->error->all(FLERR, "The fix kinetics command is required for running iBM simulation");
 
   bio = kinetics->bio;
-  shearRate = input->variable->compute_equal(ivar[0]);
-  tol = input->variable->compute_equal(ivar[1]);
-
-  if (bulkflag == 1) {
-    q = input->variable->compute_equal(ivar[2]);
-    if (q < 0)
-      lmp->error->all(FLERR, "Flow rate (Q) cannot be negative");
-    rvol = input->variable->compute_equal(ivar[3]);
-    if (rvol <= 0)
-      lmp->error->all(FLERR, "Reactor volume (Rvol) cannot be equal or less than 0");
-    af = input->variable->compute_equal(ivar[4]);
-    if (af < 0)
-      lmp->error->all(FLERR, "Biofilm surface area (Af) cannot be negative");
-  }
+  tol = input->variable->compute_equal(ivar[0]);
 
   //set diffusion grid size
   nx = kinetics->nx;
@@ -343,7 +334,7 @@ void FixKineticsDiffusion::init() {
  ------------------------------------------------------------------------- */
 
 int *FixKineticsDiffusion::diffusion(int *nuConv, int iter, double diffT) {
-  if (iter == 1 && kinetics->bl >= 0)
+  if (iter == 1 && kinetics->blayer >= 0)
     update_grids();
 
   this->diffT = diffT;
@@ -681,7 +672,7 @@ void FixKineticsDiffusion::compute_flux(double cellDNu, double &nuCell, double *
     double uZ = kinetics->fV[2][grid] * (nuPrev[up] - nuPrev[down]) / stepz;
 
     res = (jX + jY + jZ + rateNu - uX - uY - uZ) * diffT;
-  } else if (shearRate == 1) {
+  } else if (srate == 1) {
     int hgrid = grid;
     int deep = 0;
 
@@ -690,7 +681,7 @@ void FixKineticsDiffusion::compute_flux(double cellDNu, double &nuCell, double *
       deep++;
     }
 
-    shear = shearRate * (deep * stepz - stepz / 2) * (nuPrev[rhs] - nuPrev[lhs]) / (2 * stepz);
+    shear = srate * (deep * stepz - stepz / 2) * (nuPrev[rhs] - nuPrev[lhs]) / (2 * stepz);
 
     res = (jX + jY + jZ + rateNu - shear) * diffT;
   } else {

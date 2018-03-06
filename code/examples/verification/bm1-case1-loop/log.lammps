@@ -1,0 +1,9 @@
+LAMMPS (5 Nov 2016)
+# NUFEB simulation
+
+atom_style	bio
+atom_modify	map array sort 1000 5.0e-7
+boundary	pp pp ff
+newton		off
+processors  4 1 1
+ERROR: Specified processors != physical processors (../comm.cpp:329)

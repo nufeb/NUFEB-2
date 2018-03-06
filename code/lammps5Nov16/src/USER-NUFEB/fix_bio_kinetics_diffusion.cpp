@@ -213,7 +213,7 @@ void FixKineticsDiffusion::init() {
     lmp->error->all(FLERR, "The fix kinetics command is required for running iBM simulation");
 
   bio = kinetics->bio;
-  shearRate = input->variable->compute_equal(ivar[0]);
+  srate = input->variable->compute_equal(ivar[0]);
   tol = input->variable->compute_equal(ivar[1]);
 
   if (bulkflag == 1) {
@@ -346,7 +346,7 @@ void FixKineticsDiffusion::init() {
  ------------------------------------------------------------------------- */
 
 int *FixKineticsDiffusion::diffusion(int *nuConv, int iter, double diffT) {
-  if (iter == 1 && kinetics->bl >= 0)
+  if (iter == 1 && kinetics->blayer >= 0)
     update_grids();
 
   this->diffT = diffT;
@@ -700,7 +700,7 @@ void FixKineticsDiffusion::compute_flux(double cellDNu, double &nuCell, double *
     double uZ = kinetics->fV[2][grid] * (nuPrev[up] - nuPrev[down]) / stepz;
 
     res = (jX + jY + jZ + rateNu - uX - uY - uZ) * diffT;
-  } else if (shearRate == 1) {
+  } else if (srate == 1) {
     int hgrid = grid;
     int deep = 0;
 
@@ -709,7 +709,7 @@ void FixKineticsDiffusion::compute_flux(double cellDNu, double &nuCell, double *
       deep++;
     }
 
-    shear = shearRate * (deep * stepz - stepz / 2) * (nuPrev[rhs] - nuPrev[lhs]) / (2 * stepz);
+    shear = srate * (deep * stepz - stepz / 2) * (nuPrev[rhs] - nuPrev[lhs]) / (2 * stepz);
 
     res = (jX + jY + jZ + rateNu - shear) * diffT;
   } else {
