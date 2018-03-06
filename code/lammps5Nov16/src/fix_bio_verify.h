@@ -31,6 +31,7 @@ class FixVerify : public Fix {
   void init();
   int setmask();
   void end_of_step();
+  int modify_param(int, char **);
 
  private:
 
@@ -41,6 +42,7 @@ class FixVerify : public Fix {
   int nevery;
   int bm1flag, bm2flag, bm3flag, mflag;
   int bm1cflag;
+  int demflag;
 
   double **nuS;                    // nutrient concentration for all grids
   double **catCoeff;                 // catabolism coefficients of species
