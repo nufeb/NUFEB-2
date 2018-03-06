@@ -262,7 +262,7 @@ void FixKineticsThermo::thermo() {
 
   init_dG0();
 
-  double vRgT = kinetics->gVol * 1000 / (kinetics->gasTrans * kinetics->temp);
+  double vRgT = kinetics->gvol * 1000 / (kinetics->rg * kinetics->temp);
   double vg = vol * 1000;
   double rGas, rLiq;
 
@@ -296,10 +296,10 @@ void FixKineticsThermo::thermo() {
             nuR[j][i] += rGas;
             nuR[liqID][i] += rLiq;
             //gas correction
-            nuR[j][i] = nuR[j][i] * (nuS[j][i] * kinetics->gasTrans * temp / pressure + vg);
+            nuR[j][i] = nuR[j][i] * (nuS[j][i] * kinetics->rg * temp / pressure + vg);
             //update gas concentration
             nuS[j][i] += nuR[j][i];
-            qGas[j][i] = nuR[j][i] * kinetics->gasTrans * temp / pressure;
+            qGas[j][i] = nuR[j][i] * kinetics->rg * temp / pressure;
             if (nuS[j][i] < 0)
               nuS[j][i] = 0;
           }

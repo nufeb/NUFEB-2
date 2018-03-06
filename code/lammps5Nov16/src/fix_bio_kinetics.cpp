@@ -61,6 +61,8 @@ using namespace FixConst;
 
 using namespace std;
 
+enum{TEMPERATURE, RTH, GVOL, RG, PH, DIFFT, BL, ITER};
+
 #define BUFMIN 1000
 
 /* ---------------------------------------------------------------------- */
@@ -73,28 +75,25 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
 
   bio = avec->bio;
 
-  if (narg < 15)
+  if (narg < 10)
     error->all(FLERR, "Not enough arguments in fix kinetics command");
 
   nevery = force->inumeric(FLERR, arg[3]);
   if (nevery < 0)
     error->all(FLERR, "Illegal fix kinetics command: calling steps should be positive integer");
 
-  if (strcmp(arg[15],"no") == 0) demflag = 0;
-  else if (strcmp(arg[15],"yes") == 0) demflag = 1;
-  else error->all(FLERR,"Illegal demflag parameter (yes or no)");
+  nx = force->inumeric(FLERR, arg[4]);
+  ny = force->inumeric(FLERR, arg[5]);
+  nz = force->inumeric(FLERR, arg[6]);
 
-  var = new char*[7];
-  ivar = new int[7];
+  var = new char*[2];
+  ivar = new int[2];
 
-  nx = atoi(arg[4]);
-  ny = atoi(arg[5]);
-  nz = atoi(arg[6]);
-
-//  nout = 0;
-//  if (narg > 14) { // grid output
-//    nout = force->inumeric(FLERR, arg[14]);
-//  }
+  for (int i = 0; i < 2; i++) {
+    int n = strlen(&arg[7 + i][2]) + 1;
+    var[i] = new char[n];
+    strcpy(var[i], &arg[7 + i][2]);
+  }
 
   //Get computational domain size
   if (domain->triclinic == 0) {
@@ -113,15 +112,53 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
     zhi = domain->boxhi_bound[2];
   }
 
+  //set defaul values
+  temp = 298.15;
+  rth = 0.0083144;
+  gvol = 8e-14;
+  rg = 0.08205746;
+  iph = 7.0;
+  demflag = 0;
+
+  int iarg = 9;
+  while (iarg < narg){
+    if (strcmp(arg[iarg],"temp") == 0) {
+      temp = force->numeric(FLERR, arg[iarg + 1]);
+      if (temp < 0.0)
+        error->all(FLERR, "Illegal fix kinetics command: temp");
+      iarg += 2;
+    } else if (strcmp(arg[iarg],"rth") == 0) {
+      rth = force->numeric(FLERR, arg[iarg + 1]);
+      if (rth < 0.0)
+        error->all(FLERR, "Illegal fix kinetics command: rth");
+      iarg += 2;
+    } else if (strcmp(arg[iarg],"gvol") == 0) {
+      gvol = force->numeric(FLERR, arg[iarg + 1]);
+      if (gvol < 0.0)
+        error->all(FLERR, "Illegal fix kinetics command: gvol");
+      iarg += 2;;
+    } else if (strcmp(arg[iarg],"rg") == 0) {
+      rg = force->numeric(FLERR, arg[iarg + 1]);
+      if (rg < 0.0)
+        error->all(FLERR, "Illegal fix kinetics command: rg");
+      iarg += 2;
+    } else if (strcmp(arg[iarg],"ph") == 0) {
+      iph = force->numeric(FLERR, arg[iarg + 1]);
+      if (iph < 0.0)
+        error->all(FLERR, "Illegal fix kinetics command: ph");
+      iarg += 2;
+    } else if (strcmp(arg[iarg],"demflag") == 0) {
+      demflag = force->inumeric(FLERR, arg[iarg + 1]);
+      if (demflag != 1 && demflag != 0)
+        error->all(FLERR, "Illegal fix kinetics command: demflag");
+      iarg += 2;
+    } else
+      error->all(FLERR, "Illegal fix kinetics command");
+  }
+
   stepx = (xhi - xlo) / nx;
   stepy = (yhi - ylo) / ny;
   stepz = (zhi - zlo) / nz;
-
-  for (int i = 0; i < 7; i++) {
-    int n = strlen(&arg[7 + i][2]) + 1;
-    var[i] = new char[n];
-    strcpy(var[i], &arg[7 + i][2]);
-  }
 
   for (int i = 0; i < 3; i++) {
     // considering that the grid will always have a cubic cell (i.e. stepx = stepy = stepz)
@@ -140,7 +177,7 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
 
 FixKinetics::~FixKinetics() {
   int i;
-  for (i = 0; i < 7; i++) {
+  for (i = 0; i < 2; i++) {
     delete[] var[i];
   }
   delete[] var;
@@ -155,7 +192,7 @@ FixKinetics::~FixKinetics() {
   memory->destroy(DRGCat);
   memory->destroy(DRGAn);
   memory->destroy(kEq);
-  memory->destroy(Sh);
+  memory->destroy(sh);
 
   memory->destroy(recvcells);
   memory->destroy(sendcells);
@@ -179,13 +216,16 @@ int FixKinetics::setmask() {
 /* ---------------------------------------------------------------------- */
 
 void FixKinetics::init() {
-  for (int n = 0; n < 7; n++) {
+  for (int n = 0; n < 2; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
       error->all(FLERR, "Variable name for fix kinetics does not exist");
     if (!input->variable->equalstyle(ivar[n]))
       error->all(FLERR, "Variable for fix kinetics is invalid style");
   }
+
+  diffT = input->variable->compute_equal(ivar[0]);
+  blayer = input->variable->compute_equal(ivar[1]);
 
   // register fix kinetics with this class
   diffusion = NULL;
@@ -224,14 +264,6 @@ void FixKinetics::init() {
   nnus = bio->nnus;
   int ntypes = atom->ntypes;
 
-  temp = input->variable->compute_equal(ivar[0]);
-  rth = input->variable->compute_equal(ivar[1]);
-  gVol = input->variable->compute_equal(ivar[2]);
-  gasTrans = input->variable->compute_equal(ivar[3]);
-  iph = input->variable->compute_equal(ivar[4]);
-  diffT = input->variable->compute_equal(ivar[5]);
-  bl = input->variable->compute_equal(ivar[6]);
-
   nuConv = new int[nnus + 1]();
   nuS = memory->create(nuS, nnus + 1, ngrids, "kinetics:nuS");
   nuR = memory->create(nuR, nnus + 1, ngrids, "kinetics:nuR");
@@ -242,7 +274,7 @@ void FixKinetics::init() {
   DRGCat = memory->create(DRGCat, ntypes + 1, ngrids, "kinetics:DRGCat");
   DRGAn = memory->create(DRGAn, ntypes + 1, ngrids, "kinetics:DRGAn");
   kEq = memory->create(kEq, nnus + 1, 4, "kinetics:kEq");
-  Sh = memory->create(Sh, ngrids, "kinetics:Sh");
+  sh = memory->create(sh, ngrids, "kinetics:Sh");
   fV = memory->create(fV, 3, ngrids, "kinetcis:fV");
 
   //initialize grid yield, inlet concentration, consumption
@@ -392,7 +424,7 @@ void FixKinetics::init_activity() {
   for (int k = 1; k < nnus + 1; k++) {
     for (int j = 0; j < ngrids; j++) {
       double iniNuS = bio->iniS[k][0];
-      Sh[j] = gSh;
+      sh[j] = gSh;
       denm[k] = (1 + kEq[k][0]) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][3] * gSh + kEq[k][3] * kEq[k][2] * kEq[k][1];
       if (denm[k] == 0) {
         lmp->error->all(FLERR, "denm returns a zero value");
@@ -536,9 +568,9 @@ double FixKinetics::getMaxHeight() {
 }
 
 void FixKinetics::update_bgrids() {
-  if (bl > 0) {
+  if (blayer > 0) {
     maxheight = getMaxHeight();
-    bnz = (int)((bl + maxheight) / stepz) + 1;
+    bnz = (int)((blayer + maxheight) / stepz) + 1;
     bgrids = subn[0] * subn[1] * MIN(subn[2], MAX(0, bnz - subnlo[2]));
   }
   else {
@@ -654,9 +686,9 @@ int FixKinetics::modify_param(int narg, char **arg)
 {
   if (strcmp(arg[0],"demflag") == 0) {
     if (narg != 2) error->all(FLERR,"Illegal fix_modify command");
-    if (strcmp(arg[1],"no") == 0) demflag = 0;
-    else if (strcmp(arg[1],"yes") == 0) demflag = 1;
-    else error->all(FLERR,"Illegal demflag parameter (yes or no)");
+    demflag = force->inumeric(FLERR, arg[1]);
+    if (demflag != 1 && demflag != 0)
+      error->all(FLERR, "Illegal fix_modify command: demflag");
     return 2;
   }
   return 0;

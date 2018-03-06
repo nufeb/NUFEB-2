@@ -150,7 +150,7 @@ FixKinetics::~FixKinetics() {
   memory->destroy(DRGCat);
   memory->destroy(DRGAn);
   memory->destroy(kEq);
-  memory->destroy(Sh);
+  memory->destroy(sh);
 
   memory->destroy(recvcells);
   memory->destroy(sendcells);
@@ -221,11 +221,11 @@ void FixKinetics::init() {
 
   temp = input->variable->compute_equal(ivar[0]);
   rth = input->variable->compute_equal(ivar[1]);
-  gVol = input->variable->compute_equal(ivar[2]);
-  gasTrans = input->variable->compute_equal(ivar[3]);
+  gvol = input->variable->compute_equal(ivar[2]);
+  rg = input->variable->compute_equal(ivar[3]);
   iph = input->variable->compute_equal(ivar[4]);
   diffT = input->variable->compute_equal(ivar[5]);
-  bl = input->variable->compute_equal(ivar[6]);
+  blayer = input->variable->compute_equal(ivar[6]);
 
   nuConv = new int[nnus + 1]();
   nuS = memory->create(nuS, nnus + 1, ngrids, "kinetics:nuS");
@@ -236,7 +236,7 @@ void FixKinetics::init() {
   DRGCat = memory->create(DRGCat, ntypes + 1, ngrids, "kinetics:DRGCat");
   DRGAn = memory->create(DRGAn, ntypes + 1, ngrids, "kinetics:DRGAn");
   kEq = memory->create(kEq, nnus + 1, 4, "kinetics:kEq");
-  Sh = memory->create(Sh, ngrids, "kinetics:Sh");
+  sh = memory->create(sh, ngrids, "kinetics:Sh");
   fV = memory->create(fV, 3, ngrids, "kinetcis:fV");
 
   //initialize grid yield, inlet concentration, consumption
@@ -386,7 +386,7 @@ void FixKinetics::init_activity() {
   for (int k = 1; k < nnus + 1; k++) {
     for (int j = 0; j < ngrids; j++) {
       double iniNuS = bio->iniS[k][0];
-      Sh[j] = gSh;
+      sh[j] = gSh;
       denm[k] = (1 + kEq[k][0]) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][3] * gSh + kEq[k][3] * kEq[k][2] * kEq[k][1];
       if (denm[k] == 0) {
         lmp->error->all(FLERR, "denm returns a zero value");
@@ -510,9 +510,9 @@ double FixKinetics::getMaxHeight() {
 }
 
 void FixKinetics::update_bgrids() {
-  if (bl > 0) {
+  if (blayer > 0) {
     maxheight = getMaxHeight();
-    bnz = (int)((bl + maxheight) / stepz) + 1;
+    bnz = (int)((blayer + maxheight) / stepz) + 1;
     bgrids = subn[0] * subn[1] * MIN(subn[2], MAX(0, bnz - subnlo[2]));
   }
   else {
