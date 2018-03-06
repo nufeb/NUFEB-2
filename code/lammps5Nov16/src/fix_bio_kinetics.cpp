@@ -73,12 +73,16 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
 
   bio = avec->bio;
 
-  if (narg < 14)
+  if (narg < 15)
     error->all(FLERR, "Not enough arguments in fix kinetics command");
 
   nevery = force->inumeric(FLERR, arg[3]);
   if (nevery < 0)
     error->all(FLERR, "Illegal fix kinetics command: calling steps should be positive integer");
+
+  if (strcmp(arg[15],"no") == 0) demflag = 0;
+  else if (strcmp(arg[15],"yes") == 0) demflag = 1;
+  else error->all(FLERR,"Illegal demflag parameter (yes or no)");
 
   var = new char*[7];
   ivar = new int[7];
@@ -87,10 +91,10 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
   ny = atoi(arg[5]);
   nz = atoi(arg[6]);
 
-  nout = 0;
-  if (narg > 14) { // grid output
-    nout = force->inumeric(FLERR, arg[14]);
-  }
+//  nout = 0;
+//  if (narg > 14) { // grid output
+//    nout = force->inumeric(FLERR, arg[14]);
+//  }
 
   //Get computational domain size
   if (domain->triclinic == 0) {
@@ -190,7 +194,7 @@ void FixKinetics::init() {
   thermo = NULL;
   monod = NULL;
   nufebFoam = NULL;
-  printf("init!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+
   int nfix = modify->nfix;
   for (int j = 0; j < nfix; j++) {
     if (strcmp(modify->fix[j]->style, "kinetics/growth/energy") == 0) {
@@ -417,11 +421,14 @@ void FixKinetics::init_activity() {
 
 void FixKinetics::pre_force(int vflag) {
   bool flag = true;
+  if (nufebFoam != NULL)
+    demflag = demflag || nufebFoam->demflag;
+
   if (nevery == 0)
     flag = false;
   if (update->ntimestep % nevery)
     flag = false;
-  if(nufebFoam != NULL && nufebFoam->demflag)
+  if(demflag)
     flag = false;
 
   if (flag)
@@ -444,13 +451,6 @@ void FixKinetics::pre_force(int vflag) {
  ------------------------------------------------------------------------- */
 
 void FixKinetics::integration() {
-  if (diffusion != NULL) printf("nuBS = %e \n", nuBS[1]);
-  double sumR = 0;
-  for (int i = 0; i < bgrids; i++) {
-    sumR += nuR[1][i];
-  }
-  if (diffusion != NULL) printf("sumR = %e \n", sumR);
-
   int iteration = 0;
   bool isConv = false;
 
@@ -489,10 +489,10 @@ void FixKinetics::integration() {
       }
     }
 
-    if (iteration >= 100000) isConv = true;
+    if (iteration >= 10000) isConv = true;
   }
 
-  //if (comm->me == 0) printf( "number of iteration: %i \n", iteration);
+  if (comm->me == 0) printf( "number of iteration: %i \n", iteration);
 
   gflag = 1;
   reset_isConv();
@@ -646,6 +646,20 @@ void FixKinetics::reset_isConv() {
     else
       nuConv[i] = false;
   }
+}
+
+/* ---------------------------------------------------------------------- */
+
+int FixKinetics::modify_param(int narg, char **arg)
+{
+  if (strcmp(arg[0],"demflag") == 0) {
+    if (narg != 2) error->all(FLERR,"Illegal fix_modify command");
+    if (strcmp(arg[1],"no") == 0) demflag = 0;
+    else if (strcmp(arg[1],"yes") == 0) demflag = 1;
+    else error->all(FLERR,"Illegal demflag parameter (yes or no)");
+    return 2;
+  }
+  return 0;
 }
 
 #ifdef OUTPUT_GRID

@@ -516,6 +516,7 @@ void FixKineticsDiffusion::compute_bulk(int nu) {
   MPI_Allreduce(&sumR, &global_sumR, 1, MPI_DOUBLE, MPI_SUM, world);
 
   nuBS[nu] = nuBS[nu] + ((q / rvol) * (iniBC - nuBS[nu]) + ((af * global_sumR) / (rvol * yhi * xhi))) * update->dt * kinetics->nevery;
+  if (nuBS[nu] < 0) nuBS[nu] = 0;
 }
 
 /* ----------------------------------------------------------------------
