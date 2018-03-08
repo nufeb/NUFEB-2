@@ -61,6 +61,8 @@ using namespace FixConst;
 
 using namespace std;
 
+enum{TEMPERATURE, RTH, GVOL, RG, PH, DIFFT, BL, ITER};
+
 #define BUFMIN 1000
 
 /* ---------------------------------------------------------------------- */
@@ -73,23 +75,24 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
 
   bio = avec->bio;
 
-  if (narg < 14)
+  if (narg < 9)
     error->all(FLERR, "Not enough arguments in fix kinetics command");
 
   nevery = force->inumeric(FLERR, arg[3]);
   if (nevery < 0)
     error->all(FLERR, "Illegal fix kinetics command: calling steps should be positive integer");
 
-  var = new char*[7];
-  ivar = new int[7];
+  nx = force->inumeric(FLERR, arg[4]);
+  ny = force->inumeric(FLERR, arg[5]);
+  nz = force->inumeric(FLERR, arg[6]);
 
-  nx = atoi(arg[4]);
-  ny = atoi(arg[5]);
-  nz = atoi(arg[6]);
+  var = new char*[2];
+  ivar = new int[2];
 
-  nout = 0;
-  if (narg > 14) { // grid output
-    nout = force->inumeric(FLERR, arg[14]);
+  for (int i = 0; i < 2; i++) {
+    int n = strlen(&arg[7 + i][2]) + 1;
+    var[i] = new char[n];
+    strcpy(var[i], &arg[7 + i][2]);
   }
 
   //Get computational domain size
@@ -109,15 +112,57 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
     zhi = domain->boxhi_bound[2];
   }
 
+  //set defaul values
+  temp = 298.15;
+  rth = 0.0083144;
+  gvol = 8e-14;
+  rg = 0.08205746;
+  iph = 7.0;
+  demflag = 0;
+  niter = -1;
+
+  int iarg = 9;
+  while (iarg < narg){
+    if (strcmp(arg[iarg],"temp") == 0) {
+      temp = force->numeric(FLERR, arg[iarg + 1]);
+      if (temp < 0.0)
+        error->all(FLERR, "Illegal fix kinetics command: temp");
+      iarg += 2;
+    } else if (strcmp(arg[iarg],"rth") == 0) {
+      rth = force->numeric(FLERR, arg[iarg + 1]);
+      if (rth < 0.0)
+        error->all(FLERR, "Illegal fix kinetics command: rth");
+      iarg += 2;
+    } else if (strcmp(arg[iarg],"gvol") == 0) {
+      gvol = force->numeric(FLERR, arg[iarg + 1]);
+      if (gvol < 0.0)
+        error->all(FLERR, "Illegal fix kinetics command: gvol");
+      iarg += 2;;
+    } else if (strcmp(arg[iarg],"rg") == 0) {
+      rg = force->numeric(FLERR, arg[iarg + 1]);
+      if (rg < 0.0)
+        error->all(FLERR, "Illegal fix kinetics command: rg");
+      iarg += 2;
+    } else if (strcmp(arg[iarg],"ph") == 0) {
+      iph = force->numeric(FLERR, arg[iarg + 1]);
+      if (iph < 0.0)
+        error->all(FLERR, "Illegal fix kinetics command: ph");
+      iarg += 2;
+    } else if (strcmp(arg[iarg],"demflag") == 0) {
+      demflag = force->inumeric(FLERR, arg[iarg + 1]);
+      if (demflag != 1 && demflag != 0)
+        error->all(FLERR, "Illegal fix kinetics command: demflag");
+      iarg += 2;
+    }  else if (strcmp(arg[iarg],"niter") == 0) {
+      niter = force->inumeric(FLERR, arg[iarg + 1]);
+      iarg += 2;
+    } else
+      error->all(FLERR, "Illegal fix kinetics command");
+  }
+
   stepx = (xhi - xlo) / nx;
   stepy = (yhi - ylo) / ny;
   stepz = (zhi - zlo) / nz;
-
-  for (int i = 0; i < 7; i++) {
-    int n = strlen(&arg[7 + i][2]) + 1;
-    var[i] = new char[n];
-    strcpy(var[i], &arg[7 + i][2]);
-  }
 
   for (int i = 0; i < 3; i++) {
     // considering that the grid will always have a cubic cell (i.e. stepx = stepy = stepz)
@@ -136,7 +181,7 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
 
 FixKinetics::~FixKinetics() {
   int i;
-  for (i = 0; i < 7; i++) {
+  for (i = 0; i < 2; i++) {
     delete[] var[i];
   }
   delete[] var;
@@ -146,6 +191,7 @@ FixKinetics::~FixKinetics() {
   memory->destroy(activity);
   memory->destroy(nuR);
   memory->destroy(nuS);
+  memory->destroy(nuBS);
   memory->destroy(qGas);
   memory->destroy(DRGCat);
   memory->destroy(DRGAn);
@@ -174,13 +220,16 @@ int FixKinetics::setmask() {
 /* ---------------------------------------------------------------------- */
 
 void FixKinetics::init() {
-  for (int n = 0; n < 7; n++) {
+  for (int n = 0; n < 2; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
       error->all(FLERR, "Variable name for fix kinetics does not exist");
     if (!input->variable->equalstyle(ivar[n]))
       error->all(FLERR, "Variable for fix kinetics is invalid style");
   }
+
+  diffT = input->variable->compute_equal(ivar[0]);
+  blayer = input->variable->compute_equal(ivar[1]);
 
   // register fix kinetics with this class
   diffusion = NULL;
@@ -219,17 +268,10 @@ void FixKinetics::init() {
   nnus = bio->nnus;
   int ntypes = atom->ntypes;
 
-  temp = input->variable->compute_equal(ivar[0]);
-  rth = input->variable->compute_equal(ivar[1]);
-  gvol = input->variable->compute_equal(ivar[2]);
-  rg = input->variable->compute_equal(ivar[3]);
-  iph = input->variable->compute_equal(ivar[4]);
-  diffT = input->variable->compute_equal(ivar[5]);
-  blayer = input->variable->compute_equal(ivar[6]);
-
   nuConv = new int[nnus + 1]();
   nuS = memory->create(nuS, nnus + 1, ngrids, "kinetics:nuS");
   nuR = memory->create(nuR, nnus + 1, ngrids, "kinetics:nuR");
+  nuBS = memory->create(nuBS, nnus + 1, "kinetics:nuBS");
   qGas = memory->create(qGas, nnus + 1, ngrids, "kinetics:nuGas");
   gYield = memory->create(gYield, ntypes + 1, ngrids, "kinetic:gYield");
   activity = memory->create(activity, nnus + 1, 5, ngrids, "kinetics:activity");
@@ -415,11 +457,14 @@ void FixKinetics::init_activity() {
 
 void FixKinetics::pre_force(int vflag) {
   bool flag = true;
+  if (nufebFoam != NULL)
+    demflag = demflag || nufebFoam->demflag;
+
   if (nevery == 0)
     flag = false;
   if (update->ntimestep % nevery)
     flag = false;
-  if(nufebFoam != NULL && nufebFoam->demflag)
+  if(demflag)
     flag = false;
 
   if (flag)
@@ -442,18 +487,18 @@ void FixKinetics::pre_force(int vflag) {
  ------------------------------------------------------------------------- */
 
 void FixKinetics::integration() {
-
   int iteration = 0;
   bool isConv = false;
-  reset_nuR();
 
+  gflag = 0;
   update_bgrids();
+  reset_nuR();
 
   while (!isConv) {
     iteration++;
     isConv = true;
-    gflag = 0;
 
+    // solve for reaction term, no growth happens here
     if (energy != NULL) {
       if (ph != NULL) ph->solve_ph();
       else init_activity();
@@ -464,9 +509,15 @@ void FixKinetics::integration() {
       monod->growth(diffT, gflag);
     }
 
-    if (diffusion != NULL) nuConv = diffusion->diffusion(nuConv, iteration, diffT);
-    else break;
+    // solve for diffusion and advection
+    if (diffusion != NULL) {
+      nuConv = diffusion->diffusion(nuConv, iteration, diffT);
+    } else {
+      reset_nuR();
+      break;
+    }
 
+    // check for convergence
     for (int i = 1; i <= nnus; i++) {
       if (!nuConv[i]) {
         isConv = false;
@@ -474,16 +525,28 @@ void FixKinetics::integration() {
       }
     }
 
-    if (iteration >= 10000) isConv = true;
+    if (niter > 0 && iteration >= niter) isConv = true;
   }
 
-  if (comm->me == 0) printf( "number of iteration: %i \n", iteration);
+  if (comm->me == 0 && logfile) fprintf(logfile, "number of iteration: %i \n", iteration);
+  if (comm->me == 0 && screen) fprintf(screen, "number of iteration: %i \n", iteration);
 
   gflag = 1;
   reset_isConv();
 
+  // microbe growth
   if (energy != NULL) energy->growth(update->dt*nevery, gflag);
   if (monod != NULL) monod->growth(update->dt*nevery, gflag);
+
+  // solve mass balance of nutrients in bulk liquid
+  // the concentration of o2 in the bulk liquid is kept constant by aeration
+  if (diffusion != NULL && diffusion->bulkflag == 1) {
+    for (int i = 1; i <= nnus; i++) {
+      if (strcmp(bio->nuName[i], "o2") != 0) {
+        diffusion->compute_bulk(i);
+      }
+    }
+  }
 
   if (diffusion != NULL) diffusion->update_nuS();
 }
@@ -620,6 +683,20 @@ void FixKinetics::reset_isConv() {
     else
       nuConv[i] = false;
   }
+}
+
+/* ---------------------------------------------------------------------- */
+
+int FixKinetics::modify_param(int narg, char **arg)
+{
+  if (strcmp(arg[0],"demflag") == 0) {
+    if (narg != 2) error->all(FLERR,"Illegal fix_modify command");
+    demflag = force->inumeric(FLERR, arg[1]);
+    if (demflag != 1 && demflag != 0)
+      error->all(FLERR, "Illegal fix_modify command: demflag");
+    return 2;
+  }
+  return 0;
 }
 
 #ifdef OUTPUT_GRID

@@ -26,6 +26,7 @@ class FixKineticsDiffusion: public Fix {
 
   char **var;
   int *ivar;
+
   int nnus;                     // # of nutrients
   double stepx, stepy, stepz;
 
@@ -38,7 +39,7 @@ class FixKineticsDiffusion: public Fix {
   int *type;
   int shearflag, dragflag;
 
-  double srate;
+  double srate;                 // shear rate
   double **iniS;                // inlet concentrations of nutrients
   double *diffCoeff;            // diffusion coefficients of nutrients
   double *mw;                   // molecular weights of nutrients
@@ -46,7 +47,7 @@ class FixKineticsDiffusion: public Fix {
 
   double **nuR;
   double **nuS;
-  double *nuBS;                           // concentration in boundary layer [nutrient]
+  double *nuBS;                       // concentration in boundary layer [nutrient]
   double **nuGrid;                    // nutrient concentration in ghost mesh [nutrient][grid]
   double **xGrid;                     // grid coordinate [gird][3]
   bool *ghost;

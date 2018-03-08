@@ -69,6 +69,7 @@ class FixKinetics : public Fix {
   int demflag;                     // flag for DEM run
   double maxheight;
   int nout;
+  int niter;                        // # of iterations
 
   int subn[3];                     // number of grids in x y axis for this proc
   int subnlo[3],subnhi[3];         // cell index of the subdomain lower and upper bound for each axis

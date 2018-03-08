@@ -75,7 +75,7 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
 
   bio = avec->bio;
 
-  if (narg < 10)
+  if (narg < 9)
     error->all(FLERR, "Not enough arguments in fix kinetics command");
 
   nevery = force->inumeric(FLERR, arg[3]);
@@ -119,6 +119,7 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
   rg = 0.08205746;
   iph = 7.0;
   demflag = 0;
+  niter = -1;
 
   int iarg = 9;
   while (iarg < narg){
@@ -151,6 +152,9 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
       demflag = force->inumeric(FLERR, arg[iarg + 1]);
       if (demflag != 1 && demflag != 0)
         error->all(FLERR, "Illegal fix kinetics command: demflag");
+      iarg += 2;
+    }  else if (strcmp(arg[iarg],"niter") == 0) {
+      niter = force->inumeric(FLERR, arg[iarg + 1]);
       iarg += 2;
     } else
       error->all(FLERR, "Illegal fix kinetics command");
@@ -521,10 +525,11 @@ void FixKinetics::integration() {
       }
     }
 
-    if (iteration >= 10000) isConv = true;
+    if (niter > 0 && iteration >= niter) isConv = true;
   }
 
-  if (comm->me == 0) printf( "number of iteration: %i \n", iteration);
+  if (comm->me == 0 && logfile) fprintf(logfile, "number of iteration: %i \n", iteration);
+  if (comm->me == 0 && screen) fprintf(screen, "number of iteration: %i \n", iteration);
 
   gflag = 1;
   reset_isConv();
