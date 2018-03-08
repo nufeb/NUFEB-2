@@ -53,7 +53,7 @@ inline bool is_empty(const Box<T, N> &b)
 }
 
 template <typename T, std::size_t N>
-inline Box<T, N> translate(const Box<T, N> &b, std::array<T, N> d) {
+inline Box<T, N> translate(const Box<T, N> &b, const std::array<T, N> &d) {
   Box<T, N> result(b);
   for (int i = 0; i < N; i++) {
     result.lower[i] += d[i];
@@ -67,6 +67,15 @@ inline std::array<T, N> size(const Box<T, N> &b) {
   std::array<T, N> result;
   for (int i = 0; i < N; i++) {
     result[i] = b.upper[i] - b.lower[i];
+  }
+  return result;
+}
+
+template <typename T, std::size_t N>
+inline bool is_inside(const Box<T, N> &b, const std::array<T, N> &point) {
+  bool result = true;
+  for (int i = 0; i < N; i++) {
+    result &= point[i] >= b.lower[i] && point[i] < b.upper[i];
   }
   return result;
 }
