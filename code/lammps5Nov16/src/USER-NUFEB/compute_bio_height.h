@@ -21,24 +21,43 @@ ComputeStyle(ave_height,ComputeNufebHeight)
 #define LMP_COMPUTE_HEIGHT_H
 
 #include "compute.h"
+#include "reduce_grid.h"
 
 namespace LAMMPS_NS {
 
-class ComputeNufebHeight : public Compute {
+class ComputeNufebHeight : public Compute, public ReduceGrid<ComputeNufebHeight> {
+  friend ReduceGrid<ComputeNufebHeight>;
+
  public:
   ComputeNufebHeight(class LAMMPS *, int, char **);
-  virtual ~ComputeNufebHeight();
+  ~ComputeNufebHeight();
   void init();
-  virtual double compute_scalar();
+  double compute_scalar();
 
  private:
   int nx, ny, nxy;
+  double stepx, stepy;
   double *maxh;
+  Grid<double, 2> grid;
+  Box<int, 2> subgrid;
 
-  double stepx, stepy;       // grids size
-  double xlo,xhi,ylo,yhi;    // computational domain size
-
-  int position(int);
+  Box<int, 2> get_subgrid() const { return subgrid; }
+  template <typename InputIterator, typename OutputIterator>
+  OutputIterator pack_cells(InputIterator first, InputIterator last, OutputIterator result) {
+    for (InputIterator it = first; it != last; ++it) {
+      *result++ = maxh[*it];
+    }
+    return result;
+  }
+  template <typename InputIterator0, typename InputIterator1, typename BinaryOperation>
+  InputIterator1 unpack_cells_reduce(InputIterator0 first, InputIterator0 last, InputIterator1 input, BinaryOperation op) {
+    for (InputIterator0 it = first; it != last; ++it) {
+      maxh[*it] = op(maxh[*it], *input++);
+    }
+    return input;
+  }
+  int get_cell_data_size(int n) const { return 1; }
+  bool is_bottom_most() const;
 };
 
 }
