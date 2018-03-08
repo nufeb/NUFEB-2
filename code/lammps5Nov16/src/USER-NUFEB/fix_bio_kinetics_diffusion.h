@@ -30,28 +30,6 @@ class FixKineticsDiffusion: public Fix, protected DecompGrid<FixKineticsDiffusio
   void init();
   int *diffusion(int*, int, double);
   void update_nuS();
-  Grid<double, 3> get_grid() const;
-  Box<int, 3> get_subgrid() const;
-  std::array<bool, 3> get_periodic_boundary() const;
-  template <typename InputIterator, typename OutputIterator>
-  OutputIterator pack_cells(InputIterator first, InputIterator last, OutputIterator result) {
-    for (InputIterator it = first; it != last; ++it) {
-      for (int i = 1; i <= bio->nnus; i++) {
-	*result++ = nuGrid[i][*it];
-      }
-    }
-    return result;
-  }
-  template <typename InputIterator0, typename InputIterator1>
-  InputIterator1 unpack_cells(InputIterator0 first, InputIterator0 last, InputIterator1 input) {
-    for (InputIterator0 it = first; it != last; ++it) {
-      for (int i = 1; i <= bio->nnus; i++) {
-	nuGrid[i][*it] = *input++;
-      }
-    }
-    return input;
-  }
-  int get_cell_data_size(int n);
 
   int xbcflag, ybcflag, zbcflag;             // 0=PERIODIC-PERIODIC, 1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
 
@@ -112,6 +90,28 @@ class FixKineticsDiffusion: public Fix, protected DecompGrid<FixKineticsDiffusio
   void compute_flux(double, double &, double *, double, int);
   bool isEuqal(double, double, double);
   int get_index(int);
+  Grid<double, 3> get_grid() const;
+  Box<int, 3> get_subgrid() const;
+  std::array<bool, 3> get_periodic_boundary() const;
+  template <typename InputIterator, typename OutputIterator>
+  OutputIterator pack_cells(InputIterator first, InputIterator last, OutputIterator result) {
+    for (InputIterator it = first; it != last; ++it) {
+      for (int i = 1; i <= bio->nnus; i++) {
+	*result++ = nuGrid[i][*it];
+      }
+    }
+    return result;
+  }
+  template <typename InputIterator0, typename InputIterator1>
+  InputIterator1 unpack_cells(InputIterator0 first, InputIterator0 last, InputIterator1 input) {
+    for (InputIterator0 it = first; it != last; ++it) {
+      for (int i = 1; i <= bio->nnus; i++) {
+	nuGrid[i][*it] = *input++;
+      }
+    }
+    return input;
+  }
+  int get_cell_data_size(int n);
 };
 
 }
