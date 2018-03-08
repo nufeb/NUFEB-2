@@ -11,7 +11,7 @@ fprintf(fid,'#include "shapes.inc"\n');
 
 fprintf(fid,'// Right-handed coordinate system in which the z-axis points upwards\n');
 fprintf(fid,'camera {\n');
-fprintf(fid,['location <0, 60e-2, 0>\n']);
+fprintf(fid,['location <0, 120e-2, 0>\n']);
 fprintf(fid,'sky z\n');
 fprintf(fid,'right 0.24*x*image_width/image_height\n');
 fprintf(fid,'up 0.24*y\n');

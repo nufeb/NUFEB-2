@@ -36,6 +36,7 @@ class FixKinetics : public Fix {
   virtual void pre_force(int);
   void init();
   void borders();
+  int modify_param(int, char **);
 
   char **var;
   int *ivar;
@@ -48,6 +49,7 @@ class FixKinetics : public Fix {
 
   double **nuS;                    // nutrient concentration [nutrient][grid]
   double **nuR;                    // nutrient consumption [nutrient][grid]
+  double *nuBS;                    // concentration in boundary layer [nutrient]
   double **fV;                     // velocity field [velo][grid]
   double **qGas;                   // gas chemicals [nutrient][grid]
   double **gYield;                 // inverse yield [type][grid]
@@ -64,8 +66,10 @@ class FixKinetics : public Fix {
   double zhi,bzhi,zlo, xlo, xhi, ylo, yhi;
   double stepz, stepx, stepy;
   int gflag;                      // microbe growth flag 1 = update biomass; 0 = solve reaction only, growth is negligible
+  int demflag;                     // flag for DEM run
   double maxheight;
   int nout;
+  int niter;                        // # of iterations
 
   int subn[3];                     // number of grids in x y axis for this proc
   int subnlo[3],subnhi[3];         // cell index of the subdomain lower and upper bound for each axis

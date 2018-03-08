@@ -23,14 +23,14 @@ class BIO : protected Pointers {
   double *yield;              // growth yield coefficient
   double *dissipation;        // universal gas constant (thermodynamics)
   double *maintain;           // maintenance [type]
-  double *decay;              // decay rate
+  double *decay;              // decay rate [type]
   double *eD;
 
   double **catCoeff;          // catabolism coefficient [type][nutrient]
   double **anabCoeff;         // anabolism coefficient [type][nutrient]
   double **decayCoeff;        // decay coefficient [type][nutrient]
   double **typeGCoeff;        // Gibbs free energy coefficient [type][5charges]
-  int *tgflag;                // Gibbs free energy flag
+  int *tgflag;                // Gibbs free energy flag for type [type]
   int **typeChr;              // charge [type][5charges]
 
   //nutrient
@@ -42,7 +42,7 @@ class BIO : protected Pointers {
   double *mw;                 // molecular Weights [nutrient]
   double **iniS;              // inlet nutrient concentrations [nutrient][1grid + 5bc]
   double **nuGCoeff;          // Gibbs free energy coefficient [nutrient][5charges]
-  int *ngflag;                // Gibbs free energy flag
+  int *ngflag;                // Gibbs free energy flag for nutrients [nutrient]
   int **nuChr;                // charge [nutrient][5charges]
   double *kLa;                // mass Transfer Coefficient [nutrient]
 
