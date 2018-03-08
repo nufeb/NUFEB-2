@@ -192,8 +192,8 @@ void FixKineticsEnergy::growth(double dt, int gflag) {
 
   radius = atom->radius;
   rmass = atom->rmass;
-  outerMass = avec->outerMass;
-  outerRadius = avec->outerRadius;
+  outerMass = avec->outer_mass;
+  outerRadius = avec->outer_radius;
 
   nuS = kinetics->nuS;
   nuR = kinetics->nuR;
@@ -320,7 +320,7 @@ void FixKineticsEnergy::bio_update(double biomass, int i) {
           + biomass;
       outerRadius[i] = pow(threeQuartersPI * (rmass[i] / density + outerMass[i] / EPSdens), third);
     }
-  } else if (mask[i] != avec->maskEPS && mask[i] != avec->maskDEAD) {
+  } else if (mask[i] != avec->eps_mask && mask[i] != avec->maskDEAD) {
     radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
     outerMass[i] = rmass[i];
     outerRadius[i] = radius[i];

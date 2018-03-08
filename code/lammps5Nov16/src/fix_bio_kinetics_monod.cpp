@@ -73,7 +73,7 @@ FixKineticsMonod::FixKineticsMonod(LAMMPS *lmp, int narg, char **arg) :
 
   kinetics = NULL;
 
-  external_gflag = 0;
+  external_gflag = 1;
 
   int iarg = 5;
   while (iarg < narg){
@@ -266,8 +266,8 @@ void FixKineticsMonod::growth(double dt, int gflag) {
 
   double *radius = atom->radius;
   double *rmass = atom->rmass;
-  double *outerMass = avec->outerMass;
-  double *outerRadius = avec->outerRadius;
+  double *outerMass = avec->outer_mass;
+  double *outerRadius = avec->outer_radius;
 
   double *mu = bio->mu;
   double *decay = bio->decay;

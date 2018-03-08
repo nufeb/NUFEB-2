@@ -60,9 +60,9 @@ FixVerify::FixVerify(LAMMPS *lmp, int narg, char **arg) :
     else if (strcmp(arg[4+i], "mb") == 0) mflag = 1;
     else if (strcmp(arg[4+i], "bm3") == 0) bm3flag = 1;
     else if (strcmp(arg[4+i], "demflag") == 0) {
-      if (strcmp(arg[5+i],"no") == 0) demflag = 0;
-      else if (strcmp(arg[5+i],"yes") == 0) demflag = 1;
-      else error->all(FLERR,"Illegal demflag parameter (yes or no)");
+      demflag = force->inumeric(FLERR, arg[5+i]);
+      if (demflag != 0 && demflag != 1)
+        error->all(FLERR, "Illegal fix divide command: demflag");
     }
   }
 }
@@ -215,7 +215,8 @@ void FixVerify::benchmark_one() {
   double tmass = 0;
   double ave_height;
   double height = kinetics->getMaxHeight();
-  if (comm->me == 0) printf("max height = %e \n", height);
+  if (comm->me == 0 && screen) fprintf(screen, "max height = %e \n", height);
+  if (comm->me == 0 && logfile) fprintf(logfile, "max height = %e \n", height);
   bm1_output();
   // get biomass concentration (mol/L)
   for (int i = 0; i < nlocal; i++) {
@@ -227,7 +228,8 @@ void FixVerify::benchmark_one() {
 
   if (bm1cflag == 1) {
     if (global_tmass > 2e-12) {
-      if (comm->me == 0) printf("tmass = %e \n\n", global_tmass);
+      if (comm->me == 0 && screen)  fprintf(screen, "tmass = %e \n\n", global_tmass);
+      if (comm->me == 0 && logfile)  fprintf(logfile, "tmass = %e \n\n", global_tmass);
 
       kinetics->monod->external_gflag = 0;
       kinetics->diffusion = this->diffusion;
@@ -235,7 +237,7 @@ void FixVerify::benchmark_one() {
       //kinetics->diffusion->bulkflag = 1;
 
       int k = 0;
-      while(k < 10000) {
+      while(k < 500) {
         kinetics->integration();
         for (int i = 1; i <= nnus; i++) {
           if (strcmp(bio->nuName[i], "o2") != 0) {
@@ -245,6 +247,7 @@ void FixVerify::benchmark_one() {
         bm1_output();
         k++;
       }
+      error->all(FLERR, "Stop here");
     }
   }
 
@@ -259,7 +262,7 @@ void FixVerify::benchmark_one() {
       kinetics->diffusion->bulkflag = 1;
 
       int k = 0;
-      while(k < 1000) {
+      while(k < 500) {
         kinetics->integration();
         for (int i = 1; i <= nnus; i++) {
           if (strcmp(bio->nuName[i], "o2") != 0) {
@@ -278,15 +281,19 @@ void FixVerify::benchmark_one() {
 void FixVerify::bm1_output() {
   for (int nu = 1; nu <= nnus; nu++) {
     if (strcmp(bio->nuName[nu], "sub") == 0) {
-      if (comm->me == 0) printf("S-sub-bulk = %e\n", kinetics->diffusion->nuBS[nu]);
+      if (comm->me == 0 && screen) fprintf(screen, "S-sub-bulk = %e\n", kinetics->diffusion->nuBS[nu]);
+      if (comm->me == 0 && logfile) fprintf(logfile, "S-sub-bulk = %e\n", kinetics->diffusion->nuBS[nu]);
       double s = get_ave_s_sub_base();
-      if (comm->me == 0) printf("S-sub-base = %e\n", s);
+      if (comm->me == 0 && screen) fprintf(screen, "S-sub-base = %e\n", s);
+      if (comm->me == 0 && logfile) fprintf(logfile, "S-sub-base = %e\n", s);
     }
 
     if (strcmp(bio->nuName[nu], "o2") == 0) {
-      if (comm->me == 0) printf("S-o2-bulk = %e\n", kinetics->diffusion->nuBS[nu]);
+      if (comm->me == 0 && screen) fprintf(screen, "S-o2-bulk = %e\n", kinetics->diffusion->nuBS[nu]);
+      if (comm->me == 0 && logfile) fprintf(logfile, "S-o2-bulk = %e\n", kinetics->diffusion->nuBS[nu]);
       double s = get_ave_s_o2_base();
-      if (comm->me == 0) printf("S-o2-base = %e\n\n", s);
+      if (comm->me == 0 && screen) fprintf(screen, "S-o2-base = %e\n\n", s);
+      if (comm->me == 0 && logfile) fprintf(logfile, "S-o2-base = %e\n\n", s);
     }
   }
 }
@@ -345,9 +352,9 @@ int FixVerify::modify_param(int narg, char **arg)
 {
   if (strcmp(arg[0],"demflag") == 0) {
     if (narg != 2) error->all(FLERR,"Illegal fix_modify command");
-    if (strcmp(arg[1],"no") == 0) demflag = 0;
-    else if (strcmp(arg[1],"yes") == 0) demflag = 1;
-    else error->all(FLERR,"Illegal demflag parameter (yes or no)");
+    demflag = force->inumeric(FLERR, arg[1]);
+    if (demflag != 0 && demflag != 1)
+      error->all(FLERR, "Illegal fix divide command: demflag");
     return 2;
   }
   return 0;

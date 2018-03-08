@@ -1,15 +1,15 @@
 /* ----------------------------------------------------------------------
-   LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
-   http://lammps.sandia.gov, Sandia National Laboratories
-   Steve Plimpton, sjplimp@sandia.gov
+ LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
+ http://lammps.sandia.gov, Sandia National Laboratories
+ Steve Plimpton, sjplimp@sandia.gov
 
-   Copyright (2003) Sandia Corporation.  Under the terms of Contract
-   DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under
-   the GNU General Public License.
+ Copyright (2003) Sandia Corporation.  Under the terms of Contract
+ DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+ certain rights in this software.  This software is distributed under
+ the GNU General Public License.
 
-   See the README file in the top-level LAMMPS directory.
-------------------------------------------------------------------------- */
+ See the README file in the top-level LAMMPS directory.
+ ------------------------------------------------------------------------- */
 
 #include "fix_bio_divide.h"
 
@@ -45,99 +45,109 @@ using namespace MathConst;
 
 /* ---------------------------------------------------------------------- */
 
-FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg)
-{
+FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) :
+    Fix(lmp, narg, arg) {
   avec = (AtomVecBio *) atom->style_match("bio");
-  if (!avec) error->all(FLERR,"Fix kinetics requires atom style bio");
+  if (!avec)
+    error->all(FLERR, "Fix kinetics requires atom style bio");
 
-  if (narg != 9) error->all(FLERR,"Illegal fix divide command: Missing arguments");
+  if (narg < 7)
+    error->all(FLERR, "Illegal fix divide command: not enough arguments");
 
-  nevery = force->inumeric(FLERR,arg[3]);
-  if (nevery < 0) error->all(FLERR,"Illegal fix divide command: calling steps should be positive integer");
+  nevery = force->inumeric(FLERR, arg[3]);
+  if (nevery < 0)
+    error->all(FLERR, "Illegal fix divide command: nevery is negative");
 
   var = new char*[2];
   ivar = new int[2];
 
   for (int i = 0; i < 2; i++) {
-    int n = strlen(&arg[4+i][2]) + 1;
+    int n = strlen(&arg[4 + i][2]) + 1;
     var[i] = new char[n];
-    strcpy(var[i],&arg[4+i][2]);
+    strcpy(var[i], &arg[4 + i][2]);
   }
 
-  seed = atoi(arg[6]);
+  seed = force->inumeric(FLERR, arg[6]);
+  demflag = 0;
 
-  if (strcmp(arg[8],"no") == 0) demflag = 0;
-  else if (strcmp(arg[8],"yes") == 0) demflag = 1;
-  else error->all(FLERR,"Illegal demflag parameter (yes or no)");
+  int iarg = 7;
+  while (iarg < narg) {
+    if (strcmp(arg[iarg], "demflag") == 0) {
+      demflag = force->inumeric(FLERR, arg[iarg + 1]);
+      if (demflag != 0 && demflag != 1)
+        error->all(FLERR, "Illegal fix divide command: demflag");
+      iarg += 2;
+    } else
+      error->all(FLERR, "Illegal fix divide command");
+  }
 
-  if (seed <= 0) error->all(FLERR,"Illegal fix divide command: seed should be greater than 0");
+  if (seed <= 0)
+    error->all(FLERR, "Illegal fix divide command: seed is negative");
 
   // Random number generator, same for all procs
-  random = new RanPark(lmp,seed);  
+  random = new RanPark(lmp, seed);
 
   if (domain->triclinic == 0) {
-  	xlo = domain->boxlo[0];
-  	xhi = domain->boxhi[0];
-  	ylo = domain->boxlo[1];
-  	yhi = domain->boxhi[1];
-  	zlo = domain->boxlo[2];
-  	zhi = domain->boxhi[2];
-  }
-  else {
-  	xlo = domain->boxlo_bound[0];
-  	xhi = domain->boxhi_bound[0];
-  	ylo = domain->boxlo_bound[1];
-  	yhi = domain->boxhi_bound[1];
-  	zlo = domain->boxlo_bound[2];
-  	zhi = domain->boxhi_bound[2];
+    xlo = domain->boxlo[0];
+    xhi = domain->boxhi[0];
+    ylo = domain->boxlo[1];
+    yhi = domain->boxhi[1];
+    zlo = domain->boxlo[2];
+    zhi = domain->boxhi[2];
+  } else {
+    xlo = domain->boxlo_bound[0];
+    xhi = domain->boxhi_bound[0];
+    ylo = domain->boxlo_bound[1];
+    yhi = domain->boxhi_bound[1];
+    zlo = domain->boxlo_bound[2];
+    zhi = domain->boxhi_bound[2];
   }
 
   bio = avec->bio;
-   
+
   force_reneighbor = 1;
   next_reneighbor = update->ntimestep + 1;
 }
 
 /* ---------------------------------------------------------------------- */
 
-FixDivide::~FixDivide()
-{
+FixDivide::~FixDivide() {
   delete random;
 
   int i;
   for (i = 0; i < 2; i++) {
-    delete [] var[i];
+    delete[] var[i];
   }
-  delete [] var;
-  delete [] ivar;
+  delete[] var;
+  delete[] ivar;
 }
 
 /* ---------------------------------------------------------------------- */
 
-int FixDivide::setmask()
-{
+int FixDivide::setmask() {
   int mask = 0;
   mask |= POST_INTEGRATE;
   return mask;
 }
 
 /* ----------------------------------------------------------------------
-   if need to restore per-atom quantities, create new fix STORE styles
-------------------------------------------------------------------------- */
+ if need to restore per-atom quantities, create new fix STORE styles
+ ------------------------------------------------------------------------- */
 
-
-void FixDivide::init()
-{
+void FixDivide::init() {
   if (!atom->radius_flag)
-    error->all(FLERR,"Fix divide requires atom attribute diameter");
+    error->all(FLERR, "Fix divide requires atom attribute diameter");
 
   for (int n = 0; n < 2; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
-      error->all(FLERR,"Variable name for fix divide does not exist");
+      error->all(FLERR, "Variable name for fix divide does not exist");
     if (!input->variable->equalstyle(ivar[n]))
-      error->all(FLERR,"Variable for fix divide is invalid style");
+      error->all(FLERR, "Variable for fix divide is invalid style");
   }
+
+  eps_density = input->variable->compute_equal(ivar[0]);
+  div_dia = input->variable->compute_equal(ivar[1]);
 
   nufebFoam = NULL;
 
@@ -150,44 +160,45 @@ void FixDivide::init()
   }
 }
 
-void FixDivide::post_integrate()
-{
-  if (nevery == 0) return;
-  if (update->ntimestep % nevery) return;
-  if (nufebFoam != NULL) demflag = demflag | nufebFoam->demflag;
-  if (demflag) return;
+void FixDivide::post_integrate() {
+  if (nevery == 0)
+    return;
+  if (update->ntimestep % nevery)
+    return;
+  if (nufebFoam != NULL)
+    demflag = demflag | nufebFoam->demflag;
+  if (demflag)
+    return;
 
-  double EPSdens = input->variable->compute_equal(ivar[0]);
-  double divMass = input->variable->compute_equal(ivar[1]);
   int nlocal = atom->nlocal;
 
   for (int i = 0; i < nlocal; i++) {
-    if (atom->mask[i] == avec->maskEPS || atom->mask[i] == avec->maskDEAD) continue;
+    if (atom->mask[i] == avec->eps_mask || atom->mask[i] == avec->maskDEAD)
+      continue;
 
     if (atom->mask[i] & groupbit) {
-      double density = atom->rmass[i] / (4.0*MY_PI/3.0 *
-				  atom->radius[i]*atom->radius[i]*atom->radius[i]);
+      double density = atom->rmass[i] / (4.0 * MY_PI / 3.0 * atom->radius[i] * atom->radius[i] * atom->radius[i]);
 
-      if (atom->rmass[i] >= divMass) {
+      if (atom->radius[i] * 2 >= div_dia) {
         double newX, newY, newZ;
 
-        double splitF = 0.4 + (random->uniform()*0.2);
+        double splitF = 0.4 + (random->uniform() * 0.2);
         double parentMass = atom->rmass[i] * splitF;
         double childMass = atom->rmass[i] - parentMass;
 
-        double parentOuterMass = avec->outerMass[i] * splitF;
-        double childOuterMass = avec->outerMass[i] - parentOuterMass;
+        double parentOuterMass = avec->outer_mass[i] * splitF;
+        double childOuterMass = avec->outer_mass[i] - parentOuterMass;
 
         double parentfx = atom->f[i][0] * splitF;
-        double childfx =  atom->f[i][0] - parentfx;
+        double childfx = atom->f[i][0] - parentfx;
 
         double parentfy = atom->f[i][1] * splitF;
-        double childfy =  atom->f[i][1] - parentfy;
+        double childfy = atom->f[i][1] - parentfy;
 
         double parentfz = atom->f[i][2] * splitF;
-        double childfz =  atom->f[i][2] - parentfz;
+        double childfz = atom->f[i][2] - parentfz;
 
-        double thetaD = random->uniform() * 2*MY_PI;
+        double thetaD = random->uniform() * 2 * MY_PI;
         double phiD = random->uniform() * (MY_PI);
 
         double oldX = atom->x[i][0];
@@ -198,69 +209,63 @@ void FixDivide::post_integrate()
 
         //Update parent
         atom->rmass[i] = parentMass;
-        avec->outerMass[i] = parentOuterMass;
+        avec->outer_mass[i] = parentOuterMass;
         atom->f[i][0] = parentfx;
         atom->f[i][1] = parentfy;
         atom->f[i][2] = parentfz;
-        atom->radius[i] = pow(((6*atom->rmass[i])/(density*MY_PI)),(1.0/3.0))*0.5;
-        avec->outerRadius[i] = pow((3.0/(4.0*MY_PI))*((atom->rmass[i]/density)+(parentOuterMass/EPSdens)),(1.0/3.0));
-        newX = oldX + (avec->outerRadius[i]*cos(thetaD)*sin(phiD)*DELTA);
-        newY = oldY + (avec->outerRadius[i]*sin(thetaD)*sin(phiD)*DELTA);
-        newZ = oldZ + (avec->outerRadius[i]*cos(phiD)*DELTA);
-        if (newX - avec->outerRadius[i] < xlo) {
-          newX = xlo + avec->outerRadius[i];
+        atom->radius[i] = pow(((6 * atom->rmass[i]) / (density * MY_PI)), (1.0 / 3.0)) * 0.5;
+        avec->outer_radius[i] = pow((3.0 / (4.0 * MY_PI)) * ((atom->rmass[i] / density) + (parentOuterMass / eps_density)), (1.0 / 3.0));
+        newX = oldX + (avec->outer_radius[i] * cos(thetaD) * sin(phiD) * DELTA);
+        newY = oldY + (avec->outer_radius[i] * sin(thetaD) * sin(phiD) * DELTA);
+        newZ = oldZ + (avec->outer_radius[i] * cos(phiD) * DELTA);
+        if (newX - avec->outer_radius[i] < xlo) {
+          newX = xlo + avec->outer_radius[i];
+        } else if (newX + avec->outer_radius[i] > xhi) {
+          newX = xhi - avec->outer_radius[i];
         }
-        else if (newX + avec->outerRadius[i] > xhi) {
-          newX = xhi - avec->outerRadius[i];
+        if (newY - avec->outer_radius[i] < ylo) {
+          newY = ylo + avec->outer_radius[i];
+        } else if (newY + avec->outer_radius[i] > yhi) {
+          newY = yhi - avec->outer_radius[i];
         }
-        if (newY - avec->outerRadius[i] < ylo) {
-          newY = ylo + avec->outerRadius[i];
-        }
-        else if (newY + avec->outerRadius[i] > yhi) {
-          newY = yhi - avec->outerRadius[i];
-        }
-        if (newZ - avec->outerRadius[i] < zlo) {
-          newZ = zlo + avec->outerRadius[i];
-        }
-        else if (newZ + avec->outerRadius[i] > zhi) {
-          newZ = zhi - avec->outerRadius[i];
+        if (newZ - avec->outer_radius[i] < zlo) {
+          newZ = zlo + avec->outer_radius[i];
+        } else if (newZ + avec->outer_radius[i] > zhi) {
+          newZ = zhi - avec->outer_radius[i];
         }
         atom->x[i][0] = newX;
         atom->x[i][1] = newY;
         atom->x[i][2] = newZ;
 
         //create child
-        double childRadius = pow(((6*childMass)/(density*MY_PI)),(1.0/3.0))*0.5;
-        double childOuterRadius = pow((3.0/(4.0*MY_PI))*((childMass/density)+(childOuterMass/EPSdens)),(1.0/3.0));
+        double childRadius = pow(((6 * childMass) / (density * MY_PI)), (1.0 / 3.0)) * 0.5;
+        double childOuterRadius = pow((3.0 / (4.0 * MY_PI)) * ((childMass / density) + (childOuterMass / eps_density)), (1.0 / 3.0));
         double* coord = new double[3];
-        newX = oldX - (childOuterRadius*cos(thetaD)*sin(phiD)*DELTA);
-        newY = oldY - (childOuterRadius*sin(thetaD)*sin(phiD)*DELTA);
-        newZ = oldZ - (childOuterRadius*cos(phiD)*DELTA);
+        newX = oldX - (childOuterRadius * cos(thetaD) * sin(phiD) * DELTA);
+        newY = oldY - (childOuterRadius * sin(thetaD) * sin(phiD) * DELTA);
+        newZ = oldZ - (childOuterRadius * cos(phiD) * DELTA);
         if (newX - childOuterRadius < xlo) {
-	  newX = xlo + childOuterRadius;
-        }
-        else if (newX + childOuterRadius > xhi) {
-	  newX = xhi - childOuterRadius;
+          newX = xlo + childOuterRadius;
+        } else if (newX + childOuterRadius > xhi) {
+          newX = xhi - childOuterRadius;
         }
         if (newY - childOuterRadius < ylo) {
-	  newY = ylo + childOuterRadius;
-        }
-        else if (newY + childOuterRadius > yhi) {
-	  newY = yhi - childOuterRadius;
+          newY = ylo + childOuterRadius;
+        } else if (newY + childOuterRadius > yhi) {
+          newY = yhi - childOuterRadius;
         }
         if (newZ - childOuterRadius < zlo) {
-	  newZ = zlo + childOuterRadius;
-        }
-        else if (newZ + childOuterRadius > zhi) {
-	  newZ = zhi - childOuterRadius;
+          newZ = zlo + childOuterRadius;
+        } else if (newZ + childOuterRadius > zhi) {
+          newZ = zhi - childOuterRadius;
         }
         coord[0] = newX;
         coord[1] = newY;
         coord[2] = newZ;
 
-	int n = 0;
-	atom->avec->create_atom(atom->type[i],coord);
-	n = atom->nlocal - 1;
+        int n = 0;
+        atom->avec->create_atom(atom->type[i], coord);
+        n = atom->nlocal - 1;
 
         atom->tag[n] = 0;
         atom->mask[n] = atom->mask[i];
@@ -278,7 +283,7 @@ void FixDivide::post_integrate()
         atom->omega[n][2] = atom->omega[i][2];
 
         atom->rmass[n] = childMass;
-        avec->outerMass[n] = childOuterMass;
+        avec->outer_mass[n] = childOuterMass;
 
         atom->f[n][0] = childfx;
         atom->f[n][1] = childfy;
@@ -289,7 +294,7 @@ void FixDivide::post_integrate()
         atom->torque[n][2] = atom->torque[i][2];
 
         atom->radius[n] = childRadius;
-        avec->outerRadius[n] = childOuterRadius;
+        avec->outer_radius[n] = childOuterRadius;
 
         for (int j = 0; j < modify->nfix; j++) {
           if (modify->fix[j]->create_attribute) {
@@ -305,9 +310,10 @@ void FixDivide::post_integrate()
   bigint nblocal = atom->nlocal;
   MPI_Allreduce(&nblocal, &atom->natoms, 1, MPI_LMP_BIGINT, MPI_SUM, world);
   if (atom->natoms < 0 || atom->natoms >= MAXBIGINT)
-    error->all(FLERR,"Too many total atoms");
+    error->all(FLERR, "Too many total atoms");
 
-  if (atom->tag_enable) atom->tag_extend();
+  if (atom->tag_enable)
+    atom->tag_extend();
   atom->tag_check();
 
   if (atom->map_style) {
@@ -322,13 +328,13 @@ void FixDivide::post_integrate()
 
 /* ---------------------------------------------------------------------- */
 
-int FixDivide::modify_param(int narg, char **arg)
-{
-  if (strcmp(arg[0],"demflag") == 0) {
-    if (narg != 2) error->all(FLERR,"Illegal fix_modify command");
-    if (strcmp(arg[1],"no") == 0) demflag = 0;
-    else if (strcmp(arg[1],"yes") == 0) demflag = 1;
-    else error->all(FLERR,"Illegal demflag parameter (yes or no)");
+int FixDivide::modify_param(int narg, char **arg) {
+  if (strcmp(arg[0], "demflag") == 0) {
+    if (narg != 2)
+      error->all(FLERR, "Illegal fix_modify command");
+    demflag = force->inumeric(FLERR, arg[1]);
+    if (demflag != 1 && demflag != 0)
+      error->all(FLERR, "Illegal fix_modify command: demflag");
     return 2;
   }
   return 0;

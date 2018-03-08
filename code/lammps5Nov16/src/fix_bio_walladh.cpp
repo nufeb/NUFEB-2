@@ -155,9 +155,9 @@ void FixWallAhd::post_force(int vflag)
   double **f = atom->f;
   // double **omega = atom->omega;
   // double **torque = atom->torque;
-  double *outerRadius = avec->outerRadius;
+  double *outerRadius = avec->outer_radius;
   double *rmass = atom->rmass;
-  double *outerMass = avec->outerMass;
+  double *outerMass = avec->outer_mass;
   int *type = atom->type;
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
@@ -170,7 +170,7 @@ void FixWallAhd::post_force(int vflag)
   // if (update->setupflag) shearupdate = 0;
 
   for (int i = 0; i < nlocal; i++) {
-    if (atom->mask[i] == avec->maskEPS) {
+    if (atom->mask[i] == avec->eps_mask) {
       epsMass = rmass[i];
     }
     else {
