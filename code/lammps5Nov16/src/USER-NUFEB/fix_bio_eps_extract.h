@@ -32,16 +32,20 @@ class FixEPSExtract : public Fix {
   int setmask();
   void init();
   void post_integrate();
+  int modify_param(int, char **);
 
  private:
 
-  double growthFactor;
+  double growth_factor;
   int seed;
   char **var;
   int *ivar;
-  int typeEPS;
+  int eps_type;
+  int demflag;
   tagint maxtag_all;
   double xlo,xhi,ylo,yhi,zlo,zhi;
+  double eps_ratio;
+  double eps_density;
 
   class RanPark *random;
   class AtomVecBio *avec;

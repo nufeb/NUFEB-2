@@ -55,7 +55,7 @@ void ComputeNufebBiomass::compute_vector()
   int ntypes = atom->ntypes;
   size_vector = ntypes+1;
   memory->grow(vector,ntypes+1,"compute:vector");
-
+  atom->mass[1];
   for (int i = 0; i < ntypes + 1; i++) {
     vector[i] = 0;
   }
@@ -67,5 +67,5 @@ void ComputeNufebBiomass::compute_vector()
       vector[ntypes] += rmass[i];
     }
 
-  delete [] vector;
+//  delete [] vector;
 }

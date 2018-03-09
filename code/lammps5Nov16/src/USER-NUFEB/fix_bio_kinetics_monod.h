@@ -26,6 +26,8 @@ class FixKineticsMonod : public Fix {
   int setmask();
   void growth(double, int);
 
+  int external_gflag;
+
  private:
   char **var;
   int *ivar;

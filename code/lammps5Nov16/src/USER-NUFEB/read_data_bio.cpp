@@ -2210,7 +2210,7 @@ void ReadDataBIO::typeName()
     bio->set_typeName(narg,arg);
 
     if (strcmp(arg[1], "eps") == 0) {
-       avec_bio->typeEPS = atoi(arg[0]);
+       avec_bio->eps_type = atoi(arg[0]);
     } else if (strcmp(arg[1], "dead") == 0) {
        avec_bio->typeDEAD = atoi(arg[0]);
     }

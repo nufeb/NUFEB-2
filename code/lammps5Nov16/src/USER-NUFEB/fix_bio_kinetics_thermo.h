@@ -27,12 +27,9 @@ class FixKineticsThermo : public Fix {
   void thermo();
 
  private:
-  char **var;
-  int *ivar;
-
   int ntypes;                      // # of species
-  int fixY;                        // 0 = fixed yield 1 = dynamic yield
-  int closeR;                       // 0 = closed reactor 1 = open reactor
+  int yflag;                        // 0 = fixed yield 1 = dynamic yield
+  int rflag;                       // 0 = open reactor 1 = closed reactor
 
   double rth, temp;                //Universal gas constant (thermodynamics) and temperature
   double pressure;                 // Gas pressure
@@ -47,20 +44,20 @@ class FixKineticsThermo : public Fix {
   double **nuGCoeff;               // Gibbs free energy coefficient [nutrient][5charges]
   double **typeGCoeff;             // Gibbs free energy coefficient [type][5charges]
   double *diss;                    // Gibbs free energy of dissipation
-  double *kLa;
+  double *kla;
 
   double **gYield;                 // dynamic yield coeff [type][grid]
   double **DRGCat;                 // Gibbs free energy of catabolism [type][grid]
   double **DRGAn;                  // Gibbs free energy of anabolism [type][grid]
 
-  double **nuS;                    // nutrient concentration for all grids
+  double **nuS;                    // nutrient concentration
   double **nuR;
   double ***activity;
   double **qGas;
 
-  double **dG0;
-  double *khV;                     // Henry's constant
-  int *liq2Gas;                    // liquids convert to gas
+  double **dgzero;
+  double *khv;                     // Henry's constant
+  int *liqtogas;                    // liquids convert to gas
 
   class FixKinetics *kinetics;
   class BIO *bio;
