@@ -1,5 +1,5 @@
+# commonly ignored files
 *~
-lammps.pdf
 *.o
 *.so
 *.cu_o
@@ -12,5 +12,29 @@ log.*
 *.exe
 .*.swp
 *.orig
+
+# ignoring executables
 lmp_*
+
+# ignoring automatically generated style files
 style_*
+
+# ignoring automatically generated make files
+Makefile.package
+Makefile.package.settings
+
+# ignoring GRANULAR files
+fix_freeze.cpp
+fix_freeze.h
+fix_pour.cpp
+fix_pour.h
+fix_wall_gran.cpp
+fix_wall_gran.h
+fix_wall_gran_region.cpp
+fix_wall_gran_region.h
+pair_gran_hertz_history.cpp
+pair_gran_hertz_history.h
+pair_gran_hooke.cpp
+pair_gran_hooke.h
+pair_gran_hooke_history.cpp
+pair_gran_hooke_history.h
