@@ -26,18 +26,15 @@ class FixKineticsDiffusion: public Fix, protected DecompGrid<FixKineticsDiffusio
  public:
   FixKineticsDiffusion(class LAMMPS *, int, char **);
   ~FixKineticsDiffusion();
-  int setmask();
-  void init();
-  int *diffusion(int*, int, double);
-  void update_nuS();
 
-  int xbcflag, ybcflag, zbcflag;             // 0=PERIODIC-PERIODIC, 1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
-
- private:
   char **var;
   int *ivar;
+
   int nnus;                     // # of nutrients
   double stepx, stepy, stepz;
+
+  int xbcflag, ybcflag, zbcflag;             // 0=PERIODIC-PERIODIC, 1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
+  int bulkflag;                           // 1=solve mass balance for bulk liquid
 
   double *rmass;
   int ntypes;                       // # of species
@@ -45,22 +42,25 @@ class FixKineticsDiffusion: public Fix, protected DecompGrid<FixKineticsDiffusio
   int *type;
   int shearflag, dragflag;
 
-  double shearRate;
+  double srate;                 // shear rate
   double **iniS;                // inlet concentrations of nutrients
   double *diffCoeff;            // diffusion coefficients of nutrients
   double *mw;                   // molecular weights of nutrients
   double tol;                   // tolerance for convergence criteria for nutrient balance equation
- // int rstep;                    // steps skipped between Si+n-Si
- // int rflag;
+
   double **nuR;
   double **nuS;
+  double *nuBS;                       // concentration in boundary layer [nutrient]
+  double **nuGrid;                    // nutrient concentration in ghost mesh [nutrient][grid]
+  double **xGrid;                     // grid coordinate [gird][3]
+  bool *ghost;
+
   double *diffD;
 
   double bl;
   double q, rvol, af;
   bool reactor;
   int unit;                     // nutrient unit 0 = mol/l; 1 = kg/m3
-  double *nuBS;
 
   int nx, ny, nz;               // # of non-ghost grids in x, y and z
   int nX, nY, nZ;               // # of all grids in x, y and z
@@ -69,10 +69,7 @@ class FixKineticsDiffusion: public Fix, protected DecompGrid<FixKineticsDiffusio
   double xlo, xhi, ylo, yhi, zlo, zhi, bzhi;
   double xbcm, xbcp, ybcm, ybcp, zbcm, zbcp; // inlet BC concentrations for each surface
 
-  double **xGrid;                     // grid coordinate
-  double **nuGrid;                    // nutrient concentration in ghost mesh [grid][nutrient]
   double **nuPrev;
-  bool *ghost;
 
   MPI_Request *requests;
 
@@ -83,6 +80,10 @@ class FixKineticsDiffusion: public Fix, protected DecompGrid<FixKineticsDiffusio
   class FixKinetics *kinetics;
   class AtomVecBio *avec;
 
+  int setmask();
+  void init();
+  int *diffusion(int*, int, double);
+  void update_nuS();
   void update_grids();
   void compute_bc(double &, double *, int, double);
   void compute_bulk(int);

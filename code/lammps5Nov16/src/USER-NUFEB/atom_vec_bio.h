@@ -68,12 +68,12 @@ class AtomVecBio : public AtomVec {
   int write_vel_hybrid(FILE *, double *);
   bigint memory_usage();
 
-  double *outerRadius;     // atom outer radius
-  double *outerMass;       // atom outer mass
-  int maskEPS;             // mask of EPS group
+  double *outer_radius;     // atom outer radius
+  double *outer_mass;       // atom outer mass
+  int eps_mask;             // mask of EPS group
   int maskHET;             // mask of HET group
   int maskDEAD;            // mask of HET group
-  int typeEPS;             // itype of EPS
+  int eps_type;             // itype of EPS
   int typeDEAD;            // itype of DEAD
 
   class BIO *bio;

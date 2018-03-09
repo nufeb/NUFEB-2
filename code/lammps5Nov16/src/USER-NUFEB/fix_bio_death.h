@@ -38,7 +38,7 @@ class FixDeath : public Fix {
   char *var;
   int ivar;
 
-  double deadMass;
+  double dead_dia;
 
   void death();
 };
