@@ -4,7 +4,7 @@ atom_style	bio
 atom_modify	map array sort 1000 5.0e-7
 boundary	pp pp ff
 newton		off
-processors  1 1 1
+processors  * * 5
 
 comm_modify	vel yes
 
@@ -20,7 +20,7 @@ neigh_modify	delay 0 one 2000
 pair_style  gran/hooke/history 1.e-4 NULL 1.e-5 NULL 0.0 1
 pair_coeff  * *
 
-timestep 1800
+timestep 300
 
 variable kanc equal 50
 
@@ -35,12 +35,12 @@ fix zwa all walladh v_kanc zplane  0.0   6e-04
 #EPS density, ratio variables and division diameter
 variable EPSdens equal 30
 variable EPSratio equal 1.25
-variable divDia equal 6e-6
+variable divDia equal 2e-6
 
 #kinetics variables
 variable etaHET equal 0.0
 variable diffT equal 1e-4
-variable tol equal 1e-6
+variable tol equal 1e-7
 variable layer equal 0
 
 ##############Define IBm Commands##############
@@ -55,7 +55,7 @@ fix vf1 all verify 1 bm1 1 demflag 0
 
 compute myPres all pressure thermo_temp
 
-dump		id all custom 200000 snapshot.bubblemd id type diameter x y z
+#dump		id all custom 200000 snapshot.bubblemd id type diameter x y z
 thermo_style    custom step cpu atoms biomass c_myPres
 thermo		1000
 thermo_modify	lost ignore
@@ -68,7 +68,7 @@ run 1000 pre no post no every 1 &
 "fix_modify d1 demflag 1" &
 "timestep 1e-3" &
 "run 10000 pre no post no" &
-"timestep 1800" &
+"timestep 300" &
 "fix_modify k1 demflag 0" &
 "fix_modify vf1 demflag 0" &
 "fix_modify d1 demflag 0" &
