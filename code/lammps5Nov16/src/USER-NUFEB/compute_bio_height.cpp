@@ -63,10 +63,10 @@ void ComputeNufebHeight::init()
     error->all(FLERR, "Grid step size for compute ave_height must be smaller than master list distance cutoff\n"); 
   
   grid = Grid<double, 2>(Box<double, 2>(domain->boxlo, domain->boxhi), {nx, ny});
-  subgrid = grid.get_sub_grid(Box<double, 2>(domain->sublo, domain->subhi));
+  subgrid = Subgrid<double, 2>(grid, Box<double, 2>(domain->sublo, domain->subhi));
   ReduceGrid<ComputeNufebHeight>::setup();
 
-  nxy = cell_count(subgrid);
+  nxy = subgrid.cell_count();
   maxh = new double[nxy]();
 }
 
@@ -86,17 +86,17 @@ double ComputeNufebHeight::compute_scalar()
   ReduceGrid<ComputeNufebHeight>::exchange();
 
   scalar = 0;
-
-  Box<double, 2> box = grid.get_box();
   if (is_bottom_most()) {
     for (int i = 0; i < nlocal + nghost; i++) {
-      if (mask[i] & groupbit && is_inside(box, {x[i][0], x[i][1]})) {
-	int cell = grid.get_index({x[i][0], x[i][1]});
-	double z = x[i][2] + atom->radius[i] - domain->sublo[2];
+      if ((mask[i] & groupbit) &&
+	  subgrid.is_inside({x[i][0], x[i][1]}) &&
+	  x[i][2] >= domain->sublo[2] &&
+	  x[i][2] < domain->subhi[2]) {
+	int cell = subgrid.get_index({x[i][0], x[i][1]});
+	double z = x[i][2] + atom->radius[i] - domain->boxlo[2];
 	maxh[cell] = MAX(maxh[cell], z);
       }
     }
-
     for (int i = 0; i < nxy; i++) {
       scalar += maxh[i] * stepx * stepy;
     }
@@ -104,7 +104,7 @@ double ComputeNufebHeight::compute_scalar()
     
   scalar = scalar / (domain->prd[0] * domain->prd[1]);
 
-  MPI_Allreduce(MPI_IN_PLACE, &scalar, 1, MPI_DOUBLE, MPI_MAX, world);
+  MPI_Allreduce(MPI_IN_PLACE, &scalar, 1, MPI_DOUBLE, MPI_SUM, world);
 
   return scalar;
 }

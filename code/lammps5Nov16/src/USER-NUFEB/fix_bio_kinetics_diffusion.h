@@ -77,7 +77,7 @@ class FixKineticsDiffusion: public Fix, protected DecompGrid<FixKineticsDiffusio
   MPI_Request *requests;
 
   Grid<double, 3> grid;
-  Box<int, 3> subgrid;
+  Subgrid<double, 3> subgrid;
 
   BIO *bio;
   class FixKinetics *kinetics;
@@ -90,8 +90,8 @@ class FixKineticsDiffusion: public Fix, protected DecompGrid<FixKineticsDiffusio
   void compute_flux(double, double &, double *, double, int);
   bool isEuqal(double, double, double);
   int get_index(int);
-  Grid<double, 3> get_grid() const;
-  Box<int, 3> get_subgrid() const;
+  Grid<double, 3> get_grid() const { return grid; }
+  Subgrid<double, 3> get_subgrid() const { return subgrid; }
   std::array<bool, 3> get_periodic_boundary() const;
   template <typename InputIterator, typename OutputIterator>
   OutputIterator pack_cells(InputIterator first, InputIterator last, OutputIterator result) {
