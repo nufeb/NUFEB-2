@@ -32,14 +32,17 @@ class FixDivide : public Fix {
   int setmask();
   void init();
   void post_integrate();
+  int modify_param(int, char **);
 
  private:
   char **var;
   int *ivar;
 
   int seed;
+  int demflag;
   tagint maxtag_all;
   double xlo,xhi,ylo,yhi,zlo,zhi;
+  double eps_density, div_dia;
 
   class RanPark *random;
   class AtomVecBio *avec;

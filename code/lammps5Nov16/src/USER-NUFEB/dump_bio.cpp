@@ -660,7 +660,7 @@ void DumpBio::write_pH_data()
 
     //average += kinetics->DRGCat[2][i];
 
-    fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%e\n",i, x, y, z, -log10(kinetics->Sh[i]));
+    fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%e\n",i, x, y, z, -log10(kinetics->sh[i]));
   }
 }
 
