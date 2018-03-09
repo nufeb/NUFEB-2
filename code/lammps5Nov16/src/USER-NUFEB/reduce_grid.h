@@ -1,7 +1,7 @@
 #ifndef LMP_REDUCE_GRID_H
 #define LMP_REDUCE_GRID_H
 
-#include "grid.h"
+#include "subgrid.h"
 
 #include <vector>
 
@@ -12,8 +12,8 @@ class ReduceGrid {
   void setup() {
     Derived *derived = static_cast<Derived *>(this);
     // communicate grid extent
-    Box<int, 2> box = derived->get_subgrid();
-    Grid<int, 2> basegrid(box);
+    Subgrid<double, 2> subgrid = derived->get_subgrid();
+    Box<int, 2> box = subgrid.get_box();
     std::vector<int> boxlo(2 * derived->comm->nprocs); 
     MPI_Allgather(&box.lower[0], 2, MPI_INT, boxlo.data(), 2, MPI_INT, derived->world);
     std::vector<int> boxhi(2 * derived->comm->nprocs);
@@ -37,12 +37,12 @@ class ReduceGrid {
 	Box<int, 2> intersection = intersect(box, other);
 	int n = cell_count(intersection);
 	if (n > 0 && derived->is_bottom_most()) {
-	  add_cells(basegrid, intersection, recv_cells);
+	  add_cells(subgrid, intersection, recv_cells);
 	  nrecv += n;
 	}
 	// identify which cells we need to send if we are not the bottom most proc
 	if (n > 0 && !derived->is_bottom_most()) {
-	  add_cells(basegrid, intersection, send_cells);
+	  add_cells(subgrid, intersection, send_cells);
 	  nsend += n;
 	}
       }
@@ -90,11 +90,16 @@ class ReduceGrid {
   }
 
  private:
-  void add_cells(const Grid<int, 2> &basegrid, const Box<int, 2> &box, std::vector<int> &cells)
+  int cell_count(const Box<int, 2> &box) {
+    std::array<int, 2> s = size(box);
+    return s[0] * s[1];
+  }
+
+  void add_cells(const Subgrid<double, 2> &subgrid, const Box<int, 2> &box, std::vector<int> &cells)
   {
     for (int j = box.lower[1]; j < box.upper[1]; j++) {
       for (int i = box.lower[0]; i < box.upper[0]; i++) {
-	cells.push_back(basegrid.get_linear_index({i - basegrid.get_origin()[0], j - basegrid.get_origin()[1]}));
+	cells.push_back(subgrid.get_linear_index({i, j}));
       }
     }
   }

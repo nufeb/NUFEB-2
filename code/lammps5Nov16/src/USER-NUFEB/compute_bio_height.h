@@ -39,9 +39,9 @@ class ComputeNufebHeight : public Compute, public ReduceGrid<ComputeNufebHeight>
   double stepx, stepy;
   double *maxh;
   Grid<double, 2> grid;
-  Box<int, 2> subgrid;
+  Subgrid<double, 2> subgrid;
 
-  Box<int, 2> get_subgrid() const { return subgrid; }
+  Subgrid<double, 2> get_subgrid() const { return subgrid; }
   template <typename InputIterator, typename OutputIterator>
   OutputIterator pack_cells(InputIterator first, InputIterator last, OutputIterator result) {
     for (InputIterator it = first; it != last; ++it) {
@@ -56,7 +56,7 @@ class ComputeNufebHeight : public Compute, public ReduceGrid<ComputeNufebHeight>
     }
     return input;
   }
-  int get_cell_data_size(int n) const { return 1; }
+  int get_cell_data_size(int n) const { return nxy; }
   bool is_bottom_most() const;
 };
 
