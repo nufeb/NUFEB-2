@@ -63,7 +63,9 @@ void ComputeNufebNtypes::compute_vector()
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
       int t = type[i] - 1;
-      vector[t] ++;
+      vector[t]++;
     }
   }
+
+  MPI_Allreduce(MPI_IN_PLACE, vector, ntypes, MPI_DOUBLE, MPI_SUM, world);
 }

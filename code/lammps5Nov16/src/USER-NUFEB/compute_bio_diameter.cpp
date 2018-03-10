@@ -62,5 +62,7 @@ double ComputeNufebDiameter::compute_scalar()
     }
   }
 
+  MPI_Allreduce(MPI_IN_PLACE, &scalar, 1, MPI_DOUBLE, MPI_SUM, world);
+
   return scalar;
 }

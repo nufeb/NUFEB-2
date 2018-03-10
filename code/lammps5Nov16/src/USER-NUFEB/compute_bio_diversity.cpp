@@ -55,17 +55,19 @@ double ComputeNufebDiversity::compute_scalar()
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
       int t = type[i];
-      ntypeList[t] ++;
+      ntypeList[t]++;
     }
   }
 
+  MPI_Allreduce(MPI_IN_PLACE, ntypeList, ntypes + 1, MPI_INT, MPI_SUM, world);
+
   int n = 0;
   for (int i = 1; i < ntypes + 1; i++) {
-    n = n + ntypeList[i] * (ntypeList[i] - 1);
+    n += ntypeList[i] * (ntypeList[i] - 1);
   }
 
-  int m = nlocal * (nlocal - 1);
-  double x = n/(double)m;
+  int m = atom->natoms * (atom->natoms - 1);
+  double x = n / (double)m;
   scalar = 1 - x;
 
   delete [] ntypeList;
