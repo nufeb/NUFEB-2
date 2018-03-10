@@ -67,5 +67,5 @@ void ComputeNufebBiomass::compute_vector()
       vector[ntypes] += rmass[i];
     }
 
-//  delete [] vector;
+  MPI_Allreduce(MPI_IN_PLACE, vector, ntypes + 1, MPI_DOUBLE, MPI_SUM, world);
 }

@@ -52,26 +52,23 @@ double ComputeNufebDimension::compute_scalar()
 
   scalar = 0;
 
-  double md = 0.0;
-  double m = 0.0;
-  double r = 0.0;
-
-  double ra = 0.0;
-  double rm = 0.0;
+  double sums[3] = {0}; // m*d, m, r
 
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
       double dia = radius[i] * 2;
-      md += rmass[i] * dia * dia;
-      m += rmass[i];
-      r += radius[i];
+      sums[0] += rmass[i] * dia * dia;
+      sums[1] += rmass[i];
+      sums[2] += radius[i];
     }
   }
 
-  ra = pow(md/m, 1.0/2);
-  rm = r / nlocal;
+  MPI_Allreduce(MPI_IN_PLACE, sums, 3, MPI_DOUBLE, MPI_SUM, world);
 
-  scalar = log(ra/m) / log(nlocal);
+  double ra = pow(sums[0] / sums[1], 0.5);
+  double rm = sums[2] / atom->natoms;
+
+  scalar = log(ra / rm) / log(atom->natoms);
 
   return scalar;
 }

@@ -21,10 +21,13 @@ ComputeStyle(roughness,ComputeNufebRough)
 #define LMP_COMPUTE_ROUGH_H
 
 #include "compute.h"
+#include "reduce_grid.h"
 
 namespace LAMMPS_NS {
 
-class ComputeNufebRough : public Compute {
+class ComputeNufebRough : public Compute, public ReduceGrid<ComputeNufebRough> {
+  friend ReduceGrid<ComputeNufebRough>;
+
  public:
   ComputeNufebRough(class LAMMPS *, int, char **);
   virtual ~ComputeNufebRough();
@@ -33,12 +36,28 @@ class ComputeNufebRough : public Compute {
 
  private:
   int nx, ny, nxy;
+  double stepx, stepy;
   double *maxh;
+  Grid<double, 2> grid;
+  Subgrid<double, 2> subgrid;
 
-  double stepx, stepy;       // grids size
-  double xlo,xhi,ylo,yhi;    // computational domain size
-
-  int position(int);
+  Subgrid<double, 2> get_subgrid() const { return subgrid; }
+  template <typename InputIterator, typename OutputIterator>
+  OutputIterator pack_cells(InputIterator first, InputIterator last, OutputIterator result) {
+    for (InputIterator it = first; it != last; ++it) {
+      *result++ = maxh[*it];
+    }
+    return result;
+  }
+  template <typename InputIterator0, typename InputIterator1, typename BinaryOperation>
+  InputIterator1 unpack_cells_reduce(InputIterator0 first, InputIterator0 last, InputIterator1 input, BinaryOperation op) {
+    for (InputIterator0 it = first; it != last; ++it) {
+      maxh[*it] = op(maxh[*it], *input++);
+    }
+    return input;
+  }
+  int get_cell_data_size(int n) const { return nxy; }
+  bool is_bottom_most() const;
 };
 
 }

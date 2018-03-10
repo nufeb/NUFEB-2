@@ -21,6 +21,9 @@
 #include "pointers.h"
 #include "update.h"
 #include "domain.h"
+#include "neighbor.h"
+#include "pair.h"
+#include "force.h"
 
 using namespace LAMMPS_NS;
 
@@ -51,56 +54,66 @@ ComputeNufebRough::~ComputeNufebRough()
 
 void ComputeNufebRough::init()
 {
+  stepx = domain->prd[0] / nx;
+  stepy = domain->prd[1] / ny;
+
+  // neighbor->cutneighmax is not yet initialized
+  double cutneighmax = force->pair->cutforce + neighbor->skin;
+  if (stepx > cutneighmax || stepy > cutneighmax)
+    error->all(FLERR, "Grid step size for compute ave_height must be smaller than master list distance cutoff\n"); 
+  
+  grid = Grid<double, 2>(Box<double, 2>(domain->boxlo, domain->boxhi), {nx, ny});
+  subgrid = Subgrid<double, 2>(grid, Box<double, 2>(domain->sublo, domain->subhi));
+  ReduceGrid<ComputeNufebRough>::setup();
+
+  nxy = subgrid.cell_count();
   maxh = new double[nxy]();
-
-  //Get computational domain size
-  if (domain->triclinic == 0) {
-    xlo = domain->boxlo[0];
-    xhi = domain->boxhi[0];
-    ylo = domain->boxlo[1];
-    yhi = domain->boxhi[1];
-  }
-  else {
-    xlo = domain->boxlo_bound[0];
-    xhi = domain->boxhi_bound[0];
-    ylo = domain->boxlo_bound[1];
-    yhi = domain->boxhi_bound[1];
-  }
-
-  stepx = (xhi - xlo) / nx;
-  stepy = (yhi - ylo) / ny;
 }
 
 /* ---------------------------------------------------------------------- */
+
 double ComputeNufebRough::compute_scalar()
 {
   invoked_scalar = update->ntimestep;
 
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
+  int nghost = atom->nghost;
   double **x = atom->x;
-  double height = 0;  //average height
 
-  scalar = 0;
+  std::fill(maxh, maxh + nxy, 0);
 
-  for (int i = 0; i < nlocal; i++) {
-    if (mask[i] & groupbit) {
-      int pos = position(i);
-      double z = x[i][2] + atom->radius[i];
-      if (z > maxh[pos]) maxh[pos] = z;
+  ReduceGrid<ComputeNufebRough>::exchange();
+
+  double ave_height = 0;
+  if (is_bottom_most()) {
+    for (int i = 0; i < nlocal + nghost; i++) {
+      if ((mask[i] & groupbit) &&
+	  subgrid.is_inside({x[i][0], x[i][1]}) &&
+	  x[i][2] >= domain->sublo[2] &&
+	  x[i][2] < domain->subhi[2]) {
+	int cell = subgrid.get_index({x[i][0], x[i][1]});
+	double z = x[i][2] + atom->radius[i] - domain->boxlo[2];
+	maxh[cell] = MAX(maxh[cell], z);
+      }
+    }
+    for (int i = 0; i < nxy; i++) {
+      ave_height += maxh[i] * stepx * stepy;
     }
   }
+    
+  ave_height = ave_height / (domain->prd[0] * domain->prd[1]);
 
+  MPI_Allreduce(MPI_IN_PLACE, &ave_height, 1, MPI_DOUBLE, MPI_SUM, world);
+
+  scalar = 0;
   for (int i = 0; i < nxy; i++) {
-    height += maxh[i] * stepx * stepy;
-  }
-  height = height/nxy;
-
-  for (int i = 0; i < nxy; i++) {
-    scalar = scalar + ((maxh[i] - height) * (maxh[i] - height));
+    scalar += ((maxh[i] - ave_height) * (maxh[i] - ave_height));
   }
 
-  scalar = scalar/(xhi*yhi);
+  MPI_Allreduce(MPI_IN_PLACE, &scalar, 1, MPI_DOUBLE, MPI_SUM, world);
+
+  scalar = scalar / (domain->prd[0] * domain->prd[1]);
   scalar = pow(scalar, 0.5);
 
   return scalar;
@@ -108,17 +121,6 @@ double ComputeNufebRough::compute_scalar()
 
 /* ---------------------------------------------------------------------- */
 
-int ComputeNufebRough::position(int i) {
-
-  // get index of grid containing i
-  int xpos = (atom->x[i][0] - xlo) / stepx + 1;
-  int ypos = (atom->x[i][1] - ylo) / stepy + 1;
-
-  int pos = (xpos - 1) + (ypos - 1) * ny;
-
-  if (pos >= nxy) {
-     printf("Too big! pos=%d   size = %i\n", pos, nxy);
-  }
-
-  return pos;
+bool ComputeNufebRough::is_bottom_most() const {
+  return domain->sublo[2] == domain->boxlo[2];
 }
