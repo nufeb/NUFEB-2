@@ -81,8 +81,6 @@ double ComputeNufebSegregate::compute_scalar()
   double **x = atom->x;
   double sumPtype = 0;
 
-  if (nlocal == 0) return 0;
-
   for(int i = 0; i < nlocal; i++){
     int neighbor = 0;
     int phenotype = 0;
@@ -106,7 +104,10 @@ double ComputeNufebSegregate::compute_scalar()
       sumPtype = sumPtype + ratio;
     }
   }
-  scalar = sumPtype / nlocal;
+
+  MPI_Allreduce(MPI_IN_PLACE, &sumPtype, 1, MPI_DOUBLE, MPI_SUM, world);
+
+  scalar = sumPtype / atom->natoms;
 
   return scalar;
 }
