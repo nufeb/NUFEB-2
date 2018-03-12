@@ -4,7 +4,7 @@ atom_style	bio
 atom_modify	map array sort 100 5.0e-7
 boundary	ff ff ff
 newton		off
-processors  4 1 1
+processors  * * 1
 
 comm_modify	vel yes
 read_data_bio atom.in
