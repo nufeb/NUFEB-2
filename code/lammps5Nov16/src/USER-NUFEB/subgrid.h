@@ -16,8 +16,8 @@ class Subgrid {
   Subgrid(const Grid<T, N, IndexType> &grid, const Box<T, N> & box) :
     grid(grid) {
     for (int i = 0; i < N; i++) {
-      origin[i] = box.lower[i] / grid.get_cell_size()[i];
-      dimensions[i] = box.upper[i] / grid.get_cell_size()[i] - origin[i];
+      origin[i] = static_cast<IndexType>(box.lower[i] / grid.get_cell_size()[i]);
+      dimensions[i] = static_cast<IndexType>(box.upper[i] / grid.get_cell_size()[i]) - origin[i];
     }
   }
 
@@ -33,14 +33,14 @@ class Subgrid {
     return dimensions;
   }
 
- Box<IndexType, N> get_box() const {
-   Box<IndexType, N> result;
-   result.lower = origin;
-   for (int i = 0; i < N; i++) {
-     result.upper[i] = origin[i] + dimensions[i];
-   }
-   return result;
- }
+  Box<IndexType, N> get_box() const {
+    Box<IndexType, N> result;
+    result.lower = origin;
+    for (int i = 0; i < N; i++) {
+      result.upper[i] = origin[i] + dimensions[i];
+    }
+    return result;
+  }
 
   IndexType get_linear_index(const std::array<IndexType, N> &cell) const {
     IndexType n = T(1);
