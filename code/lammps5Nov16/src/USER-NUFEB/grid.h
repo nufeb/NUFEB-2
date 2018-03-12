@@ -3,13 +3,17 @@
 
 #include "box.h"
 
-#include <type_traits>
-
 namespace LAMMPS_NS {
 template <typename T, std::size_t N, typename IndexType = int>
 class Grid {
  public:
-  Grid() : origin({0}), dimensions({0}), cell_size({1}) {}
+  Grid() {
+    for (int i = 0; i < N; i++) {
+      origin[i] = T(0);
+      dimensions[i] = T(0);
+      cell_size[i] = T(1);
+    }
+  }
   Grid(const Grid &other) = default;
   Grid(const std::array<T, N> &origin,
     const std::array<IndexType, N> &dimensions,
@@ -21,8 +25,6 @@ class Grid {
       cell_size[i] = (b.upper[i] - b.lower[i]) / dimensions[i];
     }
   }
-  template<typename U>
- Grid(const Box<U, N> &b, typename std::enable_if<std::is_integral<U>::value && std::is_same<T, U>::value>::type* = 0) : Grid(b.lower, size(b), {1}) {}
 
   const std::array<T, N> &get_origin() const {
     return origin;

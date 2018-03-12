@@ -6,7 +6,12 @@
 namespace LAMMPS_NS {
 template <typename T, std::size_t N>
 struct Box {
-  Box() : lower({0}), upper({0}) {}
+  Box() {
+    for (int i = 0; i < N; i++) {
+      lower[i] = T(0);
+      upper[i] = T(0);
+    }
+  }
   Box(const Box &other) = default;
   Box(const std::array<T, N> &l, const std::array<T, N> &u) : lower(l), upper(u) {}
   template <typename ForwardIterator>
