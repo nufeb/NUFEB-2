@@ -214,15 +214,17 @@ void FixVerify::benchmark_one() {
   double global_tmass;
   double tmass = 0;
   double ave_height;
-  double height = kinetics->getMaxHeight();
-  if (comm->me == 0 && screen) fprintf(screen, "max height = %e \n", height);
-  if (comm->me == 0 && logfile) fprintf(logfile, "max height = %e \n", height);
+  double height = cheight->compute_scalar();
+
+  if (comm->me == 0 && screen) fprintf(screen, "height = %e \n", height);
+  if (comm->me == 0 && logfile) fprintf(logfile, "height = %e \n", height);
   bm1_output();
   // get biomass concentration (mol/L)
   for (int i = 0; i < nlocal; i++) {
     tmass += atom->rmass[i];
   }
-
+  diffusion->bulkflag = 0;
+  kinetics->niter = 1;
   MPI_Allreduce(&tmass,&global_tmass,1,MPI_DOUBLE,MPI_SUM,world);
   //ave_height = cheight->compute_scalar();
 
@@ -230,13 +232,14 @@ void FixVerify::benchmark_one() {
     if (comm->me == 0 && screen)  fprintf(screen, "tmass = %e \n\n", global_tmass);
     if (comm->me == 0 && logfile)  fprintf(logfile, "tmass = %e \n\n", global_tmass);
 
+    kinetics->niter = -1;
     kinetics->monod->external_gflag = 0;
     // solve mass balance in bulk liquid
-    //kinetics->diffusion->bulkflag = 1;
 
     int k = 0;
-    while(k < 100) {
+    while(k < 500) {
       kinetics->integration();
+      diffusion->bulkflag = 1;
       for (int i = 1; i <= nnus; i++) {
         if (strcmp(bio->nuName[i], "o2") != 0) {
           diffusion->compute_bulk(i);
@@ -246,31 +249,6 @@ void FixVerify::benchmark_one() {
       k++;
     }
     error->all(FLERR, "Stop here");
-  }
-
-  // case 3, average biofilm thickness: Lf = 20 μm
-  if (bm1cflag == 3) {
-    if (global_tmass > 8e-14) {
-      if (comm->me == 0 && screen)  fprintf(screen, "tmass = %e \n\n", global_tmass);
-      if (comm->me == 0 && logfile)  fprintf(logfile, "tmass = %e \n\n", global_tmass);
-
-      kinetics->monod->external_gflag = 0;
-      // solve mass balance in bulk liquid
-      //kinetics->diffusion->bulkflag = 1;
-
-      int k = 0;
-      while(k < 100) {
-        kinetics->integration();
-        for (int i = 1; i <= nnus; i++) {
-          if (strcmp(bio->nuName[i], "o2") != 0) {
-            diffusion->compute_bulk(i);
-          }
-        }
-        bm1_output();
-        k++;
-      }
-      error->all(FLERR, "Stop here");
-    }
   }
 }
 

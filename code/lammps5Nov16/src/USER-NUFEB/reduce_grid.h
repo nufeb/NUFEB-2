@@ -6,15 +6,15 @@
 #include <vector>
 
 namespace LAMMPS_NS {
-template <class Derived>
+template<class Derived>
 class ReduceGrid {
- public:
+public:
   void setup() {
     Derived *derived = static_cast<Derived *>(this);
     // communicate grid extent
     Subgrid<double, 2> subgrid = derived->get_subgrid();
     Box<int, 2> box = subgrid.get_box();
-    std::vector<int> boxlo(2 * derived->comm->nprocs); 
+    std::vector<int> boxlo(2 * derived->comm->nprocs);
     MPI_Allgather(&box.lower[0], 2, MPI_INT, boxlo.data(), 2, MPI_INT, derived->world);
     std::vector<int> boxhi(2 * derived->comm->nprocs);
     MPI_Allgather(&box.upper[0], 2, MPI_INT, boxhi.data(), 2, MPI_INT, derived->world);
@@ -33,18 +33,18 @@ class ReduceGrid {
       send_begin[p] = nsend;
       Box<int, 2> other(&boxlo[2 * p], &boxhi[2 * p]);
       if (p != derived->comm->me) {
-	// identify which cells we need to recv if we are the bottom most proc
-	Box<int, 2> intersection = intersect(box, other);
-	int n = cell_count(intersection);
-	if (n > 0 && derived->is_bottom_most()) {
-	  add_cells(subgrid, intersection, recv_cells);
-	  nrecv += n;
-	}
-	// identify which cells we need to send if we are not the bottom most proc
-	if (n > 0 && !derived->is_bottom_most()) {
-	  add_cells(subgrid, intersection, send_cells);
-	  nsend += n;
-	}
+        // identify which cells we need to recv if we are the bottom most proc
+        Box<int, 2> intersection = intersect(box, other);
+        int n = cell_count(intersection);
+        if (n > 0 && derived->is_bottom_most()) {
+          add_cells(subgrid, intersection, recv_cells);
+          nrecv += n;
+        }
+        // identify which cells we need to send if we are not the bottom most proc
+        if (n > 0 && !derived->is_bottom_most()) {
+          add_cells(subgrid, intersection, send_cells);
+          nsend += n;
+        }
       }
       recv_end[p] = nrecv;
       send_end[p] = nsend;
@@ -60,50 +60,50 @@ class ReduceGrid {
     int send_offset = 0;
     for (int p = 0; p < derived->comm->nprocs; p++) {
       if (p == derived->comm->me)
-	continue;
+        continue;
       int nrecv = recv_end[p] - recv_begin[p];
       if (nrecv > 0) {
-	int count = derived->get_cell_data_size(nrecv);
-	MPI_Irecv(&recv_buff[recv_offset], count, MPI_DOUBLE, p, 0, derived->world, &requests[nrequests++]);
-	recv_offset += count;
+        int count = derived->get_cell_data_size(nrecv);
+        MPI_Irecv(&recv_buff[recv_offset], count, MPI_DOUBLE, p, 0, derived->world, &requests[nrequests++]);
+        recv_offset += count;
       }
     }
     for (int i = 0; i < nrequests; i++) {
       MPI_Wait(&requests[i], MPI_STATUS_IGNORE);
-      derived->unpack_cells_reduce(recv_cells.begin(), recv_cells.end(), recv_buff.begin(), [](auto v0, auto v1) { return MAX(v0, v1); });
+      derived->unpack_cells_reduce(recv_cells.begin(), recv_cells.end(), recv_buff.begin(), [](double v0, double v1) {return MAX(v0, v1);});
     }
     // pack data to send buffer
     derived->pack_cells(send_cells.begin(), send_cells.end(), send_buff.begin());
     nrequests = 0;
     for (int p = 0; p < derived->comm->nprocs; p++) {
       if (p == derived->comm->me)
-	continue;
+        continue;
       int nsend = send_end[p] - send_begin[p];
       if (nsend > 0) {
-	int count = derived->get_cell_data_size(nsend);
-	MPI_Isend(&send_buff[send_offset], count, MPI_DOUBLE, p, 0, derived->world, &requests[nrequests++]);
-	send_offset += count;
+        int count = derived->get_cell_data_size(nsend);
+        MPI_Isend(&send_buff[send_offset], count, MPI_DOUBLE, p, 0, derived->world, &requests[nrequests++]);
+        send_offset += count;
       }
     }
     // wait for all MPI requests
-    if (derived->comm->nprocs > 1) MPI_Waitall(nrequests, requests.data(), MPI_STATUS_IGNORE);
+    if (derived->comm->nprocs > 1)
+      MPI_Waitall(nrequests, requests.data(), MPI_STATUS_IGNORE);
   }
 
- private:
+private:
   int cell_count(const Box<int, 2> &box) {
     std::array<int, 2> s = size(box);
     return s[0] * s[1];
   }
 
-  void add_cells(const Subgrid<double, 2> &subgrid, const Box<int, 2> &box, std::vector<int> &cells)
-  {
+  void add_cells(const Subgrid<double, 2> &subgrid, const Box<int, 2> &box, std::vector<int> &cells) {
     for (int j = box.lower[1]; j < box.upper[1]; j++) {
       for (int i = box.lower[0]; i < box.upper[0]; i++) {
-	cells.push_back(subgrid.get_linear_index({i, j}));
+        cells.push_back(subgrid.get_linear_index( { i, j }));
       }
     }
   }
-  
+
   bool is_bottom_most() {
     Derived *derived = static_cast<Derived *>(this);
     return derived->domain->sublo[2] == derived->domain->boxlo[2];
