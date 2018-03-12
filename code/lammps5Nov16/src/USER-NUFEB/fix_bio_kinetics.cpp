@@ -174,9 +174,6 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
     subhi[i] = subnhi[i] * stepz;
     subn[i] = subnhi[i] - subnlo[i];
   }
-  // call comm::exchange to communicate atoms that might be in a different proc due to new boundaries
-  //   no need to call migrate since they are supposed to only move to neighbor procs 
-  comm->exchange();
 
   bnz = domain->boxhi[2] / stepz + 1;
   maxheight = domain->boxhi[2];
