@@ -56,8 +56,7 @@ class ComputeNufebHeight : public Compute, public ReduceGrid<ComputeNufebHeight>
     }
     return input;
   }
-  int get_cell_data_size(int n) const { return nxy; }
-  bool is_bottom_most() const;
+  int get_cell_data_size(int n) const { return n; }
 };
 
 }

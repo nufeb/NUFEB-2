@@ -56,8 +56,7 @@ class ComputeNufebRough : public Compute, public ReduceGrid<ComputeNufebRough> {
     }
     return input;
   }
-  int get_cell_data_size(int n) const { return nxy; }
-  bool is_bottom_most() const;
+  int get_cell_data_size(int n) const { return n; }
 };
 
 }

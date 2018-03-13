@@ -11,8 +11,6 @@
  See the README file in the top-level LAMMPS directory.
  ------------------------------------------------------------------------- */
 
-#include <stdlib.h> // atoi
-
 #include "atom.h"
 #include "comm.h"
 #include "error.h"
@@ -81,17 +79,18 @@ double ComputeNufebHeight::compute_scalar() {
 
   std::fill(maxh, maxh + nxy, 0);
 
+  for (int i = 0; i < nlocal + nghost; i++) {
+    if ((mask[i] & groupbit) && subgrid.is_inside( { x[i][0], x[i][1] }) && x[i][2] >= domain->sublo[2] && x[i][2] < domain->subhi[2]) {
+      int cell = subgrid.get_index( { x[i][0], x[i][1] });
+      double z = x[i][2] + atom->radius[i] - domain->boxlo[2];
+      maxh[cell] = MAX(maxh[cell], z);
+    }
+  }
+
   ReduceGrid<ComputeNufebHeight>::exchange();
 
   scalar = 0;
-  if (is_bottom_most()) {
-    for (int i = 0; i < nlocal + nghost; i++) {
-      if ((mask[i] & groupbit) && subgrid.is_inside( { x[i][0], x[i][1] }) && x[i][2] >= domain->sublo[2] && x[i][2] < domain->subhi[2]) {
-        int cell = subgrid.get_index( { x[i][0], x[i][1] });
-        double z = x[i][2] + atom->radius[i] - domain->boxlo[2];
-        maxh[cell] = MAX(maxh[cell], z);
-      }
-    }
+  if (domain->boxlo[2] == domain->sublo[2]) { // bottom most subdomain
     for (int i = 0; i < nxy; i++) {
       scalar += maxh[i] * stepx * stepy;
     }
@@ -102,10 +101,4 @@ double ComputeNufebHeight::compute_scalar() {
   MPI_Allreduce(MPI_IN_PLACE, &scalar, 1, MPI_DOUBLE, MPI_SUM, world);
 
   return scalar;
-}
-
-/* ---------------------------------------------------------------------- */
-
-bool ComputeNufebHeight::is_bottom_most() const {
-  return domain->sublo[2] == domain->boxlo[2];
 }
