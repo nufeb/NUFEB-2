@@ -68,7 +68,6 @@ class Grid {
   std::array<T, N> origin;
   std::array<IndexType, N> dimensions;
   std::array<T, N> cell_size;
-  Box<T, N> box;
 };
 } // namespace LAMMPS_NS
 #endif // LMP_GRID_H
