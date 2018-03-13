@@ -83,32 +83,32 @@ double ComputeNufebRough::compute_scalar()
 
   std::fill(maxh, maxh + nxy, 0);
 
+  for (int i = 0; i < nlocal + nghost; i++) {
+    if ((mask[i] & groupbit) && subgrid.is_inside( { x[i][0], x[i][1] }) && x[i][2] >= domain->sublo[2] && x[i][2] < domain->subhi[2]) {
+      int cell = subgrid.get_index( { x[i][0], x[i][1] });
+      double z = x[i][2] + atom->radius[i] - domain->boxlo[2];
+      maxh[cell] = MAX(maxh[cell], z);
+    }
+  }
+
   ReduceGrid<ComputeNufebRough>::exchange();
 
   double ave_height = 0;
-  if (is_bottom_most()) {
-    for (int i = 0; i < nlocal + nghost; i++) {
-      if ((mask[i] & groupbit) &&
-	  subgrid.is_inside({x[i][0], x[i][1]}) &&
-	  x[i][2] >= domain->sublo[2] &&
-	  x[i][2] < domain->subhi[2]) {
-	int cell = subgrid.get_index({x[i][0], x[i][1]});
-	double z = x[i][2] + atom->radius[i] - domain->boxlo[2];
-	maxh[cell] = MAX(maxh[cell], z);
-      }
-    }
+  if (domain->boxlo[2] == domain->sublo[2]) { // bottom most subdomain
     for (int i = 0; i < nxy; i++) {
       ave_height += maxh[i] * stepx * stepy;
     }
   }
-    
+
   ave_height = ave_height / (domain->prd[0] * domain->prd[1]);
 
   MPI_Allreduce(MPI_IN_PLACE, &ave_height, 1, MPI_DOUBLE, MPI_SUM, world);
 
   scalar = 0;
-  for (int i = 0; i < nxy; i++) {
-    scalar += ((maxh[i] - ave_height) * (maxh[i] - ave_height));
+  if (domain->boxlo[2] == domain->sublo[2]) { // bottom most subdomain
+    for (int i = 0; i < nxy; i++) {
+      scalar += ((maxh[i] - ave_height) * (maxh[i] - ave_height));
+    }
   }
 
   MPI_Allreduce(MPI_IN_PLACE, &scalar, 1, MPI_DOUBLE, MPI_SUM, world);
@@ -117,10 +117,4 @@ double ComputeNufebRough::compute_scalar()
   scalar = pow(scalar, 0.5);
 
   return scalar;
-}
-
-/* ---------------------------------------------------------------------- */
-
-bool ComputeNufebRough::is_bottom_most() const {
-  return domain->sublo[2] == domain->boxlo[2];
 }
