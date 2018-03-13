@@ -6,7 +6,7 @@
 #include <vector>
 
 namespace LAMMPS_NS {
-template<class Derived>
+template <class Derived>
 class ReduceGrid {
 public:
   void setup() {
@@ -18,6 +18,8 @@ public:
     MPI_Allgather(&box.lower[0], 2, MPI_INT, boxlo.data(), 2, MPI_INT, derived->world);
     std::vector<int> boxhi(2 * derived->comm->nprocs);
     MPI_Allgather(&box.upper[0], 2, MPI_INT, boxhi.data(), 2, MPI_INT, derived->world);
+    std::vector<double> sublo_z(derived->comm->nprocs);
+    MPI_Allgather(&derived->domain->sublo[2], 1, MPI_DOUBLE, sublo_z.data(), 1, MPI_DOUBLE, derived->world);
 
     clear();
     recv_begin.resize(derived->comm->nprocs);
@@ -28,20 +30,21 @@ public:
     // look for intersections
     int nrecv = 0;
     int nsend = 0;
+    int me = derived->comm->me;
     for (int p = 0; p < derived->comm->nprocs; p++) {
       recv_begin[p] = nrecv;
       send_begin[p] = nsend;
       Box<int, 2> other(&boxlo[2 * p], &boxhi[2 * p]);
-      if (p != derived->comm->me) {
+      if (p != me) {
         // identify which cells we need to recv if we are the bottom most proc
         Box<int, 2> intersection = intersect(box, other);
         int n = cell_count(intersection);
-        if (n > 0 && derived->is_bottom_most()) {
+        if (n > 0 && sublo_z[me] == derived->domain->boxlo[2] && sublo_z[p] != derived->domain->boxlo[2]) {
           add_cells(subgrid, intersection, recv_cells);
           nrecv += n;
         }
         // identify which cells we need to send if we are not the bottom most proc
-        if (n > 0 && !derived->is_bottom_most()) {
+        if (n > 0 && sublo_z[me] != derived->domain->boxlo[2] && sublo_z[p] == derived->domain->boxlo[2]) {
           add_cells(subgrid, intersection, send_cells);
           nsend += n;
         }
@@ -74,20 +77,16 @@ public:
     }
     // pack data to send buffer
     derived->pack_cells(send_cells.begin(), send_cells.end(), send_buff.begin());
-    nrequests = 0;
     for (int p = 0; p < derived->comm->nprocs; p++) {
       if (p == derived->comm->me)
         continue;
       int nsend = send_end[p] - send_begin[p];
       if (nsend > 0) {
         int count = derived->get_cell_data_size(nsend);
-        MPI_Isend(&send_buff[send_offset], count, MPI_DOUBLE, p, 0, derived->world, &requests[nrequests++]);
+        MPI_Send(&send_buff[send_offset], count, MPI_DOUBLE, p, 0, derived->world);
         send_offset += count;
       }
     }
-    // wait for all MPI requests
-    if (derived->comm->nprocs > 1)
-      MPI_Waitall(nrequests, requests.data(), MPI_STATUS_IGNORE);
   }
 
 private:
@@ -104,11 +103,6 @@ private:
     }
   }
 
-  bool is_bottom_most() {
-    Derived *derived = static_cast<Derived *>(this);
-    return derived->domain->sublo[2] == derived->domain->boxlo[2];
-  }
-
   void clear() {
     recv_cells.clear();
     send_cells.clear();
@@ -120,6 +114,7 @@ private:
     send_buff.clear();
     requests.clear();
   }
+
   Grid<double, 3> grid;
   Grid<double, 3> subgrid;
   std::vector<int> recv_cells;
