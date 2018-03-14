@@ -233,8 +233,8 @@ void FixVerify::benchmark_one() {
     if (comm->me == 0 && logfile)  fprintf(logfile, "tmass = %e \n\n", global_tmass);
 
     kinetics->niter = -1;
-    kinetics->monod->external_gflag = 0;
     // solve mass balance in bulk liquid
+    kinetics->monod->external_gflag = 0;
 
     int k = 0;
     while(k < 500) {

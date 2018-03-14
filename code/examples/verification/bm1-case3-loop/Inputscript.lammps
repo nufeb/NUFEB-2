@@ -4,7 +4,7 @@ atom_style	bio
 atom_modify	map array sort 1000 5.0e-7
 boundary	pp pp ff
 newton		off
-processors  * * 1
+processors  2 2 1
 
 comm_modify	vel yes
 
@@ -20,7 +20,7 @@ neigh_modify	delay 0 one 2000
 pair_style  gran/hooke/history 1.e-4 NULL 1.e-5 NULL 0.0 1
 pair_coeff  * *
 
-timestep 300
+timestep 500
 
 variable kanc equal 50
 
@@ -40,12 +40,12 @@ variable divDia equal 2e-6
 #kinetics variables
 variable etaHET equal 0.0
 variable diffT equal 1e-4
-variable tol equal 1e-7
+variable tol equal 1e-6
 variable layer equal 0
 
 ##############Define IBm Commands##############
 
-fix k1 all kinetics 1 15 15 30 v_diffT v_layer demflag 0
+fix k1 all kinetics 1 10 10 20 v_diffT v_layer demflag 0
 fix kgm all kinetics/growth/monod v_EPSdens v_etaHET
 fix g1 all kinetics/diffusion v_tol pp pp nd kg bulk 2.31e-7 1.25e-3 0.1
 fix d1 all divide 1 v_EPSdens v_divDia 31231 demflag 0
@@ -69,7 +69,7 @@ run 1000 pre no post no every 1 &
 "fix_modify d1 demflag 1" &
 "timestep 1e-3" &
 "run 10000 pre no post no" &
-"timestep 300" &
+"timestep 500" &
 "fix_modify k1 demflag 0" &
 "fix_modify vf1 demflag 0" &
 "fix_modify d1 demflag 0" &
