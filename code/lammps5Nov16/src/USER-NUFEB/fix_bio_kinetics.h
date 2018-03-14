@@ -15,7 +15,7 @@ FixStyle(kinetics,FixKinetics)
 #define SRC_FIX_KINETICS_H
 
 #include "fix.h"
-#include "grid.h"
+#include "subgrid.h"
 
 namespace LAMMPS_NS {
 
@@ -73,6 +73,9 @@ class FixKinetics : public Fix {
   int subn[3];                     // number of grids in x y axis for this proc
   int subnlo[3],subnhi[3];         // cell index of the subdomain lower and upper bound for each axis
   double sublo[3],subhi[3];        // subdomain lower and upper bound trimmed to the grid
+
+  Grid<double, 3> grid;
+  Subgrid<double, 3> subgrid;
 
   class AtomVecBio *avec;
   class BIO *bio;
