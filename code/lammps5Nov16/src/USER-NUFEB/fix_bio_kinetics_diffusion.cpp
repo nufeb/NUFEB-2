@@ -482,7 +482,6 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
   //18 19 20        21 22 23       24 25 26
   //9  10 11        12 13 14       15 16 17
   //0   1  2         3  4  5        6  7  8
-
   int lhs = grid - 1;   // x direction
   int rhs = grid + 1;  // x direction
   int bwd = grid - nX;  // y direction
@@ -511,7 +510,7 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
     }
   }
   // high-z surface
-  else if (xGrid[grid][2] > zhi && !ghost[down]) {
+  else if (xGrid[grid][2] > bzhi && !ghost[down]) {
     if (zbcflag == 0 && kinetics->nz == kinetics->subn[2]) {
       int zloGrid = grid - nX * nY * nz;
       nuCell = nuPrev[zloGrid];
