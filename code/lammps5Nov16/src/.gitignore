@@ -64,6 +64,8 @@ compute_bio_segregate.h
 decomp_grid.h
 dump_bio.cpp
 dump_bio.h
+dump_grid.cpp
+dump_grid.h
 fix_bio_balance.cpp
 fix_bio_balance.h
 fix_bio_death.cpp
@@ -105,3 +107,7 @@ read_data_bio.cpp
 read_data_bio.h
 reduce_grid.h
 subgrid.h
+
+#ignoring VTK files
+dump_custom_vtk.cpp
+dump_custom_vtk.h
