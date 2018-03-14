@@ -164,7 +164,8 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
   stepy = (yhi - ylo) / ny;
   stepz = (zhi - zlo) / nz;
 
-  Grid<double, 3> grid(Box<double, 3>(domain->boxlo, domain->boxhi), {nx, ny, nz});
+  grid = Grid<double, 3>(Box<double, 3>(domain->boxlo, domain->boxhi), {nx, ny, nz});
+  subgrid = Subgrid<double, 3>(grid, Box<double, 3>(domain->sublo, domain->subhi));
 
   for (int i = 0; i < 3; i++) {
     // considering that the grid will always have a cubic cell (i.e. stepx = stepy = stepz)
