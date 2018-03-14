@@ -496,7 +496,7 @@ double FixKinetics::getMaxHeight() {
 }
 
 void FixKinetics::update_bgrids() {
-  if (blayer > 0) {
+  if (blayer >= 0) {
     maxheight = getMaxHeight();
     bnz = (int)((blayer + maxheight) / stepz) + 1;
     bgrids = subn[0] * subn[1] * MIN(subn[2], MAX(0, bnz - subnlo[2]));
