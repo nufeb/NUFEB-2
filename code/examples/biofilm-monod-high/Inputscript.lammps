@@ -77,8 +77,8 @@ compute myNtypes all ntypes
 #compute myDia all diameter
 #compute myDimen all dimension
 #compute myDiver all diversity
-#compute myHeight all ave_height 50 50
-#compute myRough all roughness 50 50	
+#compute myHeight all ave_height nx 50 ny 50
+#compute myRough all roughness nx 50 ny 50	
 #compute mySeg all segregation v_cutoff	
 
 ##############Simulation outputs##############

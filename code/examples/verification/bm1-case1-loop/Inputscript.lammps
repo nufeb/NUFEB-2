@@ -55,7 +55,7 @@ fix vf1 all verify 1 bm1 1 demflag 0
 ##############Simulation Output##############
 
 compute myPres all pressure thermo_temp
-compute myHeight all ave_height 5 5
+compute myHeight all ave_height nx 5 ny 5
 
 #dump		id all custom 200000 snapshot.bubblemd id type diameter x y z
 thermo_style    custom step cpu atoms biomass c_myPres c_myHeight

@@ -25,6 +25,8 @@
 #include "pair.h"
 #include "force.h"
 
+#include <cstring>
+
 using namespace LAMMPS_NS;
 
 /* ---------------------------------------------------------------------- */
@@ -32,17 +34,27 @@ using namespace LAMMPS_NS;
 ComputeNufebRough::ComputeNufebRough(LAMMPS *lmp, int narg, char **arg) :
   Compute(lmp, narg, arg)
 {
-  if (narg != 5) error->all(FLERR,"Illegal compute average height command");
+  if (narg < 3) error->all(FLERR,"Illegal compute average height command");
 
   scalar_flag = 1;
   extscalar = 0;
 
-  nx = atoi(arg[3]);
-  ny = atoi(arg[4]);
+  nx = 0;
+  ny = 0;
+  nxy = 0;
 
-  if (nx <= 0 || ny <= 0) error->all(FLERR,"Illegal compute nx or ny value");
-
-  nxy = nx * ny;
+  // optional fields
+  for (int iarg = 3; iarg < narg; iarg++) {
+    if (strcmp(arg[iarg], "nx") == 0) {
+      nx = force->numeric(FLERR, arg[iarg + 1]);
+      if (nx <= 0)
+	error->all(FLERR,"Illegal nx value in compute roughness");
+    } else if (strcmp(arg[iarg], "ny") == 0) {
+      ny = force->numeric(FLERR, arg[iarg + 1]);
+      if (ny <= 0)
+	error->all(FLERR,"Illegal ny value in compute roughness");
+    }
+  }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -54,6 +66,11 @@ ComputeNufebRough::~ComputeNufebRough()
 
 void ComputeNufebRough::init()
 {
+  if (nx <= 0)
+    nx = static_cast<int>(domain->prd[0] / force->pair->cutforce) + 1;
+  if (ny <= 0)
+    ny = static_cast<int>(domain->prd[1] / force->pair->cutforce) + 1;
+
   stepx = domain->prd[0] / nx;
   stepy = domain->prd[1] / ny;
 
