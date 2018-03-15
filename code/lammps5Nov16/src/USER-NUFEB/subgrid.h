@@ -73,7 +73,8 @@ class Subgrid {
   bool is_inside(const std::array<T, N> &x) const {
     bool result = true;
     for (int i = 0; i < N; i++) {
-      result &= x[i] >= origin[i] * grid.get_cell_size()[i] && x[i] < (origin[i] + dimensions[i]) * grid.get_cell_size()[i];  
+      IndexType index = static_cast<IndexType>(x[i] / grid.get_cell_size()[i]);
+      result &= index >= origin[i] && index < origin[i] + dimensions[i];  
     }
     return result;
   }
