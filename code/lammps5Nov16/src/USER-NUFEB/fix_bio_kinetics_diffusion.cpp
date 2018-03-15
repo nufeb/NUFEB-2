@@ -314,8 +314,8 @@ void FixKineticsDiffusion::init() {
   // create request vector
   requests = new MPI_Request[MAX(2 * comm->nprocs, nnus + 1)];
 
-  grid = Grid<double, 3>(Box<double, 3>(domain->boxlo, domain->boxhi), {kinetics->nx, kinetics->ny, kinetics->nz});
-  subgrid = Subgrid<double, 3>(grid, Box<double, 3>(domain->sublo, domain->subhi));
+  grid = kinetics->grid;
+  subgrid = kinetics->subgrid;
   DecompGrid<FixKineticsDiffusion>::setup();
 }
 
