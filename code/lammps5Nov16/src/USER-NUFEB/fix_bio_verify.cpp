@@ -223,8 +223,12 @@ void FixVerify::benchmark_one() {
   for (int i = 0; i < nlocal; i++) {
     tmass += atom->rmass[i];
   }
-  diffusion->bulkflag = 0;
-  kinetics->niter = 1;
+
+  if (bm1cflag == 3) {
+    diffusion->bulkflag = 0;
+    kinetics->niter = 1;
+  }
+
   MPI_Allreduce(&tmass,&global_tmass,1,MPI_DOUBLE,MPI_SUM,world);
   //ave_height = cheight->compute_scalar();
 

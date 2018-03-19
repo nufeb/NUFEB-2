@@ -4,7 +4,7 @@ atom_style	bio
 atom_modify	map array sort 1000 5.0e-7
 boundary	pp pp ff
 newton		off
-processors  2 2 1
+processors * * *
 
 comm_modify	vel yes
 
@@ -54,7 +54,7 @@ fix vf1 all verify 1 bm1 3 demflag 0
 ##############Simulation Output##############
 
 compute myPres all pressure thermo_temp
-compute myHeight all ave_height nx 10 ny 10
+compute myHeight all ave_height 10 10
 
 #dump		id all custom 200000 snapshot.bubblemd id type diameter x y z
 thermo_style    custom step cpu atoms biomass c_myPres c_myHeight
