@@ -22,6 +22,7 @@
 #include "domain.h"
 #include "error.h"
 #include "bio.h"
+#include "fix_bio_fluid.h"
 #include "force.h"
 #include "input.h"
 #include "lmptype.h"
@@ -31,7 +32,6 @@
 #include "update.h"
 #include "variable.h"
 #include "modify.h"
-#include "fix_bio_fluid.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -165,8 +165,8 @@ void FixDivide::post_integrate() {
     return;
   if (update->ntimestep % nevery)
     return;
-  if (nufebFoam != NULL)
-    demflag = demflag | nufebFoam->demflag;
+  if (nufebFoam != NULL && nufebFoam->demflag)
+    return;
   if (demflag)
     return;
 
