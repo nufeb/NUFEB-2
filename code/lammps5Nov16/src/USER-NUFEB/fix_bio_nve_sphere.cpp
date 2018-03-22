@@ -21,9 +21,10 @@
 #include "respa.h"
 #include "force.h"
 #include "error.h"
+
+#include "fix_bio_fluid.h"
 #include "math_vector.h"
 #include "math_extra.h"
-#include "fix_bio_fluid.h"
 #include "modify.h"
 
 using namespace LAMMPS_NS;

@@ -362,7 +362,7 @@ int *FixKineticsDiffusion::diffusion(int *nuConv, int iter, double diffT) {
           int ind = get_index(grid);
           double r = (unit == 1) ? (r = nuR[i][ind]) :  (r = nuR[i][ind] * 1000);
 
-          compute_flux(diffD[i], nuGrid[i][grid], nuPrev[i], r, grid);
+          compute_flux(diffD[i], nuGrid[i][grid], nuPrev[i], r, grid, ind);
 
           nuR[i][ind] = 0;
 
@@ -590,7 +590,7 @@ void FixKineticsDiffusion::compute_bc(double &nuCell, double *nuPrev, int grid, 
  update concentration for non-ghost grids
  ------------------------------------------------------------------------- */
 
-void FixKineticsDiffusion::compute_flux(double cellDNu, double &nuCell, double *nuPrev, double rateNu, int grid) {
+void FixKineticsDiffusion::compute_flux(double cellDNu, double &nuCell, double *nuPrev, double rateNu, int grid, int ind) {
   int lhs = grid - 1;   // x direction
   int rhs = grid + 1;  // x direction
   int bwd = grid - nX;  // y direction
@@ -616,12 +616,13 @@ void FixKineticsDiffusion::compute_flux(double cellDNu, double &nuCell, double *
   // Adding fluxes in all the directions and the uptake rate (RHS side of the equation)
 
   if (dragflag == 1) {
-    double uX = kinetics->fV[0][grid] * (nuPrev[rhs] - nuPrev[lhs]) / stepx;
-    double uY = kinetics->fV[1][grid] * (nuPrev[fwd] - nuPrev[bwd]) / stepy;
-    double uZ = kinetics->fV[2][grid] * (nuPrev[up] - nuPrev[down]) / stepz;
+    double uX = kinetics->fV[0][ind] * (nuPrev[rhs] - nuPrev[lhs]) / stepx;
+    double uY = kinetics->fV[1][ind] * (nuPrev[fwd] - nuPrev[bwd]) / stepy;
+    double uZ = kinetics->fV[2][ind] * (nuPrev[up] - nuPrev[down]) / stepz;
 
     res = (jX + jY + jZ + rateNu - uX - uY - uZ) * diffT;
-  } else if (srate == 1) {
+   // printf("grid = %i, ind = %i, %e %e %e \n", grid, ind, kinetics->fV[0][ind], kinetics->fV[1][ind], kinetics->fV[2][ind]);
+  } else if (shearflag == 1) {
     int hgrid = grid;
     int deep = 0;
 
