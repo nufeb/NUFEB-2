@@ -4,9 +4,9 @@ atom_style	bio
 atom_modify	map array sort 100 5.0e-7
 boundary	pp pp ff
 newton		off
-processors  1 1 1
+processors  * * *
 
-comm_modify	vel yes
+comm_modify	 vel yes
 read_data_bio atom.in
 
 group HET type 1
@@ -27,7 +27,7 @@ timestep 1e-8
 
 fix fnve all nve/limit 1e-8
 fix fv all viscous 1e-5
-fix fd 3 all fdrag
+fix fd1 all fdrag
 
 fix zw all wall/gran hooke/history 2000 NULL 500.0 NULL 1.5 0 zplane  0.0   1.0e-04
 
@@ -55,17 +55,17 @@ variable layer equal -1
 
 
 #Defining nufebFoam variables
-variable demSteps equal 1
+variable demSteps equal 100
 variable bioSteps equal 1
 variable bioDt equal 1800
-variable nloops equal 100
+variable nloops equal 20
 
 
 ##############Define IBm Commands##############
 
-fix fk all kinetics 1 30 12 30 v_diffT v_layer niter 10000
-fix kgm all kinetics/growth/monod v_EPSdens v_etaHET
-#fix fkd all kinetics/diffusion v_tol pp pp nd kg
+fix fk all kinetics 1 5 2 5 v_diffT v_layer niter 10
+fix kgm all kinetics/growth/monod v_EPSdens v_etaHET 
+fix fkd all kinetics/diffusion v_tol pp pp nd kg
 fix fdiv all divide 1 v_EPSdens v_divDia 978595
 fix fe HET eps_extract 1 v_EPSratio v_EPSdens 6274
 
@@ -77,8 +77,8 @@ compute myNtypes all ntypes
 
 ##############Simulation Output##############
 
-dump		id all custom 1000 snapshot.bubblemd id type diameter x y z
-thermo_style    custom step cpu atoms biomass c_myNtypes[*] 
+dump		id all custom 10000 snapshot.bubblemd id type diameter x y z
+thermo_style    custom step cpu atoms biomass c_myNtypes[2] c_myNtypes[5] 
 thermo		100
 thermo_modify	lost ignore
 

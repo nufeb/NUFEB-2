@@ -21,6 +21,8 @@
 #include "atom_vec_bio.h"
 #include "domain.h"
 #include "error.h"
+
+#include "fix_bio_fluid.h"
 #include "force.h"
 #include "input.h"
 #include "lmptype.h"
@@ -30,7 +32,6 @@
 #include "update.h"
 #include "variable.h"
 #include "group.h"
-#include "fix_bio_fluid.h"
 #include "modify.h"
 
 using namespace LAMMPS_NS;
@@ -184,8 +185,8 @@ void FixEPSExtract::post_integrate() {
     return;
   if (update->ntimestep % nevery)
     return;
-  if (nufebFoam != NULL)
-    demflag = demflag | nufebFoam->demflag;
+  if (nufebFoam != NULL && nufebFoam->demflag)
+    return;
   if (demflag)
     return;
 

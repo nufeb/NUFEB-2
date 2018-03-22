@@ -176,7 +176,7 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
     subn[i] = subnhi[i] - subnlo[i];
   }
 
-  bnz = domain->boxhi[2] / stepz + 1;
+  bnz = nz;
   maxheight = domain->boxhi[2];
 }
 
@@ -381,14 +381,14 @@ void FixKinetics::init_activity() {
 
 void FixKinetics::pre_force(int vflag) {
   bool flag = true;
-  if (nufebFoam != NULL)
-    demflag = demflag || nufebFoam->demflag;
 
   if (nevery == 0)
     flag = false;
   if (update->ntimestep % nevery)
     flag = false;
-  if(demflag)
+  if (nufebFoam != NULL && nufebFoam->demflag)
+    flag = false;
+  if (demflag)
     flag = false;
 
   if (flag)
