@@ -50,7 +50,7 @@ inline Box<T, N> extend(const Box<T, N> &b, T n = T(1))
 template <typename T, std::size_t N>
 inline bool is_empty(const Box<T, N> &b)
 {
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < N; i++) {
     if (b.lower[i] >= b.upper[i])
       return true;
   }
