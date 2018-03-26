@@ -293,7 +293,7 @@ void FixKineticsBalance::rebalance()
   } else if (lbstyle == BISECTION) {
     sendproc = balance->bisection();
     comm->layout = LAYOUT_TILED;
-    int *n = new int[3];
+    int n[3];
     n[0] = kinetics->nx;
     n[1] = kinetics->ny;
     n[2] = kinetics->nz;
@@ -304,7 +304,6 @@ void FixKineticsBalance::rebalance()
       }
     }
     comm->rcbcutfrac = trim(comm->rcbcutfrac, n[comm->rcbcutdim]);
-    delete [] n;    
   }
   
   // output of new decomposition
