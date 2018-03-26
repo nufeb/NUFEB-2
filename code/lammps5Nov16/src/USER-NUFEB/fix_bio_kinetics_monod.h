@@ -24,6 +24,7 @@ class FixKineticsMonod : public Fix {
   ~FixKineticsMonod();
   void init();
   int setmask();
+  void grow_subgrid(int);
   void growth(double, int);
 
   int external_gflag;
@@ -32,10 +33,10 @@ class FixKineticsMonod : public Fix {
   char **var;
   int *ivar;
 
-  int isub, io2, inh4, ino2, ino3;   // nutrient index
+  int isub, io2, inh4, ino2, ino3;  // nutrient index
   int idead, ieps;
 
-  int *species;                      // species index 0 = unknow, 1 = het, 2 = aob, 3 = nob, 4 = eps, 5 = dead
+  int *species;                     // species index 0 = unknow, 1 = het, 2 = aob, 3 = nob, 4 = eps, 5 = dead
   double ***growrate;
 
   int nnus;                         // # of nutrients

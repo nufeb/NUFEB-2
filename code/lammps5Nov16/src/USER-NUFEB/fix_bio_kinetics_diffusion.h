@@ -19,8 +19,11 @@ FixStyle(kinetics/diffusion,FixKineticsDiffusion)
 #include "decomp_grid.h"
 
 namespace LAMMPS_NS {
+class AtomVecBio;
+class BIO;
+class FixKinetics;
 
-class FixKineticsDiffusion: public Fix, protected DecompGrid<FixKineticsDiffusion> {
+class FixKineticsDiffusion: public Fix, public DecompGrid<FixKineticsDiffusion> {
   friend DecompGrid<FixKineticsDiffusion>;
 
  public:
@@ -73,27 +76,25 @@ class FixKineticsDiffusion: public Fix, protected DecompGrid<FixKineticsDiffusio
 
   MPI_Request *requests;
 
-  Grid<double, 3> grid;
-  Subgrid<double, 3> subgrid;
-
   BIO *bio;
-  class FixKinetics *kinetics;
-  class AtomVecBio *avec;
+  FixKinetics *kinetics;
+  AtomVecBio *avec;
 
   int setmask();
   void init();
   int *diffusion(int*, int, double);
   void update_nuS();
   void update_grids();
+  void init_grid();
   void compute_bc(double &, double *, int, double);
   void compute_bulk(int);
   void compute_bl();
   void compute_flux(double, double &, double *, double, int);
   bool isEuqal(double, double, double);
   int get_index(int);
-  Grid<double, 3> get_grid() const { return grid; }
-  Subgrid<double, 3> get_subgrid() const { return subgrid; }
-  std::array<bool, 3> get_periodic_boundary() const;
+  void migrate(const Grid<double, 3> &, const Box<int, 3> &, const Box<int, 3> &);
+
+  int get_elem_per_cell() const;
   template <typename InputIterator, typename OutputIterator>
   OutputIterator pack_cells(InputIterator first, InputIterator last, OutputIterator result) {
     for (InputIterator it = first; it != last; ++it) {
@@ -112,7 +113,7 @@ class FixKineticsDiffusion: public Fix, protected DecompGrid<FixKineticsDiffusio
     }
     return input;
   }
-  int get_cell_data_size(int n);
+  void resize(const Subgrid<double, 3> &);
 };
 
 }

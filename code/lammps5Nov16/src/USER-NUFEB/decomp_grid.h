@@ -9,61 +9,58 @@ namespace LAMMPS_NS {
 template <class Derived>
 class DecompGrid {
  public:
-  void setup() {
+  void setup_exchange(const Grid<double, 3> &grid,
+		      const Box<int, 3> &box,
+		      const std::array<bool, 3> &periodic) {
     Derived *derived = static_cast<Derived *>(this);
     // communicate grid extent
-    Grid<double, 3> grid = derived->get_grid();
-    Subgrid<double, 3> subgrid = derived->get_subgrid();
-    Box<int, 3> box = subgrid.get_box();
     std::vector<int> boxlo(3 * derived->comm->nprocs); 
-    MPI_Allgather(&box.lower[0], 3, MPI_INT, boxlo.data(), 3, MPI_INT, derived->world);
+    MPI_Allgather(const_cast<int *>(&box.lower[0]), 3, MPI_INT, boxlo.data(), 3, MPI_INT, derived->world);
     std::vector<int> boxhi(3 * derived->comm->nprocs);
-    MPI_Allgather(&box.upper[0], 3, MPI_INT, boxhi.data(), 3, MPI_INT, derived->world);
+    MPI_Allgather(const_cast<int *>(&box.upper[0]), 3, MPI_INT, boxhi.data(), 3, MPI_INT, derived->world);
 
     clear();
     recv_begin.resize(derived->comm->nprocs);
     send_begin.resize(derived->comm->nprocs);
     recv_end.resize(derived->comm->nprocs);
     send_end.resize(derived->comm->nprocs);
-    requests.resize(derived->comm->nprocs);
-    std::array<bool, 3> periodic = derived->get_periodic_boundary();
-    // look for intersections
-    int nrecv = 0;
-    int nsend = 0;
-    Box<int, 3> extbox = extend(box);
-    Subgrid<double, 3> extgrid(grid, extbox);
+    requests.resize(2 * derived->comm->nprocs);
+    // look for intersetions
+    Box<int, 3> ext_box = extend(box);
+    Subgrid<double, 3> subgrid(grid, ext_box);
+    int epc = derived->get_elem_per_cell();
     for (int p = 0; p < derived->comm->nprocs; p++) {
-      recv_begin[p] = nrecv;
-      send_begin[p] = nsend;
+      recv_begin[p] = recv_cells.size() * epc;
+      send_begin[p] = send_cells.size() * epc;
       Box<int, 3> other(&boxlo[3 * p], &boxhi[3 * p]);
       if (p != derived->comm->me) {
 	// identify which cell we are going to send and receive
-	setup_comm_cells(extgrid, box, other, nsend, nrecv);
+	setup_comm_cells(subgrid, box, other);
 	// check for periodic boundary conditions
-	if (extbox.lower[0] < 0 && periodic[0]) {
-	  setup_comm_cells(extgrid, box, translate(other, {-grid.get_dimensions()[0], 0, 0}), nsend, nrecv);
+	if (ext_box.lower[0] < 0 && periodic[0]) {
+	  setup_comm_cells(subgrid, box, translate(other, {-grid.get_dimensions()[0], 0, 0}));
 	}
-	if (extbox.upper[0] > grid.get_dimensions()[0] && periodic[0]) {      
-	  setup_comm_cells(extgrid, box, translate(other, {grid.get_dimensions()[0], 0, 0}), nsend, nrecv);
+	if (ext_box.upper[0] > grid.get_dimensions()[0] && periodic[0]) {      
+	  setup_comm_cells(subgrid, box, translate(other, {grid.get_dimensions()[0], 0, 0}));
 	}
-	if (extbox.lower[1] < 0 && periodic[1]) {
-	  setup_comm_cells(extgrid, box, translate(other, {0, -grid.get_dimensions()[1], 0}), nsend, nrecv);
+	if (ext_box.lower[1] < 0 && periodic[1]) {
+	  setup_comm_cells(subgrid, box, translate(other, {0, -grid.get_dimensions()[1], 0}));
 	}
-	if (extbox.upper[1] > grid.get_dimensions()[1] && periodic[1]) {      
-	  setup_comm_cells(extgrid, box, translate(other, {0, grid.get_dimensions()[1], 0}), nsend, nrecv);
+	if (ext_box.upper[1] > grid.get_dimensions()[1] && periodic[1]) {      
+	  setup_comm_cells(subgrid, box, translate(other, {0, grid.get_dimensions()[1], 0}));
 	}
-	if (extbox.lower[2] < 0 && periodic[2]) {
-	  setup_comm_cells(extgrid, box, translate(other, {0, 0, -grid.get_dimensions()[2]}), nsend, nrecv);
+	if (ext_box.lower[2] < 0 && periodic[2]) {
+	  setup_comm_cells(subgrid, box, translate(other, {0, 0, -grid.get_dimensions()[2]}));
 	}
-	if (extbox.upper[2] > grid.get_dimensions()[2] && periodic[2]) {      
-	  setup_comm_cells(extgrid, box, translate(other, {0, 0, grid.get_dimensions()[2]}), nsend, nrecv);
+	if (ext_box.upper[2] > grid.get_dimensions()[2] && periodic[2]) {      
+	  setup_comm_cells(subgrid, box, translate(other, {0, 0, grid.get_dimensions()[2]}));
 	}
       }
-      recv_end[p] = nrecv;
-      send_end[p] = nsend;
+      recv_end[p] = recv_cells.size() * epc;
+      send_end[p] = send_cells.size() * epc;
     }
-    recv_buff.resize(derived->get_cell_data_size(nrecv));
-    send_buff.resize(derived->get_cell_data_size(nsend));
+    recv_buff.resize(recv_end.back());
+    send_buff.resize(send_end.back());
   }
 
   void exchange() {
@@ -72,28 +69,100 @@ class DecompGrid {
     derived->pack_cells(send_cells.begin(), send_cells.end(), send_buff.begin());
     // send and recv grid data
     int nrequests = 0;
-    int recv_offset = 0;
-    int send_offset = 0;
     for (int p = 0; p < derived->comm->nprocs; p++) {
       if (p == derived->comm->me)
 	continue;
-      int nrecv = recv_end[p] - recv_begin[p];
-      if (nrecv > 0) {
-	int count = derived->get_cell_data_size(nrecv);
-	MPI_Irecv(&recv_buff[recv_offset], count, MPI_DOUBLE, p, 0, derived->world, &requests[nrequests++]);
-	recv_offset += count;
+      if (recv_begin[p] < recv_end[p]) {
+	MPI_Irecv(&recv_buff[recv_begin[p]], recv_end[p] - recv_begin[p], MPI_DOUBLE, p, 0, derived->world, &requests[nrequests++]);
       }
-      int nsend = send_end[p] - send_begin[p];
-      if (nsend > 0) {
-	int count = derived->get_cell_data_size(nsend);
-	MPI_Isend(&send_buff[send_offset], count, MPI_DOUBLE, p, 0, derived->world, &requests[nrequests++]);
-	send_offset += count;
+      if (send_begin[p] < send_end[p]) {
+	MPI_Isend(&send_buff[send_begin[p]], send_end[p] - send_begin[p], MPI_DOUBLE, p, 0, derived->world, &requests[nrequests++]);
       }
     }
     // wait for all MPI requests
-    if (derived->comm->nprocs > 1) MPI_Waitall(nrequests, requests.data(), MPI_STATUS_IGNORE);
+    MPI_Waitall(nrequests, requests.data(), MPI_STATUS_IGNORE);
     // unpack data from recv buffer
     derived->unpack_cells(recv_cells.begin(), recv_cells.end(), recv_buff.begin());
+  }
+
+  void migrate(const Grid<double, 3> &grid, const Box<int, 3> &from, const Box<int, 3> &to) {
+    migrate(grid, from, to, from, to);
+  }
+
+  void migrate(const Grid<double, 3> &grid, const Box<int, 3> &from, const Box<int, 3> &to, const Box<int, 3> &from_base, const Box<int, 3> &to_base) {
+    // TODO: check if from_base contains from and to_base contains to
+    Derived *derived = static_cast<Derived *>(this);
+
+    std::vector<Box<int, 3>> old_boxes(derived->comm->nprocs);
+    std::vector<Box<int, 3>> new_boxes(derived->comm->nprocs);
+
+    std::vector<int> old_boxlo(3 * derived->comm->nprocs); 
+    MPI_Allgather(const_cast<int *>(&from.lower[0]), 3, MPI_INT, old_boxlo.data(), 3, MPI_INT, derived->world);
+    std::vector<int> old_boxhi(3 * derived->comm->nprocs);
+    MPI_Allgather(const_cast<int *>(&from.upper[0]), 3, MPI_INT, old_boxhi.data(), 3, MPI_INT, derived->world);
+
+    std::vector<int> new_boxlo(3 * derived->comm->nprocs); 
+    MPI_Allgather(const_cast<int *>(&to.lower[0]), 3, MPI_INT, new_boxlo.data(), 3, MPI_INT, derived->world);
+    std::vector<int> new_boxhi(3 * derived->comm->nprocs);
+    MPI_Allgather(const_cast<int *>(&to.upper[0]), 3, MPI_INT, new_boxhi.data(), 3, MPI_INT, derived->world);
+
+    for (int p = 0; p < derived->comm->nprocs; p++) {
+      old_boxes[p] = Box<int, 3>(&old_boxlo[3 * p], &old_boxhi[3 * p]);
+      new_boxes[p] = Box<int, 3>(&new_boxlo[3 * p], &new_boxhi[3 * p]);
+    }
+    
+    std::vector<int> mig_recv_cells;
+    std::vector<int> mig_send_cells;
+    std::vector<int> mig_recv_begin(derived->comm->nprocs);
+    std::vector<int> mig_send_begin(derived->comm->nprocs);
+    std::vector<int> mig_recv_end(derived->comm->nprocs);
+    std::vector<int> mig_send_end(derived->comm->nprocs);
+    std::vector<MPI_Request> mig_requests(2 * derived->comm->nprocs);
+
+    int me = derived->comm->me;
+    int epc = derived->get_elem_per_cell();
+    Subgrid<double, 3> from_subgrid(grid, from_base);
+    Subgrid<double, 3> to_subgrid(grid, to_base);
+    for (int p = 0; p < derived->comm->nprocs; p++) {
+      mig_recv_begin[p] = mig_recv_cells.size() * epc;
+      Box<int, 3> recv_box = intersect(new_boxes[me], old_boxes[p]);
+      if (!is_empty(recv_box)) {
+	add_cells(to_subgrid, recv_box, mig_recv_cells);
+      }
+      mig_recv_end[p] = mig_recv_cells.size() * epc;
+      mig_send_begin[p] = mig_send_cells.size() * epc;
+      Box<int, 3> send_box = intersect(old_boxes[me], new_boxes[p]);
+      if (!is_empty(send_box)) {
+	add_cells(from_subgrid, send_box, mig_send_cells);
+      }
+      mig_send_end[p] = mig_send_cells.size() * epc;
+    }
+
+    std::vector<double> mig_send_buff(mig_send_end.back());
+    derived->pack_cells(mig_send_cells.begin(), mig_send_cells.end(), mig_send_buff.begin());
+
+    int nrequests = 0;
+    std::vector<double> mig_recv_buff(mig_recv_end.back());
+    for (int p = 0; p < derived->comm->nprocs; p++) {
+      if (p == derived->comm->me) {
+	if (mig_recv_begin[p] != mig_recv_end[p]) {
+	  std::copy(mig_send_buff.begin() + mig_send_begin[p],
+		    mig_send_buff.begin() + mig_send_end[p],
+		    mig_recv_buff.begin() + mig_recv_begin[p]);
+	}
+      }
+      else {
+	if (mig_recv_begin[p] != mig_recv_end[p]) {
+	  MPI_Irecv(&mig_recv_buff[mig_recv_begin[p]], mig_recv_end[p] - mig_recv_begin[p], MPI_DOUBLE, p, 0, derived->world, &mig_requests[nrequests++]);
+	}
+	if (mig_send_begin[p] != mig_send_end[p]) {
+	  MPI_Isend(&mig_send_buff[mig_send_begin[p]], mig_send_end[p] - mig_send_begin[p], MPI_DOUBLE, p, 0, derived->world, &mig_requests[nrequests++]);
+	}
+      }
+    }
+    MPI_Waitall(nrequests, mig_requests.data(), MPI_STATUS_IGNORE);
+    derived->resize(to_subgrid);
+    derived->unpack_cells(mig_recv_cells.begin(), mig_recv_cells.end(), mig_recv_buff.begin());
   }
 
  private:
@@ -127,20 +196,18 @@ class DecompGrid {
     return s[0] * s[1] * s[2];
   }
 
-  void setup_comm_cells(const Subgrid<double, 3> &subgrid, const Box<int, 3> &box, const Box<int, 3> &other, int &nsend, int &nrecv) {
+  void setup_comm_cells(const Subgrid<double, 3> &subgrid, const Box<int, 3> &box, const Box<int, 3> &other) {
     // identify which cells we need to recv
     Box<int, 3> recvbox = intersect(extend(box), other);
     int n = cell_count(recvbox);
     if (check_intersection(recvbox)) {
       add_cells(subgrid, recvbox, recv_cells);
-      nrecv += n;
     }
     // identify which cells we need to send
     Box<int, 3> sendbox = intersect(extend(other), box);
     n = cell_count(sendbox);
     if (check_intersection(sendbox)) {
       add_cells(subgrid, sendbox, send_cells);
-      nsend += n;
     }
   }
 
@@ -156,8 +223,6 @@ class DecompGrid {
     requests.clear();
   }
 
-  Grid<double, 3> grid;
-  Grid<double, 3> subgrid;
   std::vector<int> recv_cells;
   std::vector<int> send_cells;
   std::vector<int> recv_begin;

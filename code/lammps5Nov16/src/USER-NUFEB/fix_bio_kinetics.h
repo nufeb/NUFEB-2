@@ -14,12 +14,15 @@ FixStyle(kinetics,FixKinetics)
 #ifndef SRC_FIX_KINETICS_H
 #define SRC_FIX_KINETICS_H
 
+#include "atom.h"
+#include "bio.h"
 #include "fix.h"
-#include "subgrid.h"
+#include "decomp_grid.h"
 
 namespace LAMMPS_NS {
 
-class FixKinetics : public Fix {
+class FixKinetics : public Fix, public DecompGrid<FixKinetics> {
+  friend class DecompGrid<FixKinetics>;
   friend class FixKineticsEnergy;
   friend class FixKineticsMonod;
   friend class FixKineticsThermo;
@@ -36,6 +39,7 @@ class FixKinetics : public Fix {
   virtual void pre_force(int);
   void init();
   int modify_param(int, char **);
+  void migrate();
 
   char **var;
   int *ivar;
@@ -78,7 +82,7 @@ class FixKinetics : public Fix {
   Subgrid<double, 3> subgrid;
 
   class AtomVecBio *avec;
-  class BIO *bio;
+  BIO *bio;
   class FixKineticsDiffusion *diffusion;
   class FixKineticsEnergy *energy;
   class FixKineticsMonod *monod;
@@ -96,6 +100,66 @@ class FixKinetics : public Fix {
   int position(int);
   void reset_nuR();
   void reset_isConv();
+
+  Subgrid<double, 3> get_subgrid() const { return subgrid; }
+  int get_elem_per_cell() const;
+  template <typename InputIterator, typename OutputIterator>
+  OutputIterator pack_cells(InputIterator first, InputIterator last, OutputIterator result) {
+    for (InputIterator it = first; it != last; ++it) {
+      for (int i = 1; i <= bio->nnus; i++) {
+	*result++ = nuS[i][*it];
+	*result++ = nuR[i][*it];
+      }
+      if (energy) {
+	for (int i = 1; i <= bio->nnus; i++) {
+	  *result++ = qGas[i][*it];
+	  for (int j = 0; j < 5; j++) {
+	    *result++ = activity[i][j][*it];
+	  }
+	}
+	for (int i = 1; i <= atom->ntypes; i++) {
+	  *result++ = gYield[i][*it];
+	  *result++ = DRGCat[i][*it];
+	  *result++ = DRGAn[i][*it];
+	}
+      }
+      if (nufebFoam) {
+	for (int i = 0; i < 3; i++) {
+	  *result++ = fV[i][*it];
+	}
+      }
+    }
+    return result;
+  }
+  template <typename InputIterator0, typename InputIterator1>
+  InputIterator1 unpack_cells(InputIterator0 first, InputIterator0 last, InputIterator1 input) {
+    for (InputIterator0 it = first; it != last; ++it) {
+      for (int i = 1; i <= bio->nnus; i++) {
+	nuS[i][*it] = *input++;
+	nuR[i][*it] = *input++;
+      }
+      if (energy) {
+	for (int i = 1; i <= bio->nnus; i++) {
+          qGas[i][*it] = *input++;
+	  for (int j = 0; j < 5; j++) {
+	    activity[i][j][*it] = *input++;
+	  }
+	}
+	for (int i = 1; i <= atom->ntypes; i++) {
+	  gYield[i][*it] = *input++;
+	  DRGCat[i][*it] = *input++;
+	  DRGAn[i][*it] = *input++;
+	}
+      }
+      if (nufebFoam) {
+	for (int i = 0; i < 3; i++) {
+	  fV[i][*it] = *input++;
+	}
+      }
+    }
+    return input;
+  }
+  void resize(const Subgrid<double, 3> &);
 };
 
 }
