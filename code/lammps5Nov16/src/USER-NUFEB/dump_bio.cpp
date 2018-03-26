@@ -45,6 +45,7 @@
 #include "compute_bio_rough.h"
 #include "compute_bio_segregate.h"
 #include "compute_bio_ntypes.h"
+#include "compute_bio_biomass.h"
 
 struct stat st = {0};
 
@@ -307,6 +308,9 @@ void DumpBio::init_style()
     } else if (strcmp(modify->compute[j]->style,"ntypes") == 0) {
       ctype = static_cast<ComputeNufebNtypes *>(lmp->modify->compute[j]);
       continue;
+    } else if (strcmp(modify->compute[j]->style,"biomass") == 0) {
+      cmass = static_cast<ComputeNufebBiomass *>(lmp->modify->compute[j]);
+      continue;
     }
   }
 
@@ -318,89 +322,101 @@ void DumpBio::write()
 {
   if (update-> ntimestep == 0) return;
 
+  if (ntypeFlag == 1) ctype->compute_vector();
+  if (massFlag == 1) cmass->compute_vector();
+  if (diaFlag == 1)  cdia->compute_scalar();
+  if (dimFlag == 1)   cdim->compute_scalar();
+  if (divFlag == 1)  cdiv->compute_scalar();
+  if (heightFlag == 1)  cheight->compute_scalar();
+  if (roughFlag == 1) crough->compute_scalar();
+  if (segFlag == 1) cseg->compute_scalar();
+  if (aveconcFlag == 1) cseg->compute_scalar();
+
+  if (comm->me != 0) return;
+
   int nnus = kinetics->bio->nnus;
   int ntypes = atom->ntypes;
 
-  if (concFlag == 1) {
-    for (int i = 1; i < nnus+1; i++) {
-      if (bio->nuType[i] == 0 && strcmp(bio->nuName[i], "h") != 0 && strcmp(bio->nuName[i], "h2o") != 0) {
-        char *name = bio->nuName[i];
-        int len = 30;
-        len += strlen(name);
-        char path[len];
-        strcpy(path, "./Results/S/");
-        strcat(path, name);
-        strcat(path, "/r*.csv");
+//  if (concFlag == 1) {
+//    for (int i = 1; i < nnus+1; i++) {
+//      if (bio->nuType[i] == 0 && strcmp(bio->nuName[i], "h") != 0 && strcmp(bio->nuName[i], "h2o") != 0) {
+//        char *name = bio->nuName[i];
+//        int len = 30;
+//        len += strlen(name);
+//        char path[len];
+//        strcpy(path, "./Results/S/");
+//        strcat(path, name);
+//        strcat(path, "/r*.csv");
+//
+//        filename = path;
+//        openfile();
+//        write_concentration_data(i);
+//        fclose(fp);
+//      }
+//    }
+//  }
 
-        filename = path;
-        openfile();
-        write_concentration_data(i);
-        fclose(fp);
-      }
-    }
-  }
+//  if (anFlag == 1) {
+//    for (int i = 1; i < ntypes+1; i++) {
+//      char *name = bio->typeName[i];
+//      int len = 50;
+//      len += strlen(name);
+//      char path[len];
+//      strcpy(path, "./Results/DGRAn/");
+//      strcat(path, name);
+//      strcat(path, "/r*.csv");
+//
+//      filename = path;
+//      openfile();
+//      write_DGRAn_data(i);
+//      fclose(fp);
+//    }
+//  }
 
-  if (anFlag == 1) {
-    for (int i = 1; i < ntypes+1; i++) {
-      char *name = bio->typeName[i];
-      int len = 50;
-      len += strlen(name);
-      char path[len];
-      strcpy(path, "./Results/DGRAn/");
-      strcat(path, name);
-      strcat(path, "/r*.csv");
+//  if (catFlag == 1) {
+//    for (int i = 1; i < ntypes+1; i++) {
+//      char *name = bio->typeName[i];
+//      int len = 50;
+//      len += strlen(name);
+//      char path[len];
+//      strcpy(path, "./Results/DGRCat/");
+//      strcat(path, name);
+//      strcat(path, "/r*.csv");
+//
+//      filename = path;
+//      openfile();
+//      write_DGRCat_data(i);
+//      fclose(fp);
+//    }
+//  }
+//
+//  if (yieldFlag == 1) {
+//    for (int i = 1; i < ntypes+1; i++) {
+//      char *name = bio->typeName[i];
+//      int len = 50;
+//      len += strlen(name);
+//      char path[len];
+//      strcpy(path, "./Results/yield/");
+//      strcat(path, name);
+//      strcat(path, "/r*.csv");
+//
+//      filename = path;
+//      openfile();
+//      write_yield_data(i);
+//      fclose(fp);
+//    }
+//  }
 
-      filename = path;
-      openfile();
-      write_DGRAn_data(i);
-      fclose(fp);
-    }
-  }
-
-  if (catFlag == 1) {
-    for (int i = 1; i < ntypes+1; i++) {
-      char *name = bio->typeName[i];
-      int len = 50;
-      len += strlen(name);
-      char path[len];
-      strcpy(path, "./Results/DGRCat/");
-      strcat(path, name);
-      strcat(path, "/r*.csv");
-
-      filename = path;
-      openfile();
-      write_DGRCat_data(i);
-      fclose(fp);
-    }
-  }
-
-  if (yieldFlag == 1) {
-    for (int i = 1; i < ntypes+1; i++) {
-      char *name = bio->typeName[i];
-      int len = 50;
-      len += strlen(name);
-      char path[len];
-      strcpy(path, "./Results/yield/");
-      strcat(path, name);
-      strcat(path, "/r*.csv");
-
-      filename = path;
-      openfile();
-      write_yield_data(i);
-      fclose(fp);
-    }
-  }
-
-  if (phFlag == 1) {
-    int len = 30;
-    char path[len];
-    strcpy(path, "./Results/pH/r*.csv");
-
-    filename = path;
-    openfile();
-    write_pH_data();
-    fclose(fp);
-  }
+//  if (phFlag == 1) {
+//    int len = 30;
+//    char path[len];
+//    strcpy(path, "./Results/pH/r*.csv");
+//
+//    filename = path;
+//    openfile();
+//    write_pH_data();
+//    fclose(fp);
+//  }
 
   if (massFlag == 1) {
     int len = 35;
@@ -501,24 +517,24 @@ void DumpBio::write()
     fclose(fp);
   }
 
-  if (gasFlag == 1) {
-    for (int i = 1; i < nnus+1; i++) {
-      if (bio->nuType[i] == 1) {
-        char *name = bio->nuName[i];
-        int len = 30;
-        len += strlen(name);
-        char path[len];
-        strcpy(path, "./Results/Gas/");
-        strcat(path, name);
-        strcat(path, "/r*.csv");
-
-        filename = path;
-        openfile();
-        write_gas_data(i);
-        fclose(fp);
-      }
-    }
-  }
+//  if (gasFlag == 1) {
+//    for (int i = 1; i < nnus+1; i++) {
+//      if (bio->nuType[i] == 1) {
+//        char *name = bio->nuName[i];
+//        int len = 30;
+//        len += strlen(name);
+//        char path[len];
+//        strcpy(path, "./Results/Gas/");
+//        strcat(path, name);
+//        strcat(path, "/r*.csv");
+//
+//        filename = path;
+//        openfile();
+//        write_gas_data(i);
+//        fclose(fp);
+//      }
+//    }
+//  }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -694,46 +710,26 @@ void DumpBio::write_aveconcentration_data()
 void DumpBio::write_biomass_data()
 {
   if (!massHeader) {
-    for(int i = 1; i < atom->ntypes+1; i++){
-      fprintf(fp, "%s,\t", kinetics->bio->typeName[i]);
+    for(int i = 0; i < atom->ntypes+1; i++){
+      if(i == 0) fprintf(fp, "Total,\t");
+      else fprintf(fp, "%s,\t", kinetics->bio->typeName[i]);
     }
     massHeader = 1;
     fprintf(fp, "\n");
-  }
-
-  int local = atom->nlocal;
-  int ghost = atom->nghost;
-  int all = local + ghost;
-  double *mass = new double[atom->ntypes+1]();
-
-  for(int i = 0; i < all; i++){
-    int type = atom->type[i];
-    mass[type] += atom->rmass[i];
   }
 
   fprintf(fp, "%i,\t", update->ntimestep);
 
-  for(int i = 1; i < atom->ntypes+1; i++){
-    fprintf(fp, "%e,\t", mass[i]);
+  for(int i = 0; i < atom->ntypes+1; i++){
+    fprintf(fp, "%e,\t", cmass->vector[i]);
   }
   fprintf(fp, "\n");
-
-  if (update->ntimestep == update->nsteps) {
-    for(int i = 1; i < atom->ntypes+1; i++){
-      fprintf(fp, "%s,\t", kinetics->bio->typeName[i]);
-    }
-    massHeader = 1;
-    fprintf(fp, "\n");
-  }
-
-  delete[] mass;
 }
 
 /* ---------------------------------------------------------------------- */
 
 void DumpBio::write_diameter_data()
 {
-  cdia->compute_scalar();
   fprintf(fp, "%i,\t %e, \n", update->ntimestep, cdia->scalar);
 }
 
@@ -741,7 +737,6 @@ void DumpBio::write_diameter_data()
 
 void DumpBio::write_dimension_data()
 {
-  cdim->compute_scalar();
   fprintf(fp, "%i,\t %e, \n", update->ntimestep, cdim->scalar);
 }
 
@@ -749,7 +744,6 @@ void DumpBio::write_dimension_data()
 
 void DumpBio::write_diversity_data()
 {
-  cdiv->compute_scalar();
   fprintf(fp, "%i,\t %e, \n", update->ntimestep, cdiv->scalar);
 }
 
@@ -757,7 +751,6 @@ void DumpBio::write_diversity_data()
 
 void DumpBio::write_height_data()
 {
-  cheight->compute_scalar();
   fprintf(fp, "%i,\t %e, \n", update->ntimestep, cheight->scalar);
 }
 
@@ -765,7 +758,6 @@ void DumpBio::write_height_data()
 
 void DumpBio::write_rough_data()
 {
-  crough->compute_scalar();
   fprintf(fp, "%i,\t %e, \n", update->ntimestep, crough->scalar);
 }
 
@@ -773,7 +765,6 @@ void DumpBio::write_rough_data()
 
 void DumpBio::write_segregate_data()
 {
-  cseg->compute_scalar();
   fprintf(fp, "%i,\t %e, \n", update->ntimestep, cseg->scalar);
 }
 
@@ -789,24 +780,12 @@ void DumpBio::write_ntype_data()
     fprintf(fp, "\n");
   }
 
-  int local = atom->nlocal;
-  int ghost = atom->nghost;
-  int all = local + ghost;
-  int *ntypes1 = new int[atom->ntypes+1]();
-
-  for(int i = 0; i < all; i++){
-    int type = atom->type[i];
-    ntypes1[type] ++;
-  }
-
   fprintf(fp, "%i,\t", update->ntimestep);
 
   for(int i = 1; i < atom->ntypes+1; i++){
-    fprintf(fp, "%i,\t", ntypes1[i]);
+    fprintf(fp, "%i,\t", (int)ctype->vector[i]);
   }
   fprintf(fp, "\n");
-
-  delete[] ntypes1;
 }
 
 /* ---------------------------------------------------------------------- */

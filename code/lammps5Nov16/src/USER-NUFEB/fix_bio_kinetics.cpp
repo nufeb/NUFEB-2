@@ -381,14 +381,14 @@ void FixKinetics::init_activity() {
 
 void FixKinetics::pre_force(int vflag) {
   bool flag = true;
-  if (nufebFoam != NULL)
-    demflag = demflag || nufebFoam->demflag;
 
   if (nevery == 0)
     flag = false;
   if (update->ntimestep % nevery)
     flag = false;
-  if(demflag)
+  if (nufebFoam != NULL && nufebFoam->demflag)
+    flag = false;
+  if (demflag)
     flag = false;
 
   if (flag)

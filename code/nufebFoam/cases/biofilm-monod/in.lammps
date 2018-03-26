@@ -2,7 +2,7 @@
 
 atom_style	bio
 atom_modify	map array sort 100 5.0e-7
-boundary	ff ff ff
+boundary	pp pp ff
 newton		off
 processors  1 1 1
 
@@ -31,18 +31,12 @@ fix nve1 all nve/limit 1e-8
 #fix nve1 all bio/nve/sphere
 fix		2 all gravity 0.0 vector 0 -1 0 # spherical 90.0 -180.0    
 fix fv all viscous 1e-5
-fix     3 all fdrag
+fix  fd all fdrag
 
-
-
-fix xw all wall/gran hooke/history 5000.0 NULL 11200 NULL 0.1 0 xplane 0.00 0.0001
-fix yw all wall/gran hooke/history 5000.0 NULL 11200 NULL 0.1 0 yplane 0.00 0.0001
 fix zw all wall/gran hooke/history 5000.0 NULL 11200 NULL 0.1 0 zplane 0.00 0.00001
 
 variable kanc equal 50
 
-fix xwa all walladh v_kanc xplane  0.0  0.0001
-fix ywa all walladh v_kanc yplane  0.0  0.0001
 fix zwa all walladh v_kanc zplane  0.0  0.00001
 
 ##############Ibm Variable Definitions##############
