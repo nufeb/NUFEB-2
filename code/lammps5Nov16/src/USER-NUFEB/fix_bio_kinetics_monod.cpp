@@ -255,6 +255,10 @@ void FixKineticsMonod::init_param() {
     (error->warning(FLERR, "EPS is not defined in fix_kinetics/kinetics/monod"));
 }
 
+void FixKineticsMonod::grow_subgrid(int n) {
+  growrate = memory->create(growrate, ntypes + 1, 2, n, "monod:growrate");
+}
+
 /* ----------------------------------------------------------------------
  metabolism and atom update
  ------------------------------------------------------------------------- */

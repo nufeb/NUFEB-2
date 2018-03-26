@@ -561,3 +561,50 @@ int FixKinetics::modify_param(int narg, char **arg)
   return 0;
 }
 
+int FixKinetics::get_elem_per_cell() const {
+  int result = 2 * bio->nnus; // nuS + nuR
+  if (energy) {
+    result += 6 * bio->nnus; // qGas + activity
+    result += 3 * atom->ntypes; // gYield + DRGCat + DRGAn 
+  }
+  if (nufebFoam) {
+    result += 3; // fV
+  }
+  return result;
+}
+
+void FixKinetics::migrate() {
+  Subgrid<double, 3> new_subgrid = Subgrid<double, 3>(grid, Box<double, 3>(domain->sublo, domain->subhi), [](double value) { return std::round(value); });
+  DecompGrid<FixKinetics>::migrate(grid, subgrid.get_box(), new_subgrid.get_box());
+  for (int i = 0; i < 3; i++) {
+    // considering that the grid will always have a cubic cell (i.e. stepx = stepy = stepz)
+    subnlo[i] = domain->sublo[i] / stepz;
+    subnhi[i] = domain->subhi[i] / stepz;
+    sublo[i] = subnlo[i] * stepz;
+    subhi[i] = subnhi[i] * stepz;
+    subn[i] = subnhi[i] - subnlo[i];
+  }
+  diffusion->migrate(grid, subgrid.get_box(), new_subgrid.get_box());
+  subgrid = new_subgrid;
+  monod->grow_subgrid(ngrids);
+}
+
+void FixKinetics::resize(const Subgrid<double, 3> &subgrid) {
+  int nnus = bio->nnus;
+  int ntypes = atom->ntypes;
+  ngrids = subgrid.cell_count();
+  bgrids = ngrids; // TODO: not the case when blayer > 0
+  nuS = memory->grow(nuS, nnus + 1, ngrids, "kinetics:nuS");
+  nuR = memory->grow(nuR, nnus + 1, ngrids, "kinetics:nuR");
+  if (energy) {
+    qGas = memory->grow(qGas, nnus + 1, ngrids, "kinetics:nuGas");
+    gYield = memory->grow(gYield, ntypes + 1, ngrids, "kinetic:gYield");
+    activity = memory->grow(activity, nnus + 1, 5, ngrids, "kinetics:activity");
+    DRGCat = memory->grow(DRGCat, ntypes + 1, ngrids, "kinetics:DRGCat");
+    DRGAn = memory->grow(DRGAn, ntypes + 1, ngrids, "kinetics:DRGAn");
+    sh = memory->grow(sh, ngrids, "kinetics:Sh");
+  }
+  if (nufebFoam) {
+    fV = memory->grow(fV, 3, ngrids, "kinetcis:fV");
+  }
+}
