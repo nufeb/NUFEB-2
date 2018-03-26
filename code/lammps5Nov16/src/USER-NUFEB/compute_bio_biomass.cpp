@@ -55,16 +55,15 @@ void ComputeNufebBiomass::compute_vector()
   int ntypes = atom->ntypes;
   size_vector = ntypes+1;
   memory->grow(vector,ntypes+1,"compute:vector");
-  atom->mass[1];
+
   for (int i = 0; i < ntypes + 1; i++) {
     vector[i] = 0;
   }
 
   for (int i = 0; i < nlocal; i++)
     if (mask[i] & groupbit) {
-      int t = type[i] - 1;
-      vector[t] += rmass[i];
-      vector[ntypes] += rmass[i];
+      vector[type[i]] += rmass[i];
+      vector[0] += rmass[i];
     }
 
   MPI_Allreduce(MPI_IN_PLACE, vector, ntypes + 1, MPI_DOUBLE, MPI_SUM, world);

@@ -61,6 +61,7 @@ class DumpBio : public Dump {
   class ComputeNufebRough *crough;
   class ComputeNufebSegregate *cseg;
   class ComputeNufebNtypes *ctype;
+  class ComputeNufebBiomass *cmass;
 
 
   void openfile();
