@@ -89,7 +89,7 @@ class FixKineticsDiffusion: public Fix, public DecompGrid<FixKineticsDiffusion> 
   void compute_bc(double &, double *, int, double);
   void compute_bulk(int);
   void compute_bl();
-  void compute_flux(double, double &, double *, double, int);
+  void compute_flux(double, double &, double *, double, int, int);
   bool isEuqal(double, double, double);
   int get_index(int);
   void migrate(const Grid<double, 3> &, const Box<int, 3> &, const Box<int, 3> &);

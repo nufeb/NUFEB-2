@@ -4,7 +4,7 @@ atom_style	bio
 atom_modify	map array sort 100 5.0e-7
 boundary	ff ff ff
 newton		off
-processors  4 1 1
+processors  * * *
 
 comm_modify	vel yes
 read_data_bio atom.in
@@ -70,21 +70,21 @@ fix d5 all death 100 v_deadDia
 
 ##############Define IBm Computes##############
 
-#variable cutoff equal 9.66e-7
+variable cutoff equal 9.66e-7
 
 compute myNtypes all ntypes
-#compute myMass all biomass
-#compute myDia all diameter
-#compute myDimen all dimension
-#compute myDiver all diversity
-#compute myHeight all ave_height nx 50 ny 50
-#compute myRough all roughness nx 50 ny 50	
-#compute mySeg all segregation v_cutoff	
+compute myMass all biomass
+compute myDia all diameter
+compute myDimen all dimension
+compute myDiver all diversity
+compute myHeight all ave_height 
+compute myRough all roughness 	
+compute mySeg all segregation v_cutoff	
 
 ##############Simulation outputs##############
 
 dump		id all custom 1000 snapshot.bubblemd id type diameter x y z
-#dump            d0 all bio 1000 biomass ntypes diameter dimension diversity ave_height roughness segregation
+dump            d0 all bio 1000 biomass ntypes diameter dimension diversity ave_height roughness segregation
 thermo_style    custom step cpu atoms biomass c_myNtypes[*] 
 thermo		100
 thermo_modify	lost ignore
