@@ -176,7 +176,7 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
     subn[i] = subnhi[i] - subnlo[i];
   }
 
-  bnz = domain->boxhi[2] / stepz + 1;
+  bnz = subgrid.get_box().upper[2];
   maxheight = domain->boxhi[2];
 }
 
