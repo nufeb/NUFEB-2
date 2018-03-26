@@ -338,7 +338,7 @@ void FixKineticsBalance::rebalance()
 
   pending = 1;
 
-  // TODO: call decomp_grid::setup
+  kinetics->migrate();
 }
 
 /* ----------------------------------------------------------------------
