@@ -296,11 +296,7 @@ void FixDivide::post_integrate() {
         atom->radius[n] = childRadius;
         avec->outer_radius[n] = childOuterRadius;
 
-        for (int j = 0; j < modify->nfix; j++) {
-          if (modify->fix[j]->create_attribute) {
-            modify->fix[j]->set_arrays(n);
-          }
-        }
+        modify->create_attribute(n);
 
         delete[] coord;
       }

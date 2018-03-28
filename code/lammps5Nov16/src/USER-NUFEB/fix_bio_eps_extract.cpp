@@ -267,6 +267,8 @@ void FixEPSExtract::post_integrate() {
         avec->outer_radius[n] = childRadius;
 
         delete[] coord;
+
+        modify->create_attribute(n);
       }
     }
   }
