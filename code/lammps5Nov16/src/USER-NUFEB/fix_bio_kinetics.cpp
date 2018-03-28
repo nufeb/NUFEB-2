@@ -577,16 +577,14 @@ void FixKinetics::migrate() {
   Subgrid<double, 3> new_subgrid = Subgrid<double, 3>(grid, Box<double, 3>(domain->sublo, domain->subhi), [](double value) { return std::round(value); });
   DecompGrid<FixKinetics>::migrate(grid, subgrid.get_box(), new_subgrid.get_box());
   for (int i = 0; i < 3; i++) {
-    // considering that the grid will always have a cubic cell (i.e. stepx = stepy = stepz)
-    subnlo[i] = domain->sublo[i] / stepz;
-    subnhi[i] = domain->subhi[i] / stepz;
+    subnlo[i] = new_subgrid.get_origin()[i];
+    subnhi[i] = subnlo[i] + new_subgrid.get_dimensions()[i];
     sublo[i] = subnlo[i] * stepz;
     subhi[i] = subnhi[i] * stepz;
     subn[i] = subnhi[i] - subnlo[i];
   }
   diffusion->migrate(grid, subgrid.get_box(), new_subgrid.get_box());
   subgrid = new_subgrid;
-  monod->grow_subgrid(ngrids);
 }
 
 void FixKinetics::resize(const Subgrid<double, 3> &subgrid) {
@@ -607,4 +605,7 @@ void FixKinetics::resize(const Subgrid<double, 3> &subgrid) {
   if (nufebFoam) {
     fV = memory->grow(fV, 3, ngrids, "kinetcis:fV");
   }
+  if (monod != NULL)
+    monod->grow_subgrid(ngrids);
+  // TODO: resize energy and computes
 }
