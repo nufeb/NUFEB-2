@@ -46,6 +46,9 @@
 #include "fix_bio_kinetics_monod.h"
 #include "comm.h"
 #include "fix_bio_fluid.h"
+#include "compute.h"
+#include "compute_bio_height.h"
+#include "compute_bio_rough.h"
 
 #ifdef OUTPUT_GRID
 #include <vtkCellData.h>
@@ -607,5 +610,10 @@ void FixKinetics::resize(const Subgrid<double, 3> &subgrid) {
   }
   if (monod != NULL)
     monod->grow_subgrid(ngrids);
-  // TODO: resize energy and computes
+  for (int i = 0; i < modify->ncompute; i++) {
+    if (modify->compute[i]->style == "ave_height")
+      static_cast<ComputeNufebHeight *>(modify->compute[i])->grow_subgrid();
+    else if (modify->compute[i]->style == "roughness")
+      static_cast<ComputeNufebRough *>(modify->compute[i])->grow_subgrid();
+  }
 }

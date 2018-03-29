@@ -30,14 +30,15 @@ class ComputeNufebRough : public Compute, public ReduceGrid<ComputeNufebRough> {
 
  public:
   ComputeNufebRough(class LAMMPS *, int, char **);
-  virtual ~ComputeNufebRough();
+  virtual ~ComputeNufebRough() {}
   void init();
-  virtual double compute_scalar();
+  void grow_subgrid();
+  double compute_scalar();
 
  private:
-  int nx, ny, nxy;
+  int nx, ny;
   double stepx, stepy;
-  double *maxh;
+  std::vector<double> maxh;
   Grid<double, 2> grid;
   Subgrid<double, 2> subgrid;
 
