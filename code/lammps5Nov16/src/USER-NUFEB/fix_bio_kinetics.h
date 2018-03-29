@@ -48,7 +48,6 @@ class FixKinetics : public Fix, public DecompGrid<FixKinetics> {
   int bgrids;                      // # of non-boundary grids
   int ngrids;                      // # of grids
   double iph;                      // initial ph
-  int nnus;                        // # of nutrients
 
   double **nuS;                    // nutrient concentration [nutrient][grid]
   double **nuR;                    // nutrient consumption [nutrient][grid]

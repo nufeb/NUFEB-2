@@ -259,16 +259,16 @@ void FixVerify::benchmark_one() {
 void FixVerify::bm1_output() {
   for (int nu = 1; nu <= nnus; nu++) {
     if (strcmp(bio->nuName[nu], "sub") == 0) {
-      if (comm->me == 0 && screen) fprintf(screen, "S-sub-bulk = %e\n", kinetics->diffusion->nuBS[nu]);
-      if (comm->me == 0 && logfile) fprintf(logfile, "S-sub-bulk = %e\n", kinetics->diffusion->nuBS[nu]);
+      if (comm->me == 0 && screen) fprintf(screen, "S-sub-bulk = %e\n", kinetics->nuBS[nu]);
+      if (comm->me == 0 && logfile) fprintf(logfile, "S-sub-bulk = %e\n", kinetics->nuBS[nu]);
       double s = get_ave_s_sub_base();
       if (comm->me == 0 && screen) fprintf(screen, "S-sub-base = %e\n", s);
       if (comm->me == 0 && logfile) fprintf(logfile, "S-sub-base = %e\n", s);
     }
 
     if (strcmp(bio->nuName[nu], "o2") == 0) {
-      if (comm->me == 0 && screen) fprintf(screen, "S-o2-bulk = %e\n", kinetics->diffusion->nuBS[nu]);
-      if (comm->me == 0 && logfile) fprintf(logfile, "S-o2-bulk = %e\n", kinetics->diffusion->nuBS[nu]);
+      if (comm->me == 0 && screen) fprintf(screen, "S-o2-bulk = %e\n", kinetics->nuBS[nu]);
+      if (comm->me == 0 && logfile) fprintf(logfile, "S-o2-bulk = %e\n", kinetics->nuBS[nu]);
       double s = get_ave_s_o2_base();
       if (comm->me == 0 && screen) fprintf(screen, "S-o2-base = %e\n\n", s);
       if (comm->me == 0 && logfile) fprintf(logfile, "S-o2-base = %e\n\n", s);
