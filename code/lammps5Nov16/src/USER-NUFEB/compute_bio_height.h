@@ -30,14 +30,15 @@ class ComputeNufebHeight : public Compute, public ReduceGrid<ComputeNufebHeight>
 
  public:
   ComputeNufebHeight(class LAMMPS *, int, char **);
-  ~ComputeNufebHeight();
+  ~ComputeNufebHeight() {}
   void init();
+  void grow_subgrid();
   double compute_scalar();
 
  private:
-  int nx, ny, nxy;
+  int nx, ny;
   double stepx, stepy;
-  double *maxh;
+  std::vector<double> maxh;
   Grid<double, 2> grid;
   Subgrid<double, 2> subgrid;
 

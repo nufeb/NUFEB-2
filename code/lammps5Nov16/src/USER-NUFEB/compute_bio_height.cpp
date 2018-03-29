@@ -39,7 +39,6 @@ ComputeNufebHeight::ComputeNufebHeight(LAMMPS *lmp, int narg, char **arg) :
 
   nx = 0;
   ny = 0;
-  nxy = 0;
 
   // optional fields
   for (int iarg = 3; iarg < narg; iarg++) {
@@ -57,10 +56,6 @@ ComputeNufebHeight::ComputeNufebHeight(LAMMPS *lmp, int narg, char **arg) :
 
 /* ---------------------------------------------------------------------- */
 
-ComputeNufebHeight::~ComputeNufebHeight() {
-  delete[] maxh;
-}
-
 void ComputeNufebHeight::init() {
   if (nx <= 0)
     nx = static_cast<int>(domain->prd[0] / force->pair->cutforce) + 1;
@@ -75,12 +70,16 @@ void ComputeNufebHeight::init() {
   if (stepx > cutneighmax || stepy > cutneighmax)
     error->all(FLERR, "Grid step size for compute ave_height must be smaller than master list distance cutoff\n");
 
+  grow_subgrid();
+}
+
+/* ---------------------------------------------------------------------- */
+
+void ComputeNufebHeight::grow_subgrid() {
   grid = Grid<double, 2>(Box<double, 2>(domain->boxlo, domain->boxhi), { nx, ny });
   subgrid = Subgrid<double, 2>(grid, Box<double, 2>(domain->sublo, domain->subhi));
   ReduceGrid<ComputeNufebHeight>::setup();
-
-  nxy = subgrid.cell_count();
-  maxh = new double[nxy]();
+  maxh.resize(subgrid.cell_count());
 }
 
 /* ---------------------------------------------------------------------- */
@@ -93,7 +92,7 @@ double ComputeNufebHeight::compute_scalar() {
   int nghost = atom->nghost;
   double **x = atom->x;
 
-  std::fill(maxh, maxh + nxy, 0);
+  std::fill(maxh.begin(), maxh.end(), 0);
 
   for (int i = 0; i < nlocal + nghost; i++) {
     if ((mask[i] & groupbit) && subgrid.is_inside( { x[i][0], x[i][1] }) && x[i][2] >= domain->sublo[2] && x[i][2] < domain->subhi[2]) {
@@ -107,7 +106,7 @@ double ComputeNufebHeight::compute_scalar() {
 
   scalar = 0;
   if (domain->boxlo[2] == domain->sublo[2]) { // bottom most subdomain
-    for (int i = 0; i < nxy; i++) {
+    for (int i = 0; i < maxh.size(); i++) {
       scalar += maxh[i] * stepx * stepy;
     }
   }
