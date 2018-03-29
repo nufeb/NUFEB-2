@@ -195,13 +195,7 @@ void FixKineticsEnergy::growth(double dt, int gflag) {
   outerMass = avec->outer_mass;
   outerRadius = avec->outer_radius;
 
-  nuS = kinetics->nuS;
-  nuR = kinetics->nuR;
-  DGRCat = kinetics->DRGCat;
-  nuConv = kinetics->nuConv;
-  gYield = kinetics->gYield;
-
-  memory->create(gMonod, atom->ntypes + 1, kinetics->bgrids, "kinetics/monod:gMonod");
+  double **gMonod = memory->create(gMonod, atom->ntypes + 1, kinetics->bgrids, "kinetics/monod:gMonod");
 
   //initialization
   for (int i = 0; i <= ntypes; i++) {
@@ -212,7 +206,7 @@ void FixKineticsEnergy::growth(double dt, int gflag) {
 
   for (int i = 0; i < nlocal; i++) {
     //get new growth rate based on new nutrients
-    double mass = biomass(i) * dt;
+    double mass = biomass(i, gMonod) * dt;
     //update bacteria mass, radius etc
     if (gflag) bio_update(mass, i);
   }
@@ -220,9 +214,13 @@ void FixKineticsEnergy::growth(double dt, int gflag) {
   memory->destroy(gMonod);
 }
 
-inline double FixKineticsEnergy::biomass(int i) {
+inline double FixKineticsEnergy::biomass(int i, double **gMonod) {
   int t = type[i];
   int pos = kinetics->position(i);
+  double **DGRCat = kinetics->DRGCat;
+  double **nuR = kinetics->nuR;
+  double **gYield = kinetics->gYield;
+  int *nuConv = kinetics->nuConv;
 
   if (pos == -1) error->warning(FLERR, "Cross-boundary particles reported in ");
 
@@ -287,6 +285,7 @@ inline double FixKineticsEnergy::biomass(int i) {
 
 double FixKineticsEnergy::grid_monod(int pos, int type, int ind) {
   double monod = 1;
+  double **nuS = kinetics->nuS;
 
   for (int i = 1; i <= nnus; i++) {
     double s = nuS[i][pos];

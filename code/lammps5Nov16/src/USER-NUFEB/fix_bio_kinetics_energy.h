@@ -51,17 +51,9 @@ class FixKineticsEnergy : public Fix {
   double EPSdens;                   // EPS density
   double *maintain;
   double *decay;
-  double **DGRCat;
 
   double **catCoeff;                 // catabolism coefficients of species
   double **anabCoeff;                // anabolism  coefficients of species
-  double **gYield;                   // yield coefficients
-  double **gMonod;
-  int *nuConv;
-  //double **minCatMonod;
-
-  double **nuS;                    // nutrient concentration for all grids
-  double **nuR;                    // nutrient consumption for all grids
 
   class AtomVecBio *avec;
   class FixKinetics *kinetics;
@@ -70,7 +62,7 @@ class FixKineticsEnergy : public Fix {
  // double minimal_monod(int, int, int);
   double grid_monod(int, int, int);
   void bio_update(double, int);
-  double  biomass(int);
+  double  biomass(int, double **gMonod);
 };
 
 }

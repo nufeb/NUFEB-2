@@ -27,14 +27,6 @@ class FixKineticsPH : public Fix {
   void solve_ph();
 
  private:
-  int nnus;                     // # of nutrients
-  double rth, temp;             // universal gas constant (thermodynamics) and temperature
-
-  double **nuS;                 // nutrient concentration [nutrient][grid]
-  double **kEq;                // equilibrium constants [nutrient][4]
-  int **nuChr;                 // charge [nutrient][5charges]
-  double ***activity;          // [nutrient][5 charges][grids]
-
   class FixKinetics *kinetics;
   class BIO *bio;
 

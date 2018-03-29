@@ -33,7 +33,6 @@ class FixKineticsDiffusion: public Fix, public DecompGrid<FixKineticsDiffusion> 
   char **var;
   int *ivar;
 
-  int nnus;                     // # of nutrients
   double stepx, stepy, stepz;
 
   int xbcflag, ybcflag, zbcflag;             // 0=PERIODIC-PERIODIC, 1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
@@ -46,14 +45,8 @@ class FixKineticsDiffusion: public Fix, public DecompGrid<FixKineticsDiffusion> 
   int shearflag, dragflag;
 
   double srate;                 // shear rate
-  double **iniS;                // inlet concentrations of nutrients
-  double *diffCoeff;            // diffusion coefficients of nutrients
-  double *mw;                   // molecular weights of nutrients
   double tol;                   // tolerance for convergence criteria for nutrient balance equation
 
-  double **nuR;
-  double **nuS;
-  double *nuBS;                       // concentration in boundary layer [nutrient]
   double **nuGrid;                    // nutrient concentration in ghost mesh [nutrient][grid]
   double **xGrid;                     // grid coordinate [gird][3]
   bool *ghost;

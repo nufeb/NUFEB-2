@@ -120,12 +120,7 @@ void FixKineticsThermo::init() {
   else if (yflag == 1 && bio->eD == NULL)
     error->all(FLERR, "fix_kinetics/thermo requires eD input for unfix yield");
 
-  temp = kinetics->temp;
-  rth = kinetics->rth;
-
-  nnus = bio->nnus;
-  kla = bio->kLa;
-  nuGCoeff = bio->nuGCoeff;
+  int nnus = bio->nnus;
 
   khv = memory->create(khv, nnus + 1, "kinetics/thermo:khv");
   liqtogas = memory->create(liqtogas, nnus + 1, "kinetics/thermo:liqtogas");
@@ -167,20 +162,21 @@ void FixKineticsThermo::init_dG0() {
     dgzero[i][0] = 0;
     dgzero[i][1] = 0;
 
-    for (int j = 1; j <= nnus; j++) {
+    for (int j = 1; j <= bio->nnus; j++) {
       int flag = ngflag[j];
-      dgzero[i][0] += catCoeff[i][j] * nuGCoeff[j][flag];
-      dgzero[i][1] += anabCoeff[i][j] * nuGCoeff[j][flag];
+      dgzero[i][0] += bio->catCoeff[i][j] * bio->nuGCoeff[j][flag];
+      dgzero[i][1] += bio->anabCoeff[i][j] * bio->nuGCoeff[j][flag];
     }
 
     int flag = tgflag[i];
-    dgzero[i][1] += typeGCoeff[i][flag];
+    dgzero[i][1] += bio->typeGCoeff[i][flag];
   }
 }
 
 /* ----------------------------------------------------------------------*/
 
 void FixKineticsThermo::init_KhV() {
+  int nnus = bio->nnus;
   for (int i = 1; i < nnus + 1; i++) {
     khv[i] = 0;
     liqtogas[i] = 0;
@@ -199,10 +195,10 @@ void FixKineticsThermo::init_KhV() {
         nName2 = bio->nuName[j];
         if (strcmp(lName, nName2) == 0) {
           liqtogas[i] = j;
-          if (nuGCoeff[j][0] > 10000) {
-            khv[j] = exp((nuGCoeff[j][1] - nuGCoeff[i][1]) / (-rth * temp));
+          if (bio->nuGCoeff[j][0] > 10000) {
+            khv[j] = exp((bio->nuGCoeff[j][1] - bio->nuGCoeff[i][1]) / (-kinetics->rth * kinetics->temp));
           } else {
-            khv[j] = exp((nuGCoeff[j][0] - nuGCoeff[i][1]) / (-rth * temp));
+            khv[j] = exp((bio->nuGCoeff[j][0] - bio->nuGCoeff[i][1]) / (-kinetics->rth * kinetics->temp));
           }
           break;
         }
@@ -226,22 +222,15 @@ int FixKineticsThermo::setmask() {
 void FixKineticsThermo::thermo() {
   int *mask = atom->mask;
   int *type = atom->type;
-  ntypes = atom->ntypes;
+  int nnus = bio->nnus;
 
-  DRGCat = kinetics->DRGCat;
-  DRGAn = kinetics->DRGAn;
-  nuR = kinetics->nuR;
-  nuS = kinetics->nuS;
-  gYield = kinetics->gYield;
-  activity = kinetics->activity;
-  qGas = kinetics->qGas;
-
-  catCoeff = bio->catCoeff;
-  anabCoeff = bio->anabCoeff;
-  typeGCoeff = bio->typeGCoeff;
-  diss = bio->dissipation;
-
-  dgzero = memory->grow(dgzero, ntypes + 1, 2, "kinetics/thermo:dG0");
+  double **DRGCat = kinetics->DRGCat;
+  double **DRGAn = kinetics->DRGAn;
+  double **nuR = kinetics->nuR;
+  double **nuS = kinetics->nuS;
+  double **gYield = kinetics->gYield;
+  double ***activity = kinetics->activity;
+  double **qGas = kinetics->qGas;
 
   init_dG0();
 
@@ -268,10 +257,10 @@ void FixKineticsThermo::thermo() {
           int liqID = liqtogas[j];
           double gasT = 0;
           if (liqID != 0) {
-            if (nuGCoeff[liqID][0] > 10000) {
-              gasT = kla[liqID] * (activity[liqID][1][i] / khv[liqID] - activity[j][0][i]);
+            if (bio->nuGCoeff[liqID][0] > 10000) {
+              gasT = bio->kLa[liqID] * (activity[liqID][1][i] / khv[liqID] - activity[j][0][i]);
             } else {
-              gasT = kla[liqID] * (activity[liqID][0][i] / khv[liqID] - activity[j][0][i]);
+              gasT = bio->kLa[liqID] * (activity[liqID][0][i] / khv[liqID] - activity[j][0][i]);
             }
             rGas = gasT;
             rLiq = -gasT * vRgT;
@@ -279,10 +268,10 @@ void FixKineticsThermo::thermo() {
             nuR[j][i] += rGas;
             nuR[liqID][i] += rLiq;
             //gas correction
-            nuR[j][i] = nuR[j][i] * (nuS[j][i] * kinetics->rg * temp / pressure + vg);
+            nuR[j][i] = nuR[j][i] * (nuS[j][i] * kinetics->rg * kinetics->temp / pressure + vg);
             //update gas concentration
             nuS[j][i] += nuR[j][i];
-            qGas[j][i] = nuR[j][i] * kinetics->rg * temp / pressure;
+            qGas[j][i] = nuR[j][i] * kinetics->rg * kinetics->temp / pressure;
             if (nuS[j][i] < 0)
               nuS[j][i] = 0;
           }
@@ -290,15 +279,15 @@ void FixKineticsThermo::thermo() {
       }
     }
 
-    for (int j = 1; j <= ntypes; j++) {
-      double rthT = temp * rth;
+    for (int j = 1; j <= atom->ntypes; j++) {
+      double rthT = kinetics->temp * kinetics->rth;
 
       //Gibbs free energy of the reaction
       DRGCat[j][i] = dgzero[j][0];  //catabolic energy values
       DRGAn[j][i] = dgzero[j][1] + rthT;  //anabolic energy values
 
       for (int k = 1; k <= nnus; k++) {
-        if (nuGCoeff[k][1] < 1e4) {
+        if (bio->nuGCoeff[k][1] < 1e4) {
           double value = 0;
           int flag = bio->ngflag[k];
           if (activity[k][flag][i] == 0)
@@ -308,8 +297,8 @@ void FixKineticsThermo::thermo() {
 
           double dgr = rthT * log(value);
 
-          DRGCat[j][i] += catCoeff[j][k] * dgr;
-          DRGAn[j][i] += anabCoeff[j][k] * dgr;
+          DRGCat[j][i] += bio->catCoeff[j][k] * dgr;
+          DRGAn[j][i] += bio->anabCoeff[j][k] * dgr;
         } else {
           error->all(FLERR, "nuGCoeff[1] is inf value");
         }
@@ -318,7 +307,7 @@ void FixKineticsThermo::thermo() {
       //use catabolic and anabolic energy values to derive catabolic reaction equation
       if (yflag == 1) {
         if (DRGCat[j][i] < 0) {
-          gYield[j][i] = -(DRGAn[j][i] + diss[j]) / DRGCat[j][i] + bio->eD[j];
+          gYield[j][i] = -(DRGAn[j][i] + bio->dissipation[j]) / DRGCat[j][i] + bio->eD[j];
           if (gYield[j][i] != 0)
             gYield[j][i] = 1 / gYield[j][i];
         } else {
