@@ -155,14 +155,12 @@ void FixKineticsMonod::init() {
   else if (bio->mu == NULL)
     error->all(FLERR, "fix_kinetics/monod requires Growth Rate input");
 
-  ntypes = atom->ntypes;
-  nnus = bio->nnus;
   nx = kinetics->nx;
   ny = kinetics->ny;
   nz = kinetics->nz;
 
-  species = memory->create(species, ntypes + 1, "monod:species");
-  growrate = memory->create(growrate, ntypes + 1, 2, kinetics->ngrids, "monod:growrate");
+  species = memory->create(species, atom->ntypes + 1, "monod:species");
+  growrate = memory->create(growrate, atom->ntypes + 1, 2, kinetics->ngrids, "monod:growrate");
 
   //Get computational domain size
   if (domain->triclinic == 0) {
@@ -198,7 +196,7 @@ void FixKineticsMonod::init_param() {
   ieps = idead = 0;
 
   // initialize nutrient
-  for (int nu = 1; nu <= nnus; nu++) {
+  for (int nu = 1; nu <= bio->nnus; nu++) {
     if (strcmp(bio->nuName[nu], "sub") == 0)
       isub = nu;
     else if (strcmp(bio->nuName[nu], "o2") == 0)
@@ -256,7 +254,7 @@ void FixKineticsMonod::init_param() {
 }
 
 void FixKineticsMonod::grow_subgrid(int n) {
-  growrate = memory->create(growrate, ntypes + 1, 2, n, "monod:growrate");
+  growrate = memory->create(growrate, atom->ntypes + 1, 2, n, "monod:growrate");
 }
 
 /* ----------------------------------------------------------------------

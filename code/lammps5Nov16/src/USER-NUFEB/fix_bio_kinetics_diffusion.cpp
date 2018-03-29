@@ -212,15 +212,6 @@ void FixKineticsDiffusion::init() {
   nx = kinetics->nx;
   ny = kinetics->ny;
   nz = kinetics->nz;
-  nuR = kinetics->nuR;
-  nuS = kinetics->nuS;
-  nuBS = kinetics->nuBS;
-
-  nnus = bio->nnus;
-  iniS = bio->iniS;
-  diffCoeff = bio->diffCoeff;
-
-  diffD = memory->create(diffD, nnus + 1, "diffusion:diffD");
 
   //Get computational domain size
   if (domain->triclinic == 0) {
@@ -252,10 +243,12 @@ void FixKineticsDiffusion::init() {
 
   nXYZ = nX * nY * nZ;
 
+  int nnus = bio->nnus;
+  diffD = memory->create(diffD, nnus + 1, "diffusion:diffD");
   //inlet concentration, diffusion constant
   //and maximum boundary condition conc value
   for (int i = 1; i <= nnus; i++) {
-    diffD[i] = diffCoeff[i];
+    diffD[i] = bio->diffCoeff[i];
   }
 
   xGrid = memory->create(xGrid, nXYZ, 3, "diffusion:xGrid");
@@ -279,10 +272,12 @@ int *FixKineticsDiffusion::diffusion(int *nuConv, int iter, double diffT) {
   if (iter == 1 && kinetics->blayer >= 0)
     update_grids();
 
+  int nnus = bio->nnus;
   this->diffT = diffT;
-  nuR = kinetics->nuR;
-  nuS = kinetics->nuS;
-  nuBS = kinetics->nuBS;
+  double **nuR = kinetics->nuR;
+  double **nuS = kinetics->nuS;
+  double *nuBS = kinetics->nuBS;
+  double **iniS = bio->iniS;
 
   DecompGrid<FixKineticsDiffusion>::exchange();
 
@@ -394,6 +389,9 @@ void FixKineticsDiffusion::update_grids() {
 }
 
 void FixKineticsDiffusion::init_grid() {
+  double *nuBS = kinetics->nuBS;
+  double **iniS = bio->iniS;
+
   double i, j, k;
   int cell = 0;
   for (k = kinetics->sublo[2] - (stepz/2); k < kinetics->subhi[2] + stepz; k += stepz) {
@@ -403,7 +401,7 @@ void FixKineticsDiffusion::init_grid() {
         xGrid[cell][1] = j;
         xGrid[cell][2] = k;
         //Initialise concentration values for ghost and std grids
-        for (int nu = 1; nu <= nnus; nu++) {
+        for (int nu = 1; nu <= bio->nnus; nu++) {
           if (i < kinetics->sublo[0]) {
             ghost[cell] = true;
             nuGrid[nu][cell] = iniS[nu][1];
@@ -448,7 +446,10 @@ void FixKineticsDiffusion::compute_bulk(int nu) {
   double sumR = 0;
   double global_sumR = 0;
   double vol = stepx * stepy * stepz;
+  double **iniS = bio->iniS;
   double iniBC = (unit == 1) ? iniBC = iniS[nu][6] : iniBC = iniS[nu][6] * 1000;
+  double **nuR = kinetics->nuR;
+  double *nuBS = kinetics->nuBS;
 
   for (int i = 0; i < kinetics->bgrids; i++) {
     (unit == 1) ? (sumR += nuR[nu][i] * vol) : (sumR += nuR[nu][i] * vol * 1000);
@@ -660,10 +661,10 @@ bool FixKineticsDiffusion::isEuqal(double a, double b, double c) {
 
 void FixKineticsDiffusion::update_nuS() {
   if ((xbcflag == 0 || xbcflag == 3) && (ybcflag == 0 || ybcflag == 3) && (zbcflag == 0 || zbcflag == 3)) {
-    nuS = kinetics->nuS;
-    nuR = kinetics->nuR;
+    double **nuS = kinetics->nuS;
+    double **nuR = kinetics->nuR;
 
-    for (int nu = 1; nu < nnus + 1; nu++) {
+    for (int nu = 1; nu < bio->nnus + 1; nu++) {
       for (int grid = 0; grid < nXYZ; grid++) {
         // transform nXYZ index to nuR index
         if (!ghost[grid]) {
@@ -688,6 +689,7 @@ int FixKineticsDiffusion::get_elem_per_cell() const {
 }
 
 void FixKineticsDiffusion::resize(const Subgrid<double, 3> &subgrid) {
+  int nnus = bio->nnus;
   nXYZ = subgrid.cell_count();
   xGrid = memory->grow(xGrid, nXYZ, 3, "diffusion:xGrid");
   nuGrid = memory->grow(nuGrid, nnus + 1, nXYZ, "diffusion:nuGrid");
@@ -719,7 +721,8 @@ void FixKineticsDiffusion::migrate(const Grid<double, 3> &grid, const Box<int, 3
     else
       ghost[grid] = false;
   }
-  for (int i = 1; i <= nnus; i++) {
+  double *nuBS = kinetics->nuBS;
+  for (int i = 1; i <= bio->nnus; i++) {
     for (int grid = 0; grid < nXYZ; grid++) {
       if (ghost[grid]) {
 	compute_bc(nuGrid[i][grid], nuGrid[i], grid, nuBS[i]);

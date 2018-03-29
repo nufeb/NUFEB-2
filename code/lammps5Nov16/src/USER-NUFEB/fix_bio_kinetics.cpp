@@ -261,9 +261,8 @@ void FixKinetics::init() {
 
   ngrids = subn[0] * subn[1] * subn[2];
 
-  nnus = bio->nnus;
+  int nnus = bio->nnus;
   int ntypes = atom->ntypes;
-
   nuConv = new int[nnus + 1]();
   nuS = memory->create(nuS, nnus + 1, ngrids, "kinetics:nuS");
   nuR = memory->create(nuR, nnus + 1, ngrids, "kinetics:nuR");
@@ -402,6 +401,7 @@ void FixKinetics::pre_force(int vflag) {
 void FixKinetics::integration() {
   int iteration = 0;
   bool isConv = false;
+  int nnus = bio->nnus;
 
   gflag = 0;
   update_bgrids();
@@ -523,7 +523,7 @@ int FixKinetics::position(int i) {
  ------------------------------------------------------------------------- */
 
 void FixKinetics::reset_nuR() {
-  for (int k = 1; k < nnus+1; k++) {
+  for (int k = 1; k < bio->nnus + 1; k++) {
     for (int j = 0; j < bgrids; j++) {
         nuR[k][j] = 0;
      }
@@ -535,7 +535,7 @@ void FixKinetics::reset_nuR() {
  ------------------------------------------------------------------------- */
 
 void FixKinetics::reset_isConv() {
-  for (int i = 1; i <= nnus; i++) {
+  for (int i = 1; i <= bio->nnus; i++) {
     if (strcmp(bio->nuName[i], "h2o") == 0)
       nuConv[i] = true;
     else if (strcmp(bio->nuName[i], "h") == 0)
@@ -591,7 +591,7 @@ void FixKinetics::resize(const Subgrid<double, 3> &subgrid) {
   int nnus = bio->nnus;
   int ntypes = atom->ntypes;
   ngrids = subgrid.cell_count();
-  bgrids = ngrids; // TODO: not the case when blayer > 0
+  update_bgrids();
   nuS = memory->grow(nuS, nnus + 1, ngrids, "kinetics:nuS");
   nuR = memory->grow(nuR, nnus + 1, ngrids, "kinetics:nuR");
   if (energy) {

@@ -83,9 +83,6 @@ void FixKineticsPH::init() {
     error->all(FLERR, "fix_kinetics requires # of Nutrients inputs");
   else if (bio->nuChr == NULL)
     error->all(FLERR, "fix_kinetics requires Nutrient Charge inputs");
-
-  nnus = bio->nnus;
-  nuChr = bio->nuChr;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -105,15 +102,18 @@ void FixKineticsPH::solve_ph() {
   double tol = 5e-15;
   int maxIter = 20;
 
+  int nnus = bio->nnus;
+
   double *denm = memory->create(denm, nnus + 1, "kinetics/ph:denm");
   double *dDenm = memory->create(dDenm, nnus + 1, "kinetics/ph:denm");
   double *aux = memory->create(aux, nnus + 1, "kinetics/ph:aux");
 
-  nuS = kinetics->nuS;
-  temp = kinetics->temp;
-  rth = kinetics->rth;
-  activity = kinetics->activity;
-  kEq = kinetics->kEq;
+  double **nuS = kinetics->nuS;
+  double temp = kinetics->temp;
+  double rth = kinetics->rth;
+  double ***activity = kinetics->activity;
+  double **kEq = kinetics->kEq;
+  int **nuChr = bio->nuChr;
 
   for (int i = 0; i < kinetics->bgrids; i++) {
     double a = 1e-14;

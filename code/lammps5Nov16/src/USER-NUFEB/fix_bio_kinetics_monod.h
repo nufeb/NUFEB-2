@@ -39,9 +39,6 @@ class FixKineticsMonod : public Fix {
   int *species;                     // species index 0 = unknow, 1 = het, 2 = aob, 3 = nob, 4 = eps, 5 = dead
   double ***growrate;
 
-  int nnus;                         // # of nutrients
-  int ntypes;                       // # of species
-
   double stepx, stepy, stepz;       // grids size
   double xlo,xhi,ylo,yhi,zlo,zhi;   // computational domain size
   int nx, ny, nz;

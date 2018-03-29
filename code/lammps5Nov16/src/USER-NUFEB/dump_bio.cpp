@@ -685,7 +685,7 @@ void DumpBio::write_pH_data()
 void DumpBio::write_aveconcentration_data()
 {
   if (!nuHeader) {
-    for(int i = 1; i < kinetics->nnus+1; i++){
+    for(int i = 1; i < bio->nnus+1; i++){
       fprintf(fp, "%s,\t", kinetics->bio->nuName[i]);
     }
     nuHeader = 1;
@@ -694,7 +694,7 @@ void DumpBio::write_aveconcentration_data()
 
   fprintf(fp, "%i,\t", update->ntimestep);
 
-  for(int i = 1; i < kinetics->nnus+1; i++){
+  for(int i = 1; i < bio->nnus+1; i++){
     double s = 0;
     for(int j = 0; j < kinetics->ngrids; j++){
       s += kinetics->nuS[i][j];
