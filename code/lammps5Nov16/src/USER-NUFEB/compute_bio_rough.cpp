@@ -41,7 +41,6 @@ ComputeNufebRough::ComputeNufebRough(LAMMPS *lmp, int narg, char **arg) :
 
   nx = 0;
   ny = 0;
-  nxy = 0;
 
   // optional fields
   for (int iarg = 3; iarg < narg; iarg++) {
@@ -59,11 +58,6 @@ ComputeNufebRough::ComputeNufebRough(LAMMPS *lmp, int narg, char **arg) :
 
 /* ---------------------------------------------------------------------- */
 
-ComputeNufebRough::~ComputeNufebRough()
-{
-   delete [] maxh;
-}
-
 void ComputeNufebRough::init()
 {
   if (nx <= 0)
@@ -79,12 +73,16 @@ void ComputeNufebRough::init()
   if (stepx > cutneighmax || stepy > cutneighmax)
     error->all(FLERR, "Grid step size for compute ave_height must be smaller than master list distance cutoff\n"); 
   
-  grid = Grid<double, 2>(Box<double, 2>(domain->boxlo, domain->boxhi), {nx, ny});
+  grow_subgrid();
+}
+
+/* ---------------------------------------------------------------------- */
+
+void ComputeNufebRough::grow_subgrid() {
+  grid = Grid<double, 2>(Box<double, 2>(domain->boxlo, domain->boxhi), { nx, ny });
   subgrid = Subgrid<double, 2>(grid, Box<double, 2>(domain->sublo, domain->subhi));
   ReduceGrid<ComputeNufebRough>::setup();
-
-  nxy = subgrid.cell_count();
-  maxh = new double[nxy]();
+  maxh.resize(subgrid.cell_count());
 }
 
 /* ---------------------------------------------------------------------- */
@@ -98,7 +96,7 @@ double ComputeNufebRough::compute_scalar()
   int nghost = atom->nghost;
   double **x = atom->x;
 
-  std::fill(maxh, maxh + nxy, 0);
+  std::fill(maxh.begin(), maxh.end(), 0);
 
   for (int i = 0; i < nlocal + nghost; i++) {
     if ((mask[i] & groupbit) && subgrid.is_inside( { x[i][0], x[i][1] }) && x[i][2] >= domain->sublo[2] && x[i][2] < domain->subhi[2]) {
@@ -112,7 +110,7 @@ double ComputeNufebRough::compute_scalar()
 
   double ave_height = 0;
   if (domain->boxlo[2] == domain->sublo[2]) { // bottom most subdomain
-    for (int i = 0; i < nxy; i++) {
+    for (int i = 0; i < maxh.size(); i++) {
       ave_height += maxh[i] * stepx * stepy;
     }
   }
@@ -123,7 +121,7 @@ double ComputeNufebRough::compute_scalar()
 
   scalar = 0;
   if (domain->boxlo[2] == domain->sublo[2]) { // bottom most subdomain
-    for (int i = 0; i < nxy; i++) {
+    for (int i = 0; i < maxh.size(); i++) {
       scalar += ((maxh[i] - ave_height) * (maxh[i] - ave_height));
     }
   }
