@@ -205,7 +205,7 @@ void DumpGrid::pack_tuple5(vtkSmartPointer<vtkImageData> image, const char *name
     for (int i = 0; i < kinetics->subgrid.cell_count(); i++) {
       double tuple[5];
       for (int j = 0; j < 5; j++)
-	tuple[i] = data[n][j][i];
+	tuple[j] = data[n][j][i];
       array->InsertNextTuple(tuple);
     }
     image->GetCellData()->AddArray(array);
