@@ -76,8 +76,8 @@ compute myNtypes all ntypes
 ##############Simulation Output##############
 
 #dump		id all custom 1000 snapshot.bubblemd id type diameter x y z
-dump		du1 all custom/vtk 2000 atom%_*.vtu id type diameter x y z
-dump		du2 all grid 2000 grid_%_*.vti con
+dump		du1 all custom/vtk 1000 atom%_*.vtu id type diameter x y z
+dump		du2 all grid 1000 grid_%_*.vti con
 thermo_style    custom step cpu atoms biomass c_myNtypes[*] 
 thermo		100
 thermo_modify	lost ignore

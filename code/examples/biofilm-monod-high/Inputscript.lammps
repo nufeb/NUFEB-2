@@ -83,8 +83,10 @@ compute mySeg all segregation v_cutoff
 
 ##############Simulation outputs##############
 
-dump		id all custom 1000 snapshot.bubblemd id type diameter x y z
-dump            d0 all bio 1000 biomass ntypes diameter dimension diversity ave_height roughness segregation
+#dump		id all custom 1000 snapshot.bubblemd id type diameter x y z
+dump		du1 all custom/vtk 1000 atom%_*.vtu id type diameter x y z
+dump		du2 all grid 1000 grid_%_*.vti con
+#dump            d0 all bio 1000 biomass ntypes diameter dimension diversity ave_height roughness segregation
 thermo_style    custom step cpu atoms biomass c_myNtypes[*] 
 thermo		100
 thermo_modify	lost ignore
