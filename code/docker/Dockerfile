@@ -11,6 +11,11 @@ RUN apt-get -y install build-essential sudo make git openmpi-bin openmpi-common 
 USER admin
 WORKDIR /home/admin
 RUN git clone https://nufebdocker:nufeb123@github.com/shelllbw/nufeb.git
+WORKDIR /home/admin/nufeb
+
+#setup vtk makefile
+WORKDIR /home/admin/nufeb/code/lammps5Nov16/lib/vtk
+RUN cp Makefile.lammps.ubuntu16.04_vtk6.2 Makefile.lammps
 
 #compile NUFEB code
 WORKDIR /home/admin/nufeb/code/lammps5Nov16/src
