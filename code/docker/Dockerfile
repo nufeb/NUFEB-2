@@ -17,7 +17,7 @@ WORKDIR /home/admin/nufeb
 WORKDIR /home/admin/nufeb/code/lammps5Nov16/lib/vtk
 RUN cp Makefile.lammps.ubuntu16.04_vtk6.2 Makefile.lammps
 WORKDIR /home/admin/nufeb/code/lammps5Nov16/lib/nufeb
-RUN cp Makefile.lammps.ubuntu16.04_vtk6.2 Makefile.lammps
+RUN cp Makefile.lammps.ubuntu16.04_vtk6.2.dump_grid Makefile.lammps
 
 #compile NUFEB code
 WORKDIR /home/admin/nufeb/code/lammps5Nov16/src
