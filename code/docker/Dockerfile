@@ -5,8 +5,7 @@ RUN useradd --create-home --shell /bin/bash admin
 
 #install required libs
 RUN apt-get update
-RUN apt-get -y install build-essential sudo make git openmpi-bin openmpi-common libopenmpi-dev 
-#libvtk6-dev
+RUN apt-get -y install build-essential sudo make git openmpi-bin openmpi-common libopenmpi-dev libvtk6-dev vim 
 
 #switch to user admin, download NUFEB
 USER admin
@@ -17,6 +16,7 @@ RUN git clone https://nufebdocker:nufeb123@github.com/shelllbw/nufeb.git
 WORKDIR /home/admin/nufeb/code/lammps5Nov16/src
 RUN make yes-user-nufeb
 RUN make yes-granular
+RUN make yes-user-vtk
 RUN make -j4 mpi
 
 #add NUFEB executable to bashrc
