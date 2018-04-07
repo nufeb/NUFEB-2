@@ -281,7 +281,7 @@ int *FixKineticsDiffusion::diffusion(int *nuConv, int iter, double diffT) {
 
   DecompGrid<FixKineticsDiffusion>::exchange();
 
-  double maxS[nnus + 1] = {};
+  double *maxS = new double[nnus + 1];
   for (int i = 1; i <= nnus; i++) {
     if (bio->nuType[i] == 0 && !nuConv[i]) {
       if (unit == 0) {
@@ -367,6 +367,8 @@ int *FixKineticsDiffusion::diffusion(int *nuConv, int iter, double diffT) {
 #if MPI_VERSION >= 3
   MPI_Waitall(nrequests, requests, MPI_STATUS_IGNORE);
 #endif
+
+  delete [] maxS;
 
   return nuConv;
 }
