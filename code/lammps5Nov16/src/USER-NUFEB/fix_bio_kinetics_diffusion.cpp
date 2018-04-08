@@ -304,7 +304,7 @@ int *FixKineticsDiffusion::diffusion(int *nuConv, int iter, double diffT) {
         nuPrev[i][grid] = nuGrid[i][grid];
       }
 
-      //maxS[i] = 0;
+      maxS[i] = 0;
       // solve diffusion and reaction
       for (int grid = 0; grid < nXYZ; grid++) {
         // transform nXYZ index to nuR index
