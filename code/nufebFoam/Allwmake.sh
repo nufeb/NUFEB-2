@@ -31,21 +31,9 @@ ln -sf $currentDir/interfaceToLammps/*.* .
 cd $lammpsDir/src/MAKE
 ln -sf $currentDir/interfaceToLammps/MAKE/*.* .
 
-# Make STUBS 
-cd $lammpsDir/src/STUBS
-make
-cd $lammpsDir/src
-
 # Make packages
 make yes-GRANULAR
-make yes-KSPACE
-make yes-MANYBODY
-make yes-MOLECULE
 make yes-USER-NUFEB
-make yes-COLLOID # lubrication
-make yes-RIGID # freeze
-#make yes-MISC # deposit
-#make yes-VORONOI # ??
 
 version=`uname`
 # Use different options according to different versions
