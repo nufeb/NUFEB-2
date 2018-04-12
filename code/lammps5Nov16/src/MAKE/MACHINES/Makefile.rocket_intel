@@ -7,12 +7,12 @@ SHELL = /bin/sh
 # specify flags and libraries needed for your compiler
 
 CC =		mpiicpc
-CCFLAGS =	-g -O0 -mt_mpi -qopenmp -restrict -qopt-report=5 -qopt-report-phase=openmp
+CCFLAGS =	-O3
 SHFLAGS =	-fPIC
 DEPFLAGS =	-M
 
 LINK =		mpiicpc
-LINKFLAGS =	-g -O0 -liomp5 -shared-intel
+LINKFLAGS =	-O
 LIB =            
 SIZE =		size
 
