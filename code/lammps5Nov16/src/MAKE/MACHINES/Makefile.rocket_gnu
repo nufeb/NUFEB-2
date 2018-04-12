@@ -6,13 +6,13 @@ SHELL = /bin/sh
 # compiler/linker settings
 # specify flags and libraries needed for your compiler
 
-CC =		mpiicpc
-CCFLAGS =	-O3 -mt_mpi -qopenmp -restrict #-qopt-report -qopt-report-phase=openmp
+CC =		mpicxx
+CCFLAGS =	-O3
 SHFLAGS =	-fPIC
 DEPFLAGS =	-M
 
-LINK =		mpiicpc
-LINKFLAGS =	-O3 -liomp5 -shared-intel
+LINK =		mpicxx
+LINKFLAGS =	-O
 LIB =            
 SIZE =		size
 
