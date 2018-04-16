@@ -40,7 +40,7 @@ version=`uname`
 if [ $version == "Linux" ]
 then
     echo "The version you choose is openmpi version"
-    make -j4 shanghailinux mode=shlib
+    make -j4 shanghailinux mode=shlibmake
     cd $FOAM_USER_LIBBIN
     ln -sf $lammpsDir/src/liblammps_shanghailinux.so .
     cd $currentDir/lammpsFoam
