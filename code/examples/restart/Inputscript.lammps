@@ -62,7 +62,7 @@ variable deadDia equal 9e-7
 
 ##############Define IBm Commands##############
 
-fix k1 all kinetics 100 30 12 30 v_diffT v_layer niter 10000
+fix k1 all kinetics 100 30 12 30 v_diffT v_layer niter -1
 fix kgm all kinetics/growth/monod v_EPSdens v_etaHET
 fix g1 all kinetics/diffusion v_tol pp pp nd kg
 fix d1 all divide 100 v_EPSdens v_divDia 978595
@@ -81,6 +81,6 @@ compute myNtypes all ntypes
 thermo_style    custom step cpu atoms biomass c_myNtypes[*] 
 thermo		100
 thermo_modify	lost ignore
-restart 10000  restart.%.mpiio restart.%.mpiio
+restart 500 restart
 
-run 20000
+run 2000
