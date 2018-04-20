@@ -122,7 +122,7 @@ double ComputeNufebRough::compute_scalar()
   scalar = 0;
   if (domain->boxlo[2] == domain->sublo[2]) { // bottom most subdomain
     for (int i = 0; i < maxh.size(); i++) {
-      scalar += ((maxh[i] - ave_height) * (maxh[i] - ave_height));
+      scalar += ((maxh[i] - ave_height) * (maxh[i] - ave_height)) * stepx * stepy;
     }
   }
 

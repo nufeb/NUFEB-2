@@ -175,7 +175,7 @@ void lammps_get_initial_info(void* ptr, double* coords, double* velos,
   int *tag = lammps->atom->tag;
 
   int id, offset;
-  printf("start the loop!");
+
   for (int i = 0; i < nlocal; i++) {
 
     offset = 3 * i;
@@ -228,10 +228,10 @@ void lammps_get_local_domain(void* ptr, double* domain_) {
   domain_[3] = subhi[1];
   domain_[4] = sublo[2];
   domain_[5] = subhi[2];
-  printf(
-      "++++=A> domain in processor %5d\n is: x0 %f, x1 %f, y0 %f; y1 %f z0 %f, z1 %f.",
-      myrank, domain_[0], domain_[1], domain_[2], domain_[3], domain_[4],
-      domain_[5]);
+//  printf(
+//      "++++=A> domain in processor %5d\n is: x0 %f, x1 %f, y0 %f; y1 %f z0 %f, z1 %f.",
+//      myrank, domain_[0], domain_[1], domain_[2], domain_[3], domain_[4],
+//      domain_[5]);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -363,7 +363,7 @@ void lammps_put_local_info(void* ptr, int nLocalIn, double* fdrag, double* DuDt,
 
 //  printf("bgrid = %i \n", kinetics_ptr->bgrids);
   if (kinetics_ptr != NULL) {
-    for (int i = 0; i < kinetics_ptr->bgrids; i++) {
+    for (int i = 0; i < kinetics_ptr->ngrids; i++) {
       double x = gridPU[i * 6];
       double y = gridPU[i * 6 + 1];
       double z = gridPU[i * 6 + 2];
@@ -380,7 +380,6 @@ void lammps_put_local_info(void* ptr, int nLocalIn, double* fdrag, double* DuDt,
       kinetics_ptr->fV[2][ind] = gridPU[i * 6 + 5];
     }
   }
-  printf("\n");
 }
 
 /* ---------------------------------------------------------------------- */
