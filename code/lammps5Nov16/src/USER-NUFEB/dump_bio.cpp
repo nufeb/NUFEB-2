@@ -337,87 +337,6 @@ void DumpBio::write()
   int nnus = kinetics->bio->nnus;
   int ntypes = atom->ntypes;
 
-//  if (concFlag == 1) {
-//    for (int i = 1; i < nnus+1; i++) {
-//      if (bio->nuType[i] == 0 && strcmp(bio->nuName[i], "h") != 0 && strcmp(bio->nuName[i], "h2o") != 0) {
-//        char *name = bio->nuName[i];
-//        int len = 30;
-//        len += strlen(name);
-//        char path[len];
-//        strcpy(path, "./Results/S/");
-//        strcat(path, name);
-//        strcat(path, "/r*.csv");
-//
-//        filename = path;
-//        openfile();
-//        write_concentration_data(i);
-//        fclose(fp);
-//      }
-//    }
-//  }
-
-//  if (anFlag == 1) {
-//    for (int i = 1; i < ntypes+1; i++) {
-//      char *name = bio->typeName[i];
-//      int len = 50;
-//      len += strlen(name);
-//      char path[len];
-//      strcpy(path, "./Results/DGRAn/");
-//      strcat(path, name);
-//      strcat(path, "/r*.csv");
-//
-//      filename = path;
-//      openfile();
-//      write_DGRAn_data(i);
-//      fclose(fp);
-//    }
-//  }
-
-//  if (catFlag == 1) {
-//    for (int i = 1; i < ntypes+1; i++) {
-//      char *name = bio->typeName[i];
-//      int len = 50;
-//      len += strlen(name);
-//      char path[len];
-//      strcpy(path, "./Results/DGRCat/");
-//      strcat(path, name);
-//      strcat(path, "/r*.csv");
-//
-//      filename = path;
-//      openfile();
-//      write_DGRCat_data(i);
-//      fclose(fp);
-//    }
-//  }
-//
-//  if (yieldFlag == 1) {
-//    for (int i = 1; i < ntypes+1; i++) {
-//      char *name = bio->typeName[i];
-//      int len = 50;
-//      len += strlen(name);
-//      char path[len];
-//      strcpy(path, "./Results/yield/");
-//      strcat(path, name);
-//      strcat(path, "/r*.csv");
-//
-//      filename = path;
-//      openfile();
-//      write_yield_data(i);
-//      fclose(fp);
-//    }
-//  }
-
-//  if (phFlag == 1) {
-//    int len = 30;
-//    char path[len];
-//    strcpy(path, "./Results/pH/r*.csv");
-//
-//    filename = path;
-//    openfile();
-//    write_pH_data();
-//    fclose(fp);
-//  }
-
   if (massFlag == 1) {
     int len = 35;
     char path[len];
@@ -425,7 +344,7 @@ void DumpBio::write()
 
     filename = path;
     fp = fopen(filename,"a");
-    write_biomass_data();
+    if (comm->me == 0) write_biomass_data();
     fclose(fp);
   }
 
@@ -436,7 +355,7 @@ void DumpBio::write()
 
     filename = path;
     fp = fopen(filename,"a");
-    write_diameter_data();
+    if (comm->me == 0) write_diameter_data();
     fclose(fp);
   }
 
@@ -447,7 +366,7 @@ void DumpBio::write()
 
     filename = path;
     fp = fopen(filename,"a");
-    write_dimension_data();
+    if (comm->me == 0) write_dimension_data();
     fclose(fp);
   }
 
@@ -458,7 +377,7 @@ void DumpBio::write()
 
     filename = path;
     fp = fopen(filename,"a");
-    write_diversity_data();
+    if (comm->me == 0) write_diversity_data();
     fclose(fp);
   }
 
@@ -469,7 +388,7 @@ void DumpBio::write()
 
     filename = path;
     fp = fopen(filename,"a");
-    write_height_data();
+    if (comm->me == 0) write_height_data();
     fclose(fp);
   }
 
@@ -480,7 +399,7 @@ void DumpBio::write()
 
     filename = path;
     fp = fopen(filename,"a");
-    write_rough_data();
+    if (comm->me == 0) write_rough_data();
     fclose(fp);
   }
 
@@ -491,7 +410,7 @@ void DumpBio::write()
 
     filename = path;
     fp = fopen(filename,"a");
-    write_segregate_data();
+    if (comm->me == 0) write_segregate_data();
     fclose(fp);
   }
 
@@ -502,7 +421,7 @@ void DumpBio::write()
 
     filename = path;
     fp = fopen(filename,"a");
-    write_ntype_data();
+    if (comm->me == 0)write_ntype_data();
     fclose(fp);
   }
 
@@ -513,28 +432,9 @@ void DumpBio::write()
 
     filename = path;
     fp = fopen(filename,"a");
-    write_aveconcentration_data();
+    if (comm->me == 0) write_aveconcentration_data();
     fclose(fp);
   }
-
-//  if (gasFlag == 1) {
-//    for (int i = 1; i < nnus+1; i++) {
-//      if (bio->nuType[i] == 1) {
-//        char *name = bio->nuName[i];
-//        int len = 30;
-//        len += strlen(name);
-//        char path[len];
-//        strcpy(path, "./Results/Gas/");
-//        strcat(path, name);
-//        strcat(path, "/r*.csv");
-//
-//        filename = path;
-//        openfile();
-//        write_gas_data(i);
-//        fclose(fp);
-//      }
-//    }
-//  }
 }
 
 /* ---------------------------------------------------------------------- */
