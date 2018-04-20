@@ -752,11 +752,11 @@ void enhancedCloud::evolve()
         // update position/velocity of all particles in this cloud.
         // (Harvest XLocal & VLocal)  Lammps --> Cloud
         setPositionVeloCpuId(XLocal, VLocal, lmpCpuIdLocal);
-
+        printf("sizexxxx = %i!!!!! \n", size());
         diffusionRunTime_.cpuTimeIncrement();
         // move particle to the new position
         Cloud<softParticle>::move(td0, mesh_.time().deltaTValue());
-
+        printf("size2222 = %i!!!!! \n", size());
         particleMoveTime_ += diffusionRunTime_.cpuTimeIncrement();
 
         if (particleCount_ != size())
@@ -786,7 +786,6 @@ void enhancedCloud::evolve()
 //        delete VLocal;
 //        delete lmpCpuIdLocal;
     }
-
     // Pout<< "After this cycle, "
     //     << size() << " local particles has been moved. " << endl;
     Info<< "Adding/deleting statistics. adding: " << totalAdd_ << " deleting: " << totalDelete_

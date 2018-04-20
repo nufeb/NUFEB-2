@@ -444,8 +444,8 @@ void FixKinetics::integration() {
     if (niter > 0 && iteration >= niter) isConv = true;
   }
 
-  if (comm->me == 0 && logfile) fprintf(logfile, "number of iteration: %i \n", iteration);
-  if (comm->me == 0 && screen) fprintf(screen, "number of iteration: %i \n", iteration);
+  if (comm->me == 0 && logfile) fprintf(logfile, "number of iterations: %i \n", iteration);
+  if (comm->me == 0 && screen) fprintf(screen, "number of iterations: %i \n", iteration);
 
   gflag = 1;
   reset_isConv();

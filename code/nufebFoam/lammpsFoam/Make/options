@@ -1,13 +1,13 @@
-LAMMPS_DIR =$HOME/nufeb/code/lammps5Nov16/src
-/*LAMMPS_DIR = ../lammps5Nov16/src*/
+LAMMPS_DIR =/home/bowen/Workspace/nufeb/code/lammps5Nov16/src
+LAMMPS_DIR =/home/bowen/Workspace/nufeb/code/lammps5Nov16/src
 
 EXE_INC = \
     -I$lammpsFoamTurbulenceModels/include \
     -I$(PWD)/include \
     -I$(LAMMPS_DIR)/   \
     -I$(LAMMPS_DIR)/GRANULAR   \
-    -I/usr/include/openmpi-x86_64/ \
-    -I/usr/lib64/openmpi/lib/ \
+    -I/usr/lib/openmpi/include \
+    -I/usr/lib/openmpi/lib \
     -I$(LAMMPS_DIR)/Obj_shanghailinux   \
     -I$(FOAM_SRC)/lagrangian/basic/lnInclude \
     -I$(FOAM_SRC)/meshTools/lnInclude \
@@ -32,7 +32,7 @@ EXE_LIBS = \
     -lrandomProcesses \
     -lmeshTools  \
     -llagrangian \
-    -L/usr/lib64/openmpi/lib/ -lmpi -lmpi_cxx\
+    -L/usr/lib/openmpi/lib -lmpi -lmpi_cxx \	    
     -llammps_shanghailinux \
     -ltriSurface \
     -lchPressureGrad-DEM \

@@ -6,6 +6,8 @@
 		<project>OpenFOAM-2.3.0</project>
 		<project>OpenFoam</project>
 		<project>lammps5Nov16</project>
+		<project>nufeb</project>
+		<project>openfoam</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

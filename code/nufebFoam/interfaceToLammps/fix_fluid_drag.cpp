@@ -86,6 +86,7 @@ void FixFluidDrag::init()
 {
   int nlocal = atom->nlocal;
   int *mask = atom->mask;
+
   for (int i = 0; i < nlocal; i++){
     if (mask[i] & groupbit) {
       ffluiddrag[i][0] = 0.;

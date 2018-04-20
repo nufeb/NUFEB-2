@@ -30,17 +30,19 @@ echo $lammpsSRC
 ln -sf $currentDir/interfaceToLammps/*.* . 
 cd $lammpsDir/src/MAKE
 ln -sf $currentDir/interfaceToLammps/MAKE/*.* .
+cd ..
 
 # Make packages
 make yes-GRANULAR
 make yes-USER-NUFEB
+make yes-COLLOID
 
 version=`uname`
 # Use different options according to different versions
 if [ $version == "Linux" ]
 then
     echo "The version you choose is openmpi version"
-    make -j4 shanghailinux mode=shlibmake
+    make -j4 shanghailinux mode=shlib
     cd $FOAM_USER_LIBBIN
     ln -sf $lammpsDir/src/liblammps_shanghailinux.so .
     cd $currentDir/lammpsFoam
