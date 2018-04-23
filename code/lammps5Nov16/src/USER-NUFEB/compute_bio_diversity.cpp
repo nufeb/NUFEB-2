@@ -18,6 +18,7 @@
 #include "pointers.h"
 #include "update.h"
 #include "memory.h"
+#include "comm.h"
 
 using namespace LAMMPS_NS;
 
@@ -50,7 +51,7 @@ double ComputeNufebDiversity::compute_scalar()
   int nlocal = atom->nlocal;
   int ntypes = atom->ntypes;
 
-  int *ntypeList = new int[ntypes + 1]();
+  bigint *ntypeList = new bigint[ntypes + 1]();
 
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
@@ -61,13 +62,13 @@ double ComputeNufebDiversity::compute_scalar()
 
   MPI_Allreduce(MPI_IN_PLACE, ntypeList, ntypes + 1, MPI_INT, MPI_SUM, world);
 
-  int n = 0;
+  bigint n = 0;
   for (int i = 1; i < ntypes + 1; i++) {
     n += ntypeList[i] * (ntypeList[i] - 1);
   }
 
-  int m = atom->natoms * (atom->natoms - 1);
-  double x = n / (double)m;
+  bigint m = atom->natoms * (atom->natoms - 1);
+  double x = n*1.0 / m;
   scalar = 1 - x;
 
   delete [] ntypeList;

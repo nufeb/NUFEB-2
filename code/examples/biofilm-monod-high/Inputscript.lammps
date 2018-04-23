@@ -61,7 +61,7 @@ variable deadDia equal 8.6e-7
 
 ##############Define IBm Commands##############
 
-fix k1 all kinetics 100 30 12 30 v_diffT v_layer niter 100
+fix k1 all kinetics 100 5 2 5 v_diffT v_layer niter 1
 fix kgm all kinetics/growth/monod v_EPSdens v_etaHET
 fix g1 all kinetics/diffusion v_tol pp pp nd kg
 fix d1 all divide 100 v_EPSdens v_divDia 978595
@@ -87,7 +87,7 @@ dump		id all custom 10000 snapshot.bubblemd id type diameter x y z
 #dump		du1 all custom/vtk 1000 atom%_*.vtu id type diameter x y z
 #dump		du2 all grid 1000 grid_%_*.vti con
 dump            d0 all bio 1000 biomass ntypes diameter dimension diversity ave_height roughness segregation
-thermo_style    custom step cpu atoms biomass 
+thermo_style    custom step cpu atoms biomass c_myDiver
 thermo		100
 thermo_modify	lost ignore
 
