@@ -1,0 +1,99 @@
+# NUFEB simulation
+units si
+atom_style	bio
+atom_modify	map array sort 100 5.0e-7
+boundary	pp pp ff
+newton		off
+processors  * * 2
+
+comm_modify	vel yes
+read_data_bio atom.in
+
+group AOB type 1
+group NOB type 2
+group DEAD type 3
+
+##############Define initial particle distribution##############
+
+lattice sc 4e-6 origin 0.5 0.5 0.4
+region reg block 13 38 5 20 0 1
+create_atoms 1 region reg
+
+lattice sc 4e-6 origin 0.1 0.5 0.4
+region reg2 block 13 38 5 20 0 1
+create_atoms 2 region reg2
+
+set type 1 diameter 1e-6
+set type 1 density 500
+set type 1 mass 2.62e-16
+set type 2 diameter 1e-6
+set type 2 density 500
+set type 2 mass 2.62e-16
+
+neighbor	5e-7 bin
+neigh_modify	delay 0 one 5000
+
+##############Define DEM Variables&Commands##############
+
+pair_style  gran/hooke/history 1.e-4 NULL 1.e-5 NULL 0.0 1
+pair_coeff  * *
+
+timestep 1
+
+fix 1 all nve/limit 1e-7
+fix fv all viscous 1e-5
+
+fix zw all wall/gran hooke/history 2000 NULL 500 NULL 1.5 0 zplane  0.0   2.0e-04
+
+variable kanc equal 0
+fix zwa all walladh v_kanc zplane  0.0   2.0e-04
+
+variable ke equal 5e+9
+fix j1 all epsadh 1 v_ke 1
+
+##############Ibm Variable Definitions##############
+
+#Defining EPS density and ratio variables
+variable EPSdens equal 30
+variable EPSratio equal 1.25
+
+#variables used in fix division
+variable divDia equal 1e-6
+
+#Defining diffusion variables
+variable diffT equal 1e-4
+variable tol equal 1e-7
+variable etaHET equal 0.0
+variable layer equal 2e-5
+
+#variables used in fix death
+variable deadDia equal 1.08e-7
+
+##############Ibm functions##############
+
+fix k1 all kinetics 3600 50 25 50 v_diffT v_layer demflag 0 niter 50000
+fix ki2 all kinetics/thermo
+fix ki1 all kinetics/growth/energy v_EPSdens	
+fix g1 all kinetics/diffusion v_tol pp pp nd mol
+fix d1 all divide 3600 v_EPSdens v_divDia 31231 demflag 0
+fix d2 all death 3600 v_deadDia
+
+##############Ibm compute##############
+
+compute myNtypes all ntypes
+compute myMass all biomass
+
+##############Simulation outputs##############
+
+dump 		du2 all grid 18000 grid_%_*.vti con
+dump		du1 all custom/vtk 18000 snapshot%_*.vtu id type diameter x y z
+dump            du3 all custom 18000 snapshot.lammps id type diameter x y z mass
+dump            d0 all bio 18000 biomass ntypes con bulk
+thermo_style    custom step cpu atoms biomass c_myNtypes[*]
+thermo		3600
+thermo_modify	lost ignore
+
+##############Define Bio-loop and DEM-subloop##############
+
+run 8640000 
+

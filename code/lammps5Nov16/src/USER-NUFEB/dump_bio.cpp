@@ -83,6 +83,7 @@ DumpBio::DumpBio(LAMMPS *lmp, int narg, char **arg) :
   nuHeader = 0;
   gasFlag = 0;
   yieldFlag = 0;
+  bulkFlag = 0;
 
   diaFlag = 0;
   dimFlag = 0;
@@ -169,7 +170,7 @@ void DumpBio::init_style()
   }
 
   while (i < nkeywords) {
-    if (strcmp(keywords[i],"concentration") == 0) {
+    if (strcmp(keywords[i],"con") == 0) {
       concFlag = 1;
       if (stat("./Results/S", &st) == -1) {
           mkdir("./Results/S", 0700);
@@ -248,6 +249,8 @@ void DumpBio::init_style()
       massFlag = 1;
     } else if (strcmp(keywords[i],"ave_concentration") == 0) {
       aveconcFlag = 1;
+    } else if (strcmp(keywords[i],"bulk") == 0) {
+      bulkFlag = 1;
     } else if (strcmp(keywords[i],"gas") == 0) {
       gasFlag = 1;
       if (stat("./Results/Gas", &st) == -1) {
@@ -332,96 +335,105 @@ void DumpBio::write()
   if (segFlag == 1) cseg->compute_scalar();
   if (aveconcFlag == 1) cseg->compute_scalar();
 
-  if (comm->me != 0) return;
-
   int nnus = kinetics->bio->nnus;
   int ntypes = atom->ntypes;
 
-  if (massFlag == 1) {
+  if (massFlag == 1 && comm->me == 0) {
     int len = 35;
     char path[len];
     strcpy(path, "./Results/biomass.csv");
 
     filename = path;
     fp = fopen(filename,"a");
-    if (comm->me == 0) write_biomass_data();
+    write_biomass_data();
     fclose(fp);
   }
 
-  if (diaFlag == 1) {
+  if (diaFlag == 1 && comm->me == 0) {
     int len = 36;
     char path[len];
     strcpy(path, "./Results/diameter.csv");
 
     filename = path;
     fp = fopen(filename,"a");
-    if (comm->me == 0) write_diameter_data();
+    write_diameter_data();
     fclose(fp);
   }
 
-  if (dimFlag == 1) {
+  if (dimFlag == 1 && comm->me == 0) {
     int len = 38;
     char path[len];
     strcpy(path, "./Results/dimension.csv");
 
     filename = path;
     fp = fopen(filename,"a");
-    if (comm->me == 0) write_dimension_data();
+    write_dimension_data();
     fclose(fp);
   }
 
-  if (divFlag == 1) {
+  if (divFlag == 1 && comm->me == 0) {
     int len = 38;
     char path[len];
     strcpy(path, "./Results/diversity.csv");
 
     filename = path;
     fp = fopen(filename,"a");
-    if (comm->me == 0) write_diversity_data();
+    write_diversity_data();
     fclose(fp);
   }
 
-  if (heightFlag == 1) {
+  if (heightFlag == 1 && comm->me == 0) {
     int len = 38;
     char path[len];
     strcpy(path, "./Results/ave_height.csv");
 
     filename = path;
     fp = fopen(filename,"a");
-    if (comm->me == 0) write_height_data();
+    write_height_data();
     fclose(fp);
   }
 
-  if (roughFlag == 1) {
+  if (roughFlag == 1 && comm->me == 0) {
     int len = 38;
     char path[len];
     strcpy(path, "./Results/roughness.csv");
 
     filename = path;
     fp = fopen(filename,"a");
-    if (comm->me == 0) write_rough_data();
+    write_rough_data();
     fclose(fp);
   }
 
-  if (segFlag == 1) {
+  if (segFlag == 1 && comm->me == 0) {
     int len = 38;
     char path[len];
     strcpy(path, "./Results/segregation.csv");
 
     filename = path;
     fp = fopen(filename,"a");
-    if (comm->me == 0) write_segregate_data();
+    write_segregate_data();
     fclose(fp);
   }
 
-  if (ntypeFlag == 1) {
+  if (ntypeFlag == 1 && comm->me == 0) {
     int len = 38;
     char path[len];
     strcpy(path, "./Results/ntypes.csv");
 
     filename = path;
     fp = fopen(filename,"a");
-    if (comm->me == 0)write_ntype_data();
+    write_ntype_data();
+    fclose(fp);
+  }
+
+  if (bulkFlag == 1 && comm->me == 0) {
+    int len = 38;
+    char path[len];
+    strcpy(path, "./Results/bulk.csv");
+
+    filename = path;
+    fp = fopen(filename,"a");
+    write_bulk_data();
     fclose(fp);
   }
 
@@ -432,9 +444,28 @@ void DumpBio::write()
 
     filename = path;
     fp = fopen(filename,"a");
-    if (comm->me == 0) write_aveconcentration_data();
+     write_aveconcentration_data();
     fclose(fp);
   }
+
+  if (concFlag == 1) {
+    for (int i = 1; i < nnus+1; i++) {
+      if (bio->nuType[i] == 0 && strcmp(bio->nuName[i], "h") != 0 && strcmp(bio->nuName[i], "h2o") != 0) {
+        char *name = bio->nuName[i];
+        int len = 30;
+        len += strlen(name);
+        char path[len];
+        strcpy(path, "./Results/S/");
+        strcat(path, name);
+        strcat(path, "/r*.csv");
+
+        filename = path;
+        openfile();
+        write_concentration_data(i);
+        fclose(fp);
+      }
+    }
+}
 }
 
 /* ---------------------------------------------------------------------- */
@@ -466,8 +497,9 @@ void DumpBio::openfile()
     sprintf(filecurrent,"%s" BIGINT_FORMAT "%s",
             filestar,update->ntimestep,ptr+1);
   }
+
   *ptr = '*';
-  fp = fopen(filecurrent,"w");
+  fp = fopen(filecurrent,"a");
   delete [] filecurrent;
 }
 
@@ -481,7 +513,7 @@ void DumpBio::pack(tagint *ids)
 
 void DumpBio::write_concentration_data(int nuID)
 {
-  fprintf(fp, ",x,y,z,scalar,1,1,1,0.5\n");
+ // fprintf(fp, ",x,y,z,scalar,1,1,1,0.5\n");
 
   for(int i = 0; i < kinetics->ngrids; i++){
     int zpos = i/(kinetics->subn[0] * kinetics->subn[1]) + 1;
@@ -601,6 +633,26 @@ void DumpBio::write_aveconcentration_data()
     }
     s = s/kinetics->ngrids;
     fprintf(fp, "%e,\t", s);
+  }
+  fprintf(fp, "\n");
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpBio::write_bulk_data()
+{
+  if (!nuHeader) {
+    for(int i = 1; i < bio->nnus+1; i++){
+      fprintf(fp, "%s,\t", kinetics->bio->nuName[i]);
+    }
+    nuHeader = 1;
+    fprintf(fp, "\n");
+  }
+
+  fprintf(fp, "%i,\t", update->ntimestep);
+
+  for(int i = 1; i < bio->nnus+1; i++){
+    fprintf(fp, "%e,\t",  kinetics->nuBS[i]);
   }
   fprintf(fp, "\n");
 }
