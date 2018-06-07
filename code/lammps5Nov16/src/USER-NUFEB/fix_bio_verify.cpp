@@ -246,7 +246,7 @@ void FixVerify::benchmark_one() {
       diffusion->bulkflag = 1;
       for (int i = 1; i <= nnus; i++) {
         if (strcmp(bio->nuName[i], "o2") != 0) {
-          diffusion->compute_bulk(i);
+          diffusion->compute_bulk();
         }
       }
       bm1_output();
