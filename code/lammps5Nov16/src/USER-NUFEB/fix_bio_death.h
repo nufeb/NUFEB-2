@@ -31,6 +31,7 @@ class FixDeath : public Fix {
   int setmask();
   void init();
   void pre_exchange();
+  int modify_param(int, char **);
 
  private:
   class AtomVecBio *avec;
@@ -38,6 +39,7 @@ class FixDeath : public Fix {
   char *var;
   int ivar;
 
+  int demflag;
   double dead_dia;
 
   void death();

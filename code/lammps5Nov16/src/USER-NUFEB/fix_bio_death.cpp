@@ -48,6 +48,19 @@ FixDeath::FixDeath(LAMMPS *lmp, int narg, char **arg) :
   var = new char[n];
   strcpy(var, &arg[4][2]);
 
+  demflag = 0;
+
+  int iarg = 5;
+  while (iarg < narg) {
+    if (strcmp(arg[iarg], "demflag") == 0) {
+      demflag = force->inumeric(FLERR, arg[iarg + 1]);
+      if (demflag != 0 && demflag != 1)
+        error->all(FLERR, "Illegal fix death command: demflag");
+      iarg += 2;
+    } else
+      error->all(FLERR, "Illegal fix death command");
+  }
+
   //force_reneighbor = 1;
   //next_reneighbor = update->ntimestep + 1;
 }
@@ -90,6 +103,8 @@ void FixDeath::pre_exchange() {
     return;
   if (update->ntimestep % nevery)
     return;
+  if (demflag)
+    return;
 
   death();
 }
@@ -109,4 +124,18 @@ void FixDeath::death() {
       }
     }
   }
+}
+
+/* ---------------------------------------------------------------------- */
+
+int FixDeath::modify_param(int narg, char **arg) {
+  if (strcmp(arg[0], "demflag") == 0) {
+    if (narg != 2)
+      error->all(FLERR, "Illegal fix_modify command");
+    demflag = force->inumeric(FLERR, arg[1]);
+    if (demflag != 1 && demflag != 0)
+      error->all(FLERR, "Illegal fix_modify command: demflag");
+    return 2;
+  }
+  return 0;
 }
