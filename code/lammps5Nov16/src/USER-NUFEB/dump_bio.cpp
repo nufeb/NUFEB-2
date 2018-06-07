@@ -46,6 +46,7 @@
 #include "compute_bio_segregate.h"
 #include "compute_bio_ntypes.h"
 #include "compute_bio_biomass.h"
+#include "compute_bio_avgcon.h"
 
 struct stat st = {0};
 
@@ -73,14 +74,15 @@ DumpBio::DumpBio(LAMMPS *lmp, int narg, char **arg) :
 
   anFlag = 0;
   concFlag = 0;
-  aveconcFlag = 0;
+  avgsFlag = 0;
   catFlag = 0;
   phFlag = 0;
   massFlag = 0;
   massHeader = 0;
   divHeader = 0;
   typeHeader = 0;
-  nuHeader = 0;
+  bulkHeader = 0;
+  avgsHeader = 0;
   gasFlag = 0;
   yieldFlag = 0;
   bulkFlag = 0;
@@ -247,8 +249,6 @@ void DumpBio::init_style()
       }
     } else if (strcmp(keywords[i],"biomass") == 0) {
       massFlag = 1;
-    } else if (strcmp(keywords[i],"ave_concentration") == 0) {
-      aveconcFlag = 1;
     } else if (strcmp(keywords[i],"bulk") == 0) {
       bulkFlag = 1;
     } else if (strcmp(keywords[i],"gas") == 0) {
@@ -284,7 +284,9 @@ void DumpBio::init_style()
       segFlag = 1;
     }  else if (strcmp(keywords[i],"ntypes") == 0) {
       ntypeFlag = 1;
-    } else lmp->error->all(FLERR,"Undefined dump_bio keyword");
+    } else if (strcmp(keywords[i],"avg_con") == 0) {
+      avgsFlag = 1;
+    }  else lmp->error->all(FLERR,"Undefined dump_bio keyword");
 
     i++;
   }
@@ -314,6 +316,9 @@ void DumpBio::init_style()
     } else if (strcmp(modify->compute[j]->style,"biomass") == 0) {
       cmass = static_cast<ComputeNufebBiomass *>(lmp->modify->compute[j]);
       continue;
+    } else if (strcmp(modify->compute[j]->style,"avg_con") == 0) {
+      cavgs = static_cast<ComputeNufebAvgcon *>(lmp->modify->compute[j]);
+      continue;
     }
   }
 
@@ -333,7 +338,7 @@ void DumpBio::write()
   if (heightFlag == 1)  cheight->compute_scalar();
   if (roughFlag == 1) crough->compute_scalar();
   if (segFlag == 1) cseg->compute_scalar();
-  if (aveconcFlag == 1) cseg->compute_scalar();
+  if (avgsFlag == 1) cavgs->compute_vector();
 
   int nnus = kinetics->bio->nnus;
   int ntypes = atom->ntypes;
@@ -437,14 +442,14 @@ void DumpBio::write()
     fclose(fp);
   }
 
-  if (aveconcFlag == 1) {
+  if (avgsFlag == 1 && comm->me == 0) {
     int len = 38;
     char path[len];
     strcpy(path, "./Results/ave_concentration.csv");
 
     filename = path;
     fp = fopen(filename,"a");
-     write_aveconcentration_data();
+    write_avgcon_data();
     fclose(fp);
   }
 
@@ -614,25 +619,20 @@ void DumpBio::write_pH_data()
 
 /* ---------------------------------------------------------------------- */
 
-void DumpBio::write_aveconcentration_data()
+void DumpBio::write_avgcon_data()
 {
-  if (!nuHeader) {
+  if (!avgsHeader) {
     for(int i = 1; i < bio->nnus+1; i++){
       fprintf(fp, "%s,\t", kinetics->bio->nuName[i]);
     }
-    nuHeader = 1;
+    avgsHeader = 1;
     fprintf(fp, "\n");
   }
 
   fprintf(fp, "%i,\t", update->ntimestep);
 
   for(int i = 1; i < bio->nnus+1; i++){
-    double s = 0;
-    for(int j = 0; j < kinetics->ngrids; j++){
-      s += kinetics->nuS[i][j];
-    }
-    s = s/kinetics->ngrids;
-    fprintf(fp, "%e,\t", s);
+    fprintf(fp, "%e,\t", cavgs->vector[i]);
   }
   fprintf(fp, "\n");
 }
@@ -641,18 +641,18 @@ void DumpBio::write_aveconcentration_data()
 
 void DumpBio::write_bulk_data()
 {
-  if (!nuHeader) {
+  if (!bulkHeader) {
     for(int i = 1; i < bio->nnus+1; i++){
       fprintf(fp, "%s,\t", kinetics->bio->nuName[i]);
     }
-    nuHeader = 1;
+    bulkHeader = 1;
     fprintf(fp, "\n");
   }
 
   fprintf(fp, "%i,\t", update->ntimestep);
 
   for(int i = 1; i < bio->nnus+1; i++){
-    fprintf(fp, "%e,\t",  kinetics->nuBS[i]);
+    fprintf(fp, "%e,\t",  kinetics->nuBS[i]/1000);
   }
   fprintf(fp, "\n");
 }

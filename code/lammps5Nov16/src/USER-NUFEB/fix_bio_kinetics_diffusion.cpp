@@ -118,7 +118,7 @@ FixKineticsDiffusion::FixKineticsDiffusion(LAMMPS *lmp, int narg, char **arg) :
   else if (strcmp(arg[7], "mol") == 0)
     unit = 0;
   else
-    error->all(FLERR, "Illegal unit in fix kinetics/diffusionS command: specify 'kg' or 'mol'");
+    error->all(FLERR, "Illegal unit in fix kinetics/diffusion command: specify 'kg' or 'mol'");
 
   int iarg = 8;
   while (iarg < narg){
@@ -141,7 +141,7 @@ FixKineticsDiffusion::FixKineticsDiffusion(LAMMPS *lmp, int narg, char **arg) :
       iarg += 4;
     }
     else
-      error->all(FLERR, "Illegal fix kinetics/growth/monod command");
+      error->all(FLERR, "Illegal fix kinetics/diffusion command");
   }
 }
 
@@ -234,6 +234,7 @@ void FixKineticsDiffusion::init() {
   stepy = (yhi - ylo) / ny;
   stepz = (zhi - zlo) / nz;
   bzhi = kinetics->bnz * stepz;
+
   if (!isEuqal(stepx, stepy, stepz))
     error->all(FLERR, "Grid is not cubic");
 
@@ -373,8 +374,12 @@ int *FixKineticsDiffusion::diffusion(int *nuConv, int iter, double diffT) {
   return nuConv;
 }
 
+/* ----------------------------------------------------------------------
+ Update attributes in non-boundary grids
+ ------------------------------------------------------------------------- */
+
 void FixKineticsDiffusion::update_grids() {
-  //update grids
+
   bzhi = kinetics->bnz * stepz;
   if (kinetics->bgrids == 0)
     nXYZ = 0;
@@ -389,6 +394,10 @@ void FixKineticsDiffusion::update_grids() {
       ghost[grid] = false;
   }
 }
+
+/* ----------------------------------------------------------------------
+ Initialize grids
+ ------------------------------------------------------------------------- */
 
 void FixKineticsDiffusion::init_grid() {
   double *nuBS = kinetics->nuBS;
@@ -441,31 +450,42 @@ void FixKineticsDiffusion::init_grid() {
 }
 
 /* ----------------------------------------------------------------------
- Mass balances of nutrients in the bulk liquid
+ Mass balance in bulk liquid
  ------------------------------------------------------------------------- */
 
-void FixKineticsDiffusion::compute_bulk(int nu) {
-  double sumR = 0;
-  double global_sumR = 0;
+void FixKineticsDiffusion::compute_bulk() {
   double vol = stepx * stepy * stepz;
   double **iniS = bio->iniS;
-  double iniBC = (unit == 1) ? iniBC = iniS[nu][6] : iniBC = iniS[nu][6] * 1000;
   double **nuR = kinetics->nuR;
   double *nuBS = kinetics->nuBS;
 
-  for (int i = 0; i < kinetics->bgrids; i++) {
-    (unit == 1) ? (sumR += nuR[nu][i] * vol) : (sumR += nuR[nu][i] * vol * 1000);
+  for (int nu = 1; nu <= bio->nnus; nu++) {
+    // the concentration of o2 in the bulk liquid is kept constant by aeration
+    if (strcmp(bio->nuName[nu], "o2") != 0) {
+      double sumR = 0;
+      double global_sumR = 0;
+      double iniBC = (unit == 1) ? iniBC = iniS[nu][6] : iniBC = iniS[nu][6] * 1000;
+      // sum up consumption
+      for (int i = 0; i < kinetics->bgrids; i++) {
+        (unit == 1) ? (sumR += nuR[nu][i]) : (sumR += nuR[nu][i] * 1000);
+      }
+
+      MPI_Allreduce(&sumR, &global_sumR, 1, MPI_DOUBLE, MPI_SUM, world);
+
+      double dt = update->dt * kinetics->nevery;
+      // solve for the mass balance in bulk liquid
+
+      nuBS[nu] = nuBS[nu] + ((q / rvol) * (iniBC - nuBS[nu]) + ((af * global_sumR * vol) / (rvol * yhi * xhi))) * dt;
+
+      if (nuBS[nu] < 0) nuBS[nu] = 1e-20;
+    }
   }
-
-  MPI_Allreduce(&sumR, &global_sumR, 1, MPI_DOUBLE, MPI_SUM, world);
-
-  nuBS[nu] = nuBS[nu] + ((q / rvol) * (iniBC - nuBS[nu]) + ((af * global_sumR) / (rvol * yhi * xhi))) * update->dt * kinetics->nevery;
-  if (nuBS[nu] < 0) nuBS[nu] = 0;
 }
 
 /* ----------------------------------------------------------------------
  get index of non-ghost mesh grid
  ------------------------------------------------------------------------- */
+
 int FixKineticsDiffusion::get_index(int grid) {
   int ix = (xGrid[grid][0] - kinetics->sublo[0]) / stepx;
   int iy = (xGrid[grid][1] - kinetics->sublo[1]) / stepy;
@@ -646,7 +666,7 @@ void FixKineticsDiffusion::compute_flux(double cellDNu, double &nuCell, double *
 }
 
 /* ----------------------------------------------------------------------
- compare double values for equality
+ Compare double values for equality
  ------------------------------------------------------------------------- */
 
 bool FixKineticsDiffusion::isEuqal(double a, double b, double c) {

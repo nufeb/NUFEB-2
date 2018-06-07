@@ -80,7 +80,7 @@ class FixKineticsDiffusion: public Fix, public DecompGrid<FixKineticsDiffusion> 
   void update_grids();
   void init_grid();
   void compute_bc(double &, double *, int, double);
-  void compute_bulk(int);
+  void compute_bulk();
   void compute_bl();
   void compute_flux(double, double &, double *, double, int, int);
   bool isEuqal(double, double, double);

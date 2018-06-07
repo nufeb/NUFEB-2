@@ -455,15 +455,9 @@ void FixKinetics::integration() {
   if (monod != NULL) monod->growth(update->dt*nevery, gflag);
 
   // solve mass balance of nutrients in bulk liquid
-  // the concentration of o2 in the bulk liquid is kept constant by aeration
-  if (diffusion != NULL && diffusion->bulkflag == 1) {
-    for (int i = 1; i <= nnus; i++) {
-      if (strcmp(bio->nuName[i], "o2") != 0) {
-        diffusion->compute_bulk(i);
-      }
-    }
-  }
+  if (diffusion != NULL && diffusion->bulkflag == 1) diffusion->compute_bulk();
 
+  // manually update reaction if none of the surface is using dirichlet BC
   if (diffusion != NULL) diffusion->update_nuS();
 }
 
