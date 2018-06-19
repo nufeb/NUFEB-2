@@ -64,6 +64,8 @@ compute_bio_segregate.h
 decomp_grid.h
 dump_bio.cpp
 dump_bio.h
+dump_bio_hdf5.cpp
+dump_bio_hdf5.h
 dump_grid.cpp
 dump_grid.h
 fix_bio_balance.cpp
