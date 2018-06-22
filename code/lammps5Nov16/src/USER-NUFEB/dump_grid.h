@@ -52,6 +52,8 @@ class DumpGrid : public Dump {
   void pack_yield(vtkSmartPointer<vtkImageData>);
   void pack_catabolism(vtkSmartPointer<vtkImageData>);
   void pack_anabolism(vtkSmartPointer<vtkImageData>);
+  void pack_hydronium(vtkSmartPointer<vtkImageData>);
+  void pack_tuple1(vtkSmartPointer<vtkImageData>, const char *, double *);
   void pack_tuple1(vtkSmartPointer<vtkImageData>, const char *, double **, char **, int);
   void pack_tuple5(vtkSmartPointer<vtkImageData>, const char *, double ***, char **, int);
 
