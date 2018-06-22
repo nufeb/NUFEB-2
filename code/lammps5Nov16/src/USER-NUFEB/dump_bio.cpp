@@ -47,6 +47,7 @@
 #include "compute_bio_ntypes.h"
 #include "compute_bio_biomass.h"
 #include "compute_bio_avgcon.h"
+#include "compute_bio_avgph.h"
 
 struct stat st = {0};
 
@@ -86,6 +87,8 @@ DumpBio::DumpBio(LAMMPS *lmp, int narg, char **arg) :
   gasFlag = 0;
   yieldFlag = 0;
   bulkFlag = 0;
+  avgphFlag = 0;
+  avgphHeader = 0;
 
   diaFlag = 0;
   dimFlag = 0;
@@ -286,7 +289,10 @@ void DumpBio::init_style()
       ntypeFlag = 1;
     } else if (strcmp(keywords[i],"avg_con") == 0) {
       avgsFlag = 1;
-    }  else lmp->error->all(FLERR,"Undefined dump_bio keyword");
+    } else if (strcmp(keywords[i],"avg_ph") == 0) {
+      avgphFlag = 1;
+    }
+    else lmp->error->all(FLERR,"Undefined dump_bio keyword");
 
     i++;
   }
@@ -319,6 +325,9 @@ void DumpBio::init_style()
     } else if (strcmp(modify->compute[j]->style,"avg_con") == 0) {
       cavgs = static_cast<ComputeNufebAvgcon *>(lmp->modify->compute[j]);
       continue;
+    } else if (strcmp(modify->compute[j]->style,"avg_ph") == 0) {
+      cavgph = static_cast<ComputeNufebAvgph *>(lmp->modify->compute[j]);
+      continue;
     }
   }
 
@@ -339,6 +348,7 @@ void DumpBio::write()
   if (roughFlag == 1) crough->compute_scalar();
   if (segFlag == 1) cseg->compute_scalar();
   if (avgsFlag == 1) cavgs->compute_vector();
+  if (avgphFlag == 1) cavgph->compute_scalar();
 
   int nnus = kinetics->bio->nnus;
   int ntypes = atom->ntypes;
@@ -450,6 +460,17 @@ void DumpBio::write()
     filename = path;
     fp = fopen(filename,"a");
     write_avgcon_data();
+    fclose(fp);
+  }
+
+  if (avgphFlag == 1 && comm->me == 0) {
+    int len = 38;
+    char path[len];
+    strcpy(path, "./Results/ave_ph.csv");
+
+    filename = path;
+    fp = fopen(filename,"a");
+    write_avgph_data();
     fclose(fp);
   }
 
@@ -635,6 +656,13 @@ void DumpBio::write_avgcon_data()
     fprintf(fp, "%e,\t", cavgs->vector[i]);
   }
   fprintf(fp, "\n");
+}
+
+/* ---------------------------------------------------------------------- */
+
+void DumpBio::write_avgph_data()
+{
+  fprintf(fp, "%i,\t %e, \n", update->ntimestep, cavgph->scalar);
 }
 
 /* ---------------------------------------------------------------------- */

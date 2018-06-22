@@ -136,7 +136,7 @@ void FixKineticsPH::solve_ph() {
       for (int k = 1; k < nnus + 1; k++) {
         denm[k] = (1 + kEq[k][0] / w) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][3] * gSh
             + kEq[k][3] * kEq[k][2] * kEq[k][1];
-        if (denm[k] == 0) {
+        if (denm[k] <= 0) {
           lmp->error->all(FLERR, "denm returns a zero value");
         }
         // not hydrated form acitivity
@@ -198,22 +198,17 @@ void FixKineticsPH::solve_ph() {
         dDenm[k] = pow(denm[k], 2);
         aux[k] = 3 * gSh * gSh * (kEq[k][0] / w + 1) + 2 * gSh * kEq[k][1] + kEq[k][1] * kEq[k][2];
 
-        sumActivity +=
-            nuChr[k][0]
-                * ((3 * gSh * gSh * kEq[k][0] * nuS[k][i]) / (w * denm[k])
-                    - (kEq[k][0] * nuS[k][i] * gSh * gSh * gSh * aux[k]) / (w * dDenm[k]));
+        sumActivity += nuChr[k][0] * ((3 * gSh * gSh * kEq[k][0] * nuS[k][i]) / (w * denm[k]) - (kEq[k][0] * nuS[k][i] * gSh * gSh * gSh * aux[k]) / (w * dDenm[k]));
         sumActivity += nuChr[k][1] * ((3 * gSh * gSh * nuS[k][i]) / denm[k] - (nuS[k][i] * gSh * gSh * gSh * aux[k]) / dDenm[k]);
-        sumActivity += nuChr[k][2]
-            * ((2 * gSh * kEq[k][1] * nuS[k][i]) / denm[k] - (kEq[k][1] * nuS[k][i] * gSh * gSh * aux[k]) / dDenm[k]);
-        sumActivity += nuChr[k][3]
-            * ((kEq[k][1] * kEq[k][2] * nuS[k][i]) / denm[k] - (kEq[k][1] * kEq[k][2] * nuS[k][i] * gSh * aux[k]) / dDenm[k]);
+        sumActivity += nuChr[k][2] * ((2 * gSh * kEq[k][1] * nuS[k][i]) / denm[k] - (kEq[k][1] * nuS[k][i] * gSh * gSh * aux[k]) / dDenm[k]);
+        sumActivity += nuChr[k][3] * ((kEq[k][1] * kEq[k][2] * nuS[k][i]) / denm[k] - (kEq[k][1] * kEq[k][2] * nuS[k][i] * gSh * aux[k]) / dDenm[k]);
         sumActivity += nuChr[k][4] * (-(kEq[k][1] * kEq[k][2] * kEq[k][3] * nuS[k][i] * aux[k]) / dDenm[k]);
       }
       // evaluation of the charge balance for the current Sh value, dF(Sh)
       dF = 1 + sumActivity;
       err = fun / dF;
+     // printf("gSh = %e, fun = %e, df = %e, err = %e \n", gSh, fun, dF, err);
       gSh = gSh - err;
-
       if ((abs(err) < 1e-14) && (abs(fun) < tol)) {
         // Checking if a valid pH was obtained
         if ((gSh > 1e-14) && (gSh < 1)) {
@@ -273,6 +268,7 @@ void FixKineticsPH::solve_ph() {
       }
       ipH += ipH;
     }
+
     kinetics->sh[i] = gSh;
 
     for (int k = 1; k < nnus + 1; k++) {
