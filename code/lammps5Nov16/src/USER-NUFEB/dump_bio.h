@@ -42,9 +42,9 @@ class DumpBio : public Dump {
   char **id_fix;             // their IDs
   class Fix **fix;           // list of ptrs to the Fix objects
 
-  int anFlag, concFlag, avgsFlag, catFlag, phFlag, massFlag, gasFlag, yieldFlag;
+  int anFlag, concFlag, avgsFlag, catFlag, phFlag, massFlag, gasFlag, yieldFlag, avgphFlag;
   int diaFlag, dimFlag, divFlag, heightFlag, roughFlag, segFlag, ntypeFlag, bulkFlag;
-  int massHeader, divHeader, typeHeader, bulkHeader, avgsHeader;
+  int massHeader, divHeader, typeHeader, bulkHeader, avgsHeader, avgphHeader;
 
   double xlo,xhi,ylo,yhi,zlo,zhi;
   double stepx, stepy, stepz;
@@ -64,6 +64,7 @@ class DumpBio : public Dump {
   class ComputeNufebNtypes *ctype;
   class ComputeNufebBiomass *cmass;
   class ComputeNufebAvgcon *cavgs;
+  class ComputeNufebAvgph *cavgph;
 
 
   void openfile();
@@ -83,6 +84,7 @@ class DumpBio : public Dump {
   void write_biomass_data();
   void write_ntype_data();
   void write_bulk_data();
+  void write_avgph_data();
 
   void write_diameter_data();
   void write_dimension_data();

@@ -61,7 +61,7 @@ class FixKinetics : public Fix, public DecompGrid<FixKinetics> {
   double **DRGCat;                 // Gibbs free energy of catabolism [type][grid]
   double **DRGAn;                  // Gibbs free energy of anabolism [type][grid]
   double **kEq;                    // equilibrium constants [nutrient][4]
-  double *sh;
+  double *sh;                      // concentration of hydrogen ion
   int *nuConv;
   double diffT;                    // diffusion timestep
   double blayer;

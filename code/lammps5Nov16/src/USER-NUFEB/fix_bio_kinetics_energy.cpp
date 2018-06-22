@@ -244,6 +244,7 @@ inline double FixKineticsEnergy::biomass(int i, double **gMonod) {
   }
 
   qCat = qMet;
+
   bacMaint = maintain[t] / -DGRCat[t][pos];
 
   if (gYield[t][pos] != 0) invYield = 1 / gYield[t][pos];

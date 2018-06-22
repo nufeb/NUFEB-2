@@ -454,6 +454,8 @@ void FixKineticsDiffusion::init_grid() {
  ------------------------------------------------------------------------- */
 
 void FixKineticsDiffusion::compute_bulk() {
+  if (!bulkflag) return;
+
   double vol = stepx * stepy * stepz;
   double **iniS = bio->iniS;
   double **nuR = kinetics->nuR;
@@ -478,9 +480,25 @@ void FixKineticsDiffusion::compute_bulk() {
       nuBS[nu] = nuBS[nu] + ((q / rvol) * (iniBC - nuBS[nu]) + ((af * global_sumR * vol) / (rvol * yhi * xhi))) * dt;
 
       if (nuBS[nu] < 0) nuBS[nu] = 1e-20;
+
+      // update concentration in ghost grids
+      for (int grid = 0; grid < nX*nY*nZ; grid++) {
+        if (xGrid[grid][2] > MIN(bzhi, kinetics->subhi[2])) {
+          nuGrid[nu][grid] = nuBS[nu];
+          int ind = get_index(grid);
+          if (ind >= 0 && ind < kinetics->subn[0]*kinetics->subn[1]*kinetics->subn[2]) {
+            if (nuBS[nu] == 1e-20) {
+              kinetics->nuS[nu][ind] = nuGrid[nu][grid];
+            } else {
+              (unit == 1) ? (kinetics->nuS[nu][ind] = nuGrid[nu][grid]):(kinetics->nuS[nu][ind] = nuGrid[nu][grid] / 1000);
+            }
+          }
+        }
+      }
     }
   }
 }
+
 
 /* ----------------------------------------------------------------------
  get index of non-ghost mesh grid

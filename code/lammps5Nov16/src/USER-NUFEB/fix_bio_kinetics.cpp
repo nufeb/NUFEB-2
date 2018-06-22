@@ -408,6 +408,12 @@ void FixKinetics::integration() {
 
   gflag = 0;
   update_bgrids();
+
+  if (diffusion != NULL) {
+   diffusion->compute_bulk();
+   diffusion->update_grids();
+  }
+
   reset_nuR();
 
   while (!isConv) {
@@ -453,9 +459,6 @@ void FixKinetics::integration() {
   // microbe growth
   if (energy != NULL) energy->growth(update->dt*nevery, gflag);
   if (monod != NULL) monod->growth(update->dt*nevery, gflag);
-
-  // solve mass balance of nutrients in bulk liquid
-  if (diffusion != NULL && diffusion->bulkflag == 1) diffusion->compute_bulk();
 
   // manually update reaction if none of the surface is using dirichlet BC
   if (diffusion != NULL) diffusion->update_nuS();

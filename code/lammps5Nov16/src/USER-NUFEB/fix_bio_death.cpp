@@ -37,7 +37,7 @@ FixDeath::FixDeath(LAMMPS *lmp, int narg, char **arg) :
   if (!avec)
     error->all(FLERR, "Fix death requires atom style bio");
 
-  if (narg != 5)
+  if (narg < 5)
     error->all(FLERR, "Illegal fix death command");
 
   nevery = force->inumeric(FLERR, arg[3]);
