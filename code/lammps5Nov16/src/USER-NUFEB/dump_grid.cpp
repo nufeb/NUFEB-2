@@ -95,6 +95,12 @@ void DumpGrid::init_style() {
       else
 	error->warning(FLERR, "dump grid 'ana' argument only available when using kinetics/energy");
     }
+    else if (*it == "hyd") {
+      if (energy)
+	packs.push_back(std::bind(&DumpGrid::pack_hydronium, this, _1));
+      else
+	error->warning(FLERR, "dump grid 'hyd' argument only available when using kinetics/energy");
+    }
   }
 }
 
@@ -149,6 +155,8 @@ int DumpGrid::parse_fields(int narg, char **arg) {
       fields.push_back(arg[iarg]);
     } else if (strcmp(arg[iarg], "ana") == 0) {
       fields.push_back(arg[iarg]);
+    } else if (strcmp(arg[iarg], "hyd") == 0) {
+      fields.push_back(arg[iarg]);
     }
   }
 }
@@ -179,6 +187,20 @@ void DumpGrid::pack_catabolism(vtkSmartPointer<vtkImageData> image) {
 
 void DumpGrid::pack_anabolism(vtkSmartPointer<vtkImageData> image) {
   pack_tuple1(image, "anabolism", kinetics->DRGAn, bio->typeName, atom->ntypes);
+}
+
+void DumpGrid::pack_hydronium(vtkSmartPointer<vtkImageData> image) {
+  pack_tuple1(image, "hydronium", kinetics->sh);
+}
+
+void DumpGrid::pack_tuple1(vtkSmartPointer<vtkImageData> image, const char *name, double *data) {
+  vtkSmartPointer<vtkDoubleArray> array = vtkSmartPointer<vtkDoubleArray>::New();
+  array->SetName(name);
+  array->SetNumberOfComponents(1);
+  for (int i = 0; i < kinetics->subgrid.cell_count(); i++) {
+    array->InsertNextTuple1(data[i]);
+  }
+  image->GetCellData()->AddArray(array);
 }
 
 void DumpGrid::pack_tuple1(vtkSmartPointer<vtkImageData> image, const char *name, double **data, char **names, int count) {
