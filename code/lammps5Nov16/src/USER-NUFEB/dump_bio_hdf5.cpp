@@ -173,6 +173,8 @@ void DumpBioHDF5::write() {
 	write_grid(file, oss.str().c_str(), H5T_NATIVE_DOUBLE, kinetics->DRGAn[0], oneperproc, atom->ntypes + 1, i);
       }
       H5Gclose(group);
+    } else if (*it == "hyd") {
+      write_grid(file, "hydronium", H5T_NATIVE_DOUBLE, kinetics->sh, oneperproc);
     }
   }
   H5Fclose(file);
@@ -219,6 +221,8 @@ int DumpBioHDF5::parse_fields(int narg, char **arg) {
     } else if (strcmp(arg[iarg], "cat") == 0) {
       fields.push_back(arg[iarg]);
     } else if (strcmp(arg[iarg], "ana") == 0) {
+      fields.push_back(arg[iarg]);
+    } else if (strcmp(arg[iarg], "hyd") == 0) {
       fields.push_back(arg[iarg]);
     }
   }
@@ -276,6 +280,40 @@ herr_t DumpBioHDF5::write_atoms_comp(hid_t file, const char *name, hid_t type, T
   stride[0] = 1;
   stride[1] = 3;
   H5Sselect_hyperslab(memspace, H5S_SELECT_SET, memstart, stride, memcount, NULL);
+  herr_t err = H5Dwrite(dataset, type, memspace, filespace, proplist, buf);
+  H5Sclose(memspace);
+  H5Pclose(proplist);
+  H5Dclose(dataset);
+  H5Sclose(filespace);
+  return err;
+}
+
+template <class T>
+herr_t DumpBioHDF5::write_grid(hid_t file, const char *name, hid_t type, T *buf, bool oneperproc) {
+  hsize_t dims[3];
+  if (oneperproc) {
+    for (int i = 0; i < 3; i++)
+      dims[i] = kinetics->subgrid.get_dimensions()[i];
+  } else {
+    for (int i = 0; i < 3; i++)
+      dims[i] = kinetics->grid.get_dimensions()[i];
+  }
+  hid_t filespace = H5Screate_simple(3, dims, NULL); 
+  hid_t dataset = H5Dcreate(file, name, type, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  hid_t proplist = H5P_DEFAULT;
+  if (!oneperproc) {
+    hsize_t start[3];
+    for (int i = 0; i < 3; i++)
+      start[i] = kinetics->subgrid.get_origin()[i];
+    hsize_t count[3];
+    for (int i = 0; i < 3; i++)
+      count[i] = kinetics->subgrid.get_dimensions()[i];
+    H5Sselect_hyperslab(filespace, H5S_SELECT_SET, start, NULL, count, NULL);
+    proplist = H5Pcreate(H5P_DATASET_XFER);
+    H5Pset_dxpl_mpio(proplist, H5FD_MPIO_INDEPENDENT);
+  }
+  hsize_t memcount = kinetics->ngrids;
+  hid_t memspace = H5Screate_simple(1, &memcount, NULL);
   herr_t err = H5Dwrite(dataset, type, memspace, filespace, proplist, buf);
   H5Sclose(memspace);
   H5Pclose(proplist);

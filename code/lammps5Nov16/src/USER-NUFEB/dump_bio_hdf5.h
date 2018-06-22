@@ -54,6 +54,8 @@ protected:
   template <class T>
   herr_t write_atoms_comp(hid_t file, const char *name, hid_t type, T *buf, bool oneperproc, int offset, int comp);
   template <class T>
+  herr_t write_grid(hid_t file, const char *name, hid_t type, T *buf, bool oneperproc);
+  template <class T>
   herr_t write_grid(hid_t file, const char *name, hid_t type, T *buf, bool oneperproc, int n, int index);
 
   BIO *bio;
