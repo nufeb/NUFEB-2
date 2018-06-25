@@ -16,19 +16,19 @@ group DEAD type 3
 ##############Define initial particle distribution##############
 
 lattice sc 16e-6 origin 0.5 0.5 0.4
-region reg block 0 36 0 18 0 1
+region reg block 0 36 0 9 0 1
 create_atoms 1 region reg
 
 lattice sc 16e-6 origin 0.1 0.5 0.4
-region reg2 block 0 36 0 18 0 1
+region reg2 block 0 36 0 9 0 1
 create_atoms 2 region reg2
 
-set type 1 diameter 3.6e-6
+set type 1 diameter 5.5e-6
 set type 1 density 200
-set type 1 mass 5e-15
-set type 2 diameter 3.6e-6
+set type 1 mass 1.75e-14
+set type 2 diameter 5.5e-6
 set type 2 density 200
-set type 2 mass 5e-15
+set type 2 mass 1.75e-14
 
 neighbor        5e-7 bin
 neigh_modify    delay 0 one 5000
@@ -58,7 +58,7 @@ variable EPSdens equal 30
 variable EPSratio equal 1.25
 
 #variables used in fix division
-variable divDia equal 3.6e-6
+variable divDia equal 5.5e-6
 
 #Defining diffusion variables
 variable diffT equal 1e-4
@@ -67,11 +67,11 @@ variable etaHET equal 0.0
 variable layer equal 2e-5
 
 #variables used in fix death
-variable deadDia equal 4.08e-7
+variable deadDia equal 1.5e-6
 
 ##############Ibm functions##############
 
-fix k1 all kinetics 1 150 75 150 v_diffT v_layer demflag 0 niter 50000 ph 7.5
+fix k1 all kinetics 1 100 25 100 v_diffT v_layer demflag 0 niter 50000 ph 7.5
 fix ki3 all kinetics/ph
 fix ki2 all kinetics/thermo
 fix ki1 all kinetics/growth/energy v_EPSdens 
