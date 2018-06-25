@@ -54,6 +54,7 @@ class FixKineticsEnergy : public Fix {
 
   double **catCoeff;                 // catabolism coefficients of species
   double **anabCoeff;                // anabolism  coefficients of species
+  double ***activity;                // activity of chemical species
 
   class AtomVecBio *avec;
   class FixKinetics *kinetics;
