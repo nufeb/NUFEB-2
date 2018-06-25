@@ -189,6 +189,7 @@ void FixKineticsEnergy::growth(double dt, int gflag) {
   anabCoeff = bio->anabCoeff;
   maintain = bio->maintain;
   decay = bio->decay;
+  activity = kinetics->activity;
 
   radius = atom->radius;
   rmass = atom->rmass;
@@ -286,10 +287,10 @@ inline double FixKineticsEnergy::biomass(int i, double **gMonod) {
 
 double FixKineticsEnergy::grid_monod(int pos, int type, int ind) {
   double monod = 1;
-  double **nuS = kinetics->nuS;
 
   for (int i = 1; i <= nnus; i++) {
-    double s = nuS[i][pos];
+    int flag = bio->ngflag[i];
+    double s = activity[i][flag][pos];
     double ks = bio->ks[type][i];
 
     if (ks != 0) {

@@ -246,59 +246,59 @@ void FixKineticsThermo::thermo() {
     }
   }
 
-  for (int i = 0; i < kinetics->bgrids; i++) {
+  for (int grid = 0; grid < kinetics->bgrids; grid++) {
     // gas transfer
     if (rflag == 1) {
       for (int j = 1; j <= nnus; j++) {
-        nuR[j][i] = 0;
-        qGas[j][i] = 0;
+        nuR[j][grid] = 0;
+        qGas[j][grid] = 0;
         if (bio->nuType[j] == 1) {
           //get corresponding liquid ID
           int liqID = liqtogas[j];
           double gasT = 0;
           if (liqID != 0) {
             if (bio->nuGCoeff[liqID][0] > 10000) {
-              gasT = bio->kLa[liqID] * (activity[liqID][1][i] / khv[liqID] - activity[j][0][i]);
+              gasT = bio->kLa[liqID] * (activity[liqID][1][grid] / khv[liqID] - activity[j][0][grid]);
             } else {
-              gasT = bio->kLa[liqID] * (activity[liqID][0][i] / khv[liqID] - activity[j][0][i]);
+              gasT = bio->kLa[liqID] * (activity[liqID][0][grid] / khv[liqID] - activity[j][0][grid]);
             }
             rGas = gasT;
             rLiq = -gasT * vRgT;
             // update nutrient consumption
-            nuR[j][i] += rGas;
-            nuR[liqID][i] += rLiq;
+            nuR[j][grid] += rGas;
+            nuR[liqID][grid] += rLiq;
             //gas correction
-            nuR[j][i] = nuR[j][i] * (nuS[j][i] * kinetics->rg * kinetics->temp / pressure + vg);
+            nuR[j][grid] = nuR[j][grid] * (nuS[j][grid] * kinetics->rg * kinetics->temp / pressure + vg);
             //update gas concentration
-            nuS[j][i] += nuR[j][i];
-            qGas[j][i] = nuR[j][i] * kinetics->rg * kinetics->temp / pressure;
-            if (nuS[j][i] < 0)
-              nuS[j][i] = 0;
+            nuS[j][grid] += nuR[j][grid];
+            qGas[j][grid] = nuR[j][grid] * kinetics->rg * kinetics->temp / pressure;
+            if (nuS[j][grid] < 0)
+              nuS[j][grid] = 0;
           }
         }
       }
     }
 
-    for (int j = 1; j <= atom->ntypes; j++) {
+    for (int i = 1; i <= atom->ntypes; i++) {
       double rthT = kinetics->temp * kinetics->rth;
 
       //Gibbs free energy of the reaction
-      DRGCat[j][i] = dgzero[j][0];  //catabolic energy values
-      DRGAn[j][i] = dgzero[j][1] + rthT;  //anabolic energy values
+      DRGCat[i][grid] = dgzero[i][0];  //catabolic energy values
+      DRGAn[i][grid] = dgzero[i][1] + rthT;  //anabolic energy values
 
-      for (int k = 1; k <= nnus; k++) {
-        if (bio->nuGCoeff[k][1] < 1e4) {
+      for (int nu = 1; nu <= nnus; nu++) {
+        if (bio->nuGCoeff[nu][1] < 1e4) {
           double value = 0;
-          int flag = bio->ngflag[k];
-          if (activity[k][flag][i] == 0)
+          int flag = bio->ngflag[nu];
+          if (activity[nu][flag][grid] == 0)
             value = 1e-20;
           else
-            value = activity[k][flag][i];
+            value = activity[nu][flag][grid];
 
           double dgr = rthT * log(value);
 
-          DRGCat[j][i] += bio->catCoeff[j][k] * dgr;
-          DRGAn[j][i] += bio->anabCoeff[j][k] * dgr;
+          DRGCat[i][grid] += bio->catCoeff[i][nu] * dgr;
+          DRGAn[i][grid] += bio->anabCoeff[i][nu] * dgr;
         } else {
           error->all(FLERR, "nuGCoeff[1] is inf value");
         }
@@ -306,12 +306,12 @@ void FixKineticsThermo::thermo() {
 
       //use catabolic and anabolic energy values to derive catabolic reaction equation
       if (yflag == 1) {
-        if (DRGCat[j][i] < 0) {
-          gYield[j][i] = -(DRGAn[j][i] + bio->dissipation[j]) / DRGCat[j][i] + bio->eD[j];
-          if (gYield[j][i] != 0)
-            gYield[j][i] = 1 / gYield[j][i];
+        if (DRGCat[i][grid] < 0) {
+          gYield[i][grid] = -(DRGAn[i][grid] + bio->dissipation[i]) / DRGCat[i][grid] + bio->eD[i];
+          if (gYield[i][grid] != 0)
+            gYield[i][grid] = 1 / gYield[i][grid];
         } else {
-          gYield[j][i] = 0;
+          gYield[i][grid] = 0;
         }
       }
     }
