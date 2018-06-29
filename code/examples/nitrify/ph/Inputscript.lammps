@@ -71,7 +71,7 @@ variable deadDia equal 1.5e-6
 
 ##############Ibm functions##############
 
-fix k1 all kinetics 1 100 25 100 v_diffT v_layer demflag 0 niter 50000 ph 7.5
+fix k1 all kinetics 1 100 25 100 v_diffT v_layer demflag 0 niter 10 ph 7.5
 fix ki3 all kinetics/ph
 fix ki2 all kinetics/thermo
 fix ki1 all kinetics/growth/energy v_EPSdens 
@@ -91,9 +91,9 @@ compute myPh all avg_ph
 thermo_style    custom step cpu atoms biomass c_myNtypes[*]
 dump du0 all bio 20001 biomass ntypes bulk avg_con avg_ph
 #dump du1 all custom 20001 snapshot.bubblemd id type diameter x y z
-dump du2 all grid 20001 grid_%_*.vti con cat ana hyd
-dump du3 all custom/vtk 20001 snapshot%_*.vtu id type diameter x y z
-dump du4 all bio/hdf5 20001 dump_*.h5 id type radius x y z con cat ana hyd
+#dump du2 all grid 20001 grid_%_*.vti con cat ana hyd
+#dump du3 all custom/vtk 20001 snapshot%_*.vtu id type diameter x y z
+#dump du4 all bio/hdf5 20001 dump_*.h5 id type radius x y z con cat ana hyd
 thermo 20001
 thermo_modify   lost ignore
 

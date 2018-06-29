@@ -288,14 +288,14 @@ void FixKineticsThermo::thermo() {
 
       for (int nu = 1; nu <= nnus; nu++) {
         if (bio->nuGCoeff[nu][1] < 1e4) {
-          double value = 0;
+          double act = 0;
           int flag = bio->ngflag[nu];
           if (activity[nu][flag][grid] == 0)
-            value = 1e-20;
+            act = 1e-20;
           else
-            value = activity[nu][flag][grid];
+            act = activity[nu][flag][grid];
 
-          double dgr = rthT * log(value);
+          double dgr = rthT * log(act);
 
           DRGCat[i][grid] += bio->catCoeff[i][nu] * dgr;
           DRGAn[i][grid] += bio->anabCoeff[i][nu] * dgr;
