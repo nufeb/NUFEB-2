@@ -100,7 +100,7 @@ void FixKineticsPH::solve_ph() {
   int w = 1;
 
   double tol = 5e-15;
-  int maxIter = 20;
+  int maxIter = 50;
 
   int nnus = bio->nnus;
 
@@ -134,7 +134,7 @@ void FixKineticsPH::solve_ph() {
       else
         gSh = b;
       for (int k = 1; k < nnus + 1; k++) {
-        denm[k] = (1 + kEq[k][0] / w) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][3] * gSh
+        denm[k] = (1 + kEq[k][0] / w) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][1] * gSh
             + kEq[k][3] * kEq[k][2] * kEq[k][1];
         if (denm[k] <= 0) {
           lmp->error->all(FLERR, "denm returns a zero value");
@@ -207,9 +207,9 @@ void FixKineticsPH::solve_ph() {
       // evaluation of the charge balance for the current Sh value, dF(Sh)
       dF = 1 + sumActivity;
       err = fun / dF;
-     // printf("gSh = %e, fun = %e, df = %e, err = %e \n", gSh, fun, dF, err);
       gSh = gSh - err;
-      if ((abs(err) < 1e-14) && (abs(fun) < tol)) {
+
+      if ((fabs(err) < 1e-14) && (fabs(fun) < tol)) {
         // Checking if a valid pH was obtained
         if ((gSh > 1e-14) && (gSh < 1)) {
           ipH = maxIter;
@@ -220,7 +220,7 @@ void FixKineticsPH::solve_ph() {
           int n1 = 0;
           int n2 = 0;
           while (ipH < maxIter) {
-            gSh = (fa * a - fa * b) / (fb - fa);
+            gSh = (fb * a - fa * b) / (fb - fa);
             sumActivity = 0.0;
             for (int k = 1; k < nnus + 1; k++) {
               denm[k] = (1 + kEq[k][0] / w) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][1] * gSh
@@ -239,6 +239,7 @@ void FixKineticsPH::solve_ph() {
               sumActivity += nuChr[k][4] * activity[k][4][i];
             }
             fc = gSh + sumActivity;
+
             if (fa * fc > 0) {
               n1 += 1;
               if (n1 == 2) {
@@ -256,17 +257,18 @@ void FixKineticsPH::solve_ph() {
               b = gSh;
               fb = fc;
             }
-            err1 = abs(fc);
-            err2 = abs(gSh - (fb * a - fa * b) / (fb - fa));
+
+            err1 = fabs(fc);
+            err2 = fabs(gSh - (fb * a - fa * b) / (fb - fa));
 
             if ((err1 < tol) && (err2 < 1e-14)) {
               ipH = maxIter;
             }
-            ipH += 1;
+            ipH++;
           }
         }
       }
-      ipH += ipH;
+      ipH++;
     }
 
     kinetics->sh[i] = gSh;

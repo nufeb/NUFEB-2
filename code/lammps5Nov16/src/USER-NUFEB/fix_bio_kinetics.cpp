@@ -369,7 +369,7 @@ void FixKinetics::init_activity() {
       activity[k][3][j] = nuS[k][j] * gSh * kEq[k][1] * kEq[k][2] / denm[k];
       // 3rd deprotonated form activity
       activity[k][4][j] = nuS[k][j] * kEq[k][1] * kEq[k][2] * kEq[k][3] / denm[k];
-
+     // if(k==1)printf("act = %e, s= %e, flag = %i \n", activity[k][1][j], nuS[k][j], bio->ngflag[k]);
       if (strcmp(bio->nuName[k], "h") == 0) {
         activity[k][1][j] = gSh;
       }
