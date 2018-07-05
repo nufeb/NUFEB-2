@@ -293,10 +293,10 @@ herr_t DumpBioHDF5::write_grid(hid_t file, const char *name, hid_t type, T *buf,
   hsize_t dims[3];
   if (oneperproc) {
     for (int i = 0; i < 3; i++)
-      dims[i] = kinetics->subgrid.get_dimensions()[i];
+      dims[2 - i] = kinetics->subgrid.get_dimensions()[i];
   } else {
     for (int i = 0; i < 3; i++)
-      dims[i] = kinetics->grid.get_dimensions()[i];
+      dims[2 - i] = kinetics->grid.get_dimensions()[i];
   }
   hid_t filespace = H5Screate_simple(3, dims, NULL); 
   hid_t dataset = H5Dcreate(file, name, type, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
@@ -304,10 +304,10 @@ herr_t DumpBioHDF5::write_grid(hid_t file, const char *name, hid_t type, T *buf,
   if (!oneperproc) {
     hsize_t start[3];
     for (int i = 0; i < 3; i++)
-      start[i] = kinetics->subgrid.get_origin()[i];
+      start[2 - i] = kinetics->subgrid.get_origin()[i];
     hsize_t count[3];
     for (int i = 0; i < 3; i++)
-      count[i] = kinetics->subgrid.get_dimensions()[i];
+      count[2 - i] = kinetics->subgrid.get_dimensions()[i];
     H5Sselect_hyperslab(filespace, H5S_SELECT_SET, start, NULL, count, NULL);
     proplist = H5Pcreate(H5P_DATASET_XFER);
     H5Pset_dxpl_mpio(proplist, H5FD_MPIO_INDEPENDENT);
@@ -327,10 +327,10 @@ herr_t DumpBioHDF5::write_grid(hid_t file, const char *name, hid_t type, T *buf,
   hsize_t dims[3];
   if (oneperproc) {
     for (int i = 0; i < 3; i++)
-      dims[i] = kinetics->subgrid.get_dimensions()[i];
+      dims[2 - i] = kinetics->subgrid.get_dimensions()[i];
   } else {
     for (int i = 0; i < 3; i++)
-      dims[i] = kinetics->grid.get_dimensions()[i];
+      dims[2 - i] = kinetics->grid.get_dimensions()[i];
   }
   hid_t filespace = H5Screate_simple(3, dims, NULL); 
   hid_t dataset = H5Dcreate(file, name, type, filespace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
@@ -338,10 +338,10 @@ herr_t DumpBioHDF5::write_grid(hid_t file, const char *name, hid_t type, T *buf,
   if (!oneperproc) {
     hsize_t start[3];
     for (int i = 0; i < 3; i++)
-      start[i] = kinetics->subgrid.get_origin()[i];
+      start[2 - i] = kinetics->subgrid.get_origin()[i];
     hsize_t count[3];
     for (int i = 0; i < 3; i++)
-      count[i] = kinetics->subgrid.get_dimensions()[i];
+      count[2 - i] = kinetics->subgrid.get_dimensions()[i];
     H5Sselect_hyperslab(filespace, H5S_SELECT_SET, start, NULL, count, NULL);
     proplist = H5Pcreate(H5P_DATASET_XFER);
     H5Pset_dxpl_mpio(proplist, H5FD_MPIO_INDEPENDENT);
