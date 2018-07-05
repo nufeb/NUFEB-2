@@ -117,7 +117,7 @@ void FixKineticsPH::solve_ph() {
 
   for (int i = 0; i < kinetics->bgrids; i++) {
     double a = 1e-14;
-    int b = 1;
+    double b = 1;
     int ipH = 1;
 
     double fun;
@@ -222,6 +222,7 @@ void FixKineticsPH::solve_ph() {
           while (ipH < maxIter) {
             gSh = (fb * a - fa * b) / (fb - fa);
             sumActivity = 0.0;
+
             for (int k = 1; k < nnus + 1; k++) {
               denm[k] = (1 + kEq[k][0] / w) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][1] * gSh
                   + kEq[k][3] * kEq[k][2] * kEq[k][1];

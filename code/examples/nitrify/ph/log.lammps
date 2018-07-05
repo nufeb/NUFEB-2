@@ -1,0 +1,177 @@
+LAMMPS (5 Nov 2016)
+# NUFEB simulation
+units si
+atom_style      bio
+atom_modify     map array sort 100 5.0e-7
+boundary        pp pp ff
+newton          off
+processors  2 2 1
+
+comm_modify     vel yes
+read_data_bio atom.in
+  orthogonal box = (0 0 0) to (0.00012 6e-05 0.0003)
+  2 by 2 by 1 MPI processor grid
+  reading atoms ...
+  0 atoms
+  7 nutrients
+
+group AOB type 1
+0 atoms in group AOB
+group NOB type 2
+0 atoms in group NOB
+group DEAD type 3
+0 atoms in group DEAD
+
+##############Define initial particle distribution##############
+
+lattice sc 2e-5 origin 0.5 0.5 0.4
+Lattice spacing in x,y,z = 2e-05 2e-05 2e-05
+region reg block 0 6 0 3 0 1
+create_atoms 1 region reg
+Created 18 atoms
+
+lattice sc 2e-5 origin 0.1 0.5 0.4
+Lattice spacing in x,y,z = 2e-05 2e-05 2e-05
+region reg2 block 0 6 0 3 0 1
+create_atoms 2 region reg2
+Created 18 atoms
+
+set type 1 diameter 2.3e-6
+  18 settings made for diameter
+set type 1 density 200
+  18 settings made for density
+set type 1 mass 1.64e-15
+  18 settings made for mass
+set type 2 diameter 2.3e-6
+  18 settings made for diameter
+set type 2 density 200
+  18 settings made for density
+set type 2 mass 1.64e-15
+  18 settings made for mass
+
+lattice sc 1e-5 origin 0 0 0
+Lattice spacing in x,y,z = 1e-05 1e-05 1e-05
+region reg3 block 0 12 0 6 25 30
+
+neighbor        5e-7 bin
+neigh_modify    delay 0 one 5000
+
+##############Define DEM Variables&Commands##############
+
+pair_style  gran/hooke/history 1.e-4 NULL 1.e-5 NULL 0.0 1
+pair_coeff  * *
+
+timestep 3600
+
+fix 1 all nve/limit 1e-7
+fix fv all viscous 1e-5
+
+fix zw all wall/gran hooke/history 2000 NULL 500 NULL 1.5 0 zplane  0.0  3e-04
+
+variable kanc equal 0
+fix zwa all walladh v_kanc zplane  0.0   3e-04
+
+variable ke equal 5e+9
+#fix j1 all epsadh 1 v_ke 1
+
+##############Ibm Variable Definitions##############
+
+#Defining EPS density and ratio variables
+variable EPSdens equal 30
+variable EPSratio equal 1.25
+
+#variables used in fix division
+variable divDia equal 2.5e-6
+
+#Defining diffusion variables
+variable diffT equal 1e-4
+variable tol equal 1e-6
+variable etaHET equal 0.0
+variable layer equal 2e-5
+
+#variables used in fix death
+variable deadDia equal 6.8e-7
+
+##############Ibm functions##############
+
+fix k1 all kinetics 1 40 20 100 v_diffT v_layer demflag 0 niter 100 ph 7.5
+#fix ki3 all kinetics/ph
+fix ki2 all kinetics/thermo
+fix ki1 all kinetics/growth/energy v_EPSdens
+fix g1 all kinetics/diffusion v_tol pp pp nd mol
+fix d1 all divide 1 v_EPSdens v_divDia 31231 demflag 0
+fix d2 all death 1 v_deadDia demflag 0
+
+##############Ibm compute##############
+
+compute myNtypes all ntypes
+compute myMass all biomass
+compute myAvgs all avg_con
+compute myPh all avg_ph
+
+##############Simulation outputs##############
+
+thermo_style    custom step cpu atoms biomass c_myNtypes[*] c_myAvgs[3]
+dump du0 all bio 21 biomass ntypes bulk avg_con avg_ph
+#dump du1 all custom 20001 snapshot.bubblemd id type diameter x y z
+#dump du2 all grid 20001 grid_%_*.vti con cat ana hyd
+#dump du3 all custom/vtk 20001 snapshot%_*.vtu id type diameter x y z
+#dump du4 all bio/hdf5 20001 dump_*.h5 id type radius x y z con cat ana hyd
+thermo 5001
+thermo_modify   lost ignore
+
+##############Define Bio-loop and DEM-subloop##############
+
+run 2400 pre no post no every 1 "fix_modify k1 demflag 1" "fix_modify d2 demflag 1" "fix_modify d1 demflag 1" "delete_atoms region reg3" "timestep 1e-3" "run 5000 pre no post no" "timestep 3600" "fix_modify k1 demflag 0" "fix_modify d2 demflag 0" "fix_modify d1 demflag 0"
+Neighbor list info ...
+  2 neighbor list requests
+  update every 1 steps, delay 0 steps, check yes
+  max neighbors/atom: 5000, page size: 100000
+  master list distance cutoff = 2.8e-06
+  ghost atom cutoff = 2.8e-06
+  binsize = 1.4e-06 -> bins = 86 43 215
+Memory usage per processor = 8.44773 Mbytes
+Step CPU Atoms biomass c_myNtypes[1] c_myNtypes[2] c_myNtypes[3] c_myNtypes[4] c_myAvgs[3] 
+       0            0       36    5.904e-14            0           18           18            0        8e-17 
+number of iterations: 100 
+       1    1.0583451       36 5.9842694e-14            0           18           18            0 2.6218738e-05 
+Loop time of 1.05867 on 4 procs for 1 steps with 36 atoms
+
+99.6% CPU use with 4 MPI tasks x no OpenMP threads
+fix_modify k1 demflag 1
+fix_modify d2 demflag 1
+fix_modify d1 demflag 1
+delete_atoms region reg3
+Deleted 0 atoms, new total = 36
+timestep 1e-3
+run 5000 pre no post no
+Step CPU Atoms biomass c_myNtypes[1] c_myNtypes[2] c_myNtypes[3] c_myNtypes[4] c_myAvgs[3] 
+       1            0       36 5.9842694e-14            0           18           18            0 2.6218738e-05 
+    5001  0.048631907       36 5.9842694e-14            0           18           18            0 2.6218738e-05 
+Loop time of 0.0486537 on 4 procs for 5000 steps with 36 atoms
+
+96.8% CPU use with 4 MPI tasks x no OpenMP threads
+timestep 3600
+fix_modify k1 demflag 0
+fix_modify d2 demflag 0
+fix_modify d1 demflag 0
+Step CPU Atoms biomass c_myNtypes[1] c_myNtypes[2] c_myNtypes[3] c_myNtypes[4] c_myAvgs[3] 
+    5001            0       36 5.9842694e-14            0           18           18            0 2.6218738e-05 
+number of iterations: 100 
+    5002     1.077611       36 6.1051784e-14            0           18           18            0 5.3063041e-05 
+Loop time of 1.07763 on 4 procs for 1 steps with 36 atoms
+
+99.7% CPU use with 4 MPI tasks x no OpenMP threads
+fix_modify k1 demflag 1
+fix_modify d2 demflag 1
+fix_modify d1 demflag 1
+delete_atoms region reg3
+Deleted 0 atoms, new total = 36
+timestep 1e-3
+run 5000 pre no post no
+Step CPU Atoms biomass c_myNtypes[1] c_myNtypes[2] c_myNtypes[3] c_myNtypes[4] c_myAvgs[3] 
+    5002            0       36 6.1051784e-14            0           18           18            0 5.3063041e-05 
+   10002   0.04853487       36 6.1051784e-14            0           18           18            0 5.3063041e-05 
+Loop time of 0.0485575 on 4 procs for 5000 steps with 36 atoms
+
+98.9% CPU use with 4 MPI tasks x no OpenMP threads
