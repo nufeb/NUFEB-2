@@ -303,6 +303,8 @@ int *FixKineticsDiffusion::diffusion(int *nuConv, int iter, double diffT) {
       // copy current concentrations
       for (int grid = 0; grid < nXYZ; grid++) {
         nuPrev[i][grid] = nuGrid[i][grid];
+	if (ghost[grid])
+	  compute_bc(nuPrev[i][grid], nuGrid[i], grid, nuBS[i]);
       }
 
       maxS[i] = 0;
@@ -326,8 +328,7 @@ int *FixKineticsDiffusion::diffusion(int *nuConv, int iter, double diffT) {
 
 	  if (maxS[i] < nuGrid[i][grid])
 	    maxS[i] = nuGrid[i][grid];
-        } else
-          compute_bc(nuGrid[i][grid], nuPrev[i], grid, nuBS[i]);
+        }
       }
 #if MPI_VERSION >= 3
       MPI_Iallreduce(MPI_IN_PLACE, &maxS[i], 1, MPI_DOUBLE, MPI_MAX, world, &requests[i]);
