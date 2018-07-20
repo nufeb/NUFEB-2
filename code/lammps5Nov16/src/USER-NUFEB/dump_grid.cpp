@@ -65,12 +65,6 @@ void DumpGrid::init_style() {
     else if (*it == "upt") {
       packs.push_back(std::bind(&DumpGrid::pack_uptake, this, _1));
     }
-    else if (*it == "gas") {
-      if (energy)
-	packs.push_back(std::bind(&DumpGrid::pack_gas, this, _1));
-      else
-	error->warning(FLERR, "dump grid 'gas' argument only available when using kinetics/energy");
-    }
     else if (*it == "act") {
       if (energy)
 	packs.push_back(std::bind(&DumpGrid::pack_activity, this, _1));
@@ -145,8 +139,6 @@ int DumpGrid::parse_fields(int narg, char **arg) {
       fields.push_back(arg[iarg]);
     } else if (strcmp(arg[iarg], "upt") == 0) {
       fields.push_back(arg[iarg]);
-    } else if (strcmp(arg[iarg], "gas") == 0) {
-      fields.push_back(arg[iarg]);
     } else if (strcmp(arg[iarg], "act") == 0) {
       fields.push_back(arg[iarg]);
     } else if (strcmp(arg[iarg], "yie") == 0) {
@@ -167,10 +159,6 @@ void DumpGrid::pack_concentration(vtkSmartPointer<vtkImageData> image) {
 
 void DumpGrid::pack_uptake(vtkSmartPointer<vtkImageData> image) {
   pack_tuple1(image, "uptake", kinetics->nuR, bio->nuName, bio->nnus);
-}
-
-void DumpGrid::pack_gas(vtkSmartPointer<vtkImageData> image) {
-  pack_tuple1(image, "gas", kinetics->qGas, bio->nuName, bio->nnus);
 }
 
 void DumpGrid::pack_activity(vtkSmartPointer<vtkImageData> image) {

@@ -56,24 +56,24 @@ FixKineticsThermo::FixKineticsThermo(LAMMPS *lmp, int narg, char **arg) :
   // default values
   yflag = 0;
   rflag = 0;
-  pressure = 1;
 
   int iarg = 3;
-  while (iarg < narg){
-    if (strcmp(arg[iarg],"pressure") == 0) {
-      pressure = force->numeric(FLERR, arg[iarg + 1]);
-      if (pressure < 0.0)
-        error->all(FLERR, "Illegal fix kinetics/thermo command: pressure");
+  while (iarg < narg) {
+    if (strcmp(arg[iarg], "yield") == 0) {
+      if (strcmp(arg[iarg + 1], "fix") == 0)
+        yflag = 0;
+      else if (strcmp(arg[iarg + 1], "unfix") == 0)
+        yflag = 1;
+      else
+        error->all(FLERR, "Illegal yield parameter:fix or unfix");
       iarg += 2;
-    } else if (strcmp(arg[iarg],"yield") == 0) {
-      if (strcmp(arg[iarg+1],"fix") == 0) yflag = 0;
-      else if (strcmp(arg[iarg+1],"unfix") == 0) yflag = 1;
-      else error->all(FLERR,"Illegal yield parameter:fix or unfix");
-      iarg += 2;
-    } else if (strcmp(arg[iarg],"reactor") == 0) {
-      if (strcmp(arg[iarg+1],"close") == 0) rflag = 0;
-      else if (strcmp(arg[iarg+1],"open") == 0) rflag = 1;
-      else error->all(FLERR,"Illegal yield parameter:open or close");
+    } else if (strcmp(arg[iarg], "reactor") == 0) {
+      if (strcmp(arg[iarg + 1], "close") == 0)
+        rflag = 0;
+      else if (strcmp(arg[iarg + 1], "open") == 0)
+        rflag = 1;
+      else
+        error->all(FLERR, "Illegal yield parameter:open or close");
     } else
       error->all(FLERR, "Illegal fix kinetics/thermo command");
   }
@@ -127,6 +127,7 @@ void FixKineticsThermo::init() {
   dgzero = memory->create(dgzero, atom->ntypes + 1, 2, "kinetics/thermo:dgzero");
 
   init_KhV();
+  init_dG0();
 
   //Get computational domain size
   if (domain->triclinic == 0) {
@@ -219,7 +220,7 @@ int FixKineticsThermo::setmask() {
 /* ----------------------------------------------------------------------
  thermodynamics
  ------------------------------------------------------------------------- */
-void FixKineticsThermo::thermo() {
+void FixKineticsThermo::thermo(double dt) {
   int *mask = atom->mask;
   int *type = atom->type;
   int nnus = bio->nnus;
@@ -232,53 +233,48 @@ void FixKineticsThermo::thermo() {
   double ***activity = kinetics->activity;
   double **qGas = kinetics->qGas;
 
-  init_dG0();
-
   double vRgT = kinetics->gvol * 1000 / (kinetics->rg * kinetics->temp);
   double vg = vol * 1000;
   double rGas, rLiq;
 
   if (rflag == 0) {
     for (int j = 1; j <= nnus; j++) {
-      if (bio->nuType[j] == 1) {
+      if (bio->nuType[j] == 1)
         kinetics->nuConv[j] = true;
-      }
     }
   }
 
   for (int grid = 0; grid < kinetics->bgrids; grid++) {
-    // gas transfer
+    // gas liquid transfer
     if (rflag == 1) {
-      for (int j = 1; j <= nnus; j++) {
-        nuR[j][grid] = 0;
-        qGas[j][grid] = 0;
-        if (bio->nuType[j] == 1) {
+      for (int nu = 1; nu <= nnus; nu++) {
+        if (bio->nuType[nu] == 1) {
           //get corresponding liquid ID
-          int liqID = liqtogas[j];
+          int liqID = liqtogas[nu];
           double gasT = 0;
           if (liqID != 0) {
             if (bio->nuGCoeff[liqID][0] > 10000) {
-              gasT = bio->kLa[liqID] * (activity[liqID][1][grid] / khv[liqID] - activity[j][0][grid]);
+              gasT = bio->kLa[liqID] * (activity[nu][0][grid] - activity[liqID][1][grid] / khv[liqID]);
             } else {
-              gasT = bio->kLa[liqID] * (activity[liqID][0][grid] / khv[liqID] - activity[j][0][grid]);
+              gasT = bio->kLa[liqID] * (activity[nu][0][grid] - activity[liqID][0][grid] / khv[liqID]);
             }
             rGas = gasT;
             rLiq = -gasT * vRgT;
             // update nutrient consumption
-            nuR[j][grid] += rGas;
+            nuR[nu][grid] += rGas;
             nuR[liqID][grid] += rLiq;
-            //gas correction
-            nuR[j][grid] = nuR[j][grid] * (nuS[j][grid] * kinetics->rg * kinetics->temp / pressure + vg);
+
             //update gas concentration
-            nuS[j][grid] += nuR[j][grid];
-            qGas[j][grid] = nuR[j][grid] * kinetics->rg * kinetics->temp / pressure;
-            if (nuS[j][grid] < 0)
-              nuS[j][grid] = 0;
+            nuS[nu][grid] += nuR[nu][grid] * dt;
+
+            if (nuS[nu][grid] < 0)
+              nuS[nu][grid] = 1e-20;
           }
         }
       }
     }
 
+    // calculate metablic energy
     for (int i = 1; i <= atom->ntypes; i++) {
       double rthT = kinetics->temp * kinetics->rth;
 
@@ -317,3 +313,4 @@ void FixKineticsThermo::thermo() {
     }
   }
 }
+

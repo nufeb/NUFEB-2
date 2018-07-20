@@ -140,14 +140,6 @@ void DumpBioHDF5::write() {
 	write_grid(file, oss.str().c_str(), H5T_NATIVE_DOUBLE, kinetics->nuR[0], oneperproc, bio->nnus + 1, i);
       }
       H5Gclose(group);
-    } else if (*it == "gas") {
-      hid_t group = H5Gcreate(file, "gas", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-      for (int i = 1; i <= bio->nnus; i++) {
-	std::ostringstream oss;
-	oss << "gas/" << bio->nuName[i];
-	write_grid(file, oss.str().c_str(), H5T_NATIVE_DOUBLE, kinetics->qGas[0], oneperproc, bio->nnus + 1, i);
-      }
-      H5Gclose(group);
     } else if (*it == "act") {
     } else if (*it == "yie") {
       hid_t group = H5Gcreate(file, "yield", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
@@ -211,8 +203,6 @@ int DumpBioHDF5::parse_fields(int narg, char **arg) {
     } else if (strcmp(arg[iarg], "con") == 0) {
       fields.push_back(arg[iarg]);
     } else if (strcmp(arg[iarg], "upt") == 0) {
-      fields.push_back(arg[iarg]);
-    } else if (strcmp(arg[iarg], "gas") == 0) {
       fields.push_back(arg[iarg]);
     } else if (strcmp(arg[iarg], "act") == 0) {
       fields.push_back(arg[iarg]);
