@@ -24,13 +24,11 @@ class FixKineticsThermo : public Fix {
   ~FixKineticsThermo();
   void init();
   int setmask();
-  void thermo();
+  void thermo(double dt);
 
  private:
   int yflag;                        // 0 = fixed yield 1 = dynamic yield
   int rflag;                       // 0 = open reactor 1 = closed reactor
-
-  double pressure;                 // Gas pressure
 
   double stepx, stepy, stepz;       // grids size
   double xlo,xhi,ylo,yhi,zlo,zhi;   // simulaton box size

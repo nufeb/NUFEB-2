@@ -17,8 +17,8 @@ ComputeStyle(avg_con,ComputeNufebAvgcon)
 
 #else
 
-#ifndef LMP_COMPUTE_NETYPS_H
-#define LMP_COMPUTE_NTYPES_H
+#ifndef LMP_COMPUTE_AVGCON_H
+#define LMP_COMPUTE_AVGCON_H
 
 #include "compute.h"
 

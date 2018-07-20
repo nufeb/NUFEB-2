@@ -87,9 +87,9 @@ void ComputeNufebAvgcon::compute_vector()
   }
 
   MPI_Allreduce(MPI_IN_PLACE, vector, nnus+1, MPI_DOUBLE, MPI_SUM, world);
- // MPI_Allreduce(&kinetics->bgrids, &global_bgrids, 1, MPI_INT, MPI_SUM, world);
+  MPI_Allreduce(&kinetics->bgrids, &global_bgrids, 1, MPI_INT, MPI_SUM, world);
 
-//  for(int i = 1; i < bio->nnus+1; i++){
-//    vector[i] /= (double)global_bgrids;
-//  }
+  for(int i = 1; i < bio->nnus+1; i++){
+    vector[i] /= (double)global_bgrids;
+  }
 }

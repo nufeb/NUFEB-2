@@ -77,7 +77,7 @@ compute myMass all biomass
 compute myDia all diameter
 compute myDimen all dimension
 compute myDiver all diversity
-compute myHeight all ave_height 
+compute myHeight all avg_height 
 compute myRough all roughness 
 compute mySeg all segregation v_cutoff	
 
@@ -86,7 +86,7 @@ compute mySeg all segregation v_cutoff
 dump		id all custom 10000 snapshot.bubblemd id type diameter x y z
 #dump		du1 all custom/vtk 1000 atom%_*.vtu id type diameter x y z
 #dump		du2 all grid 1000 grid_%_*.vti con
-dump            d0 all bio 1000 biomass ntypes diameter dimension diversity ave_height roughness segregation
+dump            d0 all bio 1000 biomass ntypes diameter dimension diversity avg_height roughness segregation
 thermo_style    custom step cpu atoms biomass c_myDiver
 thermo		100
 thermo_modify	lost ignore

@@ -115,7 +115,7 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
     zhi = domain->boxhi_bound[2];
   }
 
-  //set defaul values
+  //set default values
   temp = 298.15;
   rth = 0.0083144;
   gvol = 8e-14;
@@ -408,12 +408,6 @@ void FixKinetics::integration() {
 
   gflag = 0;
   update_bgrids();
-
-  if (diffusion != NULL) {
-   diffusion->compute_bulk();
-   diffusion->update_grids();
-  }
-
   reset_nuR();
 
   while (!isConv) {
@@ -425,7 +419,7 @@ void FixKinetics::integration() {
       if (ph != NULL) ph->solve_ph();
       else init_activity();
 
-      thermo->thermo();
+      thermo->thermo(diffT);
       energy->growth(diffT, gflag);
     } else if (monod != NULL) {
       monod->growth(diffT, gflag);
@@ -434,6 +428,7 @@ void FixKinetics::integration() {
     // solve for diffusion and advection
     if (diffusion != NULL) {
       nuConv = diffusion->diffusion(nuConv, iteration, diffT);
+      reset_nuR();
     } else {
       reset_nuR();
       break;
@@ -460,8 +455,16 @@ void FixKinetics::integration() {
   if (energy != NULL) energy->growth(update->dt*nevery, gflag);
   if (monod != NULL) monod->growth(update->dt*nevery, gflag);
 
-  // manually update reaction if none of the surface is using dirichlet BC
-  if (diffusion != NULL) diffusion->update_nuS();
+  if (diffusion != NULL) {
+   // manually update reaction if none of the surface is using dirichlet BC
+   diffusion->update_nuS();
+   // update concentration in bulk liquid
+   diffusion->compute_bulk();
+   // update grids
+   diffusion->update_grids();
+  }
+
+  if (thermo != NULL) thermo->thermo(update->dt*nevery);
 }
 
 /* ----------------------------------------------------------------------
@@ -523,9 +526,10 @@ int FixKinetics::position(int i) {
  ------------------------------------------------------------------------- */
 
 void FixKinetics::reset_nuR() {
-  for (int k = 1; k < bio->nnus + 1; k++) {
+  for (int nu = 1; nu < bio->nnus + 1; nu++) {
     for (int j = 0; j < bgrids; j++) {
-        nuR[k][j] = 0;
+        nuR[nu][j] = 0;
+        qGas[nu][j] = 0;
      }
    }
 }
