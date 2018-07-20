@@ -43,7 +43,7 @@ class DumpBio : public Dump {
   class Fix **fix;           // list of ptrs to the Fix objects
 
   int anFlag, concFlag, avgsFlag, catFlag, phFlag, massFlag, gasFlag, yieldFlag, avgphFlag;
-  int diaFlag, dimFlag, divFlag, heightFlag, roughFlag, segFlag, ntypeFlag, bulkFlag;
+  int diaFlag, dimFlag, divFlag, heightFlag, roughFlag, segFlag, ntypeFlag, bulkFlag, gasFlag;
   int massHeader, divHeader, typeHeader, bulkHeader, avgsHeader, avgphHeader;
 
   double xlo,xhi,ylo,yhi,zlo,zhi;
@@ -65,6 +65,7 @@ class DumpBio : public Dump {
   class ComputeNufebBiomass *cmass;
   class ComputeNufebAvgcon *cavgs;
   class ComputeNufebAvgph *cavgph;
+  class ComputeNufebGas *cgas;
 
 
   void openfile();
@@ -85,6 +86,7 @@ class DumpBio : public Dump {
   void write_ntype_data();
   void write_bulk_data();
   void write_avgph_data();
+  void write_gas_data();
 
   void write_diameter_data();
   void write_dimension_data();

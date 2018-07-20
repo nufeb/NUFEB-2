@@ -47,7 +47,6 @@ class DumpGrid : public Dump {
 
   void pack_concentration(vtkSmartPointer<vtkImageData>);
   void pack_uptake(vtkSmartPointer<vtkImageData>);
-  void pack_gas(vtkSmartPointer<vtkImageData>);
   void pack_activity(vtkSmartPointer<vtkImageData>);
   void pack_yield(vtkSmartPointer<vtkImageData>);
   void pack_catabolism(vtkSmartPointer<vtkImageData>);

@@ -17,8 +17,8 @@ ComputeStyle(avg_ph,ComputeNufebAvgph)
 
 #else
 
-#ifndef LMP_COMPUTE_NETYPS_H
-#define LMP_COMPUTE_NTYPES_H
+#ifndef LMP_COMPUTE_PH_H
+#define LMP_COMPUTE_PH_H
 
 #include "compute.h"
 
