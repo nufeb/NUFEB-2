@@ -209,6 +209,7 @@ void FixKineticsEnergy::growth(double dt, int gflag) {
     //get new growth rate based on new nutrients
     double mass = biomass(i, gMonod) * dt;
     //update bacteria mass, radius etc
+
     if (gflag) bio_update(mass, i);
   }
 
@@ -231,8 +232,8 @@ inline double FixKineticsEnergy::biomass(int i, double **gMonod) {
   double qCat;       // specific substrate uptake rate for catabolism
 
   double bacMaint;    // specific substrate consumption required for maintenance
-  double mu;          // specific biomass growth
-  double mass;
+  double mu = 0;          // specific biomass growth
+  double mass = 0;
   double invYield;
 
   double m = gMonod[t][pos];
@@ -252,30 +253,30 @@ inline double FixKineticsEnergy::biomass(int i, double **gMonod) {
   else invYield = 0;
 
   for (int nu = 1; nu <= nnus; nu++) {
-    if ((bio->nuType[nu] == 0 && bio->diffCoeff[nu] != 0 && !nuConv[nu])) {
-      double consume;
+    if (bio->nuType[nu] != 0) continue;
 
-      if (1.2 * bacMaint < qCat) {
-        double metCoeff = catCoeff[t][nu] * invYield + anabCoeff[t][nu];
-        mu = gYield[t][pos] * (qMet - bacMaint);
-        mass = mu * rmass[i];
-        consume = mass * metCoeff;
-      } else if (qCat <= 1.2 * bacMaint && bacMaint <= qCat) {
-        consume = catCoeff[t][nu] * gYield[t][pos] * bacMaint * rmass[i];
-      } else {
-        double f;
+    double consume;
+    if (1.2 * bacMaint < qCat) {
+      double metCoeff = catCoeff[t][nu] * invYield + anabCoeff[t][nu];
+      mu = gYield[t][pos] * (qMet - bacMaint);
+      mass = mu * rmass[i];
+      consume = mass * metCoeff;
+    } else if (qCat <= 1.2 * bacMaint && bacMaint <= qCat) {
+      consume = catCoeff[t][nu] * gYield[t][pos] * bacMaint * rmass[i];
+    } else {
+      double f;
 
-        if (bacMaint == 0) f = 0;
-        else f = (bacMaint - qCat) / bacMaint;
+      if (bacMaint == 0) f = 0;
+      else f = (bacMaint - qCat) / bacMaint;
 
-        mass = -decay[t] * f * rmass[i];
-        consume = -mass * bio->decayCoeff[t][nu] + catCoeff[t][nu] * gYield[t][pos] * qCat * rmass[i];
-      }
-      // convert biomass unit from kg/m3 to mol/L
-      consume = consume / (vol * 24.6);
-
-      nuR[nu][pos] += consume;
+      mass = -decay[t] * f * rmass[i];
+      consume = -mass * bio->decayCoeff[t][nu] + catCoeff[t][nu] * gYield[t][pos] * qCat * rmass[i];
     }
+
+    if (nuConv[nu]) continue;
+    // convert biomass unit from kg/m3 to mol/L
+    consume = consume / (vol * 24.6);
+    nuR[nu][pos] += consume;
   }
 
   return mass;

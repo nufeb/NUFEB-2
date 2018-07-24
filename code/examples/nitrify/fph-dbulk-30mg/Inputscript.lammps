@@ -16,22 +16,22 @@ group DEAD type 3
 ##############Define initial particle distribution##############
 
 lattice sc 1e-5 origin 0.5 0.5 0.4
-region reg block 0 12 0 6 0 1
+region reg block 0 25 0 5 0 1
 create_atoms 1 region reg
 
 lattice sc 1e-5 origin 0.1 0.5 0.4
-region reg2 block 0 12 0 6 0 1
+region reg2 block 0 25 0 5 0 1
 create_atoms 2 region reg2
 
-set type 1 diameter 3e-6
-set type 1 density 200
-set type 1 mass 2.82e-15
-set type 2 diameter 3e-6
-set type 2 density 200
-set type 2 mass 2.82e-15
+set type 1 diameter 1e-6
+set type 1 density 290
+set type 1 mass 1.52e-15
+set type 2 diameter 1e-6
+set type 2 density 290
+set type 2 mass 1.52e-15
 
 lattice sc 1e-5 origin 0 0 0
-region reg3 block 0 12 0 6 25 30
+region reg3 block 0 25 0 5 25 30
 
 neighbor        5e-7 bin
 neigh_modify    delay 0 one 5000
@@ -61,20 +61,20 @@ variable EPSdens equal 30
 variable EPSratio equal 1.25
 
 #variables used in fix division
-variable divDia equal 3e-6
+variable divDia equal 1e-6
 
 #Defining diffusion variables
 variable diffT equal 1e-4
-variable tol equal 1e-6
+variable tol equal 1e-7
 variable etaHET equal 0.0
 variable layer equal 2e-5
 
 #variables used in fix death
-variable deadDia equal 6.8e-7
+variable deadDia equal 5.85e-7
 
 ##############Ibm functions##############
 
-fix k1 all kinetics 1 40 20 100 v_diffT v_layer demflag 0 niter 10000 ph 7.5
+fix k1 all kinetics 1 125 25 150 v_diffT v_layer demflag 0 niter 50000 ph 7.5
 #fix ki3 all kinetics/ph
 fix ki2 all kinetics/thermo
 fix ki1 all kinetics/growth/energy v_EPSdens 
@@ -92,23 +92,22 @@ compute myPh all avg_ph
 ##############Simulation outputs##############
 
 thermo_style    custom step cpu atoms biomass c_myNtypes[*]
-dump du0 all bio 7236 biomass ntypes bulk avg_con avg_ph
-#dump du1 all custom 20001 snapshot.bubblemd id type diameter x y z
-dump du2 all grid 80001 grid_%_*.vti con hyd
-dump du3 all custom/vtk 80001 snapshot%_*.vtu id type diameter x y z
-dump du4 all bio/hdf5 80001 dump_*.h5 id type radius x y z con cat ana hyd
-thermo 201
+dump du0 all bio 14436 biomass ntypes bulk avg_con 
+dump du2 all grid 144360 grid_%_*.vti con hyd
+dump du3 all custom/vtk 144360 snapshot%_*.vtu id type diameter x y z
+dump du4 all bio/hdf5 144360 dump_*.h5 id type radius x y z con cat ana hyd
+thermo 401
 thermo_modify   lost ignore
 
 ##############Define Bio-loop and DEM-subloop##############
 
-run 240000 pre no post no every 1 &
+run 86400 pre no post no every 1 &
 "fix_modify k1 demflag 1" &
 "fix_modify d2 demflag 1" &
 "fix_modify d1 demflag 1" &
 "delete_atoms region reg3" &
 "timestep 0.1" &
-"run 200 pre no post no" &
+"run 400 pre no post no" &
 "timestep 100" &
 "fix_modify k1 demflag 0" &
 "fix_modify d2 demflag 0" &

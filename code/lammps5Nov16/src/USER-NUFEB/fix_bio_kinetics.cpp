@@ -198,7 +198,6 @@ FixKinetics::~FixKinetics() {
   memory->destroy(nuR);
   memory->destroy(nuS);
   memory->destroy(nuBS);
-  memory->destroy(qGas);
   memory->destroy(DRGCat);
   memory->destroy(DRGAn);
   memory->destroy(kEq);
@@ -270,7 +269,6 @@ void FixKinetics::init() {
   nuS = memory->create(nuS, nnus + 1, ngrids, "kinetics:nuS");
   nuR = memory->create(nuR, nnus + 1, ngrids, "kinetics:nuR");
   nuBS = memory->create(nuBS, nnus + 1, "kinetics:nuBS");
-  qGas = memory->create(qGas, nnus + 1, ngrids, "kinetics:nuGas");
   gYield = memory->create(gYield, ntypes + 1, ngrids, "kinetic:gYield");
   activity = memory->create(activity, nnus + 1, 5, ngrids, "kinetics:activity");
   DRGCat = memory->create(DRGCat, ntypes + 1, ngrids, "kinetics:DRGCat");
@@ -292,7 +290,6 @@ void FixKinetics::init() {
     for (int i = 1; i <= nnus; i++) {
       nuS[i][j] = bio->iniS[i][0];
       nuR[i][j] = 0;
-      qGas[i][j] = 0;
     }
   }
 
@@ -529,7 +526,6 @@ void FixKinetics::reset_nuR() {
   for (int nu = 1; nu < bio->nnus + 1; nu++) {
     for (int j = 0; j < bgrids; j++) {
         nuR[nu][j] = 0;
-        qGas[nu][j] = 0;
      }
    }
 }
@@ -568,7 +564,7 @@ int FixKinetics::modify_param(int narg, char **arg)
 int FixKinetics::get_elem_per_cell() const {
   int result = 2 * bio->nnus; // nuS + nuR
   if (energy) {
-    result += 6 * bio->nnus; // qGas + activity
+    result += 5 * bio->nnus; // qGas + activity
     result += 3 * atom->ntypes; // gYield + DRGCat + DRGAn 
   }
   if (nufebFoam) {
@@ -599,7 +595,6 @@ void FixKinetics::resize(const Subgrid<double, 3> &subgrid) {
   nuS = memory->grow(nuS, nnus + 1, ngrids, "kinetics:nuS");
   nuR = memory->grow(nuR, nnus + 1, ngrids, "kinetics:nuR");
   if (energy) {
-    qGas = memory->grow(qGas, nnus + 1, ngrids, "kinetics:nuGas");
     gYield = memory->grow(gYield, ntypes + 1, ngrids, "kinetic:gYield");
     activity = memory->grow(activity, nnus + 1, 5, ngrids, "kinetics:activity");
     DRGCat = memory->grow(DRGCat, ntypes + 1, ngrids, "kinetics:DRGCat");

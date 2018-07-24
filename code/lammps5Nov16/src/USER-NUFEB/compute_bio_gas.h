@@ -40,7 +40,6 @@ class ComputeNufebGas : public Compute {
   class FixKinetics *kinetics;
   class BIO *bio;
 };
-
 }
 
 #endif
