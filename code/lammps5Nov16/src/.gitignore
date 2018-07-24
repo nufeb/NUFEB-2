@@ -113,3 +113,5 @@ subgrid.h
 #ignoring VTK files
 dump_custom_vtk.cpp
 dump_custom_vtk.h
+
+!USER-NUFEB/*
