@@ -53,7 +53,6 @@ class FixKinetics : public Fix, public DecompGrid<FixKinetics> {
   double **nuR;                    // nutrient consumption [nutrient][grid]
   double *nuBS;                    // concentration in boundary layer [nutrient]
   double **fV;                     // velocity field [velo][grid]
-  double **qGas;                   // gas chemicals [nutrient][grid]
   double **gYield;                 // inverse yield [type][grid]
   double ***activity;              // activities of chemical species [nutrient][5 charges][grid]
   double gvol, rg;           // gas volume and gas transfer constant
@@ -111,7 +110,6 @@ class FixKinetics : public Fix, public DecompGrid<FixKinetics> {
       }
       if (energy) {
 	for (int i = 1; i <= bio->nnus; i++) {
-	  *result++ = qGas[i][*it];
 	  for (int j = 0; j < 5; j++) {
 	    *result++ = activity[i][j][*it];
 	  }
@@ -139,7 +137,6 @@ class FixKinetics : public Fix, public DecompGrid<FixKinetics> {
       }
       if (energy) {
 	for (int i = 1; i <= bio->nnus; i++) {
-          qGas[i][*it] = *input++;
 	  for (int j = 0; j < 5; j++) {
 	    activity[i][j][*it] = *input++;
 	  }
