@@ -48,6 +48,7 @@
 #include "compute_bio_biomass.h"
 #include "compute_bio_avgcon.h"
 #include "compute_bio_avgph.h"
+#include "compute_bio_gas.h"
 
 struct stat st = {0};
 
@@ -89,7 +90,6 @@ DumpBio::DumpBio(LAMMPS *lmp, int narg, char **arg) :
   bulkFlag = 0;
   avgphFlag = 0;
   avgphHeader = 0;
-  gasFlag = 0;
 
   diaFlag = 0;
   dimFlag = 0;
@@ -255,26 +255,7 @@ void DumpBio::init_style()
       massFlag = 1;
     } else if (strcmp(keywords[i],"bulk") == 0) {
       bulkFlag = 1;
-    } else if (strcmp(keywords[i],"gas") == 0) {
-      gasFlag = 1;
-      if (stat("./Results/Gas", &st) == -1) {
-          mkdir("./Results/Gas", 0700);
-      }
-      for (int j = 1; j < nnus + 1; j++) {
-        if (bio->nuType[j] == 1) {
-          char *name = bio->nuName[j];
-          int len = 16;
-          len += strlen(name);
-          char path[len];
-          strcpy(path, "./Results/Gas/");
-          strcat(path, name);
-
-          if (stat(path, &st) == -1) {
-              mkdir(path, 0700);
-          }
-        }
-      }
-    } else if (strcmp(keywords[i],"diameter") == 0) {
+    }  else if (strcmp(keywords[i],"diameter") == 0) {
       diaFlag = 1;
     } else if (strcmp(keywords[i],"dimension") == 0) {
       dimFlag = 1;
@@ -568,7 +549,7 @@ void DumpBio::write_concentration_data(int nuID)
     double y = kinetics->sublo[1] + ypos * stepy - stepy/2;
     double z = zpos * stepz - stepz/2;
 
-    fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%e\n",i, x, y, z, kinetics->nuS[nuID][i]);
+    fprintf(fp, "%i,%f,%f,%f,%e\n",i, x, y, z, kinetics->nuS[nuID][i]);
   }
 }
 
@@ -589,7 +570,7 @@ void DumpBio::write_DGRCat_data(int typeID)
 
     //average += kinetics->DRGCat[2][i];
 
-    fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%e\n",i, x, y, z, kinetics->DRGCat[typeID][i]);
+    fprintf(fp, "%i,%f,%f,%f,%e\n",i, x, y, z, kinetics->DRGCat[typeID][i]);
   }
 }
 
@@ -610,7 +591,7 @@ void DumpBio::write_yield_data(int typeID)
 
     //average += kinetics->DRGCat[2][i];
 
-    fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%e\n",i, x, y, z, kinetics->gYield[typeID][i]);
+    fprintf(fp, "%i,%f,%f,%f,%e\n",i, x, y, z, kinetics->gYield[typeID][i]);
   }
 }
 
@@ -631,7 +612,7 @@ void DumpBio::write_DGRAn_data(int typeID)
 
     //average += kinetics->DRGCat[2][i];
 
-    fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%e\n",i, x, y, z, kinetics->DRGAn[typeID][i]);
+    fprintf(fp, "%i,%f,%f,%f,%e\n",i, x, y, z, kinetics->DRGAn[typeID][i]);
   }
 }
 
@@ -652,7 +633,7 @@ void DumpBio::write_pH_data()
 
     //average += kinetics->DRGCat[2][i];
 
-    fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%e\n",i, x, y, z, -log10(kinetics->sh[i]));
+    fprintf(fp, "%i,%f,%f,%f,%e\n",i, x, y, z, -log10(kinetics->sh[i]));
   }
 }
 
@@ -662,16 +643,16 @@ void DumpBio::write_avgcon_data()
 {
   if (!avgsHeader) {
     for(int i = 1; i < bio->nnus+1; i++){
-      fprintf(fp, "%s,\t", kinetics->bio->nuName[i]);
+      fprintf(fp, "%s,", kinetics->bio->nuName[i]);
     }
     avgsHeader = 1;
     fprintf(fp, "\n");
   }
 
-  fprintf(fp, "%i,\t", update->ntimestep);
+  fprintf(fp, "%i,", update->ntimestep);
 
   for(int i = 1; i < bio->nnus+1; i++){
-    fprintf(fp, "%e,\t", cavgs->vector[i]);
+    fprintf(fp, "%e,", cavgs->vector[i]);
   }
   fprintf(fp, "\n");
 }
@@ -680,14 +661,14 @@ void DumpBio::write_avgcon_data()
 
 void DumpBio::write_avgph_data()
 {
-  fprintf(fp, "%i,\t %e, \n", update->ntimestep, cavgph->scalar);
+  fprintf(fp, "%i, %e \n", update->ntimestep, cavgph->scalar);
 }
 
 /* ---------------------------------------------------------------------- */
 
 void DumpBio::write_gas_data()
 {
-  fprintf(fp, "%i,\t %e, \n", update->ntimestep, cgas->scalar);
+  fprintf(fp, "%i, %e \n", update->ntimestep, cgas->scalar);
 }
 
 
@@ -697,16 +678,17 @@ void DumpBio::write_bulk_data()
 {
   if (!bulkHeader) {
     for(int i = 1; i < bio->nnus+1; i++){
-      fprintf(fp, "%s,\t", kinetics->bio->nuName[i]);
+      fprintf(fp, "%s,", kinetics->bio->nuName[i]);
     }
     bulkHeader = 1;
     fprintf(fp, "\n");
   }
 
-  fprintf(fp, "%i,\t", update->ntimestep);
+  fprintf(fp, "%i,", update->ntimestep);
 
-  for(int i = 1; i < bio->nnus+1; i++){
-    fprintf(fp, "%e,\t",  kinetics->nuBS[i]/1000);
+  for(int nu = 1; nu < bio->nnus+1; nu++){
+    if (bio->nuType[nu] != 0) continue;
+    fprintf(fp, "%e,",  kinetics->nuBS[nu]/1000);
   }
   fprintf(fp, "\n");
 }
@@ -717,17 +699,17 @@ void DumpBio::write_biomass_data()
 {
   if (!massHeader) {
     for(int i = 0; i < atom->ntypes+1; i++){
-      if(i == 0) fprintf(fp, "Total,\t");
-      else fprintf(fp, "%s,\t", kinetics->bio->typeName[i]);
+      if(i == 0) fprintf(fp, "Total,");
+      else fprintf(fp, "%s,", kinetics->bio->typeName[i]);
     }
     massHeader = 1;
     fprintf(fp, "\n");
   }
 
-  fprintf(fp, "%i,\t", update->ntimestep);
+  fprintf(fp, "%i,", update->ntimestep);
 
   for(int i = 0; i < atom->ntypes+1; i++){
-    fprintf(fp, "%e,\t", cmass->vector[i]);
+    fprintf(fp, "%e,", cmass->vector[i]);
   }
   fprintf(fp, "\n");
 }
@@ -736,42 +718,42 @@ void DumpBio::write_biomass_data()
 
 void DumpBio::write_diameter_data()
 {
-  fprintf(fp, "%i,\t %e, \n", update->ntimestep, cdia->scalar);
+  fprintf(fp, "%i, %e \n", update->ntimestep, cdia->scalar);
 }
 
 /* ---------------------------------------------------------------------- */
 
 void DumpBio::write_dimension_data()
 {
-  fprintf(fp, "%i,\t %e, \n", update->ntimestep, cdim->scalar);
+  fprintf(fp, "%i, %e \n", update->ntimestep, cdim->scalar);
 }
 
 /* ---------------------------------------------------------------------- */
 
 void DumpBio::write_diversity_data()
 {
-  fprintf(fp, "%i,\t %e, \n", update->ntimestep, cdiv->scalar);
+  fprintf(fp, "%i, %e \n", update->ntimestep, cdiv->scalar);
 }
 
 /* ---------------------------------------------------------------------- */
 
 void DumpBio::write_height_data()
 {
-  fprintf(fp, "%i,\t %e, \n", update->ntimestep, cheight->scalar);
+  fprintf(fp, "%i, %e \n", update->ntimestep, cheight->scalar);
 }
 
 /* ---------------------------------------------------------------------- */
 
 void DumpBio::write_rough_data()
 {
-  fprintf(fp, "%i,\t %e, \n", update->ntimestep, crough->scalar);
+  fprintf(fp, "%i, %e \n", update->ntimestep, crough->scalar);
 }
 
 /* ---------------------------------------------------------------------- */
 
 void DumpBio::write_segregate_data()
 {
-  fprintf(fp, "%i,\t %e, \n", update->ntimestep, cseg->scalar);
+  fprintf(fp, "%i, %e \n", update->ntimestep, cseg->scalar);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -780,37 +762,18 @@ void DumpBio::write_ntype_data()
 {
   if (!typeHeader) {
     for(int i = 1; i < atom->ntypes+1; i++){
-      fprintf(fp, "%s,\t", kinetics->bio->typeName[i]);
+      fprintf(fp, "%s,", kinetics->bio->typeName[i]);
     }
     typeHeader = 1;
     fprintf(fp, "\n");
   }
 
-  fprintf(fp, "%i,\t", update->ntimestep);
+  fprintf(fp, "%i,", update->ntimestep);
 
   for(int i = 1; i < atom->ntypes+1; i++){
-    fprintf(fp, "%i,\t", (int)ctype->vector[i]);
+    fprintf(fp, "%i,", (int)ctype->vector[i]);
   }
   fprintf(fp, "\n");
-}
-
-/* ---------------------------------------------------------------------- */
-
-void DumpBio::write_gas_data(int nuID)
-{
-  fprintf(fp, ",x,y,z,scalar,1,1,1,0.5\n");
-
-  for(int i = 0; i < kinetics->ngrids; i++){
-    int zpos = i/(kinetics->subn[0] * kinetics->subn[1]) + 1;
-    int ypos = (i - (zpos - 1) * (kinetics->subn[0] * kinetics->subn[1])) / kinetics->subn[0] + 1;
-    int xpos = i - (zpos - 1) * (kinetics->subn[0] * kinetics->subn[1]) - (ypos - 1) * kinetics->subn[0] + 1;
-
-    double x = kinetics->sublo[0] + xpos * stepx - stepx/2;
-    double y = kinetics->sublo[1] + ypos * stepy - stepy/2;
-    double z = zpos * stepz - stepz/2;
-
-    fprintf(fp, "%i,\t%f,\t%f,\t%f,\t%e\n",i, x, y, z, kinetics->qGas[nuID][i]);
-  }
 }
 
 

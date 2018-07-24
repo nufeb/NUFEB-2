@@ -2,6 +2,7 @@
 #SBATCH -A tcnufeb
 #SBATCH --ntasks=20
 #SBATCH -c 1
+#SBATCH -N 1-1
 module load intel
 
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK

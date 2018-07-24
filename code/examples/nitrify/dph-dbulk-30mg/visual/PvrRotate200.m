@@ -20,9 +20,9 @@ fprintf(fid,'look_at 0\n')
 fprintf(fid,'rotate <0, 0, 20>\n', rotate);
 fprintf(fid,'}\n');
 fprintf(fid,'// Create simualtion domain\n');
-fprintf(fid,'#declare b_x=0.3;\n');
-fprintf(fid,'#declare b_y=0.15;\n');
-fprintf(fid,'#declare b_z=0.3;\n');
+fprintf(fid,'#declare b_x=0.125;\n');
+fprintf(fid,'#declare b_y=0.025;\n');
+fprintf(fid,'#declare b_z=0.15;\n');
 fprintf(fid,'object{ \n');
 fprintf(fid,['Wire_Box(<b_x, b_y, b_z>, <-b_x, -b_y, -b_z>, 0.0002, 0) \n']);
 fprintf(fid,[' texture{ pigment{ color rgb<1,1,1>}}\n']);

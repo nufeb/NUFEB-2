@@ -36,7 +36,7 @@ using namespace LAMMPS_NS;
 ComputeNufebGas::ComputeNufebGas(LAMMPS *lmp, int narg, char **arg) :
   Compute(lmp, narg, arg)
 {
-  if (narg != 4) error->all(FLERR,"Illegal compute avgcon command");
+  if (narg != 4) error->all(FLERR,"Illegal compute gas command");
 
   // register fix kinetics with this class
   kinetics = NULL;

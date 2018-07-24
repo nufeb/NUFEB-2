@@ -43,7 +43,7 @@ class DumpBio : public Dump {
   class Fix **fix;           // list of ptrs to the Fix objects
 
   int anFlag, concFlag, avgsFlag, catFlag, phFlag, massFlag, gasFlag, yieldFlag, avgphFlag;
-  int diaFlag, dimFlag, divFlag, heightFlag, roughFlag, segFlag, ntypeFlag, bulkFlag, gasFlag;
+  int diaFlag, dimFlag, divFlag, heightFlag, roughFlag, segFlag, ntypeFlag, bulkFlag;
   int massHeader, divHeader, typeHeader, bulkHeader, avgsHeader, avgphHeader;
 
   double xlo,xhi,ylo,yhi,zlo,zhi;
