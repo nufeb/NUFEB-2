@@ -280,59 +280,58 @@ int *FixKineticsDiffusion::diffusion(int *nuConv, int iter, double diffT) {
 
   double *maxS = new double[nnus + 1];
   for (int i = 1; i <= nnus; i++) {
-    if (bio->nuType[i] != 0 || nuConv[i]) continue;
-
-    if (unit == 0) {
-      xbcm = iniS[i][1] * 1000;
-      xbcp = iniS[i][2] * 1000;
-      ybcm = iniS[i][3] * 1000;
-      ybcp = iniS[i][4] * 1000;
-      zbcm = iniS[i][5] * 1000;
-      zbcp = iniS[i][6] * 1000;
-    } else {
-      xbcm = iniS[i][1];
-      xbcp = iniS[i][2];
-      ybcm = iniS[i][3];
-      ybcp = iniS[i][4];
-      zbcm = iniS[i][5];
-      zbcp = iniS[i][6];
-    }
-    // copy current concentrations
-    for (int grid = 0; grid < nXYZ; grid++) {
-      nuPrev[i][grid] = nuGrid[i][grid];
-      if (ghost[grid])
-        compute_bc(nuPrev[i][grid], nuGrid[i], grid, nuBS[i]);
-    }
-
-    maxS[i] = 0;
-    // solve diffusion and reaction
-    for (int grid = 0; grid < nXYZ; grid++) {
-      // transform nXYZ index to nuR index
-      if (!ghost[grid]) {
-        int ind = get_index(grid);
-        double r = (unit == 1) ? nuR[i][ind] : nuR[i][ind] * 1000;
-
-        compute_flux(diffD[i], nuGrid[i][grid], nuPrev[i], r, grid, ind);
-
-        nuR[i][ind] = 0;
-
-        if (nuGrid[i][grid] > 0) {
-          nuS[i][ind] = (unit == 1) ? (nuGrid[i][grid]) : (nuGrid[i][grid] / 1000);
-        } else {
-          nuGrid[i][grid] = 1e-20;
-          nuS[i][ind] = 1e-20;
-        }
-
-        if (maxS[i] < nuGrid[i][grid])
-          maxS[i] = nuGrid[i][grid];
+    if (bio->nuType[i] == 0 && !nuConv[i]) {
+      if (unit == 0) {
+        xbcm = iniS[i][1] * 1000;
+        xbcp = iniS[i][2] * 1000;
+        ybcm = iniS[i][3] * 1000;
+        ybcp = iniS[i][4] * 1000;
+        zbcm = iniS[i][5] * 1000;
+        zbcp = iniS[i][6] * 1000;
+      } else {
+        xbcm = iniS[i][1];
+        xbcp = iniS[i][2];
+        ybcm = iniS[i][3];
+        ybcp = iniS[i][4];
+        zbcm = iniS[i][5];
+        zbcp = iniS[i][6];
       }
-    }
+      // copy current concentrations
+      for (int grid = 0; grid < nXYZ; grid++) {
+        nuPrev[i][grid] = nuGrid[i][grid];
+      }
+
+      maxS[i] = 0;
+      // solve diffusion and reaction
+      for (int grid = 0; grid < nXYZ; grid++) {
+        // transform nXYZ index to nuR index
+        if (!ghost[grid]) {
+          int ind = get_index(grid);
+          double r = (unit == 1) ? (r = nuR[i][ind]) :  (r = nuR[i][ind] * 1000);
+
+          compute_flux(diffD[i], nuGrid[i][grid], nuPrev[i], r, grid, ind);
+
+          nuR[i][ind] = 0;
+
+          if (nuGrid[i][grid] > 0) {
+            (unit == 1) ? (nuS[i][ind] = nuGrid[i][grid]) : (nuS[i][ind] = nuGrid[i][grid] / 1000);
+          } else {
+            nuGrid[i][grid] = 1e-20;
+            nuS[i][ind] = 1e-20;
+          }
+
+    if (maxS[i] < nuGrid[i][grid])
+      maxS[i] = nuGrid[i][grid];
+        } else
+          compute_bc(nuGrid[i][grid], nuPrev[i], grid, nuBS[i]);
+      }
 #if MPI_VERSION >= 3
       MPI_Iallreduce(MPI_IN_PLACE, &maxS[i], 1, MPI_DOUBLE, MPI_MAX, world, &requests[i]);
 #else
       MPI_Allreduce(MPI_IN_PLACE, &maxS[i], 1, MPI_DOUBLE, MPI_MAX, world);
 #endif
-  }
+    }
+}
 
   int nrequests = 0;
   for (int i = 1; i <= nnus; i++) {
@@ -386,35 +385,35 @@ void FixKineticsDiffusion::update_grids() {
     nXYZ = nX * nY * (MIN(kinetics->subn[2], MAX(0, kinetics->bnz - kinetics->subnlo[2])) + 2);
 
   for (int grid = 0; grid < nXYZ; grid++) {
-    if (xGrid[grid][0] < kinetics->sublo[0] || xGrid[grid][1] < kinetics->sublo[1]
-        || xGrid[grid][2] < kinetics->sublo[2] || xGrid[grid][0] > kinetics->subhi[0]
-        || xGrid[grid][1] > kinetics->subhi[1]) {
+    if (xGrid[grid][0] < kinetics->sublo[0]|| xGrid[grid][1] < kinetics->sublo[1] || xGrid[grid][2] < kinetics->sublo[2]
+    || xGrid[grid][0] > kinetics->subhi[0] || xGrid[grid][1] > kinetics->subhi[1] || xGrid[grid][2] > MIN(bzhi, kinetics->subhi[2]))
       ghost[grid] = true;
-    } else if (xGrid[grid][2] > MIN(bzhi, kinetics->subhi[2])) {
-      ghost[grid] = true;
-
-      // update bulk concentration
-      if (!bulkflag) continue;
-
-      for (int nu = 1; nu <= bio->nnus; nu++) {
-        if (bio->nuType[nu] != 0) continue;
-
-        nuGrid[nu][grid] = kinetics->nuBS[nu];
-
-        int ind = get_index(grid);
-        if (ind >= 0 && ind < kinetics->subn[0] * kinetics->subn[1] * kinetics->subn[2]) {
-          if (kinetics->nuBS[nu] == 1e-20) {
-            kinetics->nuS[nu][ind] = nuGrid[nu][grid];
-          } else {
-            kinetics->nuS[nu][ind] = (unit == 1) ? (nuGrid[nu][grid]) : (nuGrid[nu][grid] / 1000);
-          }
-        }
-      }
-    } else {
+    else
       ghost[grid] = false;
-    }
+  }
+
+  if(!bulkflag) return;
+
+  for (int grid = 0; grid < nX*nY*nZ; grid++) {
+     if (xGrid[grid][2] > MIN(bzhi, kinetics->subhi[2])) {
+       for (int nu = 1; nu <= bio->nnus; nu++) {
+         if (bio->nuType[nu] != 0) continue;
+
+         nuGrid[nu][grid] = kinetics->nuBS[nu];
+
+         int ind = get_index(grid);
+         if (ind >= 0 && ind < kinetics->subn[0] * kinetics->subn[1] * kinetics->subn[2]) {
+           if (kinetics->nuBS[nu] == 1e-20) {
+             kinetics->nuS[nu][ind] = nuGrid[nu][grid];
+           } else {
+             kinetics->nuS[nu][ind] = (unit == 1) ? (nuGrid[nu][grid]) : (nuGrid[nu][grid] / 1000);
+           }
+         }
+       }
+     }
   }
 }
+
 
 /* ----------------------------------------------------------------------
  Initialize grids
