@@ -41,7 +41,7 @@ variable divDia equal 6e-6
 #kinetics variables
 variable etaHET equal 0.0
 variable diffT equal 1e-5
-variable tol equal 1e-7
+variable tol equal 5e-7
 variable layer equal 0
 
 ##############Define IBm Commands##############

@@ -62,6 +62,7 @@ FixKineticsDiffusion::FixKineticsDiffusion(LAMMPS *lmp, int narg, char **arg) :
   shearflag = dragflag = 0;
   bulkflag = 0;
   srate = 0;
+  dcflag = 0;
 
   var = new char*[1];
   ivar = new int[1];
@@ -126,6 +127,11 @@ FixKineticsDiffusion::FixKineticsDiffusion(LAMMPS *lmp, int narg, char **arg) :
       srate = force->numeric(FLERR, arg[iarg + 1]);
       if (srate < 0)
         error->all(FLERR, "Illegal fix kinetics/diffusion command: srate");
+      iarg += 2;
+    } else if (strcmp(arg[iarg], "dcflag") == 0) {
+      dcflag = force->inumeric(FLERR, arg[iarg + 1]);
+      if (dcflag != 1 && dcflag != 0)
+        error->all(FLERR, "Illegal fix kinetics/diffusion command: dcflag");
       iarg += 2;
     } else if (strcmp(arg[iarg], "bulk") == 0) {
       bulkflag = 1;
@@ -232,6 +238,8 @@ void FixKineticsDiffusion::init() {
   stepx = (xhi - xlo) / nx;
   stepy = (yhi - ylo) / ny;
   stepz = (zhi - zlo) / nz;
+
+  vol = stepx * stepy * stepz;
   bzhi = kinetics->bnz * stepz;
 
   if (!isEuqal(stepx, stepy, stepz))
@@ -308,8 +316,10 @@ int *FixKineticsDiffusion::diffusion(int *nuConv, int iter, double diffT) {
         if (!ghost[grid]) {
           int ind = get_index(grid);
           double r = (unit == 1) ? (r = nuR[i][ind]) :  (r = nuR[i][ind] * 1000);
+          double diffCoeff = diffD[i];
+          if (dcflag) diffCoeff *= 1 - (0.43 * pow(kinetics->xmass[ind]/vol,0.92)) / (11.19 + 0.27 * pow(kinetics->xmass[ind]/vol,0.99));
 
-          compute_flux(diffD[i], nuGrid[i][grid], nuPrev[i], r, grid, ind);
+          compute_flux(diffCoeff, nuGrid[i][grid], nuPrev[i], r, grid, ind);
 
           nuR[i][ind] = 0;
 
@@ -474,8 +484,7 @@ void FixKineticsDiffusion::init_grid() {
  ------------------------------------------------------------------------- */
 
 void FixKineticsDiffusion::compute_bulk() {
-  if (!bulkflag)
-    return;
+  if (!bulkflag) return;
 
   double vol = stepx * stepy * stepz;
   double **iniS = bio->iniS;

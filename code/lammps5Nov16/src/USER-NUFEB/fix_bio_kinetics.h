@@ -61,6 +61,7 @@ class FixKinetics : public Fix, public DecompGrid<FixKinetics> {
   double **DRGAn;                  // Gibbs free energy of anabolism [type][grid]
   double **kEq;                    // equilibrium constants [nutrient][4]
   double *sh;                      // concentration of hydrogen ion
+  double *xmass;                    // grid biomass
   int *nuConv;
   double diffT;                    // diffusion timestep
   double blayer;
@@ -94,6 +95,7 @@ class FixKinetics : public Fix, public DecompGrid<FixKinetics> {
   void grow();
   double getMaxHeight();
   void update_bgrids();
+  void update_xmass();
   bool is_inside(int);
   int position(int);
   void reset_nuR();
