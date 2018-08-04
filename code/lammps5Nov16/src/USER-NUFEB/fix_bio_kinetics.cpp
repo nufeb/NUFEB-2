@@ -203,6 +203,7 @@ FixKinetics::~FixKinetics() {
   memory->destroy(kEq);
   memory->destroy(sh);
   memory->destroy(fV);
+  memory->destroy(xmass);
 
   delete[] nuConv;
 }
@@ -276,6 +277,7 @@ void FixKinetics::init() {
   kEq = memory->create(kEq, nnus + 1, 4, "kinetics:kEq");
   sh = memory->create(sh, ngrids, "kinetics:Sh");
   fV = memory->create(fV, 3, ngrids, "kinetcis:fV");
+  xmass = memory->create(xmass, ngrids, "kinetcis:xmass");
 
   //initialize grid yield, inlet concentration, consumption
   for (int j = 0; j < ngrids; j++) {
@@ -407,6 +409,9 @@ void FixKinetics::integration() {
   update_bgrids();
   reset_nuR();
 
+  // update grid biomass for calculation diffusion coeff
+  if (diffusion != NULL && diffusion->dcflag) update_xmass();
+
   while (!isConv) {
     iteration++;
     isConv = true;
@@ -493,6 +498,20 @@ void FixKinetics::update_bgrids() {
   }
   else {
     bgrids = subn[0] * subn[1] * subn[2];
+  }
+}
+
+void FixKinetics::update_xmass() {
+  int *mask = atom->mask;
+  int nlocal = atom->nlocal;
+
+  for (int i = 0; i < ngrids; i++) {
+    xmass[i] = 0;
+  }
+
+  for (int i = 0; i < nlocal; i++) {
+    int pos = position(i);
+    xmass[pos] += atom->rmass[i];
   }
 }
 
