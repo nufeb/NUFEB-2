@@ -42,7 +42,7 @@ class FixKineticsDiffusion: public Fix, public DecompGrid<FixKineticsDiffusion> 
   int ntypes;                       // # of species
   int *mask;
   int *type;
-  int shearflag, dragflag;
+  int shearflag, dragflag, dcflag;  //flags for shear, drag(nufebfoam), and diffusion coefficent
 
   double srate;                 // shear rate
   double tol;                   // tolerance for convergence criteria for nutrient balance equation
@@ -51,7 +51,8 @@ class FixKineticsDiffusion: public Fix, public DecompGrid<FixKineticsDiffusion> 
   double **xGrid;                     // grid coordinate [gird][3]
   bool *ghost;
 
-  double *diffD;
+  double *diffD;                    // diffusion coefficent
+  double vol;                      //grid volume
 
   double bl;
   double q, rvol, af;
@@ -83,6 +84,7 @@ class FixKineticsDiffusion: public Fix, public DecompGrid<FixKineticsDiffusion> 
   void compute_bulk();
   void compute_bl();
   void compute_flux(double, double &, double *, double, int, int);
+  double compute_diffD(double);
   bool isEuqal(double, double, double);
   int get_index(int);
   void migrate(const Grid<double, 3> &, const Box<int, 3> &, const Box<int, 3> &);

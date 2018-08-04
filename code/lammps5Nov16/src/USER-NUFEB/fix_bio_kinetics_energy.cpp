@@ -106,9 +106,9 @@ void FixKineticsEnergy::init() {
   for (int n = 0; n < 1; n++) {
     ivar[n] = input->variable->find(var[n]);
     if (ivar[n] < 0)
-      error->all(FLERR, "Variable name for fix kinetics/monod does not exist");
+      error->all(FLERR, "Variable name for fix kinetics/energy does not exist");
     if (!input->variable->equalstyle(ivar[n]))
-      error->all(FLERR, "Variable for fix kinetics/monod is invalid style");
+      error->all(FLERR, "Variable for fix kinetics/energy is invalid style");
   }
 
   // register fix kinetics with this class
@@ -131,21 +131,21 @@ void FixKineticsEnergy::init() {
   bio = kinetics->bio;
 
   if (bio->nnus == 0)
-    error->all(FLERR, "fix_kinetics/monod requires Nutrients input");
+    error->all(FLERR, "fix_kinetics/energy requires Nutrients input");
   else if (bio->catCoeff == NULL)
-    error->all(FLERR, "fix_kinetics/monod requires Catabolism Coeffs input");
+    error->all(FLERR, "fix_kinetics/energy requires Catabolism Coeffs input");
   else if (bio->anabCoeff == NULL)
-    error->all(FLERR, "fix_kinetics/monod requires Anabolism Coeffs input");
+    error->all(FLERR, "fix_kinetics/energy requires Anabolism Coeffs input");
   else if (bio->maintain == NULL)
-    error->all(FLERR, "fix_kinetics/monod requires Maintenance input");
+    error->all(FLERR, "fix_kinetics/energy requires Maintenance input");
   else if (bio->decay == NULL)
-    error->all(FLERR, "fix_kinetics/monod requires Decay input");
+    error->all(FLERR, "fix_kinetics/energy requires Decay input");
   else if (bio->ks == NULL)
-    error->all(FLERR, "fix_kinetics/monod requires Ks input");
+    error->all(FLERR, "fix_kinetics/energy requires Ks input");
   else if (bio->decayCoeff == NULL)
-    error->all(FLERR, "fix_kinetics/monod requires Decay Coeffs input");
+    error->all(FLERR, "fix_kinetics/energy requires Decay Coeffs input");
   else if (bio->q == NULL)
-    error->all(FLERR, "fix_kinetics/monod requires Consumption Rate input");
+    error->all(FLERR, "fix_kinetics/energy requires Consumption Rate input");
 
   nnus = bio->nnus;
   nx = kinetics->nx;

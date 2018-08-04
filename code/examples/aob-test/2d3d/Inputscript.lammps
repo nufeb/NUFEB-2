@@ -54,7 +54,7 @@ variable divDia equal 1e-6
 
 #Defining diffusion variables
 variable diffT equal 1e-4
-variable tol equal 1e-4
+variable tol equal 5e-7
 variable etaHET equal 0.0
 variable layer equal -1
 
@@ -67,7 +67,7 @@ fix k1 all kinetics 1 10 10 10 v_diffT v_layer ph 7.5
 #fix ki3 all kinetics/ph
 fix ki2 all kinetics/thermo
 fix ki1 all kinetics/growth/energy v_EPSdens 
-fix g1 all kinetics/diffusion v_tol pp pp nd mol
+fix g1 all kinetics/diffusion v_tol pp pp nd mol dcflag 1
 fix d2 all death 1 v_deadDia
 
 ##############Ibm compute##############
