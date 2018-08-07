@@ -45,12 +45,19 @@ atom_vec_bio.h
 bio.cpp
 bio.h
 box.h
+compute_bio_avgcon.cpp
+compute_bio_avgcon.h
+compute_bio_avgph.cpp
+compute_bio_avgph.h
 compute_bio_biomass.cpp
 compute_bio_biomass.h
 compute_bio_diameter.cpp
 compute_bio_diameter.h
 compute_bio_dimension.cpp
 compute_bio_dimension.h
+compute_bio_diversity.cpp
+compute_bio_gas.cpp
+compute_bio_gas.h
 compute_bio_diversity.cpp
 compute_bio_diversity.h
 compute_bio_height.cpp
@@ -61,6 +68,8 @@ compute_bio_rough.cpp
 compute_bio_rough.h
 compute_bio_segregate.cpp
 compute_bio_segregate.h
+compute_bio_surface.cpp
+compute_bio_surface.h
 decomp_grid.h
 dump_bio.cpp
 dump_bio.h
@@ -105,6 +114,8 @@ fix_bio_verify.h
 fix_bio_walladh.cpp
 fix_bio_walladh.h
 grid.h
+read_bio_restart.cpp
+read_bio_restart.h
 read_data_bio.cpp
 read_data_bio.h
 reduce_grid.h
