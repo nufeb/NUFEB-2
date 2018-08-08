@@ -493,7 +493,7 @@ void FixKineticsDiffusion::compute_bulk() {
 
   for (int nu = 1; nu <= bio->nnus; nu++) {
     // the concentration of o2 in the bulk liquid is kept constant by aeration
-    if (bio->nuType[nu] != 0 || !strcmp(bio->nuName[nu], "o2")) continue;
+    if (bio->nuType[nu] != 0 || !strcmp(bio->nuName[nu], "o2") || !strcmp(bio->nuName[nu], "co2")) continue;
 
     double sumR = 0;
     double global_sumR = 0;
