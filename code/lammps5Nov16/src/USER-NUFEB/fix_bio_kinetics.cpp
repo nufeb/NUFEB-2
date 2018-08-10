@@ -172,8 +172,8 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
 
   for (int i = 0; i < 3; i++) {
     // considering that the grid will always have a cubic cell (i.e. stepx = stepy = stepz)
-    subnlo[i] = domain->sublo[i] / stepz;
-    subnhi[i] = domain->subhi[i] / stepz;
+    subnlo[i] = std::round(domain->sublo[i] / stepz);
+    subnhi[i] = std::round(domain->subhi[i] / stepz);
     sublo[i] = subnlo[i] * stepz;
     subhi[i] = subnhi[i] * stepz;
     subn[i] = subnhi[i] - subnlo[i];
