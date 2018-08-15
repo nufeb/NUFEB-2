@@ -123,6 +123,7 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
   iph = 7.0;
   demflag = 0;
   niter = -1;
+  devery = 1;
 
   int iarg = 9;
   while (iarg < narg){
@@ -156,8 +157,13 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
       if (demflag != 1 && demflag != 0)
         error->all(FLERR, "Illegal fix kinetics command: demflag");
       iarg += 2;
-    }  else if (strcmp(arg[iarg],"niter") == 0) {
+    } else if (strcmp(arg[iarg],"niter") == 0) {
       niter = force->inumeric(FLERR, arg[iarg + 1]);
+      iarg += 2;
+    } else if (strcmp(arg[iarg],"devery") == 0) {
+      devery = force->inumeric(FLERR, arg[iarg + 1]);
+      if (devery < 1)
+        error->all(FLERR, "Illegal fix kinetics command: devery");
       iarg += 2;
     } else
       error->all(FLERR, "Illegal fix kinetics command");
@@ -300,7 +306,7 @@ void FixKinetics::init() {
 
   if (energy != NULL) {
     init_keq();
-    init_activity();
+    compute_activity();
   }
 
   // Fitting initial domain decomposition to the grid 
@@ -345,13 +351,13 @@ void FixKinetics::init_keq() {
 
 /* ---------------------------------------------------------------------- */
 
-void FixKinetics::init_activity() {
+void FixKinetics::compute_activity() {
   int nnus = bio->nnus;
   double *denm = memory->create(denm, nnus + 1, "kinetics:denm");
   double gSh = pow(10, -iph);
 
   for (int k = 1; k < nnus + 1; k++) {
-    for (int j = 0; j < ngrids; j++) {
+    for (int j = 0; j < bgrids; j++) {
       double iniNuS = bio->iniS[k][0];
       sh[j] = gSh;
       denm[k] = (1 + kEq[k][0]) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][3] * gSh + kEq[k][3] * kEq[k][2] * kEq[k][1];
@@ -409,7 +415,7 @@ void FixKinetics::integration() {
   update_bgrids();
   reset_nuR();
 
-  // update grid biomass for calculation diffusion coeff
+  // update grid biomass to calculate diffusion coeff
   if (diffusion != NULL && diffusion->dcflag) update_xmass();
 
   while (!isConv) {
@@ -417,14 +423,16 @@ void FixKinetics::integration() {
     isConv = true;
 
     // solve for reaction term, no growth happens here
-    if (energy != NULL) {
-      if (ph != NULL) ph->solve_ph();
-      else init_activity();
+    if (iteration % devery == 0) {
+      if (energy != NULL) {
+        if (ph != NULL) ph->solve_ph();
+        else compute_activity();
 
-      thermo->thermo(diffT);
-      energy->growth(diffT, gflag);
-    } else if (monod != NULL) {
-      monod->growth(diffT, gflag);
+        thermo->thermo(diffT);
+        energy->growth(diffT, gflag);
+      } else if (monod != NULL) {
+        monod->growth(diffT, gflag);
+      }
     }
 
     // solve for diffusion and advection
