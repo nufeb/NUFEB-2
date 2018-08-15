@@ -55,23 +55,24 @@ class FixKinetics : public Fix, public DecompGrid<FixKinetics> {
   double **fV;                     // velocity field [velo][grid]
   double **gYield;                 // inverse yield [type][grid]
   double ***activity;              // activities of chemical species [nutrient][5 charges][grid]
-  double gvol, rg;           // gas volume and gas transfer constant
+  double gvol, rg;                 // gas volume and gas transfer constant
   double temp, rth;                // uiversal gas constant (thermodynamics) and temperature
   double **DRGCat;                 // Gibbs free energy of catabolism [type][grid]
   double **DRGAn;                  // Gibbs free energy of anabolism [type][grid]
   double **kEq;                    // equilibrium constants [nutrient][4]
   double *sh;                      // concentration of hydrogen ion
-  double *xmass;                    // grid biomass
+  double *xmass;                   // grid biomass
   int *nuConv;
   double diffT;                    // diffusion timestep
   double blayer;
   double zhi,bzhi,zlo, xlo, xhi, ylo, yhi;
   double stepz, stepx, stepy;
-  int gflag;                      // microbe growth flag 1 = update biomass; 0 = solve reaction only, growth is negligible
+  int gflag;                       // microbe growth flag 1 = update biomass; 0 = solve reaction only, growth is negligible
   int demflag;                     // flag for DEM run
   double maxheight;
   int nout;
-  int niter;                        // # of iterations
+  int niter;                       // # of iterations
+  int devery;                      // # of steps to call ph, thermo and form calculations
 
   int subn[3];                     // number of grids in x y axis for this proc
   int subnlo[3],subnhi[3];         // cell index of the subdomain lower and upper bound for each axis
@@ -89,7 +90,7 @@ class FixKinetics : public Fix, public DecompGrid<FixKinetics> {
   class FixKineticsThermo *thermo;
   class FixFluid *nufebFoam;
 
-  void init_activity();
+  void compute_activity();
   void init_keq();
   void integration();
   void grow();

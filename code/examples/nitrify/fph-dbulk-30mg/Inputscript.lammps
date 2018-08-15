@@ -4,7 +4,7 @@ atom_style      bio
 atom_modify     map array sort 100 5.0e-7
 boundary        pp pp ff
 newton          off
-processors  10 2 3
+processors * * *
 
 comm_modify     vel yes
 read_data_bio atom.in
@@ -74,7 +74,7 @@ variable deadDia equal 5.85e-7
 
 ##############Ibm functions##############
 
-fix k1 all kinetics 1 125 25 150 v_diffT v_layer demflag 0 niter 50000 ph 7.5
+fix k1 all kinetics 1 25 5 30 v_diffT v_layer demflag 0 niter 50000 ph 7.5 devery 1000
 #fix ki3 all kinetics/ph
 fix ki2 all kinetics/thermo
 fix ki1 all kinetics/growth/energy v_EPSdens 
@@ -93,9 +93,9 @@ compute myPh all avg_ph
 
 thermo_style    custom step cpu atoms biomass c_myNtypes[*]
 dump du0 all bio 5010 biomass ntypes bulk avg_con avg_ph
-dump du2 all grid 50100 grid_%_*.vti con hyd
-dump du3 all custom/vtk 50100 snapshot%_*.vtu id type diameter x y z
-dump du4 all bio/hdf5 50100 dump_*.h5 id type radius x y z con cat ana hyd
+#dump du2 all grid 50100 grid_%_*.vti con hyd
+#dump du3 all custom/vtk 50100 snapshot%_*.vtu id type diameter x y z
+#dump du4 all bio/hdf5 50100 dump_*.h5 id type radius x y z con cat ana hyd
 thermo 501
 thermo_modify   lost ignore
 
