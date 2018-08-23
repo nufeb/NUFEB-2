@@ -315,13 +315,11 @@ int *FixKineticsDiffusion::diffusion(int *nuConv, int iter, double diffT) {
         // transform nXYZ index to nuR index
         if (!ghost[grid]) {
           int ind = get_index(grid);
-          double r = (unit == 1) ? (r = nuR[i][ind]) :  (r = nuR[i][ind] * 1000);
+          double r = (unit == 1) ? nuR[i][ind] : nuR[i][ind] * 1000;
           double diffCoeff = diffD[i];
-          if (dcflag) diffCoeff *= 1 - (0.43 * pow(kinetics->xmass[ind]/vol,0.92)) / (11.19 + 0.27 * pow(kinetics->xmass[ind]/vol,0.99));
+	  if (dcflag) diffCoeff *= 1 - (0.43 * pow(kinetics->xmass[ind]/vol,0.92)) / (11.19 + 0.27 * pow(kinetics->xmass[ind]/vol,0.99));
 
           compute_flux(diffCoeff, nuGrid[i][grid], nuPrev[i], r, grid, ind);
-
-          nuR[i][ind] = 0;
 
           if (nuGrid[i][grid] > 0) {
             (unit == 1) ? (nuS[i][ind] = nuGrid[i][grid]) : (nuS[i][ind] = nuGrid[i][grid] / 1000);
@@ -330,8 +328,8 @@ int *FixKineticsDiffusion::diffusion(int *nuConv, int iter, double diffT) {
             nuS[i][ind] = 1e-20;
           }
 
-    if (maxS[i] < nuGrid[i][grid])
-      maxS[i] = nuGrid[i][grid];
+	  if (maxS[i] < nuGrid[i][grid])
+	    maxS[i] = nuGrid[i][grid];
         } else
           compute_bc(nuGrid[i][grid], nuPrev[i], grid, nuBS[i]);
       }
