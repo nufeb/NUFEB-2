@@ -419,7 +419,6 @@ void FixKinetics::integration() {
   if (diffusion != NULL && diffusion->dcflag) update_xmass();
 
   while (!isConv) {
-    iteration++;
     isConv = true;
 
     // solve for reaction term, no growth happens here
@@ -428,20 +427,17 @@ void FixKinetics::integration() {
         if (ph != NULL) ph->solve_ph();
         else compute_activity();
 
-        thermo->thermo(diffT);
-        energy->growth(diffT, gflag);
+        thermo->thermo(diffT * devery);
+	reset_nuR();
+	energy->growth(diffT * devery, gflag);
       } else if (monod != NULL) {
-        monod->growth(diffT, gflag);
+        monod->growth(diffT * devery, gflag);
       }
     }
 
     // solve for diffusion and advection
     if (diffusion != NULL) {
       nuConv = diffusion->diffusion(nuConv, iteration, diffT);
-      reset_nuR();
-    } else {
-      reset_nuR();
-      break;
     }
 
     // check for convergence
@@ -451,6 +447,8 @@ void FixKinetics::integration() {
         break;
       }
     }
+
+    iteration++;
 
     if (niter > 0 && iteration >= niter) isConv = true;
   }
