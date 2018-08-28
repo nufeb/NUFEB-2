@@ -418,6 +418,7 @@ void FixKinetics::integration() {
   // update grid biomass to calculate diffusion coeff
   if (diffusion != NULL && diffusion->dcflag) update_xmass();
 
+  int *nuConvPrev = new int[nnus + 1]();
   while (!isConv) {
     isConv = true;
 
@@ -440,15 +441,20 @@ void FixKinetics::integration() {
       nuConv = diffusion->diffusion(nuConv, iteration, diffT);
     }
 
+    iteration++;
+
     // check for convergence
     for (int i = 1; i <= nnus; i++) {
-      if (!nuConv[i]) {
-        isConv = false;
-        break;
+      if (comm->me == 0 && nuConv[i] && nuConvPrev[i] == 0) {
+	fprintf(screen, "nutrient %s converged at iteration %d\n", bio->nuName[i], iteration);
       }
+      isConv &= nuConv[i];
     }
 
-    iteration++;
+    for (int i = 0; i <= nnus; i++) {
+      if (nuConvPrev > 0)
+	nuConvPrev[i] = nuConv[i];
+    }
 
     if (niter > 0 && iteration >= niter) isConv = true;
   }
@@ -473,6 +479,8 @@ void FixKinetics::integration() {
   }
 
   if (thermo != NULL) thermo->thermo(update->dt*nevery);
+
+  delete [] nuConvPrev;
 }
 
 /* ----------------------------------------------------------------------
