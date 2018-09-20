@@ -173,7 +173,7 @@ void FixDivide::post_integrate() {
   int nlocal = atom->nlocal;
 
   for (int i = 0; i < nlocal; i++) {
-    if (atom->mask[i] == avec->eps_mask || atom->mask[i] == avec->maskDEAD)
+    if (atom->mask[i] == avec->eps_mask || atom->mask[i] == avec->mask_dead)
       continue;
 
     if (atom->mask[i] & groupbit) {

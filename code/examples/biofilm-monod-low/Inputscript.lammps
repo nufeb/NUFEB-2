@@ -4,7 +4,7 @@ atom_style	bio
 atom_modify	map array sort 100 5.0e-7
 boundary	ff ff ff
 newton		off
-processors  * * 1
+processors  4 1 1
 
 comm_modify	vel yes
 read_data_bio atom.in
@@ -62,7 +62,7 @@ variable deadDia equal 9e-7
 
 ##############Define IBm Commands##############
 
-fix k1 all kinetics 100 30 12 30 v_diffT v_layer niter 1000
+fix k1 all kinetics 100 30 12 30 v_diffT v_layer niter 10000
 fix kgm all kinetics/growth/monod v_EPSdens v_etaHET
 fix g1 all kinetics/diffusion v_tol pp pp nd kg
 fix d1 all divide 100 v_EPSdens v_divDia 978595
