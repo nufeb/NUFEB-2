@@ -75,7 +75,6 @@ FixKineticsEnergy::FixKineticsEnergy(LAMMPS *lmp, int narg, char **arg) :
 
   kinetics = NULL;
   epsflag = 0;
-
 }
 
 /* ---------------------------------------------------------------------- */
@@ -87,6 +86,8 @@ FixKineticsEnergy::~FixKineticsEnergy() {
   }
   delete[] var;
   delete[] ivar;
+
+  memory->destroy(growrate);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -126,15 +127,15 @@ void FixKineticsEnergy::init() {
   if (kinetics == NULL)
     lmp->error->all(FLERR, "The fix kinetics command is required for running iBM simulation");
 
-  EPSdens = input->variable->compute_equal(ivar[0]);
+  eps_dens = input->variable->compute_equal(ivar[0]);
 
   bio = kinetics->bio;
 
-  if (bio->nnus == 0)
+  if (bio->nnu == 0)
     error->all(FLERR, "fix_kinetics/energy requires Nutrients input");
-  else if (bio->catCoeff == NULL)
+  else if (bio->cata_coeff == NULL)
     error->all(FLERR, "fix_kinetics/energy requires Catabolism Coeffs input");
-  else if (bio->anabCoeff == NULL)
+  else if (bio->anab_coeff == NULL)
     error->all(FLERR, "fix_kinetics/energy requires Anabolism Coeffs input");
   else if (bio->maintain == NULL)
     error->all(FLERR, "fix_kinetics/energy requires Maintenance input");
@@ -142,15 +143,16 @@ void FixKineticsEnergy::init() {
     error->all(FLERR, "fix_kinetics/energy requires Decay input");
   else if (bio->ks == NULL)
     error->all(FLERR, "fix_kinetics/energy requires Ks input");
-  else if (bio->decayCoeff == NULL)
+  else if (bio->decay_coeff == NULL)
     error->all(FLERR, "fix_kinetics/energy requires Decay Coeffs input");
   else if (bio->q == NULL)
     error->all(FLERR, "fix_kinetics/energy requires Consumption Rate input");
 
-  nnus = bio->nnus;
   nx = kinetics->nx;
   ny = kinetics->ny;
   nz = kinetics->nz;
+
+  growrate = memory->create(growrate, atom->ntypes+1, kinetics->ngrids, "monod:growrate");
 
   //Get computational domain size
   if (domain->triclinic == 0) {
@@ -180,118 +182,113 @@ void FixKineticsEnergy::init() {
  metabolism and atom update
  ------------------------------------------------------------------------- */
 void FixKineticsEnergy::growth(double dt, int gflag) {
-  mask = atom->mask;
-  nlocal = atom->nlocal;
-  type = atom->type;
-  ntypes = atom->ntypes;
+  int *mask = atom->mask;
+  int nlocal = atom->nlocal;
+  int *type = atom->type;
+  int ntypes = atom->ntypes;
 
-  catCoeff = bio->catCoeff;
-  anabCoeff = bio->anabCoeff;
-  maintain = bio->maintain;
-  decay = bio->decay;
-  activity = kinetics->activity;
+  double **cata_coeff = bio->cata_coeff;
+  double **anab_coeff = bio->anab_coeff;
+  double *maintain = bio->maintain;
+  double *decay = bio->decay;
 
-  radius = atom->radius;
-  rmass = atom->rmass;
-  outerMass = avec->outer_mass;
-  outerRadius = avec->outer_radius;
+  double *radius = atom->radius;
+  double *rmass = atom->rmass;
+  double *outer_mass = avec->outer_mass;
+  double *outer_radius = avec->outer_radius;
 
-  double **gMonod = memory->create(gMonod, atom->ntypes + 1, kinetics->bgrids, "kinetics/monod:gMonod");
+  double **nur = kinetics->nur;
+  int nnu = bio->nnu;
 
-  //initialization
-  for (int i = 0; i <= ntypes; i++) {
-    for (int j = 0; j < kinetics->bgrids; j++) {
-      gMonod[i][j] = -1;
+  double **grid_yield = kinetics->grid_yield;
+  double **xdensity = kinetics->xdensity;
+  int *nuconv = kinetics->nuconv;
+
+  for (int grid = 0; grid < kinetics->bgrids; grid++) {
+    //empty grid is not considered
+    if(!xdensity[0][grid]) continue;
+
+    for (int t = 1; t <= ntypes; t++) {
+      double qmet, maint, inv_yield;
+
+      qmet = bio->q[t] * grid_monod(t, grid);
+
+      if (!kinetics->gibbs_cata[t][grid]) maint = 0;
+      else maint = maintain[t] / -kinetics->gibbs_cata[t][grid];
+
+      if (!grid_yield[t][grid]) inv_yield = 1 / grid_yield[t][grid];
+      else inv_yield = 0;
+
+      for (int nu = 1; nu <= nnu; nu++) {
+        if (bio->nustate[nu] != 0) continue;
+        //microbe growth
+        if (1.2 * maint < qmet) {
+          double metCoeff = cata_coeff[t][nu] * inv_yield + anab_coeff[t][nu];
+          growrate[t][grid] = grid_yield[t][grid] * (qmet - maint);
+          // reaction in kg/L
+          nur[nu][grid] += growrate[t][grid] * xdensity[t][grid] * metCoeff / 24.6;
+        //microbe maintenance
+        } else if (qmet <= 1.2 * maint && maint <= qmet) {
+          nur[nu][grid] += cata_coeff[t][nu] * grid_yield[t][grid] * maint * xdensity[t][grid] / 24.6;
+        //microbe decay
+        } else {
+          double f;
+
+          if (maint == 0) f = 0;
+          else f = (maint - qmet) / maint;
+
+          nur[nu][grid] += (decay[t] * f * bio->decay_coeff[t][nu] +
+              cata_coeff[t][nu] * grid_yield[t][grid] * qmet) * xdensity[t][grid] / 24.6;
+        }
+      }
     }
   }
+
+  if (!gflag) return;
+
+  const double three_quarters_pi = (3.0 / (4.0 * MY_PI));
+  const double four_thirds_pi = 4.0 * MY_PI / 3.0;
+  const double third = 1.0 / 3.0;
 
   for (int i = 0; i < nlocal; i++) {
-    //get new growth rate based on new nutrients
-    double mass = biomass(i, gMonod) * dt;
-    //update bacteria mass, radius etc
+    int t = type[i];
+    int pos = kinetics->position(i);
 
-    if (gflag) bio_update(mass, i);
-  }
+    double density = rmass[i] / (four_thirds_pi * radius[i] * radius[i] * radius[i]);
+    rmass[i] = rmass[i] * (1 + growrate[t][pos] * dt);
 
-  memory->destroy(gMonod);
-}
 
-inline double FixKineticsEnergy::biomass(int i, double **gMonod) {
-  int t = type[i];
-  int pos = kinetics->position(i);
-  double **DGRCat = kinetics->DRGCat;
-  double **nuR = kinetics->nuR;
-  double **gYield = kinetics->gYield;
-  int *nuConv = kinetics->nuConv;
+    //update mass and radius
+    if (mask[i] == avec->mask_het) {
+      //update HET radius
+      radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
+      //update mass and radius for EPS shell if PES production is on
+      if (epsflag == 1) {
+        outer_mass[i] = four_thirds_pi * (outer_radius[i] * outer_radius[i] * outer_radius[i] - radius[i] * radius[i] * radius[i])
+            * eps_dens + growrate[t][pos] * rmass[i];
 
-  if (pos == -1) error->warning(FLERR, "Cross-boundary particles reported in ");
-
-  if (bio->q[t] == 0 || DGRCat[t][pos] == 0) return 0;
-
-  double qMet;       // specific substrate uptake rate for growth metabolism
-  double qCat;       // specific substrate uptake rate for catabolism
-
-  double bacMaint;    // specific substrate consumption required for maintenance
-  double mu = 0;          // specific biomass growth
-  double mass = 0;
-  double invYield;
-
-  double m = gMonod[t][pos];
-
-  if (m < 0) {
-    gMonod[t][pos] = grid_monod(pos, t, 1);
-    qMet = bio->q[t] * gMonod[t][pos];
-  } else {
-    qMet = bio->q[t] * m;
-  }
-
-  qCat = qMet;
-
-  bacMaint = maintain[t] / -DGRCat[t][pos];
-
-  if (gYield[t][pos] != 0) invYield = 1 / gYield[t][pos];
-  else invYield = 0;
-
-  for (int nu = 1; nu <= nnus; nu++) {
-    if (bio->nuType[nu] != 0) continue;
-
-    double consume;
-    if (1.2 * bacMaint < qCat) {
-      double metCoeff = catCoeff[t][nu] * invYield + anabCoeff[t][nu];
-      mu = gYield[t][pos] * (qMet - bacMaint);
-      mass = mu * rmass[i];
-      consume = mass * metCoeff;
-    } else if (qCat <= 1.2 * bacMaint && bacMaint <= qCat) {
-      consume = catCoeff[t][nu] * gYield[t][pos] * bacMaint * rmass[i];
-    } else {
-      double f;
-
-      if (bacMaint == 0) f = 0;
-      else f = (bacMaint - qCat) / bacMaint;
-
-      mass = -decay[t] * f * rmass[i];
-      consume = -mass * bio->decayCoeff[t][nu] + catCoeff[t][nu] * gYield[t][pos] * qCat * rmass[i];
+        outer_radius[i] = pow(three_quarters_pi * (rmass[i] / density + outer_mass[i] / eps_dens), third);
+        radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
+      }
+    } else if (mask[i] != avec->eps_mask && mask[i] != avec->mask_dead) {
+      radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
+      outer_mass[i] = rmass[i];
+      outer_radius[i] = radius[i];
     }
-
-    if (nuConv[nu]) continue;
-    // convert biomass unit from kg/m3 to mol/L
-    consume = consume / (vol * 24.6);
-    nuR[nu][pos] += consume;
   }
 
-  return mass;
 }
 
 /* ----------------------------------------------------------------------
  get monod term w.r.t all nutrients
  ------------------------------------------------------------------------- */
 
-double FixKineticsEnergy::grid_monod(int pos, int type, int ind) {
+double FixKineticsEnergy::grid_monod(int type, int grid) {
   double monod = 1;
 
-  for (int i = 1; i <= nnus; i++) {
+  for (int i = 1; i <= bio->nnu; i++) {
     int flag = bio->ngflag[i];
-    double s = activity[i][flag][pos];
+    double s = kinetics->activity[i][flag][grid];
     double ks = bio->ks[type][i];
 
     if (ks != 0) {
@@ -303,28 +300,3 @@ double FixKineticsEnergy::grid_monod(int pos, int type, int ind) {
   return monod;
 }
 
-void FixKineticsEnergy::bio_update(double biomass, int i) {
-  double density;
-  const double threeQuartersPI = (3.0 / (4.0 * MY_PI));
-  const double fourThirdsPI = 4.0 * MY_PI / 3.0;
-  const double third = 1.0 / 3.0;
-
-  density = rmass[i] / (fourThirdsPI * radius[i] * radius[i] * radius[i]);
-  rmass[i] = rmass[i] + biomass;
-
-  //update mass and radius
-  if (mask[i] == avec->maskHET) {
-    //update HET radius
-    radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
-    //update mass and radius for EPS shell if PES production is on
-    if (epsflag == 1) {
-      outerMass[i] = fourThirdsPI * (outerRadius[i] * outerRadius[i] * outerRadius[i] - radius[i] * radius[i] * radius[i]) * EPSdens
-          + biomass;
-      outerRadius[i] = pow(threeQuartersPI * (rmass[i] / density + outerMass[i] / EPSdens), third);
-    }
-  } else if (mask[i] != avec->eps_mask && mask[i] != avec->maskDEAD) {
-    radius[i] = pow(threeQuartersPI * (rmass[i] / density), third);
-    outerMass[i] = rmass[i];
-    outerRadius[i] = radius[i];
-  }
-}

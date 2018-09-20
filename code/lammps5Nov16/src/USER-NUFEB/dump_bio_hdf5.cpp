@@ -126,18 +126,18 @@ void DumpBioHDF5::write() {
       write_atoms_scalar(file, "radius", H5T_NATIVE_DOUBLE, atom->radius, oneperproc, offset);
     } else if (*it == "con") {
       hid_t group = H5Gcreate(file, "concentration", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-      for (int i = 1; i <= bio->nnus; i++) {
+      for (int i = 1; i <= bio->nnu; i++) {
 	std::ostringstream oss;
-	oss << "concentration/" << bio->nuName[i];
-	write_grid(file, oss.str().c_str(), H5T_NATIVE_DOUBLE, kinetics->nuS[0], oneperproc, bio->nnus + 1, i);
+	oss << "concentration/" << bio->nuname[i];
+	write_grid(file, oss.str().c_str(), H5T_NATIVE_DOUBLE, kinetics->nus[0], oneperproc, bio->nnu + 1, i);
       }
       H5Gclose(group);
     } else if (*it == "upt") {
       hid_t group = H5Gcreate(file, "uptake", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-      for (int i = 1; i <= bio->nnus; i++) {
+      for (int i = 1; i <= bio->nnu; i++) {
 	std::ostringstream oss;
-	oss << "uptake/" << bio->nuName[i];
-	write_grid(file, oss.str().c_str(), H5T_NATIVE_DOUBLE, kinetics->nuR[0], oneperproc, bio->nnus + 1, i);
+	oss << "uptake/" << bio->nuname[i];
+	write_grid(file, oss.str().c_str(), H5T_NATIVE_DOUBLE, kinetics->nur[0], oneperproc, bio->nnu + 1, i);
       }
       H5Gclose(group);
     } else if (*it == "act") {
@@ -145,24 +145,24 @@ void DumpBioHDF5::write() {
       hid_t group = H5Gcreate(file, "yield", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       for (int i = 1; i <= atom->ntypes; i++) {
 	std::ostringstream oss;
-	oss << "yield/" << bio->typeName[i];
-	write_grid(file, oss.str().c_str(), H5T_NATIVE_DOUBLE, kinetics->gYield[0], oneperproc, atom->ntypes + 1, i);
+	oss << "yield/" << bio->nuname[i];
+	write_grid(file, oss.str().c_str(), H5T_NATIVE_DOUBLE, kinetics->grid_yield[0], oneperproc, atom->ntypes + 1, i);
       }
       H5Gclose(group);
     } else if (*it == "cat") {
       hid_t group = H5Gcreate(file, "catabolism", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       for (int i = 1; i <= atom->ntypes; i++) {
 	std::ostringstream oss;
-	oss << "catabolism/" << bio->typeName[i];
-	write_grid(file, oss.str().c_str(), H5T_NATIVE_DOUBLE, kinetics->DRGCat[0], oneperproc, atom->ntypes + 1, i);
+	oss << "catabolism/" << bio->tname[i];
+	write_grid(file, oss.str().c_str(), H5T_NATIVE_DOUBLE, kinetics->gibbs_cata[0], oneperproc, atom->ntypes + 1, i);
       }
       H5Gclose(group);
     } else if (*it == "ana") {
       hid_t group = H5Gcreate(file, "anabolism", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       for (int i = 1; i <= atom->ntypes; i++) {
 	std::ostringstream oss;
-	oss << "anabolism/" << bio->typeName[i];
-	write_grid(file, oss.str().c_str(), H5T_NATIVE_DOUBLE, kinetics->DRGAn[0], oneperproc, atom->ntypes + 1, i);
+	oss << "anabolism/" << bio->tname[i];
+	write_grid(file, oss.str().c_str(), H5T_NATIVE_DOUBLE, kinetics->gibbs_anab[0], oneperproc, atom->ntypes + 1, i);
       }
       H5Gclose(group);
     } else if (*it == "hyd") {

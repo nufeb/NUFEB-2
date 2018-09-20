@@ -154,27 +154,27 @@ int DumpGrid::parse_fields(int narg, char **arg) {
 }
 
 void DumpGrid::pack_concentration(vtkSmartPointer<vtkImageData> image) {
-  pack_tuple1(image, "concentration", kinetics->nuS, bio->nuName, bio->nnus);
+  pack_tuple1(image, "concentration", kinetics->nus, bio->nuname, bio->nnu);
 }
 
 void DumpGrid::pack_uptake(vtkSmartPointer<vtkImageData> image) {
-  pack_tuple1(image, "uptake", kinetics->nuR, bio->nuName, bio->nnus);
+  pack_tuple1(image, "uptake", kinetics->nur, bio->nuname, bio->nnu);
 }
 
 void DumpGrid::pack_activity(vtkSmartPointer<vtkImageData> image) {
-  pack_tuple5(image, "activity", kinetics->activity, bio->nuName, bio->nnus);
+  pack_tuple5(image, "activity", kinetics->activity, bio->nuname, bio->nnu);
 }
 
 void DumpGrid::pack_yield(vtkSmartPointer<vtkImageData> image) {
-  pack_tuple1(image, "yield", kinetics->gYield, bio->typeName, atom->ntypes);
+  pack_tuple1(image, "yield", kinetics->grid_yield, bio->tname, atom->ntypes);
 }
 
 void DumpGrid::pack_catabolism(vtkSmartPointer<vtkImageData> image) {
-  pack_tuple1(image, "catabolism", kinetics->DRGCat, bio->typeName, atom->ntypes);
+  pack_tuple1(image, "catabolism", kinetics->gibbs_cata, bio->tname, atom->ntypes);
 }
 
 void DumpGrid::pack_anabolism(vtkSmartPointer<vtkImageData> image) {
-  pack_tuple1(image, "anabolism", kinetics->DRGAn, bio->typeName, atom->ntypes);
+  pack_tuple1(image, "anabolism", kinetics->gibbs_anab, bio->tname, atom->ntypes);
 }
 
 void DumpGrid::pack_hydronium(vtkSmartPointer<vtkImageData> image) {

@@ -90,7 +90,7 @@ void FixDeath::init() {
 
   dead_dia = input->variable->compute_equal(ivar);
 
-  if (avec->typeDEAD == 0) {
+  if (avec->type_dead == 0) {
     error->all(FLERR, "At least one initial DEAD particle is required.");
   }
 }
@@ -117,10 +117,10 @@ void FixDeath::death() {
   double * const radius = atom->radius;
 
   for (int i = 0; i < atom->nlocal; i++) {
-    if ((mask[i] & groupbit) && (mask[i] != avec->maskDEAD) && (mask[i] != avec->eps_mask)) {
+    if ((mask[i] & groupbit) && (mask[i] != avec->mask_dead) && (mask[i] != avec->eps_mask)) {
       if (radius[i]*2 < dead_dia) {
-        type[i] = avec->typeDEAD;
-        mask[i] = avec->maskDEAD;
+        type[i] = avec->type_dead;
+        mask[i] = avec->mask_dead;
       }
     }
   }

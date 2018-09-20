@@ -49,25 +49,25 @@ class FixKinetics : public Fix, public DecompGrid<FixKinetics> {
   int ngrids;                      // # of grids
   double iph;                      // initial ph
 
-  double **nuS;                    // nutrient concentration [nutrient][grid]
-  double **nuR;                    // nutrient consumption [nutrient][grid]
-  double *nuBS;                    // concentration in boundary layer [nutrient]
-  double **fV;                     // velocity field [velo][grid]
-  double **gYield;                 // inverse yield [type][grid]
+  double **nus;                    // nutrient concentration [nutrient][grid]
+  double **nur;                    // nutrient consumption [nutrient][grid]
+  double *nubs;                    // concentration in boundary layer [nutrient]
+  double **fv;                     // velocity field [velo][grid]
+  double **grid_yield;             // grid yield [type][grid]
   double ***activity;              // activities of chemical species [nutrient][5 charges][grid]
   double gvol, rg;                 // gas volume and gas transfer constant
   double temp, rth;                // uiversal gas constant (thermodynamics) and temperature
-  double **DRGCat;                 // Gibbs free energy of catabolism [type][grid]
-  double **DRGAn;                  // Gibbs free energy of anabolism [type][grid]
-  double **kEq;                    // equilibrium constants [nutrient][4]
+  double **gibbs_cata;             // Gibbs free energy of catabolism [type][grid]
+  double **gibbs_anab;             // Gibbs free energy of anabolism [type][grid]
+  double **keq;                    // equilibrium constants [nutrient][4]
   double *sh;                      // concentration of hydrogen ion
-  double *xmass;                   // grid biomass
-  int *nuConv;
-  double diffT;                    // diffusion timestep
+  double **xdensity;               // grid biomass density [type][grid]; [0][grid] the overall density
+  int *nuconv;
+  double diff_dt;                  // diffusion timestep
   double blayer;
   double zhi,bzhi,zlo, xlo, xhi, ylo, yhi;
   double stepz, stepx, stepy;
-  int gflag;                       // microbe growth flag 1 = update biomass; 0 = solve reaction only, growth is negligible
+  int grow_flag;                   // microbe growth flag 1 = update biomass; 0 = solve reaction only, growth is negligible
   int demflag;                     // flag for DEM run
   double maxheight;
   int nout;
@@ -88,15 +88,16 @@ class FixKinetics : public Fix, public DecompGrid<FixKinetics> {
   class FixKineticsMonod *monod;
   class FixKineticsPH *ph;
   class FixKineticsThermo *thermo;
-  class FixFluid *nufebFoam;
+  class FixFluid *nufebfoam;
 
   void compute_activity();
+  void init_param();
   void init_keq();
   void integration();
   void grow();
   double getMaxHeight();
   void update_bgrids();
-  void update_xmass();
+  void update_xdensity();
   bool is_inside(int);
   int position(int);
   void reset_nuR();
@@ -107,25 +108,25 @@ class FixKinetics : public Fix, public DecompGrid<FixKinetics> {
   template <typename InputIterator, typename OutputIterator>
   OutputIterator pack_cells(InputIterator first, InputIterator last, OutputIterator result) {
     for (InputIterator it = first; it != last; ++it) {
-      for (int i = 1; i <= bio->nnus; i++) {
-	*result++ = nuS[i][*it];
-	*result++ = nuR[i][*it];
+      for (int i = 1; i <= bio->nnu; i++) {
+	*result++ = nus[i][*it];
+	*result++ = nur[i][*it];
       }
       if (energy) {
-	for (int i = 1; i <= bio->nnus; i++) {
+	for (int i = 1; i <= bio->nnu; i++) {
 	  for (int j = 0; j < 5; j++) {
 	    *result++ = activity[i][j][*it];
 	  }
 	}
 	for (int i = 1; i <= atom->ntypes; i++) {
-	  *result++ = gYield[i][*it];
-	  *result++ = DRGCat[i][*it];
-	  *result++ = DRGAn[i][*it];
+	  *result++ = grid_yield[i][*it];
+	  *result++ = gibbs_cata[i][*it];
+	  *result++ = gibbs_anab[i][*it];
 	}
       }
-      if (nufebFoam) {
+      if (nufebfoam) {
 	for (int i = 0; i < 3; i++) {
-	  *result++ = fV[i][*it];
+	  *result++ = fv[i][*it];
 	}
       }
     }
@@ -134,25 +135,25 @@ class FixKinetics : public Fix, public DecompGrid<FixKinetics> {
   template <typename InputIterator0, typename InputIterator1>
   InputIterator1 unpack_cells(InputIterator0 first, InputIterator0 last, InputIterator1 input) {
     for (InputIterator0 it = first; it != last; ++it) {
-      for (int i = 1; i <= bio->nnus; i++) {
-	nuS[i][*it] = *input++;
-	nuR[i][*it] = *input++;
+      for (int i = 1; i <= bio->nnu; i++) {
+	nus[i][*it] = *input++;
+	nur[i][*it] = *input++;
       }
       if (energy) {
-	for (int i = 1; i <= bio->nnus; i++) {
+	for (int i = 1; i <= bio->nnu; i++) {
 	  for (int j = 0; j < 5; j++) {
 	    activity[i][j][*it] = *input++;
 	  }
 	}
 	for (int i = 1; i <= atom->ntypes; i++) {
-	  gYield[i][*it] = *input++;
-	  DRGCat[i][*it] = *input++;
-	  DRGAn[i][*it] = *input++;
+	  grid_yield[i][*it] = *input++;
+	  gibbs_cata[i][*it] = *input++;
+	  gibbs_anab[i][*it] = *input++;
 	}
       }
-      if (nufebFoam) {
+      if (nufebfoam) {
 	for (int i = 0; i < 3; i++) {
-	  fV[i][*it] = *input++;
+	  fv[i][*it] = *input++;
 	}
       }
     }

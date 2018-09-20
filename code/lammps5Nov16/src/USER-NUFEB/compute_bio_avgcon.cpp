@@ -56,8 +56,8 @@ ComputeNufebAvgcon::ComputeNufebAvgcon(LAMMPS *lmp, int narg, char **arg) :
 
   bio = kinetics->bio;
 
-  size_vector = bio->nnus+1;
-  memory->create(vector,bio->nnus+1,"compute:vector");
+  size_vector = bio->nnu+1;
+  memory->create(vector,bio->nnu+1,"compute:vector");
 }
 
 /* ---------------------------------------------------------------------- */
@@ -73,14 +73,14 @@ void ComputeNufebAvgcon::compute_vector()
 {
   invoked_vector = update->ntimestep;
 
-  int nnus = bio->nnus;
+  int nnus = bio->nnu;
   int global_bgrids;
 
-  for(int i = 1; i < bio->nnus+1; i++){
+  for(int i = 1; i < bio->nnu+1; i++){
     double s = 0;
 
     for(int j = 0; j < kinetics->bgrids; j++){
-      s += kinetics->nuS[i][j];
+      s += kinetics->nus[i][j];
     }
 
     vector[i] = s;
@@ -89,7 +89,7 @@ void ComputeNufebAvgcon::compute_vector()
   MPI_Allreduce(MPI_IN_PLACE, vector, nnus+1, MPI_DOUBLE, MPI_SUM, world);
   MPI_Allreduce(&kinetics->bgrids, &global_bgrids, 1, MPI_INT, MPI_SUM, world);
 
-  for(int i = 1; i < bio->nnus+1; i++){
+  for(int i = 1; i < bio->nnu+1; i++){
     vector[i] /= (double)global_bgrids;
   }
 }

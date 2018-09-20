@@ -76,13 +76,13 @@ double ComputeNufebGas::compute_scalar()
   invoked_scalar = update->ntimestep;
 
   int global_bgrids;
-  double **nuR = kinetics->nuR;
+  double **nuR = kinetics->nur;
 
   scalar = 0;
 
   for(int i = 0; i < kinetics->bgrids; i++){
-    for (int nu = 1; nu <= bio->nnus; nu++) {
-      if(bio->nuType[nu] == 1 && nuR[nu][i] < 0) {
+    for (int nu = 1; nu <= bio->nnu; nu++) {
+      if(bio->nustate[nu] == 1 && nuR[nu][i] < 0) {
         scalar += -nuR[nu][i] * vol * 1000;
       }
     }
