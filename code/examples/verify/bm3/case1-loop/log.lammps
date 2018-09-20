@@ -1,0 +1,584 @@
+LAMMPS (5 Nov 2016)
+# NUFEB simulation
+
+units si
+atom_style      bio
+atom_modify     map array sort 1000 5.0e-6
+boundary        pp pp ff
+newton          off
+processors 2 1 2
+
+comm_modify     vel yes
+
+read_data_bio atom.in
+  orthogonal box = (0 0 0) to (0.0004 3e-05 0.0006)
+  2 by 1 by 2 MPI processor grid
+  reading atoms ...
+  0 atoms
+  5 nutrients
+
+group HET type 1
+0 atoms in group HET
+group AOB type 2
+0 atoms in group AOB
+
+variable  x equal 40
+variable  y equal 3
+variable  z equal 1
+
+lattice sc 2e-5 origin 0.75 0.5 0.5
+Lattice spacing in x,y,z = 2e-05 2e-05 2e-05
+region reg block 0 $x 0 $y 0 $z
+region reg block 0 40 0 $y 0 $z
+region reg block 0 40 0 3 0 $z
+region reg block 0 40 0 3 0 1
+create_atoms 1 random 100 5345 reg
+Created 100 atoms
+
+#lattice sc 2e-5 origin 0.25 0.5 0.5
+region reg2 block 0 $x 0 $y 0 $z
+region reg2 block 0 40 0 $y 0 $z
+region reg2 block 0 40 0 3 0 $z
+region reg2 block 0 40 0 3 0 1
+create_atoms 2 random 100 42342 reg
+Created 100 atoms
+
+neighbor        5e-7 bin
+
+set type 1 diameter 9.5e-6
+  100 settings made for diameter
+set type 1 density 15.5
+  100 settings made for density
+set type 2 diameter 9.5e-6
+  100 settings made for diameter
+set type 2 density 15.5
+  100 settings made for density
+
+neigh_modify    delay 0 one 2000
+
+##############Define DEM Variables&Commands##############
+
+pair_style  gran/hooke/history 1.e-4 NULL 1.e-5 NULL 0.0 1
+pair_coeff  * *
+
+timestep 720
+
+variable kanc equal 50
+
+fix 1 all nve/limit 1e-7
+fix fv all viscous 1e-5
+
+fix zw all wall/gran hooke/history 2000 NULL 500.0 NULL 1.5 0 zplane  0.0  6e-04
+
+fix zwa all walladh v_kanc zplane  0.0   6e-04
+
+variable ke equal 5e+10
+fix j1 all epsadh 1 v_ke 1
+
+##############Define IBm Variables##############
+
+#EPS density, ratio variables and division diameter
+variable EPSdens equal 30
+variable EPSratio equal 1.25
+variable divDia equal 1e-5
+
+#kinetics variables
+variable etaHET equal 0.0
+variable diffT equal 1e-4
+variable tol equal 1e-6
+variable layer equal 0
+
+##############Define IBm Commands##############
+
+fix k1 all kinetics 1 40 3 60 v_diffT v_layer niter -1 demflag 0
+fix kgm all kinetics/growth/monod v_EPSdens v_etaHET
+fix g1 all kinetics/diffusion v_tol pp pp nd kg bulk 2.31e-7 1.25e-3 0.1
+fix d1 all divide 1 v_EPSdens v_divDia 31231 demflag 0
+fix vf1 all verify 1 bm3 demflag 0
+
+##############Simulation Output##############
+
+compute myHeight all avg_height
+compute myMass all biomass
+compute myNtype all ntypes
+
+dump du0 all bio 5010 biomass ntypes bulk
+dump		id all custom 120100 snapshot.bubblemd id type diameter x y z
+thermo_style    custom step cpu atoms biomass c_myHeight c_myNtype[*]
+thermo          1001
+thermo_modify   lost warn
+
+##############Two-loops Run##############
+
+run 3600 pre no post no every 1 "fix_modify k1 demflag 1" "fix_modify d1 demflag 1" "fix_modify vf1 demflag 1" "timestep 0.1" "run 1000 pre no post no" "timestep 720" "fix_modify k1 demflag 0" "fix_modify d1 demflag 0" "fix_modify vf1 demflag 0"
+WARNING: EPS is not defined in fix_kinetics/kinetics/monod (../fix_bio_kinetics_monod.cpp:253)
+ae = 3.455000e+02, top = 2.469539e-05, base = 4.834171e-06, ave_h = 9.962754e-06 
+Neighbor list info ...
+  3 neighbor list requests
+  update every 1 steps, delay 0 steps, check yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 1e-05
+  ghost atom cutoff = 1e-05
+  binsize = 5e-06 -> bins = 80 6 120
+Memory usage per processor = 8.72881 Mbytes
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+       0            0      200 1.3916536e-12 1.2403923e-05            0          100          100 
+number of iterations: 4451 
+maxz = 2.483467e-05 
+S-sub-bulk = 2.968169e-02
+S-sub-base = 2.996531e-02
+S-nh4-bulk = 5.711314e-03
+S-nh4-base = 5.958307e-03
+
+       1   0.46001601      200 1.4290177e-12 1.2709334e-05            0          100          100 
+Loop time of 0.46003 on 4 procs for 1 steps with 200 atoms
+
+99.6% CPU use with 4 MPI tasks x no OpenMP threads
+fix_modify k1 demflag 1
+fix_modify d1 demflag 1
+fix_modify vf1 demflag 1
+timestep 0.1
+run 1000 pre no post no
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+       1            0      200 1.4290177e-12 1.2709334e-05            0          100          100 
+    1001  0.029891014      200 1.4290177e-12 1.5998771e-05            0          100          100 
+Loop time of 0.0299084 on 4 procs for 1000 steps with 200 atoms
+
+100.0% CPU use with 4 MPI tasks x no OpenMP threads
+timestep 720
+fix_modify k1 demflag 0
+fix_modify d1 demflag 0
+fix_modify vf1 demflag 0
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+    1001            0      200 1.4290177e-12 1.5998771e-05            0          100          100 
+number of iterations: 6681 
+maxz = 2.829271e-05 
+S-sub-bulk = 2.939337e-02
+S-sub-base = 2.968367e-02
+S-nh4-bulk = 5.459109e-03
+S-nh4-base = 5.676225e-03
+
+    1002   0.27292991      200 1.4675162e-12 1.6211036e-05            0          100          100 
+Loop time of 0.272947 on 4 procs for 1 steps with 200 atoms
+
+99.8% CPU use with 4 MPI tasks x no OpenMP threads
+fix_modify k1 demflag 1
+fix_modify d1 demflag 1
+fix_modify vf1 demflag 1
+timestep 0.1
+run 1000 pre no post no
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+    1002            0      200 1.4675162e-12 1.6211036e-05            0          100          100 
+    2002   0.02185607      200 1.4675162e-12 1.6231088e-05            0          100          100 
+Loop time of 0.0218756 on 4 procs for 1000 steps with 200 atoms
+
+99.9% CPU use with 4 MPI tasks x no OpenMP threads
+timestep 720
+fix_modify k1 demflag 0
+fix_modify d1 demflag 0
+fix_modify vf1 demflag 0
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+    2002            0      200 1.4675162e-12 1.6231088e-05            0          100          100 
+number of iterations: 6548 
+maxz = 2.844921e-05 
+S-sub-bulk = 2.913063e-02
+S-sub-base = 2.939590e-02
+S-nh4-bulk = 5.238549e-03
+S-nh4-base = 5.423008e-03
+
+    2003   0.26240802      200 1.507187e-12 1.6203035e-05            0          100          100 
+Loop time of 0.262422 on 4 procs for 1 steps with 200 atoms
+
+99.9% CPU use with 4 MPI tasks x no OpenMP threads
+fix_modify k1 demflag 1
+fix_modify d1 demflag 1
+fix_modify vf1 demflag 1
+timestep 0.1
+run 1000 pre no post no
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+    2003            0      200 1.507187e-12 1.6203035e-05            0          100          100 
+    3003  0.022372961      200 1.507187e-12 1.6365259e-05            0          100          100 
+Loop time of 0.0223962 on 4 procs for 1000 steps with 200 atoms
+
+100.0% CPU use with 4 MPI tasks x no OpenMP threads
+timestep 720
+fix_modify k1 demflag 0
+fix_modify d1 demflag 0
+fix_modify vf1 demflag 0
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+    3003            0      200 1.507187e-12 1.6365259e-05            0          100          100 
+number of iterations: 6372 
+maxz = 2.850634e-05 
+S-sub-bulk = 2.888954e-02
+S-sub-base = 2.912947e-02
+S-nh4-bulk = 5.045327e-03
+S-nh4-base = 5.201982e-03
+
+    3004   0.25568509      200 1.5480773e-12 1.6281477e-05            0          100          100 
+Loop time of 0.255702 on 4 procs for 1 steps with 200 atoms
+
+99.9% CPU use with 4 MPI tasks x no OpenMP threads
+fix_modify k1 demflag 1
+fix_modify d1 demflag 1
+fix_modify vf1 demflag 1
+timestep 0.1
+run 1000 pre no post no
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+    3004            0      200 1.5480773e-12 1.6281477e-05            0          100          100 
+    4004  0.024117947      200 1.5480773e-12 1.6296643e-05            0          100          100 
+Loop time of 0.0241399 on 4 procs for 1000 steps with 200 atoms
+
+100.0% CPU use with 4 MPI tasks x no OpenMP threads
+timestep 720
+fix_modify k1 demflag 0
+fix_modify d1 demflag 0
+fix_modify vf1 demflag 0
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+    4004            0      200 1.5480773e-12 1.6296643e-05            0          100          100 
+number of iterations: 6200 
+maxz = 3.078494e-05 
+S-sub-bulk = 2.866671e-02
+S-sub-base = 2.888054e-02
+S-nh4-bulk = 4.875710e-03
+S-nh4-base = 5.008065e-03
+
+    4005    0.2631309      300 1.5902362e-12 1.7902115e-05            0          200          100 
+Loop time of 0.263144 on 4 procs for 1 steps with 300 atoms
+
+99.9% CPU use with 4 MPI tasks x no OpenMP threads
+fix_modify k1 demflag 1
+fix_modify d1 demflag 1
+fix_modify vf1 demflag 1
+timestep 0.1
+run 1000 pre no post no
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+    4005            0      300 1.5902362e-12 1.7902115e-05            0          200          100 
+    5005  0.039108038      300 1.5902362e-12 1.9443133e-05            0          200          100 
+Loop time of 0.0391257 on 4 procs for 1000 steps with 300 atoms
+
+99.4% CPU use with 4 MPI tasks x no OpenMP threads
+timestep 720
+fix_modify k1 demflag 0
+fix_modify d1 demflag 0
+fix_modify vf1 demflag 0
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+    5005            0      300 1.5902362e-12 1.9443133e-05            0          200          100 
+number of iterations: 9224 
+maxz = 3.299409e-05 
+S-sub-bulk = 2.845921e-02
+S-sub-base = 2.866480e-02
+S-nh4-bulk = 4.726785e-03
+S-nh4-base = 4.819559e-03
+
+    5006    0.5125072      300 1.6336988e-12 1.9491408e-05            0          200          100 
+Loop time of 0.512525 on 4 procs for 1 steps with 300 atoms
+
+99.9% CPU use with 4 MPI tasks x no OpenMP threads
+fix_modify k1 demflag 1
+fix_modify d1 demflag 1
+fix_modify vf1 demflag 1
+timestep 0.1
+run 1000 pre no post no
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+    5006            0      300 1.6336988e-12 1.9491408e-05            0          200          100 
+    6006  0.033787966      300 1.6336988e-12 1.9537698e-05            0          200          100 
+Loop time of 0.0338059 on 4 procs for 1000 steps with 300 atoms
+
+99.7% CPU use with 4 MPI tasks x no OpenMP threads
+timestep 720
+fix_modify k1 demflag 0
+fix_modify d1 demflag 0
+fix_modify vf1 demflag 0
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+    6006            0      300 1.6336988e-12 1.9537698e-05            0          200          100 
+number of iterations: 8541 
+maxz = 3.313528e-05 
+S-sub-bulk = 2.826439e-02
+S-sub-base = 2.845593e-02
+S-nh4-bulk = 4.595389e-03
+S-nh4-base = 4.669871e-03
+
+    6007   0.40711498      300 1.6785325e-12 1.957706e-05            0          200          100 
+Loop time of 0.407132 on 4 procs for 1 steps with 300 atoms
+
+99.9% CPU use with 4 MPI tasks x no OpenMP threads
+fix_modify k1 demflag 1
+fix_modify d1 demflag 1
+fix_modify vf1 demflag 1
+timestep 0.1
+run 1000 pre no post no
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+    6007            0      300 1.6785325e-12 1.957706e-05            0          200          100 
+    7007  0.035497904      300 1.6785325e-12 1.9836286e-05            0          200          100 
+Loop time of 0.0355215 on 4 procs for 1000 steps with 300 atoms
+
+99.6% CPU use with 4 MPI tasks x no OpenMP threads
+timestep 720
+fix_modify k1 demflag 0
+fix_modify d1 demflag 0
+fix_modify vf1 demflag 0
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+    7007            0      300 1.6785325e-12 1.9836286e-05            0          200          100 
+number of iterations: 8249 
+maxz = 3.327645e-05 
+S-sub-bulk = 2.807999e-02
+S-sub-base = 2.825671e-02
+S-nh4-bulk = 4.479081e-03
+S-nh4-base = 4.537457e-03
+
+    7008   0.39422297      300 1.7247914e-12 1.981895e-05            0          200          100 
+Loop time of 0.394239 on 4 procs for 1 steps with 300 atoms
+
+99.9% CPU use with 4 MPI tasks x no OpenMP threads
+fix_modify k1 demflag 1
+fix_modify d1 demflag 1
+fix_modify vf1 demflag 1
+timestep 0.1
+run 1000 pre no post no
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+    7008            0      300 1.7247914e-12 1.981895e-05            0          200          100 
+    8008  0.035326958      300 1.7247914e-12 1.9886794e-05            0          200          100 
+Loop time of 0.0353441 on 4 procs for 1000 steps with 300 atoms
+
+99.7% CPU use with 4 MPI tasks x no OpenMP threads
+timestep 720
+fix_modify k1 demflag 0
+fix_modify d1 demflag 0
+fix_modify vf1 demflag 0
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+    8008            0      300 1.7247914e-12 1.9886794e-05            0          200          100 
+number of iterations: 7957 
+maxz = 3.324144e-05 
+S-sub-bulk = 2.790403e-02
+S-sub-base = 2.806487e-02
+S-nh4-bulk = 4.375751e-03
+S-nh4-base = 4.420416e-03
+
+    8009   0.37258291      300 1.7725312e-12 1.9918155e-05            0          200          100 
+Loop time of 0.3726 on 4 procs for 1 steps with 300 atoms
+
+99.9% CPU use with 4 MPI tasks x no OpenMP threads
+fix_modify k1 demflag 1
+fix_modify d1 demflag 1
+fix_modify vf1 demflag 1
+timestep 0.1
+run 1000 pre no post no
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+    8009            0      300 1.7725312e-12 1.9918155e-05            0          200          100 
+    9009  0.035582066      300 1.7725312e-12 2.0007683e-05            0          200          100 
+Loop time of 0.035599 on 4 procs for 1000 steps with 300 atoms
+
+99.6% CPU use with 4 MPI tasks x no OpenMP threads
+timestep 720
+fix_modify k1 demflag 0
+fix_modify d1 demflag 0
+fix_modify vf1 demflag 0
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+    9009            0      300 1.7725312e-12 2.0007683e-05            0          200          100 
+number of iterations: 7672 
+maxz = 3.338361e-05 
+S-sub-bulk = 2.773476e-02
+S-sub-base = 2.788198e-02
+S-nh4-bulk = 4.283569e-03
+S-nh4-base = 4.316125e-03
+
+    9010   0.36378694      300 1.8218095e-12 2.003727e-05            0          200          100 
+Loop time of 0.363805 on 4 procs for 1 steps with 300 atoms
+
+99.9% CPU use with 4 MPI tasks x no OpenMP threads
+fix_modify k1 demflag 1
+fix_modify d1 demflag 1
+fix_modify vf1 demflag 1
+timestep 0.1
+run 1000 pre no post no
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+    9010            0      300 1.8218095e-12 2.003727e-05            0          200          100 
+   10010  0.039407015      300 1.8218095e-12 2.0253369e-05            0          200          100 
+Loop time of 0.0394254 on 4 procs for 1000 steps with 300 atoms
+
+100.0% CPU use with 4 MPI tasks x no OpenMP threads
+timestep 720
+fix_modify k1 demflag 0
+fix_modify d1 demflag 0
+fix_modify vf1 demflag 0
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+   10010            0      300 1.8218095e-12 2.0253369e-05            0          200          100 
+number of iterations: 7416 
+maxz = 3.335020e-05 
+S-sub-bulk = 2.757066e-02
+S-sub-base = 2.770493e-02
+S-nh4-bulk = 4.200956e-03
+S-nh4-base = 4.223174e-03
+
+   10011   0.35424113      300 1.8726854e-12 2.0284277e-05            0          200          100 
+Loop time of 0.354262 on 4 procs for 1 steps with 300 atoms
+
+100.0% CPU use with 4 MPI tasks x no OpenMP threads
+fix_modify k1 demflag 1
+fix_modify d1 demflag 1
+fix_modify vf1 demflag 1
+timestep 0.1
+run 1000 pre no post no
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+   10011            0      300 1.8726854e-12 2.0284277e-05            0          200          100 
+   11011  0.038462877      300 1.8726854e-12 2.0385913e-05            0          200          100 
+Loop time of 0.0384846 on 4 procs for 1000 steps with 300 atoms
+
+100.0% CPU use with 4 MPI tasks x no OpenMP threads
+timestep 720
+fix_modify k1 demflag 0
+fix_modify d1 demflag 0
+fix_modify vf1 demflag 0
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+   11011            0      300 1.8726854e-12 2.0385913e-05            0          200          100 
+number of iterations: 7129 
+maxz = 3.349023e-05 
+S-sub-bulk = 2.741036e-02
+S-sub-base = 2.753389e-02
+S-nh4-bulk = 4.126530e-03
+S-nh4-base = 4.139948e-03
+
+   11012   0.33918715      300 1.9252208e-12 2.0419947e-05            0          200          100 
+Loop time of 0.339202 on 4 procs for 1 steps with 300 atoms
+
+100.0% CPU use with 4 MPI tasks x no OpenMP threads
+fix_modify k1 demflag 1
+fix_modify d1 demflag 1
+fix_modify vf1 demflag 1
+timestep 0.1
+run 1000 pre no post no
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+   11012            0      300 1.9252208e-12 2.0419947e-05            0          200          100 
+   12012  0.039358139      300 1.9252208e-12 2.0543358e-05            0          200          100 
+Loop time of 0.0393755 on 4 procs for 1000 steps with 300 atoms
+
+100.0% CPU use with 4 MPI tasks x no OpenMP threads
+timestep 720
+fix_modify k1 demflag 0
+fix_modify d1 demflag 0
+fix_modify vf1 demflag 0
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+   12012            0      300 1.9252208e-12 2.0543358e-05            0          200          100 
+number of iterations: 6890 
+maxz = 3.346161e-05 
+S-sub-bulk = 2.725268e-02
+S-sub-base = 2.736592e-02
+S-nh4-bulk = 4.059082e-03
+S-nh4-base = 4.064099e-03
+
+   12013   0.34811807      400 1.9794793e-12 2.1934753e-05            0          200          200 
+Loop time of 0.348135 on 4 procs for 1 steps with 400 atoms
+
+100.0% CPU use with 4 MPI tasks x no OpenMP threads
+fix_modify k1 demflag 1
+fix_modify d1 demflag 1
+fix_modify vf1 demflag 1
+timestep 0.1
+run 1000 pre no post no
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+   12013            0      400 1.9794793e-12 2.1934753e-05            0          200          200 
+   13013  0.056282997      400 1.9794793e-12 2.3452865e-05            0          200          200 
+Loop time of 0.056303 on 4 procs for 1000 steps with 400 atoms
+
+98.4% CPU use with 4 MPI tasks x no OpenMP threads
+timestep 720
+fix_modify k1 demflag 0
+fix_modify d1 demflag 0
+fix_modify vf1 demflag 0
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+   13013            0      400 1.9794793e-12 2.3452865e-05            0          200          200 
+number of iterations: 6604 
+maxz = 3.503374e-05 
+S-sub-bulk = 2.709656e-02
+S-sub-base = 2.720210e-02
+S-nh4-bulk = 3.997562e-03
+S-nh4-base = 3.998751e-03
+
+   13014   0.32769799      400 2.0355279e-12 2.3398226e-05            0          200          200 
+Loop time of 0.327716 on 4 procs for 1 steps with 400 atoms
+
+100.0% CPU use with 4 MPI tasks x no OpenMP threads
+fix_modify k1 demflag 1
+fix_modify d1 demflag 1
+fix_modify vf1 demflag 1
+timestep 0.1
+run 1000 pre no post no
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+   13014            0      400 2.0355279e-12 2.3398226e-05            0          200          200 
+   14014  0.054996014      400 2.0355279e-12 2.3568132e-05            0          200          200 
+Loop time of 0.0550131 on 4 procs for 1000 steps with 400 atoms
+
+100.0% CPU use with 4 MPI tasks x no OpenMP threads
+timestep 720
+fix_modify k1 demflag 0
+fix_modify d1 demflag 0
+fix_modify vf1 demflag 0
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+   14014            0      400 2.0355279e-12 2.3568132e-05            0          200          200 
+number of iterations: 6424 
+maxz = 3.516250e-05 
+S-sub-bulk = 2.694105e-02
+S-sub-base = 2.703843e-02
+S-nh4-bulk = 3.941169e-03
+S-nh4-base = 3.936577e-03
+
+   14015   0.31669188      400  2.09343e-12 2.3667212e-05            0          200          200 
+Loop time of 0.316709 on 4 procs for 1 steps with 400 atoms
+
+100.0% CPU use with 4 MPI tasks x no OpenMP threads
+fix_modify k1 demflag 1
+fix_modify d1 demflag 1
+fix_modify vf1 demflag 1
+timestep 0.1
+run 1000 pre no post no
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+   14015            0      400  2.09343e-12 2.3667212e-05            0          200          200 
+   15015  0.054833174      400  2.09343e-12 2.3774656e-05            0          200          200 
+Loop time of 0.0548525 on 4 procs for 1000 steps with 400 atoms
+
+100.0% CPU use with 4 MPI tasks x no OpenMP threads
+timestep 720
+fix_modify k1 demflag 0
+fix_modify d1 demflag 0
+fix_modify vf1 demflag 0
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+   15015            0      400  2.09343e-12 2.3774656e-05            0          200          200 
+number of iterations: 6221 
+maxz = 3.528800e-05 
+S-sub-bulk = 2.678531e-02
+S-sub-base = 2.687473e-02
+S-nh4-bulk = 3.889144e-03
+S-nh4-base = 3.879778e-03
+
+   15016   0.31434393      400 2.153254e-12 2.3847237e-05            0          200          200 
+Loop time of 0.314361 on 4 procs for 1 steps with 400 atoms
+
+100.0% CPU use with 4 MPI tasks x no OpenMP threads
+fix_modify k1 demflag 1
+fix_modify d1 demflag 1
+fix_modify vf1 demflag 1
+timestep 0.1
+run 1000 pre no post no
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+   15016            0      400 2.153254e-12 2.3847237e-05            0          200          200 
+   16016  0.055213213      400 2.153254e-12 2.3948814e-05            0          200          200 
+Loop time of 0.0552313 on 4 procs for 1000 steps with 400 atoms
+
+100.0% CPU use with 4 MPI tasks x no OpenMP threads
+timestep 720
+fix_modify k1 demflag 0
+fix_modify d1 demflag 0
+fix_modify vf1 demflag 0
+Step CPU Atoms biomass c_myHeight c_myNtype[1] c_myNtype[2] c_myNtype[3] 
+   16016            0      400 2.153254e-12 2.3948814e-05            0          200          200 
+number of iterations: 6043 
+maxz = 3.527949e-05 
+S-sub-bulk = 2.662862e-02
+S-sub-base = 2.670940e-02
+S-nh4-bulk = 3.840843e-03
+S-nh4-base = 3.826868e-03
+
+   16017   0.30629897      400 2.2150695e-12 2.397796e-05            0          200          200 
+Loop time of 0.306315 on 4 procs for 1 steps with 400 atoms
+
+100.0% CPU use with 4 MPI tasks x no OpenMP threads

@@ -42,9 +42,9 @@ class DumpBio : public Dump {
   char **id_fix;             // their IDs
   class Fix **fix;           // list of ptrs to the Fix objects
 
-  int anFlag, concFlag, avgsFlag, catFlag, phFlag, massFlag, gasFlag, yieldFlag, avgphFlag;
-  int diaFlag, dimFlag, divFlag, heightFlag, roughFlag, segFlag, ntypeFlag, bulkFlag;
-  int massHeader, divHeader, typeHeader, bulkHeader, avgsHeader, avgphHeader;
+  int anab_flag, nus_flag, avgnus_flag, cata_flag, ph_flag, mass_flag, gas_flag, yield_flag, avgph_flag;
+  int dia_flag, dim_flag, div_flag, height_flag, rough_flag, seg_flag, ntypes_flag, bulk_flag;
+  int mass_header, div_header, type_header, bulk_header, avgnus_header, avgph_header;
 
   double xlo,xhi,ylo,yhi,zlo,zhi;
   double stepx, stepy, stepz;

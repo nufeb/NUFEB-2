@@ -43,8 +43,8 @@ class FixKineticsMonod : public Fix {
   double xlo,xhi,ylo,yhi,zlo,zhi;   // computational domain size
   int nx, ny, nz;
   double vol;                       // grid volume and gas volume
-  double EPSdens;                   // EPS density
-  double etaHET;
+  double eps_dens;                   // EPS density
+  double eta_het;
 
   class AtomVecBio *avec;
   class FixKinetics *kinetics;

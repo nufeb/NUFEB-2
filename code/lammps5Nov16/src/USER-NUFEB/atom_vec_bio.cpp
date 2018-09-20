@@ -53,11 +53,11 @@ AtomVecBio::AtomVecBio(LAMMPS *lmp) : AtomVec(lmp)
 
   outer_mass = memory->create(outer_mass,nmax,"atom:outerMass");
   outer_radius = memory->create(outer_radius,nmax,"atom:outerRadius");;
-  eps_type = 0;
-  typeDEAD = 0;
+  type_eps = 0;
+  type_dead = 0;
   eps_mask = 0;
-  maskHET = 0;
-  maskDEAD = 0;
+  mask_het = 0;
+  mask_dead = 0;
 
   // instantiate BIO class
   bio = new BIO(lmp);
@@ -1141,9 +1141,9 @@ void AtomVecBio::set_group_mask() {
     if (strcmp(group->names[i],"EPS") == 0) {
       eps_mask = pow(2, i) + 1;
     } else if (strcmp(group->names[i],"HET") == 0) {
-      maskHET = pow(2, i) + 1;
+      mask_het = pow(2, i) + 1;
     } else if (strcmp(group->names[i],"DEAD") == 0) {
-      maskDEAD = pow(2, i) + 1;
+      mask_dead = pow(2, i) + 1;
     }
   }
 }
