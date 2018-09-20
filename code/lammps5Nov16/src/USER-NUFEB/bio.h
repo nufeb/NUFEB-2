@@ -14,8 +14,8 @@ namespace LAMMPS_NS {
 
 class BIO : protected Pointers {
  public:
-  //type (species)
-  char **typeName;            // type name
+  //type (microbial species)
+  char **tname;            // type name
 
   double **ks;                // half-saturation constant [type][nutrient]
   double *q;                  // specific consumption rate
@@ -24,27 +24,27 @@ class BIO : protected Pointers {
   double *dissipation;        // universal gas constant (thermodynamics)
   double *maintain;           // maintenance [type]
   double *decay;              // decay rate [type]
-  double *eD;
+  double *edoner;
 
-  double **catCoeff;          // catabolism coefficient [type][nutrient]
-  double **anabCoeff;         // anabolism coefficient [type][nutrient]
-  double **decayCoeff;        // decay coefficient [type][nutrient]
-  double **typeGCoeff;        // Gibbs free energy coefficient [type][5charges]
-  int *tgflag;                // Gibbs free energy flag for type [type]
-  int **typeChr;              // charge [type][5charges]
+  double **cata_coeff;          // catabolism coefficient [type][nutrient]
+  double **anab_coeff;         // anabolism coefficient [type][nutrient]
+  double **decay_coeff;        // decay coefficient [type][nutrient]
+  double **tgibbs_coeff;        // Gibbs free energy coefficient [type][5charges]
+  int *tgibbs_flag;                // Gibbs free energy flag for type [type]
+  int **tcharge;              // charge [type][5charges]
 
   //nutrient
-  int nnus;                   // # of nutrients
-  int *nuType;                // nutrient types 0 = liq, 1 = gas
-  char **nuName;              // nutrient name
+  int nnu;                   // # of nutrients
+  int *nustate;                // nutrient types 0 = liq, 1 = gas
+  char **nuname;              // nutrient name
 
-  double *diffCoeff;          // diffusion coefficient [nutrient]
+  double *diff_coeff;          // diffusion coefficient [nutrient]
   double *mw;                 // molecular Weights [nutrient]
-  double **iniS;              // inlet nutrient concentrations [nutrient][1grid + 5bc]
-  double **nuGCoeff;          // Gibbs free energy coefficient [nutrient][5charges]
+  double **ini_nus;              // inlet nutrient concentrations [nutrient][1grid + 5bc]
+  double **nugibbs_coeff;          // Gibbs free energy coefficient [nutrient][5charges]
   int *ngflag;                // Gibbs free energy flag for nutrients [nutrient]
-  int **nuChr;                // charge [nutrient][5charges]
-  double *kLa;                // mass Transfer Coefficient [nutrient]
+  int **nucharge;                // charge [nutrient][5charges]
+  double *kla;                // mass Transfer Coefficient [nutrient]
 
   BIO(class LAMMPS *);
   ~BIO();
@@ -58,7 +58,7 @@ class BIO : protected Pointers {
   void set_mw(const char *);
   void set_ks(int, char **);
   void set_yield(const char *);
-  void set_eD(const char *);
+  void set_edoner(const char *);
   void set_maintain(const char *);
   void set_decay(const char *);
   void set_diffusion(const char *);

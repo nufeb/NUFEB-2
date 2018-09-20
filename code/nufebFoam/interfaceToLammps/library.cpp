@@ -375,9 +375,9 @@ void lammps_put_local_info(void* ptr, int nLocalIn, double* fdrag, double* DuDt,
       int ind = iz * kinetics_ptr->nx * kinetics_ptr->ny + iy * kinetics_ptr->nx + ix;
 
       //printf("id = %i, i = %i %e %e %e \n", ind, i, x, y, z);
-      kinetics_ptr->fV[0][ind] = gridPU[i * 6 + 3];
-      kinetics_ptr->fV[1][ind] = gridPU[i * 6 + 4];
-      kinetics_ptr->fV[2][ind] = gridPU[i * 6 + 5];
+      kinetics_ptr->fv[0][ind] = gridPU[i * 6 + 3];
+      kinetics_ptr->fv[1][ind] = gridPU[i * 6 + 4];
+      kinetics_ptr->fv[2][ind] = gridPU[i * 6 + 5];
     }
   }
 }

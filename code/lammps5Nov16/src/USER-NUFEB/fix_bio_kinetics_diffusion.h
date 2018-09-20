@@ -24,9 +24,9 @@ class BIO;
 class FixKinetics;
 
 class FixKineticsDiffusion: public Fix, public DecompGrid<FixKineticsDiffusion> {
-  friend DecompGrid<FixKineticsDiffusion>;
+  friend DecompGrid<FixKineticsDiffusion> ;
 
- public:
+public:
   FixKineticsDiffusion(class LAMMPS *, int, char **);
   ~FixKineticsDiffusion();
 
@@ -35,7 +35,7 @@ class FixKineticsDiffusion: public Fix, public DecompGrid<FixKineticsDiffusion> 
 
   double stepx, stepy, stepz;
 
-  int xbcflag, ybcflag, zbcflag;             // 0=PERIODIC-PERIODIC, 1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
+  int xbcflag, ybcflag, zbcflag;          // 0=PERIODIC-PERIODIC, 1=DIRiCH-DIRICH, 2=NEU-DIRICH, 3=NEU-NEU, 4=DIRICH-NEU
   int bulkflag;                           // 1=solve mass balance for bulk liquid
 
   double *rmass;
@@ -47,11 +47,10 @@ class FixKineticsDiffusion: public Fix, public DecompGrid<FixKineticsDiffusion> 
   double srate;                 // shear rate
   double tol;                   // tolerance for convergence criteria for nutrient balance equation
 
-  double **nuGrid;                    // nutrient concentration in ghost mesh [nutrient][grid]
-  double **xGrid;                     // grid coordinate [gird][3]
+  double **nugrid;                    // nutrient concentration in ghost mesh [nutrient][grid]
+  double **xgrid;                     // grid coordinate [gird][3]
   bool *ghost;
 
-  double *diffD;                    // diffusion coefficent
   double vol;                      //grid volume
 
   double bl;
@@ -60,13 +59,14 @@ class FixKineticsDiffusion: public Fix, public DecompGrid<FixKineticsDiffusion> 
   int unit;                     // nutrient unit 0 = mol/l; 1 = kg/m3
 
   int nx, ny, nz;               // # of non-ghost grids in x, y and z
-  int nX, nY, nZ;               // # of all grids in x, y and z
-  int nXYZ;                   // total # of grids
-  double diffT;
+  int nxx, nyy, nzz;               // # of all grids in x, y and z
+  int nxx_yy_zz;                     // total # of grids
+  double diff_dt;
   double xlo, xhi, ylo, yhi, zlo, zhi, bzhi;
   double xbcm, xbcp, ybcm, ybcp, zbcm, zbcp; // inlet BC concentrations for each surface
 
-  double **nuPrev;
+  double **nuprev;
+  double **grid_diff_coeff;
 
   MPI_Request *requests;
 
@@ -79,6 +79,7 @@ class FixKineticsDiffusion: public Fix, public DecompGrid<FixKineticsDiffusion> 
   int *diffusion(int*, int, double);
   void update_nuS();
   void update_grids();
+  void update_diffCoeff();
   void init_grid();
   void compute_bc(double &, double *, int, double);
   void compute_bulk();
@@ -90,20 +91,20 @@ class FixKineticsDiffusion: public Fix, public DecompGrid<FixKineticsDiffusion> 
   void migrate(const Grid<double, 3> &, const Box<int, 3> &, const Box<int, 3> &);
 
   int get_elem_per_cell() const;
-  template <typename InputIterator, typename OutputIterator>
+  template<typename InputIterator, typename OutputIterator>
   OutputIterator pack_cells(InputIterator first, InputIterator last, OutputIterator result) {
     for (InputIterator it = first; it != last; ++it) {
-      for (int i = 1; i <= bio->nnus; i++) {
-	*result++ = nuGrid[i][*it];
+      for (int i = 1; i <= bio->nnu; i++) {
+        *result++ = nugrid[i][*it];
       }
     }
     return result;
   }
-  template <typename InputIterator0, typename InputIterator1>
+  template<typename InputIterator0, typename InputIterator1>
   InputIterator1 unpack_cells(InputIterator0 first, InputIterator0 last, InputIterator1 input) {
     for (InputIterator0 it = first; it != last; ++it) {
-      for (int i = 1; i <= bio->nnus; i++) {
-	nuGrid[i][*it] = *input++;
+      for (int i = 1; i <= bio->nnu; i++) {
+        nugrid[i][*it] = *input++;
       }
     }
     return input;
