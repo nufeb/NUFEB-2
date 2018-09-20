@@ -71,10 +71,10 @@ class AtomVecBio : public AtomVec {
   double *outer_radius;     // atom outer radius
   double *outer_mass;       // atom outer mass
   int eps_mask;             // mask of EPS group
-  int maskHET;             // mask of HET group
-  int maskDEAD;            // mask of HET group
-  int eps_type;             // itype of EPS
-  int typeDEAD;            // itype of DEAD
+  int mask_het;             // mask of HET group
+  int mask_dead;            // mask of HET group
+  int type_eps;             // itype of EPS
+  int type_dead;            // itype of DEAD
 
   class BIO *bio;
 

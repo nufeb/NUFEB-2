@@ -163,7 +163,7 @@ void FixEPSExtract::init() {
     error->all(FLERR, "Fix eps extract is only valid for particles of type HET");
   }
 
-  eps_type = avec->eps_type;
+  eps_type = avec->type_eps;
 
   if (eps_type == 0) {
     error->all(FLERR, "Cannot find EPS type");
@@ -200,45 +200,45 @@ void FixEPSExtract::post_integrate() {
 
         double splitF = 0.4 + (random->uniform() * 0.2);
 
-        double newOuterMass = avec->outer_mass[i] * splitF;
-        double eps_mass = avec->outer_mass[i] - newOuterMass;
+        double new_outer_mass = avec->outer_mass[i] * splitF;
+        double eps_mass = avec->outer_mass[i] - new_outer_mass;
 
-        avec->outer_mass[i] = newOuterMass;
+        avec->outer_mass[i] = new_outer_mass;
 
         double density = atom->rmass[i] / (4.0 * MY_PI / 3.0 * atom->radius[i] * atom->radius[i] * atom->radius[i]);
         avec->outer_radius[i] = pow((3.0 / (4.0 * MY_PI)) * ((atom->rmass[i] / density) + (avec->outer_mass[i] / eps_density)), (1.0 / 3.0));
 
-        double thetaD = random->uniform() * 2 * MY_PI;
-        double phiD = random->uniform() * (MY_PI);
+        double thetad = random->uniform() * 2 * MY_PI;
+        double phid = random->uniform() * (MY_PI);
 
-        double oldX = atom->x[i][0];
-        double oldY = atom->x[i][1];
-        double oldZ = atom->x[i][2];
+        double oldx = atom->x[i][0];
+        double oldy = atom->x[i][1];
+        double oldz = atom->x[i][2];
 
         //create child
-        double childRadius = pow(((6 * eps_mass) / (eps_density * MY_PI)), (1.0 / 3.0)) * 0.5;
+        double child_radius = pow(((6 * eps_mass) / (eps_density * MY_PI)), (1.0 / 3.0)) * 0.5;
         double* coord = new double[3];
-        double newX = oldX - ((childRadius + avec->outer_radius[i]) * cos(thetaD) * sin(phiD) * DELTA);
-        double newY = oldY - ((childRadius + avec->outer_radius[i]) * sin(thetaD) * sin(phiD) * DELTA);
-        double newZ = oldZ - ((childRadius + avec->outer_radius[i]) * cos(phiD) * DELTA);
-        if (newX - childRadius < xlo) {
-          newX = xlo + childRadius;
-        } else if (newX + childRadius > xhi) {
-          newX = xhi - childRadius;
+        double newx = oldx - ((child_radius + avec->outer_radius[i]) * cos(thetad) * sin(phid) * DELTA);
+        double newy = oldy - ((child_radius + avec->outer_radius[i]) * sin(thetad) * sin(phid) * DELTA);
+        double newz = oldz - ((child_radius + avec->outer_radius[i]) * cos(phid) * DELTA);
+        if (newx - child_radius < xlo) {
+          newx = xlo + child_radius;
+        } else if (newx + child_radius > xhi) {
+          newx = xhi - child_radius;
         }
-        if (newY - childRadius < ylo) {
-          newY = ylo + childRadius;
-        } else if (newY + childRadius > yhi) {
-          newY = yhi - childRadius;
+        if (newy - child_radius < ylo) {
+          newy = ylo + child_radius;
+        } else if (newy + child_radius > yhi) {
+          newy = yhi - child_radius;
         }
-        if (newZ - childRadius < zlo) {
-          newZ = zlo + childRadius;
-        } else if (newZ + childRadius > zhi) {
-          newZ = zhi - childRadius;
+        if (newz - child_radius < zlo) {
+          newz = zlo + child_radius;
+        } else if (newz + child_radius > zhi) {
+          newz = zhi - child_radius;
         }
-        coord[0] = newX;
-        coord[1] = newY;
-        coord[2] = newZ;
+        coord[0] = newx;
+        coord[1] = newy;
+        coord[2] = newz;
 
         int n = 0;
         atom->avec->create_atom(eps_type, coord);
@@ -263,8 +263,8 @@ void FixEPSExtract::post_integrate() {
         atom->torque[n][0] = atom->torque[i][0];
         atom->torque[n][1] = atom->torque[i][1];
         atom->torque[n][2] = atom->torque[i][2];
-        atom->radius[n] = childRadius;
-        avec->outer_radius[n] = childRadius;
+        atom->radius[n] = child_radius;
+        avec->outer_radius[n] = child_radius;
 
         delete[] coord;
 

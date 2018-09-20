@@ -539,7 +539,7 @@ void ReadDataBIO::command(int narg, char **arg)
       } else if (strcmp(keyword,"Nutrients") == 0) {
         nuflag = 1;
         if (firstpass) nutrients();
-        else skip_lines(bio->nnus);
+        else skip_lines(bio->nnu);
       } else if (strcmp(keyword,"Consumption Rate") == 0) {
         if (tnflag == 0) error->all(FLERR,"Must read Type Name before Lines");
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
@@ -584,7 +584,7 @@ void ReadDataBIO::command(int narg, char **arg)
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
         if (firstpass) diffCoeff();
-        else skip_lines(bio->nnus);
+        else skip_lines(bio->nnu);
       } else if (strcmp(keyword,"Catabolism Coeffs") == 0) {
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
@@ -603,7 +603,7 @@ void ReadDataBIO::command(int narg, char **arg)
       } else if (strcmp(keyword,"Nutrient Energy") == 0) {
         if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
         if (firstpass) nuGCoeff();
-        else skip_lines(bio->nnus);
+        else skip_lines(bio->nnu);
       } else if (strcmp(keyword,"Type Energy") == 0) {
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (firstpass) typeGCoeff();
@@ -611,7 +611,7 @@ void ReadDataBIO::command(int narg, char **arg)
       } else if (strcmp(keyword,"Nutrient Charge") == 0) {
         if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
         if (firstpass) nuChr();
-        else skip_lines(bio->nnus);
+        else skip_lines(bio->nnu);
       } else if (strcmp(keyword,"Type Charge") == 0) {
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (tnflag == 0) error->all(FLERR,"Must read Type Name before Lines");
@@ -620,12 +620,12 @@ void ReadDataBIO::command(int narg, char **arg)
       } else if (strcmp(keyword,"KLa") == 0) {
         if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
         if (firstpass) kLa();
-        else skip_lines(bio->nnus);
+        else skip_lines(bio->nnu);
       } else if (strcmp(keyword,"Molecular Weights") == 0) {
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
         if (firstpass) mw();
-        else skip_lines(bio->nnus);
+        else skip_lines(bio->nnu);
       }
 
       else if (strcmp(keyword,"Pair Coeffs") == 0) {
@@ -1083,7 +1083,7 @@ void ReadDataBIO::header(int firstpass)
       sscanf(line,"%d",&atom->ntypes);
       type_memory();
     }else if (strstr(line,"nutrients")) {
-      sscanf(line,"%d",&bio->nnus);
+      sscanf(line,"%d",&bio->nnu);
       nutrient_memory();
     }
 
@@ -2167,10 +2167,10 @@ void ReadDataBIO::type_memory(){
 
   int ntypes = atom->ntypes;
 
-  bio->typeName = (char **) memory->srealloc(bio->typeName,(ntypes+1)*sizeof(char *),
+  bio->tname = (char **) memory->srealloc(bio->tname,(ntypes+1)*sizeof(char *),
                                       "bio:typeName");
   for (int i = 0; i < ntypes+1; i++) {
-    bio->typeName[i] = NULL;
+    bio->tname[i] = NULL;
   }
 
   //atom->virtualMass = memory->create(atom->virtualMass,ntypes+1,"atom:virtualMass");
@@ -2178,17 +2178,17 @@ void ReadDataBIO::type_memory(){
 
 void ReadDataBIO::nutrient_memory(){
 
-  int nnus = bio->nnus;
+  int nnus = bio->nnu;
   int ntypes = atom->ntypes;
 
-  bio->nuName = (char **) memory->srealloc(bio->nuName,(nnus+1)*sizeof(char *),
+  bio->nuname = (char **) memory->srealloc(bio->nuname,(nnus+1)*sizeof(char *),
                                      "bio:nuName");
   for (int i = 0; i < nnus+1; i++){
-    bio->nuName[i] = NULL;
+    bio->nuname[i] = NULL;
   }
 
-  bio->iniS = memory->create(bio->iniS,nnus+1,7,"bio:nuConc");
-  bio->nuType = memory->create(bio->nuType, nnus+1, "bio::nuGCoeff");
+  bio->ini_nus = memory->create(bio->ini_nus,nnus+1,7,"bio:nuConc");
+  bio->nustate = memory->create(bio->nustate, nnus+1, "bio::nuGCoeff");
 }
 
 /* ---------------------------------------------------------------------- */
@@ -2210,9 +2210,9 @@ void ReadDataBIO::typeName()
     bio->set_typeName(narg,arg);
 
     if (strcmp(arg[1], "eps") == 0) {
-       avec_bio->eps_type = atoi(arg[0]);
+       avec_bio->type_eps = atoi(arg[0]);
     } else if (strcmp(arg[1], "dead") == 0) {
-       avec_bio->typeDEAD = atoi(arg[0]);
+       avec_bio->type_dead = atoi(arg[0]);
     }
 
 
@@ -2229,7 +2229,7 @@ void ReadDataBIO::nutrients()
 {
   int i,m;
   char *next;
-  int nnus = bio->nnus;
+  int nnus = bio->nnu;
   char *buf = new char[nnus*MAXLINE];
 
   if (me == 0) {
@@ -2308,7 +2308,7 @@ void ReadDataBIO::ks()
   int eof = comm->read_lines_from_file(fp,atom->ntypes,MAXLINE,buf);
   if (eof) error->all(FLERR,"Unexpected end of data file");
 
-  bio->ks = memory->create(bio->ks,atom->ntypes+1,bio->nnus+1,"bio:ks");
+  bio->ks = memory->create(bio->ks,atom->ntypes+1,bio->nnu+1,"bio:ks");
 
   char *original = buf;
   for (i = 0; i < atom->ntypes; i++) {
@@ -2327,15 +2327,15 @@ void ReadDataBIO::diffCoeff()
 {
   int i,m;
   char *next;
-  char *buf = new char[bio->nnus*MAXLINE];
+  char *buf = new char[bio->nnu*MAXLINE];
 
-  int eof = comm->read_lines_from_file(fp,bio->nnus,MAXLINE,buf);
+  int eof = comm->read_lines_from_file(fp,bio->nnu,MAXLINE,buf);
   if (eof) error->all(FLERR,"Unexpected end of data file");
 
-  bio->diffCoeff = memory->create(bio->diffCoeff,bio->nnus+1,"bio:diffCoeff");
+  bio->diff_coeff = memory->create(bio->diff_coeff,bio->nnu+1,"bio:diffCoeff");
 
   char *original = buf;
-  for (i = 0; i < bio->nnus; i++) {
+  for (i = 0; i < bio->nnu; i++) {
     next = strchr(buf,'\n');
     *next = '\0';
     bio->set_diffusion(buf);
@@ -2350,15 +2350,15 @@ void ReadDataBIO::mw()
 {
   int i,m;
   char *next;
-  char *buf = new char[bio->nnus*MAXLINE];
+  char *buf = new char[bio->nnu*MAXLINE];
 
-  int eof = comm->read_lines_from_file(fp,bio->nnus,MAXLINE,buf);
+  int eof = comm->read_lines_from_file(fp,bio->nnu,MAXLINE,buf);
   if (eof) error->all(FLERR,"Unexpected end of data file");
 
-  bio->mw = memory->create(bio->mw,bio->nnus+1,"bio:mw");
+  bio->mw = memory->create(bio->mw,bio->nnu+1,"bio:mw");
 
   char *original = buf;
-  for (i = 0; i < bio->nnus; i++) {
+  for (i = 0; i < bio->nnu; i++) {
     next = strchr(buf,'\n');
     *next = '\0';
     bio->set_mw(buf);
@@ -2401,13 +2401,13 @@ void ReadDataBIO::eD()
   int eof = comm->read_lines_from_file(fp,atom->ntypes,MAXLINE,buf);
   if (eof) error->all(FLERR,"Unexpected end of data file");
 
-  bio->eD = memory->create(bio->eD,atom->ntypes+1,"bio:eD");
+  bio->edoner = memory->create(bio->edoner,atom->ntypes+1,"bio:eD");
 
   char *original = buf;
   for (i = 0; i < atom->ntypes; i++) {
     next = strchr(buf,'\n');
     *next = '\0';
-    bio->set_eD(buf);
+    bio->set_edoner(buf);
     buf = next + 1;
   }
   delete [] original;
@@ -2494,7 +2494,7 @@ void ReadDataBIO::catCoeff()
   int eof = comm->read_lines_from_file(fp,atom->ntypes,MAXLINE,buf);
   if (eof) error->all(FLERR,"Unexpected end of data file");
 
-  bio->catCoeff = memory->create(bio->catCoeff,atom->ntypes+1,bio->nnus+1,"bio:catCoeff");
+  bio->cata_coeff = memory->create(bio->cata_coeff,atom->ntypes+1,bio->nnu+1,"bio:catCoeff");
 
   char *original = buf;
   for (i = 0; i < atom->ntypes; i++) {
@@ -2518,7 +2518,7 @@ void ReadDataBIO::anabCoeff()
   int eof = comm->read_lines_from_file(fp,atom->ntypes,MAXLINE,buf);
   if (eof) error->all(FLERR,"Unexpected end of data file");
 
-  bio->anabCoeff = memory->create(bio->anabCoeff,atom->ntypes+1,bio->nnus+1,"bio:anabCoeff");
+  bio->anab_coeff = memory->create(bio->anab_coeff,atom->ntypes+1,bio->nnu+1,"bio:anabCoeff");
 
   char *original = buf;
   for (i = 0; i < atom->ntypes; i++) {
@@ -2542,7 +2542,7 @@ void ReadDataBIO::decayCoeff()
   int eof = comm->read_lines_from_file(fp,atom->ntypes,MAXLINE,buf);
   if (eof) error->all(FLERR,"Unexpected end of data file");
 
-  bio->decayCoeff = memory->create(bio->decayCoeff,atom->ntypes+1,bio->nnus+1,"bio:decayCoeff");
+  bio->decay_coeff = memory->create(bio->decay_coeff,atom->ntypes+1,bio->nnu+1,"bio:decayCoeff");
 
   char *original = buf;
   for (i = 0; i < atom->ntypes; i++) {
@@ -2561,16 +2561,16 @@ void ReadDataBIO::nuGCoeff()
 {
   int i,m;
   char *next;
-  char *buf = new char[bio->nnus*MAXLINE];
+  char *buf = new char[bio->nnu*MAXLINE];
 
-  int eof = comm->read_lines_from_file(fp,bio->nnus,MAXLINE,buf);
+  int eof = comm->read_lines_from_file(fp,bio->nnu,MAXLINE,buf);
   if (eof) error->all(FLERR,"Unexpected end of data file");
 
-  bio->nuGCoeff= memory->create(bio->nuGCoeff,bio->nnus+1, 5, "bio:nuGCoeff");
-  bio->ngflag = memory->create(bio->ngflag,bio->nnus+1,"bio:ngflag");
+  bio->nugibbs_coeff= memory->create(bio->nugibbs_coeff,bio->nnu+1, 5, "bio:nuGCoeff");
+  bio->ngflag = memory->create(bio->ngflag,bio->nnu+1,"bio:ngflag");
 
   char *original = buf;
-  for (i = 0; i < bio->nnus; i++) {
+  for (i = 0; i < bio->nnu; i++) {
     next = strchr(buf,'\n');
     *next = '\0';
     parse_coeffs(buf,NULL,0,0,boffset);
@@ -2591,8 +2591,8 @@ void ReadDataBIO::typeGCoeff()
   int eof = comm->read_lines_from_file(fp,atom->ntypes,MAXLINE,buf);
   if (eof) error->all(FLERR,"Unexpected end of data file");
 
-  bio->typeGCoeff = memory->create(bio->typeGCoeff,atom->ntypes+1,5,"bio:typeGCoeff");
-  bio->tgflag = memory->create(bio->tgflag,atom->ntypes+1,"bio:tgflag");
+  bio->tgibbs_coeff = memory->create(bio->tgibbs_coeff,atom->ntypes+1,5,"bio:typeGCoeff");
+  bio->tgibbs_flag = memory->create(bio->tgibbs_flag,atom->ntypes+1,"bio:tgflag");
 
   char *original = buf;
   for (i = 0; i < atom->ntypes; i++) {
@@ -2611,15 +2611,15 @@ void ReadDataBIO::nuChr()
 {
   int i,m;
   char *next;
-  char *buf = new char[bio->nnus*MAXLINE];
+  char *buf = new char[bio->nnu*MAXLINE];
 
-  int eof = comm->read_lines_from_file(fp,bio->nnus,MAXLINE,buf);
+  int eof = comm->read_lines_from_file(fp,bio->nnu,MAXLINE,buf);
   if (eof) error->all(FLERR,"Unexpected end of data file");
 
-  bio->nuChr = memory->create(bio->nuChr,bio->nnus+1, 5, "bio:nuChr");
+  bio->nucharge = memory->create(bio->nucharge,bio->nnu+1, 5, "bio:nuChr");
 
   char *original = buf;
-  for (i = 0; i < bio->nnus; i++) {
+  for (i = 0; i < bio->nnu; i++) {
     next = strchr(buf,'\n');
     *next = '\0';
     parse_coeffs(buf,NULL,0,0,boffset);
@@ -2640,7 +2640,7 @@ void ReadDataBIO::typeChr()
   int eof = comm->read_lines_from_file(fp,atom->ntypes,MAXLINE,buf);
   if (eof) error->all(FLERR,"Unexpected end of data file");
 
-  bio->typeChr = memory->create(bio->typeChr,atom->ntypes+1,5,"bio:typeChr");
+  bio->tcharge = memory->create(bio->tcharge,atom->ntypes+1,5,"bio:typeChr");
 
   char *original = buf;
   for (i = 0; i < atom->ntypes; i++) {
@@ -2660,15 +2660,15 @@ void ReadDataBIO::kLa()
 {
   int i,m;
   char *next;
-  char *buf = new char[bio->nnus*MAXLINE];
+  char *buf = new char[bio->nnu*MAXLINE];
 
-  int eof = comm->read_lines_from_file(fp,bio->nnus,MAXLINE,buf);
+  int eof = comm->read_lines_from_file(fp,bio->nnu,MAXLINE,buf);
   if (eof) error->all(FLERR,"Unexpected end of data file");
 
-  bio->kLa = memory->create(bio->kLa,bio->nnus+1,"bio:kLa");
+  bio->kla = memory->create(bio->kla,bio->nnu+1,"bio:kLa");
 
   char *original = buf;
-  for (i = 0; i < bio->nnus; i++) {
+  for (i = 0; i < bio->nnu; i++) {
     next = strchr(buf,'\n');
     *next = '\0';
     bio->set_kLa(buf);
