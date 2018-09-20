@@ -355,25 +355,33 @@ void FixKinetics::compute_activity() {
   int nnus = bio->nnus;
   double *denm = memory->create(denm, nnus + 1, "kinetics:denm");
   double gSh = pow(10, -iph);
+  double gSh2 = gSh * gSh;
+  double gSh3 = gSh * gSh2;
 
   for (int k = 1; k < nnus + 1; k++) {
+    double iniNuS = bio->iniS[k][0];
+    denm[k] = (1 + kEq[k][0]) * gSh3 + kEq[k][1] * gSh2 + kEq[k][2] * kEq[k][3] * gSh + kEq[k][3] * kEq[k][2] * kEq[k][1];
+    if (denm[k] == 0) {
+      lmp->error->all(FLERR, "denm returns a zero value");
+    }
+    double tmp[5];
+    tmp[0] = kEq[k][0] * gSh3 / denm[k];
+    tmp[1] = gSh3 / denm[k];
+    tmp[2] = gSh2 * kEq[k][1] / denm[k];
+    tmp[3] = gSh * kEq[k][1] * kEq[k][2] / denm[k];
+    tmp[4] = kEq[k][1] * kEq[k][2] * kEq[k][3] / denm[k];
     for (int j = 0; j < bgrids; j++) {
-      double iniNuS = bio->iniS[k][0];
       sh[j] = gSh;
-      denm[k] = (1 + kEq[k][0]) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][3] * gSh + kEq[k][3] * kEq[k][2] * kEq[k][1];
-      if (denm[k] == 0) {
-        lmp->error->all(FLERR, "denm returns a zero value");
-      }
       // not hydrated form acitivity
-      activity[k][0][j] = kEq[k][0] * nuS[k][j] * gSh * gSh * gSh / denm[k];
+      activity[k][0][j] = nuS[k][j] * tmp[0];
       // fully protonated form activity
-      activity[k][1][j] = nuS[k][j] * gSh * gSh * gSh / denm[k];
+      activity[k][1][j] = nuS[k][j] * tmp[1];
       // 1st deprotonated form activity
-      activity[k][2][j] = nuS[k][j] * gSh * gSh * kEq[k][1] / denm[k];
+      activity[k][2][j] = nuS[k][j] * tmp[2];
       // 2nd deprotonated form activity
-      activity[k][3][j] = nuS[k][j] * gSh * kEq[k][1] * kEq[k][2] / denm[k];
+      activity[k][3][j] = nuS[k][j] * tmp[3];
       // 3rd deprotonated form activity
-      activity[k][4][j] = nuS[k][j] * kEq[k][1] * kEq[k][2] * kEq[k][3] / denm[k];
+      activity[k][4][j] = nuS[k][j] * tmp[4];
      // if(k==1)printf("act = %e, s= %e, flag = %i \n", activity[k][1][j], nuS[k][j], bio->ngflag[k]);
       if (strcmp(bio->nuName[k], "h") == 0) {
         activity[k][1][j] = gSh;
