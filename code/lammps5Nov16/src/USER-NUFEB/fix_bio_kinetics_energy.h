@@ -30,38 +30,21 @@ class FixKineticsEnergy : public Fix {
   char **var;
   int *ivar;
 
-  double *radius;
-  double *rmass;
-  double *outerMass;
-  double *outerRadius;
-
-  int *mask;
-  int *type;
-  int nlocal;
-
-  int nnus;                         // # of nutrients
-  int ntypes;                       // # of species
-  int epsflag;
-
   double stepx, stepy, stepz;       // grids size
   double xlo,xhi,ylo,yhi,zlo,zhi;   // computational domain size
   int nx, ny, nz;
-  double vol;                       // grid volume and gas volume
-  double temp;                      // gas transfer constant and temperature
-  double EPSdens;                   // EPS density
-  double *maintain;
-  double *decay;
+  double vol;
 
-  double **catCoeff;                 // catabolism coefficients of species
-  double **anabCoeff;                // anabolism  coefficients of species
-  double ***activity;                // activity of chemical species
+  double eps_dens;
+  int epsflag;
+  double **growrate;
 
   class AtomVecBio *avec;
   class FixKinetics *kinetics;
   class BIO *bio;
 
  // double minimal_monod(int, int, int);
-  double grid_monod(int, int, int);
+  double grid_monod(int, int);
   void bio_update(double, int);
   double  biomass(int, double **gMonod);
 };

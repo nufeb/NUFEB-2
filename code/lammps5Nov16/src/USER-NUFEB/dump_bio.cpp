@@ -74,29 +74,29 @@ DumpBio::DumpBio(LAMMPS *lmp, int narg, char **arg) :
   keywords = NULL;
   fp = NULL;
 
-  anFlag = 0;
-  concFlag = 0;
-  avgsFlag = 0;
-  catFlag = 0;
-  phFlag = 0;
-  massFlag = 0;
-  massHeader = 0;
-  divHeader = 0;
-  typeHeader = 0;
-  bulkHeader = 0;
-  avgsHeader = 0;
-  gasFlag = 0;
-  yieldFlag = 0;
-  bulkFlag = 0;
-  avgphFlag = 0;
-  avgphHeader = 0;
+  anab_flag = 0;
+  nus_flag = 0;
+  avgnus_flag = 0;
+  cata_flag = 0;
+  ph_flag = 0;
+  mass_flag = 0;
+  mass_header = 0;
+  div_header = 0;
+  type_header = 0;
+  bulk_header = 0;
+  avgnus_header = 0;
+  gas_flag = 0;
+  yield_flag = 0;
+  bulk_flag = 0;
+  avgph_flag = 0;
+  avgph_header = 0;
 
-  diaFlag = 0;
-  dimFlag = 0;
-  divFlag = 0;
-  heightFlag = 0;
-  roughFlag = 0;
-  segFlag = 0;
+  dia_flag = 0;
+  dim_flag = 0;
+  div_flag = 0;
+  height_flag = 0;
+  rough_flag = 0;
+  seg_flag = 0;
 
   // customize for new sections
   keywords = (char **) memory->srealloc(keywords, nkeywords*sizeof(char *), "keywords");
@@ -167,7 +167,7 @@ void DumpBio::init_style()
   stepz = (zhi - zlo) / nz;
 
   int i = 0;
-  int nnus = kinetics->bio->nnus;
+  int nnus = kinetics->bio->nnu;
   int ntypes = atom->ntypes;
 
   //create directory
@@ -177,13 +177,13 @@ void DumpBio::init_style()
 
   while (i < nkeywords) {
     if (strcmp(keywords[i],"con") == 0) {
-      concFlag = 1;
+      nus_flag = 1;
       if (stat("./Results/S", &st) == -1) {
           mkdir("./Results/S", 0700);
       }
       for (int j = 1; j < nnus + 1; j++) {
-        if (bio->nuType[j] == 0 && strcmp(bio->nuName[j], "h") != 0 && strcmp(bio->nuName[j], "h2o") != 0) {
-          char *name = bio->nuName[j];
+        if (bio->nustate[j] == 0 && strcmp(bio->nuname[j], "h") != 0 && strcmp(bio->nuname[j], "h2o") != 0) {
+          char *name = bio->nuname[j];
           int len = 13;
           len += strlen(name);
           char path[len];
@@ -196,12 +196,12 @@ void DumpBio::init_style()
         }
       }
     } else if (strcmp(keywords[i],"DGRAn") == 0) {
-      anFlag = 1;
+      anab_flag = 1;
       if (stat("./Results/DGRAn", &st) == -1) {
           mkdir("./Results/DGRAn", 0700);
       }
       for (int j = 1; j < ntypes + 1; j++) {
-        char *name = bio->typeName[j];
+        char *name = bio->tname[j];
         int len = 17;
         len += strlen(name);
         char path[len];
@@ -213,12 +213,12 @@ void DumpBio::init_style()
         }
       }
     } else if (strcmp(keywords[i],"DGRCat") == 0) {
-      catFlag = 1;
+      cata_flag = 1;
       if (stat("./Results/DGRCat", &st) == -1) {
           mkdir("./Results/DGRCat", 0700);
       }
       for (int j = 1; j < ntypes + 1; j++) {
-        char *name = bio->typeName[j];
+        char *name = bio->tname[j];
         int len = 18;
         len += strlen(name);
         char path[len];
@@ -230,12 +230,12 @@ void DumpBio::init_style()
         }
       }
     } else if (strcmp(keywords[i],"yield") == 0) {
-      yieldFlag = 1;
+      yield_flag = 1;
       if (stat("./Results/yield", &st) == -1) {
           mkdir("./Results/yield", 0700);
       }
       for (int j = 1; j < ntypes + 1; j++) {
-        char *name = bio->typeName[j];
+        char *name = bio->tname[j];
         int len = 17;
         len += strlen(name);
         char path[len];
@@ -247,34 +247,34 @@ void DumpBio::init_style()
         }
       }
     } else if (strcmp(keywords[i],"ph") == 0) {
-      phFlag = 1;
+      ph_flag = 1;
       if (stat("./Results/pH", &st) == -1) {
           mkdir("./Results/pH", 0700);
       }
     } else if (strcmp(keywords[i],"biomass") == 0) {
-      massFlag = 1;
+      mass_flag = 1;
     } else if (strcmp(keywords[i],"bulk") == 0) {
-      bulkFlag = 1;
+      bulk_flag = 1;
     }  else if (strcmp(keywords[i],"diameter") == 0) {
-      diaFlag = 1;
+      dia_flag = 1;
     } else if (strcmp(keywords[i],"dimension") == 0) {
-      dimFlag = 1;
+      dim_flag = 1;
     } else if (strcmp(keywords[i],"diversity") == 0) {
-      divFlag = 1;
+      div_flag = 1;
     } else if (strcmp(keywords[i],"ave_height") == 0) {
-      heightFlag = 1;
+      height_flag = 1;
     } else if (strcmp(keywords[i],"roughness") == 0) {
-      roughFlag = 1;
+      rough_flag = 1;
     } else if (strcmp(keywords[i],"segregation") == 0) {
-      segFlag = 1;
+      seg_flag = 1;
     }  else if (strcmp(keywords[i],"ntypes") == 0) {
-      ntypeFlag = 1;
+      ntypes_flag = 1;
     } else if (strcmp(keywords[i],"avg_con") == 0) {
-      avgsFlag = 1;
+      avgnus_flag = 1;
     } else if (strcmp(keywords[i],"avg_ph") == 0) {
-      avgphFlag = 1;
+      avgph_flag = 1;
     } else if (strcmp(keywords[i],"gas") == 0) {
-      gasFlag = 1;
+      gas_flag = 1;
     }
     else lmp->error->all(FLERR,"Undefined dump_bio keyword");
 
@@ -326,22 +326,22 @@ void DumpBio::write()
 {
   if (update-> ntimestep == 0) return;
 
-  if (ntypeFlag == 1) ctype->compute_vector();
-  if (massFlag == 1) cmass->compute_vector();
-  if (diaFlag == 1)  cdia->compute_scalar();
-  if (dimFlag == 1)   cdim->compute_scalar();
-  if (divFlag == 1)  cdiv->compute_scalar();
-  if (heightFlag == 1)  cheight->compute_scalar();
-  if (roughFlag == 1) crough->compute_scalar();
-  if (segFlag == 1) cseg->compute_scalar();
-  if (avgsFlag == 1) cavgs->compute_vector();
-  if (avgphFlag == 1) cavgph->compute_scalar();
-  if (gasFlag == 1) cgas->compute_scalar();
+  if (ntypes_flag == 1) ctype->compute_vector();
+  if (mass_flag == 1) cmass->compute_vector();
+  if (dia_flag == 1)  cdia->compute_scalar();
+  if (dim_flag == 1)   cdim->compute_scalar();
+  if (div_flag == 1)  cdiv->compute_scalar();
+  if (height_flag == 1)  cheight->compute_scalar();
+  if (rough_flag == 1) crough->compute_scalar();
+  if (seg_flag == 1) cseg->compute_scalar();
+  if (avgnus_flag == 1) cavgs->compute_vector();
+  if (avgph_flag == 1) cavgph->compute_scalar();
+  if (gas_flag == 1) cgas->compute_scalar();
 
-  int nnus = kinetics->bio->nnus;
+  int nnus = kinetics->bio->nnu;
   int ntypes = atom->ntypes;
 
-  if (massFlag == 1 && comm->me == 0) {
+  if (mass_flag == 1 && comm->me == 0) {
     int len = 35;
     char path[len];
     strcpy(path, "./Results/biomass.csv");
@@ -352,7 +352,7 @@ void DumpBio::write()
     fclose(fp);
   }
 
-  if (diaFlag == 1 && comm->me == 0) {
+  if (dia_flag == 1 && comm->me == 0) {
     int len = 36;
     char path[len];
     strcpy(path, "./Results/diameter.csv");
@@ -363,7 +363,7 @@ void DumpBio::write()
     fclose(fp);
   }
 
-  if (dimFlag == 1 && comm->me == 0) {
+  if (dim_flag == 1 && comm->me == 0) {
     int len = 38;
     char path[len];
     strcpy(path, "./Results/dimension.csv");
@@ -374,7 +374,7 @@ void DumpBio::write()
     fclose(fp);
   }
 
-  if (divFlag == 1 && comm->me == 0) {
+  if (div_flag == 1 && comm->me == 0) {
     int len = 38;
     char path[len];
     strcpy(path, "./Results/diversity.csv");
@@ -385,7 +385,7 @@ void DumpBio::write()
     fclose(fp);
   }
 
-  if (heightFlag == 1 && comm->me == 0) {
+  if (height_flag == 1 && comm->me == 0) {
     int len = 38;
     char path[len];
     strcpy(path, "./Results/ave_height.csv");
@@ -396,7 +396,7 @@ void DumpBio::write()
     fclose(fp);
   }
 
-  if (roughFlag == 1 && comm->me == 0) {
+  if (rough_flag == 1 && comm->me == 0) {
     int len = 38;
     char path[len];
     strcpy(path, "./Results/roughness.csv");
@@ -407,7 +407,7 @@ void DumpBio::write()
     fclose(fp);
   }
 
-  if (segFlag == 1 && comm->me == 0) {
+  if (seg_flag == 1 && comm->me == 0) {
     int len = 38;
     char path[len];
     strcpy(path, "./Results/segregation.csv");
@@ -418,7 +418,7 @@ void DumpBio::write()
     fclose(fp);
   }
 
-  if (ntypeFlag == 1 && comm->me == 0) {
+  if (ntypes_flag == 1 && comm->me == 0) {
     int len = 38;
     char path[len];
     strcpy(path, "./Results/ntypes.csv");
@@ -429,7 +429,7 @@ void DumpBio::write()
     fclose(fp);
   }
 
-  if (bulkFlag == 1 && comm->me == 0) {
+  if (bulk_flag == 1 && comm->me == 0) {
     int len = 38;
     char path[len];
     strcpy(path, "./Results/bulk.csv");
@@ -440,7 +440,7 @@ void DumpBio::write()
     fclose(fp);
   }
 
-  if (avgsFlag == 1 && comm->me == 0) {
+  if (avgnus_flag == 1 && comm->me == 0) {
     int len = 38;
     char path[len];
     strcpy(path, "./Results/ave_concentration.csv");
@@ -451,7 +451,7 @@ void DumpBio::write()
     fclose(fp);
   }
 
-  if (avgphFlag == 1 && comm->me == 0) {
+  if (avgph_flag == 1 && comm->me == 0) {
     int len = 38;
     char path[len];
     strcpy(path, "./Results/ave_ph.csv");
@@ -462,7 +462,7 @@ void DumpBio::write()
     fclose(fp);
   }
 
-  if (gasFlag == 1 && comm->me == 0) {
+  if (gas_flag == 1 && comm->me == 0) {
     int len = 38;
     char path[len];
     strcpy(path, "./Results/gas.csv");
@@ -473,10 +473,10 @@ void DumpBio::write()
     fclose(fp);
   }
 
-  if (concFlag == 1) {
+  if (nus_flag == 1) {
     for (int i = 1; i < nnus+1; i++) {
-      if (bio->nuType[i] == 0 && strcmp(bio->nuName[i], "h") != 0 && strcmp(bio->nuName[i], "h2o") != 0) {
-        char *name = bio->nuName[i];
+      if (bio->nustate[i] == 0 && strcmp(bio->nuname[i], "h") != 0 && strcmp(bio->nuname[i], "h2o") != 0) {
+        char *name = bio->nuname[i];
         int len = 30;
         len += strlen(name);
         char path[len];
@@ -549,7 +549,7 @@ void DumpBio::write_concentration_data(int nuID)
     double y = kinetics->sublo[1] + ypos * stepy - stepy/2;
     double z = zpos * stepz - stepz/2;
 
-    fprintf(fp, "%i,%f,%f,%f,%e\n",i, x, y, z, kinetics->nuS[nuID][i]);
+    fprintf(fp, "%i,%f,%f,%f,%e\n",i, x, y, z, kinetics->nus[nuID][i]);
   }
 }
 
@@ -570,7 +570,7 @@ void DumpBio::write_DGRCat_data(int typeID)
 
     //average += kinetics->DRGCat[2][i];
 
-    fprintf(fp, "%i,%f,%f,%f,%e\n",i, x, y, z, kinetics->DRGCat[typeID][i]);
+    fprintf(fp, "%i,%f,%f,%f,%e\n",i, x, y, z, kinetics->gibbs_cata[typeID][i]);
   }
 }
 
@@ -591,7 +591,7 @@ void DumpBio::write_yield_data(int typeID)
 
     //average += kinetics->DRGCat[2][i];
 
-    fprintf(fp, "%i,%f,%f,%f,%e\n",i, x, y, z, kinetics->gYield[typeID][i]);
+    fprintf(fp, "%i,%f,%f,%f,%e\n",i, x, y, z, kinetics->grid_yield[typeID][i]);
   }
 }
 
@@ -612,7 +612,7 @@ void DumpBio::write_DGRAn_data(int typeID)
 
     //average += kinetics->DRGCat[2][i];
 
-    fprintf(fp, "%i,%f,%f,%f,%e\n",i, x, y, z, kinetics->DRGAn[typeID][i]);
+    fprintf(fp, "%i,%f,%f,%f,%e\n",i, x, y, z, kinetics->gibbs_anab[typeID][i]);
   }
 }
 
@@ -641,17 +641,17 @@ void DumpBio::write_pH_data()
 
 void DumpBio::write_avgcon_data()
 {
-  if (!avgsHeader) {
-    for(int i = 1; i < bio->nnus+1; i++){
-      fprintf(fp, "%s,", kinetics->bio->nuName[i]);
+  if (!avgnus_header) {
+    for(int i = 1; i < bio->nnu+1; i++){
+      fprintf(fp, "%s,", kinetics->bio->nuname[i]);
     }
-    avgsHeader = 1;
+    avgnus_header = 1;
     fprintf(fp, "\n");
   }
 
   fprintf(fp, "%i,", update->ntimestep);
 
-  for(int i = 1; i < bio->nnus+1; i++){
+  for(int i = 1; i < bio->nnu+1; i++){
     fprintf(fp, "%e,", cavgs->vector[i]);
   }
   fprintf(fp, "\n");
@@ -676,19 +676,19 @@ void DumpBio::write_gas_data()
 
 void DumpBio::write_bulk_data()
 {
-  if (!bulkHeader) {
-    for(int i = 1; i < bio->nnus+1; i++){
-      fprintf(fp, "%s,", kinetics->bio->nuName[i]);
+  if (!bulk_header) {
+    for(int i = 1; i < bio->nnu+1; i++){
+      fprintf(fp, "%s,", kinetics->bio->nuname[i]);
     }
-    bulkHeader = 1;
+    bulk_header = 1;
     fprintf(fp, "\n");
   }
 
   fprintf(fp, "%i,", update->ntimestep);
 
-  for(int nu = 1; nu < bio->nnus+1; nu++){
-    if (bio->nuType[nu] != 0) continue;
-    fprintf(fp, "%e,",  kinetics->nuBS[nu]/1000);
+  for(int nu = 1; nu < bio->nnu+1; nu++){
+    if (bio->nustate[nu] != 0) continue;
+    fprintf(fp, "%e,",  kinetics->nubs[nu]/1000);
   }
   fprintf(fp, "\n");
 }
@@ -697,12 +697,12 @@ void DumpBio::write_bulk_data()
 
 void DumpBio::write_biomass_data()
 {
-  if (!massHeader) {
+  if (!mass_header) {
     for(int i = 0; i < atom->ntypes+1; i++){
       if(i == 0) fprintf(fp, "Total,");
-      else fprintf(fp, "%s,", kinetics->bio->typeName[i]);
+      else fprintf(fp, "%s,", kinetics->bio->tname[i]);
     }
-    massHeader = 1;
+    mass_header = 1;
     fprintf(fp, "\n");
   }
 
@@ -760,11 +760,11 @@ void DumpBio::write_segregate_data()
 
 void DumpBio::write_ntype_data()
 {
-  if (!typeHeader) {
+  if (!type_header) {
     for(int i = 1; i < atom->ntypes+1; i++){
-      fprintf(fp, "%s,", kinetics->bio->typeName[i]);
+      fprintf(fp, "%s,", kinetics->bio->tname[i]);
     }
-    typeHeader = 1;
+    type_header = 1;
     fprintf(fp, "\n");
   }
 

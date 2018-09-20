@@ -64,7 +64,9 @@ using namespace FixConst;
 
 using namespace std;
 
-enum{TEMPERATURE, RTH, GVOL, RG, PH, DIFFT, BL, ITER};
+enum {
+  TEMPERATURE, RTH, GVOL, RG, PH, DIFFT, BL, ITER
+};
 
 #define BUFMIN 1000
 
@@ -126,41 +128,42 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
   devery = 1;
 
   int iarg = 9;
-  while (iarg < narg){
-    if (strcmp(arg[iarg],"temp") == 0) {
+  while (iarg < narg) {
+    if (strcmp(arg[iarg], "temp") == 0) {
       temp = force->numeric(FLERR, arg[iarg + 1]);
       if (temp < 0.0)
         error->all(FLERR, "Illegal fix kinetics command: temp");
       iarg += 2;
-    } else if (strcmp(arg[iarg],"rth") == 0) {
+    } else if (strcmp(arg[iarg], "rth") == 0) {
       rth = force->numeric(FLERR, arg[iarg + 1]);
       if (rth < 0.0)
         error->all(FLERR, "Illegal fix kinetics command: rth");
       iarg += 2;
-    } else if (strcmp(arg[iarg],"gvol") == 0) {
+    } else if (strcmp(arg[iarg], "gvol") == 0) {
       gvol = force->numeric(FLERR, arg[iarg + 1]);
       if (gvol < 0.0)
         error->all(FLERR, "Illegal fix kinetics command: gvol");
-      iarg += 2;;
-    } else if (strcmp(arg[iarg],"rg") == 0) {
+      iarg += 2;
+      ;
+    } else if (strcmp(arg[iarg], "rg") == 0) {
       rg = force->numeric(FLERR, arg[iarg + 1]);
       if (rg < 0.0)
         error->all(FLERR, "Illegal fix kinetics command: rg");
       iarg += 2;
-    } else if (strcmp(arg[iarg],"ph") == 0) {
+    } else if (strcmp(arg[iarg], "ph") == 0) {
       iph = force->numeric(FLERR, arg[iarg + 1]);
       if (iph < 0.0)
         error->all(FLERR, "Illegal fix kinetics command: ph");
       iarg += 2;
-    } else if (strcmp(arg[iarg],"demflag") == 0) {
+    } else if (strcmp(arg[iarg], "demflag") == 0) {
       demflag = force->inumeric(FLERR, arg[iarg + 1]);
       if (demflag != 1 && demflag != 0)
         error->all(FLERR, "Illegal fix kinetics command: demflag");
       iarg += 2;
-    } else if (strcmp(arg[iarg],"niter") == 0) {
+    } else if (strcmp(arg[iarg], "niter") == 0) {
       niter = force->inumeric(FLERR, arg[iarg + 1]);
       iarg += 2;
-    } else if (strcmp(arg[iarg],"devery") == 0) {
+    } else if (strcmp(arg[iarg], "devery") == 0) {
       devery = force->inumeric(FLERR, arg[iarg + 1]);
       if (devery < 1)
         error->all(FLERR, "Illegal fix kinetics command: devery");
@@ -173,10 +176,11 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
   stepy = (yhi - ylo) / ny;
   stepz = (zhi - zlo) / nz;
 
-  grid = Grid<double, 3>(Box<double, 3>(domain->boxlo, domain->boxhi), {nx, ny, nz});
-  subgrid = Subgrid<double, 3>(grid, Box<double, 3>(domain->sublo, domain->subhi), static_cast<double(*)(double)>(&std::round));
+  grid = Grid<double, 3>(Box<double, 3>(domain->boxlo, domain->boxhi), { nx, ny, nz });
+  subgrid = Subgrid<double, 3>(grid, Box<double, 3>(domain->sublo, domain->subhi),
+      static_cast<double (*)(double)>(&std::round));
 
-  for (int i = 0; i < 3; i++) {
+for(  int i = 0; i < 3; i++) {
     // considering that the grid will always have a cubic cell (i.e. stepx = stepy = stepz)
     subnlo[i] = std::round(domain->sublo[i] / stepz);
     subnhi[i] = std::round(domain->subhi[i] / stepz);
@@ -199,19 +203,19 @@ FixKinetics::~FixKinetics() {
   delete[] var;
   delete[] ivar;
 
-  memory->destroy(gYield);
+  memory->destroy(grid_yield);
   memory->destroy(activity);
-  memory->destroy(nuR);
-  memory->destroy(nuS);
-  memory->destroy(nuBS);
-  memory->destroy(DRGCat);
-  memory->destroy(DRGAn);
-  memory->destroy(kEq);
+  memory->destroy(nur);
+  memory->destroy(nus);
+  memory->destroy(nubs);
+  memory->destroy(gibbs_cata);
+  memory->destroy(gibbs_anab);
+  memory->destroy(keq);
   memory->destroy(sh);
-  memory->destroy(fV);
-  memory->destroy(xmass);
+  memory->destroy(fv);
+  memory->destroy(xdensity);
 
-  delete[] nuConv;
+  delete[] nuconv;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -233,7 +237,7 @@ void FixKinetics::init() {
       error->all(FLERR, "Variable for fix kinetics is invalid style");
   }
 
-  diffT = input->variable->compute_equal(ivar[0]);
+  diff_dt = input->variable->compute_equal(ivar[0]);
   blayer = input->variable->compute_equal(ivar[1]);
 
   // register fix kinetics with this class
@@ -242,7 +246,7 @@ void FixKinetics::init() {
   ph = NULL;
   thermo = NULL;
   monod = NULL;
-  nufebFoam = NULL;
+  nufebfoam = NULL;
 
   int nfix = modify->nfix;
   for (int j = 0; j < nfix; j++) {
@@ -257,50 +261,36 @@ void FixKinetics::init() {
     } else if (strcmp(modify->fix[j]->style, "kinetics/growth/monod") == 0) {
       monod = static_cast<FixKineticsMonod *>(lmp->modify->fix[j]);
     } else if (strcmp(modify->fix[j]->style, "nufebFoam") == 0) {
-      nufebFoam = static_cast<FixFluid *>(lmp->modify->fix[j]);
+      nufebfoam = static_cast<FixFluid *>(lmp->modify->fix[j]);
     }
   }
 
-  if (bio->nnus == 0)
+  if (bio->nnu == 0)
     error->all(FLERR, "fix_kinetics requires # of Nutrients inputs");
-  else if (bio->nuGCoeff == NULL && energy != NULL)
+  else if (bio->nugibbs_coeff == NULL && energy != NULL)
     error->all(FLERR, "fix_kinetics requires Nutrient Energy inputs");
-  else if (bio->iniS == NULL)
+  else if (bio->ini_nus == NULL)
     error->all(FLERR, "fix_kinetics requires Nutrients inputs");
 
   ngrids = subn[0] * subn[1] * subn[2];
 
-  int nnus = bio->nnus;
   int ntypes = atom->ntypes;
-  nuConv = new int[nnus + 1]();
-  nuS = memory->create(nuS, nnus + 1, ngrids, "kinetics:nuS");
-  nuR = memory->create(nuR, nnus + 1, ngrids, "kinetics:nuR");
-  nuBS = memory->create(nuBS, nnus + 1, "kinetics:nuBS");
-  gYield = memory->create(gYield, ntypes + 1, ngrids, "kinetic:gYield");
-  activity = memory->create(activity, nnus + 1, 5, ngrids, "kinetics:activity");
-  DRGCat = memory->create(DRGCat, ntypes + 1, ngrids, "kinetics:DRGCat");
-  DRGAn = memory->create(DRGAn, ntypes + 1, ngrids, "kinetics:DRGAn");
-  kEq = memory->create(kEq, nnus + 1, 4, "kinetics:kEq");
+  int nnus = bio->nnu;
+
+  nuconv = new int[nnus+1]();
+  nus = memory->create(nus, nnus+1, ngrids, "kinetics:nuS");
+  nur = memory->create(nur, nnus+1, ngrids, "kinetics:nuR");
+  nubs = memory->create(nubs, nnus+1, "kinetics:nuBS");
+  grid_yield = memory->create(grid_yield, ntypes + 1, ngrids, "kinetic:gYield");
+  activity = memory->create(activity, nnus+1, 5, ngrids, "kinetics:activity");
+  gibbs_cata = memory->create(gibbs_cata, ntypes+1, ngrids, "kinetics:DRGCat");
+  gibbs_anab = memory->create(gibbs_anab, ntypes+1, ngrids, "kinetics:DRGAn");
+  keq = memory->create(keq, nnus+1, 4, "kinetics:kEq");
   sh = memory->create(sh, ngrids, "kinetics:Sh");
-  fV = memory->create(fV, 3, ngrids, "kinetcis:fV");
-  xmass = memory->create(xmass, ngrids, "kinetcis:xmass");
+  fv = memory->create(fv, 3, ngrids, "kinetcis:fV");
+  xdensity = memory->create(xdensity, ntypes+1, ngrids, "kinetics:xdensity");
 
-  //initialize grid yield, inlet concentration, consumption
-  for (int j = 0; j < ngrids; j++) {
-    fV[0][j] = 0;
-    fV[1][j] = 0;
-    fV[2][j] = 0;
-    for (int i = 1; i <= ntypes; i++) {
-      gYield[i][j] = bio->yield[i];
-      DRGCat[i][j] = 0;
-      DRGAn[i][j] = 0;
-    }
-    for (int i = 1; i <= nnus; i++) {
-      nuS[i][j] = bio->iniS[i][0];
-      nuR[i][j] = 0;
-    }
-  }
-
+  init_param();
   reset_isConv();
   update_bgrids();
 
@@ -312,17 +302,38 @@ void FixKinetics::init() {
   // Fitting initial domain decomposition to the grid 
   for (int i = 0; i < comm->procgrid[0]; i++) {
     int n = nx * i * 1.0 / comm->procgrid[0];
-    comm->xsplit[i] = (double)n / nx;
+    comm->xsplit[i] = (double) n / nx;
   }
   for (int i = 0; i < comm->procgrid[1]; i++) {
     int n = ny * i * 1.0 / comm->procgrid[1];
-    comm->ysplit[i] = (double)n / ny;
+    comm->ysplit[i] = (double) n / ny;
   }
   for (int i = 0; i < comm->procgrid[2]; i++) {
     int n = nz * i * 1.0 / comm->procgrid[2];
-    comm->zsplit[i] = (double)n / nz;
+    comm->zsplit[i] = (double) n / nz;
   }
   domain->set_local_box();
+}
+
+void FixKinetics::init_param() {
+  //initialize grid yield, inlet concentration, consumption
+  for (int j = 0; j < ngrids; j++) {
+    fv[0][j] = 0;
+    fv[1][j] = 0;
+    fv[2][j] = 0;
+
+    for (int i = 1; i <= atom->ntypes; i++) {
+      grid_yield[i][j] = bio->yield[i];
+      gibbs_cata[i][j] = 0;
+      gibbs_anab[i][j] = 0;
+      xdensity[i][j] = 0;
+    }
+
+    for (int i = 1; i <= bio->nnu; i++) {
+      nus[i][j] = bio->ini_nus[i][0];
+      nur[i][j] = 0;
+    }
+  }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -330,11 +341,11 @@ void FixKinetics::init() {
 void FixKinetics::init_keq() {
   // water Kj/mol
   double dG0H2O = -237.18;
-  int nnus = bio->nnus;
-  double **nuGCoeff = bio->nuGCoeff;
+  int nnus = bio->nnu;
+  double **nuGCoeff = bio->nugibbs_coeff;
 
   for (int i = 1; i < nnus + 1; i++) {
-    kEq[i][0] = exp((dG0H2O + nuGCoeff[i][0] - nuGCoeff[i][1]) / (-rth * temp));
+    keq[i][0] = exp((dG0H2O + nuGCoeff[i][0] - nuGCoeff[i][1]) / (-rth * temp));
     for (int j = 1; j < 4; j++) {
       double coeff = 0.0;
 
@@ -344,7 +355,7 @@ void FixKinetics::init_keq() {
         coeff = 0;
       }
 
-      kEq[i][j] = exp((nuGCoeff[i][j + 1] + coeff - nuGCoeff[i][j]) / (-rth * temp));
+      keq[i][j] = exp((nuGCoeff[i][j + 1] + coeff - nuGCoeff[i][j]) / (-rth * temp));
     }
   }
 }
@@ -352,30 +363,31 @@ void FixKinetics::init_keq() {
 /* ---------------------------------------------------------------------- */
 
 void FixKinetics::compute_activity() {
-  int nnus = bio->nnus;
+  int nnus = bio->nnu;
   double *denm = memory->create(denm, nnus + 1, "kinetics:denm");
   double gSh = pow(10, -iph);
 
   for (int k = 1; k < nnus + 1; k++) {
     for (int j = 0; j < bgrids; j++) {
-      double iniNuS = bio->iniS[k][0];
+      double iniNuS = bio->ini_nus[k][0];
       sh[j] = gSh;
-      denm[k] = (1 + kEq[k][0]) * gSh * gSh * gSh + kEq[k][1] * gSh * gSh + kEq[k][2] * kEq[k][3] * gSh + kEq[k][3] * kEq[k][2] * kEq[k][1];
+      denm[k] = (1 + keq[k][0]) * gSh * gSh * gSh + keq[k][1] * gSh * gSh + keq[k][2] * keq[k][3] * gSh
+          + keq[k][3] * keq[k][2] * keq[k][1];
       if (denm[k] == 0) {
         lmp->error->all(FLERR, "denm returns a zero value");
       }
       // not hydrated form acitivity
-      activity[k][0][j] = kEq[k][0] * nuS[k][j] * gSh * gSh * gSh / denm[k];
+      activity[k][0][j] = keq[k][0] * nus[k][j] * gSh * gSh * gSh / denm[k];
       // fully protonated form activity
-      activity[k][1][j] = nuS[k][j] * gSh * gSh * gSh / denm[k];
+      activity[k][1][j] = nus[k][j] * gSh * gSh * gSh / denm[k];
       // 1st deprotonated form activity
-      activity[k][2][j] = nuS[k][j] * gSh * gSh * kEq[k][1] / denm[k];
+      activity[k][2][j] = nus[k][j] * gSh * gSh * keq[k][1] / denm[k];
       // 2nd deprotonated form activity
-      activity[k][3][j] = nuS[k][j] * gSh * kEq[k][1] * kEq[k][2] / denm[k];
+      activity[k][3][j] = nus[k][j] * gSh * keq[k][1] * keq[k][2] / denm[k];
       // 3rd deprotonated form activity
-      activity[k][4][j] = nuS[k][j] * kEq[k][1] * kEq[k][2] * kEq[k][3] / denm[k];
-     // if(k==1)printf("act = %e, s= %e, flag = %i \n", activity[k][1][j], nuS[k][j], bio->ngflag[k]);
-      if (strcmp(bio->nuName[k], "h") == 0) {
+      activity[k][4][j] = nus[k][j] * keq[k][1] * keq[k][2] * keq[k][3] / denm[k];
+      // if(k==1)printf("act = %e, s= %e, flag = %i \n", activity[k][1][j], nuS[k][j], bio->ngflag[k]);
+      if (strcmp(bio->nuname[k], "h") == 0) {
         activity[k][1][j] = gSh;
       }
     }
@@ -393,7 +405,7 @@ void FixKinetics::pre_force(int vflag) {
     flag = false;
   if (update->ntimestep % nevery)
     flag = false;
-  if (nufebFoam != NULL && nufebFoam->demflag)
+  if (nufebfoam != NULL && nufebfoam->demflag)
     flag = false;
   if (demflag)
     flag = false;
@@ -403,98 +415,99 @@ void FixKinetics::pre_force(int vflag) {
 }
 
 /* ----------------------------------------------------------------------
-   main kenetics integration loop
+ integration loop
  ------------------------------------------------------------------------- */
-
 void FixKinetics::integration() {
   int iteration = 0;
-  bool isConv = false;
-  int nnus = bio->nnus;
+  bool converge = false;
+  int nnus = bio->nnu;
 
-  gflag = 0;
+  grow_flag = 0;
   update_bgrids();
-  reset_nuR();
+  update_xdensity();
 
   // update grid biomass to calculate diffusion coeff
-  if (diffusion != NULL && diffusion->dcflag) update_xmass();
+  if (diffusion != NULL && diffusion->dcflag) {
+    diffusion->update_diffCoeff();
+  }
 
-  int *nuConvPrev = new int[nnus + 1]();
-  while (!isConv) {
-    isConv = true;
+  while (!converge) {
+    converge = true;
 
     // solve for reaction term, no growth happens here
     if (iteration % devery == 0) {
+      reset_nuR();
       if (energy != NULL) {
         if (ph != NULL) ph->solve_ph();
         else compute_activity();
 
-        thermo->thermo(diffT * devery);
-	reset_nuR();
-	energy->growth(diffT * devery, gflag);
+        thermo->thermo(diff_dt * devery);
+        energy->growth(diff_dt * devery, grow_flag);
       } else if (monod != NULL) {
-        monod->growth(diffT * devery, gflag);
+        monod->growth(diff_dt * devery, grow_flag);
       }
-    }
-
-    // solve for diffusion and advection
-    if (diffusion != NULL) {
-      nuConv = diffusion->diffusion(nuConv, iteration, diffT);
     }
 
     iteration++;
 
+    // solve for diffusion and advection
+    if (diffusion != NULL) {
+      nuconv = diffusion->diffusion(nuconv, iteration, diff_dt);
+    } else {
+      break;
+    }
+
     // check for convergence
     for (int i = 1; i <= nnus; i++) {
-      if (comm->me == 0 && nuConv[i] && nuConvPrev[i] == 0) {
-	fprintf(screen, "nutrient %s converged at iteration %d\n", bio->nuName[i], iteration);
+      if (!nuconv[i]) {
+        converge = false;
+        break;
       }
-      isConv &= nuConv[i];
     }
 
-    for (int i = 0; i <= nnus; i++) {
-      if (nuConvPrev > 0)
-	nuConvPrev[i] = nuConv[i];
-    }
-
-    if (niter > 0 && iteration >= niter) isConv = true;
+    if (niter > 0 && iteration >= niter)
+      converge = true;
   }
 
-  if (comm->me == 0 && logfile) fprintf(logfile, "number of iterations: %i \n", iteration);
-  if (comm->me == 0 && screen) fprintf(screen, "number of iterations: %i \n", iteration);
+  if (comm->me == 0 && logfile)
+    fprintf(logfile, "number of iterations: %i \n", iteration);
+  if (comm->me == 0 && screen)
+    fprintf(screen, "number of iterations: %i \n", iteration);
 
-  gflag = 1;
+  grow_flag = 1;
   reset_isConv();
+  reset_nuR();
 
   // microbe growth
-  if (energy != NULL) energy->growth(update->dt*nevery, gflag);
-  if (monod != NULL) monod->growth(update->dt*nevery, gflag);
+  if (energy != NULL)
+    energy->growth(update->dt * nevery, grow_flag);
+  if (monod != NULL)
+    monod->growth(update->dt * nevery, grow_flag);
 
   if (diffusion != NULL) {
-   // manually update reaction if none of the surface is using dirichlet BC
-   diffusion->update_nuS();
-   // update concentration in bulk liquid
-   diffusion->compute_bulk();
-   // update grids
-   diffusion->update_grids();
+    // manually update reaction if none of the surface is using dirichlet BC
+    diffusion->update_nuS();
+    // update concentration in bulk liquid
+    diffusion->compute_bulk();
+    // update grids
+    diffusion->update_grids();
   }
 
-  if (thermo != NULL) thermo->thermo(update->dt*nevery);
-
-  delete [] nuConvPrev;
+  if (thermo != NULL)
+    thermo->thermo(update->dt * nevery);
 }
 
 /* ----------------------------------------------------------------------
-   get maximum height of biofilm
+ get maximum biofilm height
  ------------------------------------------------------------------------- */
-
 double FixKinetics::getMaxHeight() {
   const int nlocal = atom->nlocal;
   double * const * const x = atom->x;
   double * const r = atom->radius;
   double maxh = 0;
 
-  for (int i=0; i < nlocal; i++) {
-    if((x[i][2] + r[i]) > maxh)
+  for (int i = 0; i < nlocal; i++) {
+    if ((x[i][2] + r[i]) > maxh)
       maxh = x[i][2] + r[i];
   }
 
@@ -507,36 +520,47 @@ double FixKinetics::getMaxHeight() {
 void FixKinetics::update_bgrids() {
   if (blayer >= 0) {
     maxheight = getMaxHeight();
-    bnz = (int)((blayer + maxheight) / stepz) + 1;
+    bnz = (int) ((blayer + maxheight) / stepz) + 1;
     bgrids = subn[0] * subn[1] * MIN(subn[2], MAX(0, bnz - subnlo[2]));
-  }
-  else {
+  } else {
     bgrids = subn[0] * subn[1] * subn[2];
   }
 }
 
-void FixKinetics::update_xmass() {
+/* ----------------------------------------------------------------------
+ update biomass density
+ ------------------------------------------------------------------------- */
+void FixKinetics::update_xdensity() {
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
+  double vol = stepx * stepy * stepz;
 
-  for (int i = 0; i < ngrids; i++) {
-    xmass[i] = 0;
+  for (int i = 0; i <= atom->ntypes; i++) {
+    for (int j = 0; j < bgrids; j++) {
+      xdensity[i][j] = 0;
+    }
   }
 
   for (int i = 0; i < nlocal; i++) {
     int pos = position(i);
-    xmass[pos] += atom->rmass[i];
+    int t = atom->type[i];
+    double xmass = atom->rmass[i] / vol;
+    xdensity[t][pos] += xmass;
+    xdensity[0][pos] += xmass;
   }
 }
 
+
 bool FixKinetics::is_inside(int i) {
-  if (atom->x[i][0] < sublo[0] || atom->x[i][0] >= subhi[0] ||
-      atom->x[i][1] < sublo[1] || atom->x[i][1] >= subhi[1] ||
-      atom->x[i][2] < sublo[2] || atom->x[i][2] >= subhi[2])
+  if (atom->x[i][0] < sublo[0] || atom->x[i][0] >= subhi[0] || atom->x[i][1] < sublo[1] || atom->x[i][1] >= subhi[1]
+      || atom->x[i][2] < sublo[2] || atom->x[i][2] >= subhi[2])
     return false;
   return true;
-}  
+}
 
+/* ----------------------------------------------------------------------
+ get grid index of atom i
+ ------------------------------------------------------------------------- */
 int FixKinetics::position(int i) {
   // get index of grid containing i
   int xpos = (atom->x[i][0] - sublo[0]) / stepz;
@@ -552,40 +576,38 @@ int FixKinetics::position(int i) {
 }
 
 /* ----------------------------------------------------------------------
-   reset nutrient reaction array
+ reset nutrient reaction array
  ------------------------------------------------------------------------- */
-
 void FixKinetics::reset_nuR() {
-  for (int nu = 1; nu < bio->nnus + 1; nu++) {
+  for (int nu = 1; nu < bio->nnu + 1; nu++) {
     for (int j = 0; j < bgrids; j++) {
-        nuR[nu][j] = 0;
-     }
-   }
+      nur[nu][j] = 0;
+    }
+  }
 }
 
 /* ----------------------------------------------------------------------
-   reset convergence status
+ reset convergence status
  ------------------------------------------------------------------------- */
-
 void FixKinetics::reset_isConv() {
-  for (int i = 1; i <= bio->nnus; i++) {
-    if (strcmp(bio->nuName[i], "h2o") == 0)
-      nuConv[i] = true;
-    else if (strcmp(bio->nuName[i], "h") == 0)
-      nuConv[i] = true;
-    else if (bio->diffCoeff[i] == 0)
-      nuConv[i] = true;
+  for (int i = 1; i <= bio->nnu; i++) {
+    if (strcmp(bio->nuname[i], "h2o") == 0)
+      nuconv[i] = true;
+    else if (strcmp(bio->nuname[i], "h") == 0)
+      nuconv[i] = true;
+    else if (bio->diff_coeff[i] == 0)
+      nuconv[i] = true;
     else
-      nuConv[i] = false;
+      nuconv[i] = false;
   }
 }
 
 /* ---------------------------------------------------------------------- */
 
-int FixKinetics::modify_param(int narg, char **arg)
-{
-  if (strcmp(arg[0],"demflag") == 0) {
-    if (narg != 2) error->all(FLERR,"Illegal fix_modify command");
+int FixKinetics::modify_param(int narg, char **arg) {
+  if (strcmp(arg[0], "demflag") == 0) {
+    if (narg != 2)
+      error->all(FLERR, "Illegal fix_modify command");
     demflag = force->inumeric(FLERR, arg[1]);
     if (demflag != 1 && demflag != 0)
       error->all(FLERR, "Illegal fix_modify command: demflag");
@@ -595,19 +617,20 @@ int FixKinetics::modify_param(int narg, char **arg)
 }
 
 int FixKinetics::get_elem_per_cell() const {
-  int result = 2 * bio->nnus; // nuS + nuR
+  int result = 2 * bio->nnu; // nuS + nuR
   if (energy) {
-    result += 5 * bio->nnus; // qGas + activity
+    result += 5 * bio->nnu; // qGas + activity
     result += 3 * atom->ntypes; // gYield + DRGCat + DRGAn 
   }
-  if (nufebFoam) {
+  if (nufebfoam) {
     result += 3; // fV
   }
   return result;
 }
 
 void FixKinetics::migrate() {
-  Subgrid<double, 3> new_subgrid = Subgrid<double, 3>(grid, Box<double, 3>(domain->sublo, domain->subhi), [](double value) { return std::round(value); });
+  Subgrid<double, 3> new_subgrid = Subgrid<double, 3>(grid, Box<double, 3>(domain->sublo, domain->subhi),
+      [](double value) {return std::round(value);});
   DecompGrid<FixKinetics>::migrate(grid, subgrid.get_box(), new_subgrid.get_box());
   for (int i = 0; i < 3; i++) {
     subnlo[i] = new_subgrid.get_origin()[i];
@@ -621,21 +644,21 @@ void FixKinetics::migrate() {
 }
 
 void FixKinetics::resize(const Subgrid<double, 3> &subgrid) {
-  int nnus = bio->nnus;
+  int nnus = bio->nnu;
   int ntypes = atom->ntypes;
   ngrids = subgrid.cell_count();
   update_bgrids();
-  nuS = memory->grow(nuS, nnus + 1, ngrids, "kinetics:nuS");
-  nuR = memory->grow(nuR, nnus + 1, ngrids, "kinetics:nuR");
+  nus = memory->grow(nus, nnus + 1, ngrids, "kinetics:nus");
+  nur = memory->grow(nur, nnus + 1, ngrids, "kinetics:nur");
   if (energy) {
-    gYield = memory->grow(gYield, ntypes + 1, ngrids, "kinetic:gYield");
+    grid_yield = memory->grow(grid_yield, ntypes + 1, ngrids, "kinetic:grid_yield");
     activity = memory->grow(activity, nnus + 1, 5, ngrids, "kinetics:activity");
-    DRGCat = memory->grow(DRGCat, ntypes + 1, ngrids, "kinetics:DRGCat");
-    DRGAn = memory->grow(DRGAn, ntypes + 1, ngrids, "kinetics:DRGAn");
-    sh = memory->grow(sh, ngrids, "kinetics:Sh");
+    gibbs_cata = memory->grow(gibbs_cata, ntypes + 1, ngrids, "kinetics:gibbs_cata");
+    gibbs_anab = memory->grow(gibbs_anab, ntypes + 1, ngrids, "kinetics:gibbs_anab");
+    sh = memory->grow(sh, ngrids, "kinetics:sh");
   }
-  if (nufebFoam) {
-    fV = memory->grow(fV, 3, ngrids, "kinetcis:fV");
+  if (nufebfoam) {
+    fv = memory->grow(fv, 3, ngrids, "kinetcis:fV");
   }
   if (monod != NULL)
     monod->grow_subgrid(ngrids);

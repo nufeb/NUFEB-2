@@ -21,6 +21,7 @@ FixStyle(verify,FixVerify)
 #define LMP_FIX_VERIFY_H
 
 #include "fix.h"
+#include <vector>
 
 namespace LAMMPS_NS {
 
@@ -41,7 +42,6 @@ class FixVerify : public Fix {
 
   int nevery;
   int bm1flag, bm2flag, bm3flag, mflag;
-  int bm1cflag;
   int demflag;
 
   double **nuS;                    // nutrient concentration for all grids
@@ -58,16 +58,28 @@ class FixVerify : public Fix {
   class BIO *bio;
   class FixKineticsDiffusion *diffusion;
   class ComputeNufebHeight *cheight;
+  class AtomVecBio *avec;
+
+  std::vector< std::vector<int> > nlist;
+  int *visit;
+  double cutoff;
+  std::vector<int> fslist;
 
   void nitrogen_mass_balance();
   void benchmark_one();
   double get_ave_s_sub_base();
   double get_ave_s_o2_base();
+  double get_ave_s_nh4_base();
   void bm1_output();
+  void bm3_output();
   void benchmark_two();
   void benchmark_three();
   void remove_atom(double);
   int reachHeight(double);
+
+  // BM2
+  void neighbor_list ();
+  void free_particle_list();
 
 };
 
@@ -75,5 +87,4 @@ class FixVerify : public Fix {
 
 #endif
 #endif
-
 
