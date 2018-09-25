@@ -16,7 +16,7 @@ group AOB type 2
 
 variable  x equal 40
 variable  y equal 3
-variable  z equal 1
+variable  z equal 2
 
 lattice sc 2e-5 origin 0.75 0.5 0.5
 region reg block 0 $x 0 $y 0 $z
@@ -29,9 +29,9 @@ create_atoms 2 random 100 42342 reg
 neighbor        5e-7 bin
 
 set type 1 diameter 9.5e-6
-set type 1 density 15.5
+set type 1 density 14.8
 set type 2 diameter 9.5e-6
-set type 2 density 15.5
+set type 2 density 14.8
 
 neigh_modify    delay 0 one 2000
 

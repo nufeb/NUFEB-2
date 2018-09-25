@@ -53,7 +53,6 @@ public:
 
   double vol;                      //grid volume
 
-  double bl;
   double q, rvol, af;
   bool reactor;
   int unit;                     // nutrient unit 0 = mol/l; 1 = kg/m3
@@ -77,16 +76,16 @@ public:
   int setmask();
   void init();
   int *diffusion(int*, int, double);
-  void update_nuS();
+  void update_nus();
   void update_grids();
-  void update_diffCoeff();
+  void update_diff_coeff();
   void init_grid();
   void compute_bc(double &, double *, int, double);
   void compute_bulk();
-  void compute_bl();
+  void compute_blayer();
   void compute_flux(double, double &, double *, double, int, int);
-  double compute_diffD(double);
-  bool isEuqal(double, double, double);
+
+  bool is_equal(double, double, double);
   int get_index(int);
   void migrate(const Grid<double, 3> &, const Box<int, 3> &, const Box<int, 3> &);
 

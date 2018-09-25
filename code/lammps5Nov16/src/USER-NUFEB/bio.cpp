@@ -178,7 +178,7 @@ void BIO::data_nutrients(int narg, char **arg)
   ini_nus[id][6] = zbcp;
 }
 
-void BIO::set_typeName(int narg, char **arg)
+void BIO::set_tname(int narg, char **arg)
 {
   if (narg != 2) error->all(FLERR,"Incorrect args for type name definitions");
 
@@ -230,7 +230,7 @@ void BIO::set_q(const char *str)
 
   if (n != 2) error->all(FLERR,"Invalid growth line in data file");
 
-  int itype = find_typeID(name);
+  int itype = find_typeid(name);
   delete [] name;
 
   if (itype < 1 || itype > atom->ntypes)
@@ -266,7 +266,7 @@ void BIO::set_mu(const char *str)
 
   if (n != 2) error->all(FLERR,"Invalid growth line in data file");
 
-  int itype = find_typeID(name);
+  int itype = find_typeid(name);
   delete [] name;
 
   if (itype < 1 || itype > atom->ntypes)
@@ -294,7 +294,7 @@ void BIO::set_ks(int narg, char **arg)
   name = new char[len];
   strcpy(name,arg[0]);
 
-  int itype = find_typeID(name);
+  int itype = find_typeid(name);
   delete [] name;
 
   if (itype < 1 || itype > atom->ntypes)
@@ -323,7 +323,7 @@ void BIO::set_yield(const char *str)
   int n = sscanf(str,"%s %lg",name,&yield_one);
   if (n != 2) error->all(FLERR,"Invalid set_yield line in data file");
 
-  int itype = find_typeID(name);
+  int itype = find_typeid(name);
   delete [] name;
 
   if (itype < 1 || itype > atom->ntypes)
@@ -356,7 +356,7 @@ void BIO::set_edoner(const char *str)
   int n = sscanf(str,"%s %lg",name,&edoner_one);
   if (n != 2) error->all(FLERR,"Invalid set_edoner line in data file");
 
-  int itype = find_typeID(name);
+  int itype = find_typeid(name);
   delete [] name;
 
   if (itype < 1 || itype > atom->ntypes)
@@ -383,7 +383,7 @@ void BIO::set_maintain(const char *str)
   int n = sscanf(str,"%s %lg",name,&maintain_one);
   if (n != 2) error->all(FLERR,"Invalid set_maintain line in data file");
 
-  int itype = find_typeID(name);
+  int itype = find_typeid(name);
   delete [] name;
 
   if (itype < 1 || itype > atom->ntypes)
@@ -410,7 +410,7 @@ void BIO::set_decay(const char *str)
   int n = sscanf(str,"%s %lg",name,&decay_one);
   if (n != 2) error->all(FLERR,"Invalid set_decay line in data file");
 
-  int itype = find_typeID(name);
+  int itype = find_typeid(name);
   delete [] name;
 
   if (itype < 1 || itype > atom->ntypes)
@@ -437,7 +437,7 @@ void BIO::set_diffusion(const char *str)
   int n = sscanf(str,"%s %lg",name,&diffu_one);
   if (n != 2) error->all(FLERR,"Invalid diffCoeff line in data file");
 
-  int inu = find_nuID(name);
+  int inu = find_nuid(name);
   delete [] name;
 
   if (inu < 1 || inu > nnu)
@@ -466,7 +466,7 @@ void BIO::set_mw(const char *str)
   int n = sscanf(str,"%s %lg",name,&mw_one);
   if (n != 2) error->all(FLERR,"Invalid molecular weights line in data file");
 
-  int inu = find_nuID(name);
+  int inu = find_nuid(name);
   delete [] name;
 
   if (inu < 1 || inu > nnu)
@@ -496,7 +496,7 @@ void BIO::set_dissipation(const char *str)
   int n = sscanf(str,"%s %lg",name,&diss_one);
   if (n != 2) error->all(FLERR,"Invalid dissipation line in data file");
 
-  int itype = find_typeID(name);
+  int itype = find_typeid(name);
   delete [] name;
 
   if (itype < 1 || itype > atom->ntypes)
@@ -513,7 +513,7 @@ void BIO::set_dissipation(const char *str)
    called from reading of data file
 ------------------------------------------------------------------------- */
 
-void BIO::set_catCoeff(int narg, char **arg)
+void BIO::set_cata_coeff(int narg, char **arg)
 {
   if (cata_coeff == NULL) error->all(FLERR,"Cannot set catCoeff for this atom style");
   if (narg != nnu+1) error->all(FLERR,"Invalid catCoeff line in data file");
@@ -523,7 +523,7 @@ void BIO::set_catCoeff(int narg, char **arg)
   name = new char[len];
   strcpy(name,arg[0]);
 
-  int itype = find_typeID(name);
+  int itype = find_typeid(name);
   delete [] name;
 
   if (itype < 1 || itype > atom->ntypes)
@@ -540,7 +540,7 @@ void BIO::set_catCoeff(int narg, char **arg)
    called from reading of data file
 ------------------------------------------------------------------------- */
 
-void BIO::set_anabCoeff(int narg, char **arg)
+void BIO::set_anab_coeff(int narg, char **arg)
 {
   if (anab_coeff == NULL) error->all(FLERR,"Cannot set anabCoeff for this atom style");
   if (narg != nnu+1) error->all(FLERR,"Invalid anabCoeff line in data file");
@@ -550,7 +550,7 @@ void BIO::set_anabCoeff(int narg, char **arg)
   name = new char[len];
   strcpy(name,arg[0]);
 
-  int itype = find_typeID(name);
+  int itype = find_typeid(name);
   delete [] name;
 
   if (itype < 1 || itype > atom->ntypes)
@@ -567,7 +567,7 @@ void BIO::set_anabCoeff(int narg, char **arg)
    called from reading of data file
 ------------------------------------------------------------------------- */
 
-void BIO::set_decayCoeff(int narg, char **arg)
+void BIO::set_decay_coeff(int narg, char **arg)
 {
   if (decay_coeff == NULL) error->all(FLERR,"Cannot set decayCoeff for this atom style");
   if (narg != nnu+1) error->all(FLERR,"Invalid decayCoeff line in data file");
@@ -577,7 +577,7 @@ void BIO::set_decayCoeff(int narg, char **arg)
   name = new char[len];
   strcpy(name,arg[0]);
 
-  int itype = find_typeID(name);
+  int itype = find_typeid(name);
   delete [] name;
 
   if (itype < 1 || itype > atom->ntypes)
@@ -594,7 +594,7 @@ void BIO::set_decayCoeff(int narg, char **arg)
    called from reading of data file
 ------------------------------------------------------------------------- */
 
-void BIO::set_nuGCoeff(int narg, char **arg)
+void BIO::set_nugibbs_coeff(int narg, char **arg)
 {
   if (nugibbs_coeff == NULL) error->all(FLERR,"Cannot set energy coeff for this nutrient");
   if (narg != 7) error->all(FLERR,"Invalid nuGCOeff line in data file");
@@ -604,7 +604,7 @@ void BIO::set_nuGCoeff(int narg, char **arg)
   name = new char[len];
   strcpy(name,arg[0]);
 
-  int inu = find_nuID(name);
+  int inu = find_nuid(name);
   delete [] name;
 
   if (inu < 1 || inu > nnu)
@@ -631,7 +631,7 @@ void BIO::set_nuGCoeff(int narg, char **arg)
    called from reading of data file
 ------------------------------------------------------------------------- */
 
-void BIO::set_typeGCoeff(int narg, char **arg)
+void BIO::set_tgibbs_coeff(int narg, char **arg)
 {
   if (tgibbs_coeff == NULL) error->all(FLERR,"Cannot set energy coeff for this type");
   if (narg != 7) error->all(FLERR,"Invalid typeGCoeff line in data file");
@@ -641,7 +641,7 @@ void BIO::set_typeGCoeff(int narg, char **arg)
   name = new char[len];
   strcpy(name,arg[0]);
 
-  int itype = find_typeID(name);
+  int itype = find_typeid(name);
   delete [] name;
 
   if (itype < 1 || itype > atom->ntypes)
@@ -667,7 +667,7 @@ void BIO::set_typeGCoeff(int narg, char **arg)
    called from reading of data file
 ------------------------------------------------------------------------- */
 
-void BIO::set_nuChr(int narg, char **arg)
+void BIO::set_nucharge(int narg, char **arg)
 {
   if (nucharge == NULL) error->all(FLERR,"Cannot set charge for this nutrient");
   if (narg != 6) error->all(FLERR,"Invalid nutrient charge line in data file");
@@ -677,7 +677,7 @@ void BIO::set_nuChr(int narg, char **arg)
   name = new char[len];
   strcpy(name,arg[0]);
 
-  int inu = find_nuID(name);
+  int inu = find_nuid(name);
   delete [] name;
 
   if (inu < 1 || inu > nnu)
@@ -698,7 +698,7 @@ void BIO::set_nuChr(int narg, char **arg)
    called from reading of data file
 ------------------------------------------------------------------------- */
 
-void BIO::set_typeChr(int narg, char **arg)
+void BIO::set_tcharge(int narg, char **arg)
 {
   if (tcharge == NULL) error->all(FLERR,"Cannot set charge for this type");
   if (narg != 6) error->all(FLERR,"Invalid type charge line in data file");
@@ -708,7 +708,7 @@ void BIO::set_typeChr(int narg, char **arg)
   name = new char[len];
   strcpy(name,arg[0]);
 
-  int itype = find_typeID(name);
+  int itype = find_typeid(name);
   delete [] name;
 
   if (itype < 1 || itype > atom->ntypes)
@@ -729,7 +729,7 @@ void BIO::set_typeChr(int narg, char **arg)
    called from reading of data file
 ------------------------------------------------------------------------- */
 
-void BIO::set_kLa(const char *str)
+void BIO::set_kla(const char *str)
 {
   if (kla == NULL) error->all(FLERR,"Cannot set KLa for this atom style");
 
@@ -741,7 +741,7 @@ void BIO::set_kLa(const char *str)
   int n = sscanf(str,"%s %lg",name,&kLa_one);
   if (n != 2) error->all(FLERR,"Invalid KLa line in data file");
 
-  int inu = find_nuID(name);
+  int inu = find_nuid(name);
   delete [] name;
 
   if (inu < 1 || inu > nnu)
@@ -753,7 +753,7 @@ void BIO::set_kLa(const char *str)
   if (kla[inu] < 0.0) error->all(FLERR,"Invalid KLa value");
 }
 
-int BIO::find_typeID(char *name) {
+int BIO::find_typeid(char *name) {
 
   for (int i = 1; i < atom->ntypes+1; i++){
     if (tname[i] && strcmp(tname[i],name) == 0) {
@@ -763,7 +763,7 @@ int BIO::find_typeID(char *name) {
   return -1;
 }
 
-int BIO::find_nuID(char *name) {
+int BIO::find_nuid(char *name) {
 
   for (int i = 1; i < nnu+1; i++)
     if (nuname[i] && strcmp(nuname[i],name) == 0) {

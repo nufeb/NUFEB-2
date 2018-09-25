@@ -486,7 +486,7 @@ void DumpBio::write()
 
         filename = path;
         openfile();
-        write_concentration_data(i);
+        write_nus_data(i);
         fclose(fp);
       }
     }
@@ -536,7 +536,7 @@ void DumpBio::pack(tagint *ids)
 
 /* ---------------------------------------------------------------------- */
 
-void DumpBio::write_concentration_data(int nuID)
+void DumpBio::write_nus_data(int nuID)
 {
  // fprintf(fp, ",x,y,z,scalar,1,1,1,0.5\n");
 
@@ -555,7 +555,7 @@ void DumpBio::write_concentration_data(int nuID)
 
 /* ---------------------------------------------------------------------- */
 
-void DumpBio::write_DGRCat_data(int typeID)
+void DumpBio::write_gibbs_cata_data(int typeID)
 {
   fprintf(fp, ",x,y,z,scalar,1,1,1,0.5\n");
 
@@ -597,7 +597,7 @@ void DumpBio::write_yield_data(int typeID)
 
 /* ---------------------------------------------------------------------- */
 
-void DumpBio::write_DGRAn_data(int typeID)
+void DumpBio::write_gibbs_anab_data(int typeID)
 {
   fprintf(fp, ",x,y,z,scalar,1,1,1,0.5\n");
 
@@ -618,7 +618,7 @@ void DumpBio::write_DGRAn_data(int typeID)
 
 /* ---------------------------------------------------------------------- */
 
-void DumpBio::write_pH_data()
+void DumpBio::write_ph_data()
 {
   fprintf(fp, ",x,y,z,scalar,1,1,1,0.5\n");
 

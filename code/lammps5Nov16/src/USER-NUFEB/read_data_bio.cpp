@@ -534,7 +534,7 @@ void ReadDataBIO::command(int narg, char **arg)
       // NUFEB CODE
       } else if (strcmp(keyword,"Type Name") == 0) {
         tnflag = 1;
-        if (firstpass) typeName();
+        if (firstpass) tname();
         else skip_lines(atom->ntypes);
       } else if (strcmp(keyword,"Nutrients") == 0) {
         nuflag = 1;
@@ -563,7 +563,7 @@ void ReadDataBIO::command(int narg, char **arg)
       } else if (strcmp(keyword,"Electron Donor") == 0) {
         if (tnflag == 0) error->all(FLERR,"Must read Type Name before Lines");
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
-        if (firstpass) eD();
+        if (firstpass) edoner();
         else skip_lines(atom->ntypes);
       } else if (strcmp(keyword,"Maintenance") == 0) {
         if (tnflag == 0) error->all(FLERR,"Must read Type Name before Lines");
@@ -583,43 +583,43 @@ void ReadDataBIO::command(int narg, char **arg)
       } else if (strcmp(keyword,"Diffusion Coeffs") == 0) {
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
-        if (firstpass) diffCoeff();
+        if (firstpass) diff_coeff();
         else skip_lines(bio->nnu);
       } else if (strcmp(keyword,"Catabolism Coeffs") == 0) {
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
-        if (firstpass) catCoeff();
+        if (firstpass) cata_coeff();
         else skip_lines(atom->ntypes);
       } else if (strcmp(keyword,"Anabolism Coeffs") == 0) {
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
-        if (firstpass) anabCoeff();
+        if (firstpass) anab_coeff();
         else skip_lines(atom->ntypes);
       } else if (strcmp(keyword,"Decay Coeffs") == 0) {
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
-        if (firstpass) decayCoeff();
+        if (firstpass) decay_coeff();
         else skip_lines(atom->ntypes);
       } else if (strcmp(keyword,"Nutrient Energy") == 0) {
         if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
-        if (firstpass) nuGCoeff();
+        if (firstpass) nugibbs_coeff();
         else skip_lines(bio->nnu);
       } else if (strcmp(keyword,"Type Energy") == 0) {
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
-        if (firstpass) typeGCoeff();
+        if (firstpass) tgibbs_coeff();
         else skip_lines(atom->ntypes);
       } else if (strcmp(keyword,"Nutrient Charge") == 0) {
         if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
-        if (firstpass) nuChr();
+        if (firstpass) nucharge();
         else skip_lines(bio->nnu);
       } else if (strcmp(keyword,"Type Charge") == 0) {
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
         if (tnflag == 0) error->all(FLERR,"Must read Type Name before Lines");
-        if (firstpass) typeChr();
+        if (firstpass) tcharge();
         else skip_lines(atom->ntypes);
       } else if (strcmp(keyword,"KLa") == 0) {
         if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
-        if (firstpass) kLa();
+        if (firstpass) kla();
         else skip_lines(bio->nnu);
       } else if (strcmp(keyword,"Molecular Weights") == 0) {
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
@@ -2193,7 +2193,7 @@ void ReadDataBIO::nutrient_memory(){
 
 /* ---------------------------------------------------------------------- */
 
-void ReadDataBIO::typeName()
+void ReadDataBIO::tname()
 {
   int i,m;
   char *next;
@@ -2207,7 +2207,7 @@ void ReadDataBIO::typeName()
     next = strchr(buf,'\n');
     *next = '\0';
     parse_coeffs(buf,NULL,0,0,boffset);
-    bio->set_typeName(narg,arg);
+    bio->set_tname(narg,arg);
 
     if (strcmp(arg[1], "eps") == 0) {
        avec_bio->type_eps = atoi(arg[0]);
@@ -2323,7 +2323,7 @@ void ReadDataBIO::ks()
 
 /* ---------------------------------------------------------------------- */
 
-void ReadDataBIO::diffCoeff()
+void ReadDataBIO::diff_coeff()
 {
   int i,m;
   char *next;
@@ -2392,7 +2392,7 @@ void ReadDataBIO::yield()
 
 /* ---------------------------------------------------------------------- */
 
-void ReadDataBIO::eD()
+void ReadDataBIO::edoner()
 {
   int i,m;
   char *next;
@@ -2485,7 +2485,7 @@ void ReadDataBIO::dissipation()
 
 /* ---------------------------------------------------------------------- */
 
-void ReadDataBIO::catCoeff()
+void ReadDataBIO::cata_coeff()
 {
   int i,m;
   char *next;
@@ -2501,7 +2501,7 @@ void ReadDataBIO::catCoeff()
     next = strchr(buf,'\n');
     *next = '\0';
     parse_coeffs(buf,NULL,0,0,boffset);
-    bio->set_catCoeff(narg,arg);
+    bio->set_cata_coeff(narg,arg);
     buf = next + 1;
   }
   delete [] original;
@@ -2509,7 +2509,7 @@ void ReadDataBIO::catCoeff()
 
 /* ---------------------------------------------------------------------- */
 
-void ReadDataBIO::anabCoeff()
+void ReadDataBIO::anab_coeff()
 {
   int i,m;
   char *next;
@@ -2525,7 +2525,7 @@ void ReadDataBIO::anabCoeff()
     next = strchr(buf,'\n');
     *next = '\0';
     parse_coeffs(buf,NULL,0,0,boffset);
-    bio->set_anabCoeff(narg,arg);
+    bio->set_anab_coeff(narg,arg);
     buf = next + 1;
   }
   delete [] original;
@@ -2533,7 +2533,7 @@ void ReadDataBIO::anabCoeff()
 
 /* ---------------------------------------------------------------------- */
 
-void ReadDataBIO::decayCoeff()
+void ReadDataBIO::decay_coeff()
 {
   int i,m;
   char *next;
@@ -2549,7 +2549,7 @@ void ReadDataBIO::decayCoeff()
     next = strchr(buf,'\n');
     *next = '\0';
     parse_coeffs(buf,NULL,0,0,boffset);
-    bio->set_decayCoeff(narg,arg);
+    bio->set_decay_coeff(narg,arg);
     buf = next + 1;
   }
   delete [] original;
@@ -2557,7 +2557,7 @@ void ReadDataBIO::decayCoeff()
 
 /* ---------------------------------------------------------------------- */
 
-void ReadDataBIO::nuGCoeff()
+void ReadDataBIO::nugibbs_coeff()
 {
   int i,m;
   char *next;
@@ -2574,7 +2574,7 @@ void ReadDataBIO::nuGCoeff()
     next = strchr(buf,'\n');
     *next = '\0';
     parse_coeffs(buf,NULL,0,0,boffset);
-    bio->set_nuGCoeff(narg,arg);
+    bio->set_nugibbs_coeff(narg,arg);
     buf = next + 1;
   }
   delete [] original;
@@ -2582,7 +2582,7 @@ void ReadDataBIO::nuGCoeff()
 
 /* ---------------------------------------------------------------------- */
 
-void ReadDataBIO::typeGCoeff()
+void ReadDataBIO::tgibbs_coeff()
 {
   int i,m;
   char *next;
@@ -2599,7 +2599,7 @@ void ReadDataBIO::typeGCoeff()
     next = strchr(buf,'\n');
     *next = '\0';
     parse_coeffs(buf,NULL,0,0,boffset);
-    bio->set_typeGCoeff(narg,arg);
+    bio->set_tgibbs_coeff(narg,arg);
     buf = next + 1;
   }
   delete [] original;
@@ -2607,7 +2607,7 @@ void ReadDataBIO::typeGCoeff()
 
 /* ---------------------------------------------------------------------- */
 
-void ReadDataBIO::nuChr()
+void ReadDataBIO::nucharge()
 {
   int i,m;
   char *next;
@@ -2623,7 +2623,7 @@ void ReadDataBIO::nuChr()
     next = strchr(buf,'\n');
     *next = '\0';
     parse_coeffs(buf,NULL,0,0,boffset);
-    bio->set_nuChr(narg,arg);
+    bio->set_nucharge(narg,arg);
     buf = next + 1;
   }
   delete [] original;
@@ -2631,7 +2631,7 @@ void ReadDataBIO::nuChr()
 
 /* ---------------------------------------------------------------------- */
 
-void ReadDataBIO::typeChr()
+void ReadDataBIO::tcharge()
 {
   int i,m;
   char *next;
@@ -2647,7 +2647,7 @@ void ReadDataBIO::typeChr()
     next = strchr(buf,'\n');
     *next = '\0';
     parse_coeffs(buf,NULL,0,0,boffset);
-    bio->set_typeChr(narg,arg);
+    bio->set_tcharge(narg,arg);
     buf = next + 1;
   }
   delete [] original;
@@ -2656,7 +2656,7 @@ void ReadDataBIO::typeChr()
 
 /* ---------------------------------------------------------------------- */
 
-void ReadDataBIO::kLa()
+void ReadDataBIO::kla()
 {
   int i,m;
   char *next;
@@ -2671,7 +2671,7 @@ void ReadDataBIO::kLa()
   for (i = 0; i < bio->nnu; i++) {
     next = strchr(buf,'\n');
     *next = '\0';
-    bio->set_kLa(buf);
+    bio->set_kla(buf);
     buf = next + 1;
   }
   delete [] original;

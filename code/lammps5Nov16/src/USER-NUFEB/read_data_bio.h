@@ -115,7 +115,7 @@ class ReadDataBIO : protected Pointers {
   void type_memory();
   void nutrient_memory();
 
-  void typeName();
+  void tname();
   void nutrients();
 
   void consumption();
@@ -124,21 +124,20 @@ class ReadDataBIO : protected Pointers {
   void yield();
   void maintain();
   void decay();
-  void eD();
+  void edoner();
 
-  void catCoeff();
-  void anabCoeff();
-  void decayCoeff();
-  void nuConcCoeff();
-  void diffCoeff();
+  void cata_coeff();
+  void anab_coeff();
+  void decay_coeff();
+  void diff_coeff();
   void mw();
 
-  void nuGCoeff();
-  void typeGCoeff();
+  void nugibbs_coeff();
+  void tgibbs_coeff();
   void dissipation();
-  void nuChr();
-  void typeChr();
-  void kLa();
+  void nucharge();
+  void tcharge();
+  void kla();
 };
 
 }
