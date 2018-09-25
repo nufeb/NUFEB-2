@@ -127,8 +127,8 @@ void FixKineticsThermo::init() {
   liqtogas = memory->create(liqtogas, nnus + 1, "kinetics/thermo:liqtogas");
   dgzero = memory->create(dgzero, atom->ntypes + 1, 2, "kinetics/thermo:dgzero");
 
-  init_KhV();
-  init_dG0();
+  init_khv();
+  init_dgzero();
 
   //Get computational domain size
   if (domain->triclinic == 0) {
@@ -156,7 +156,7 @@ void FixKineticsThermo::init() {
 
 /* ----------------------------------------------------------------------*/
 
-void FixKineticsThermo::init_dG0() {
+void FixKineticsThermo::init_dgzero() {
   int *ngflag = bio->ngflag;
   int *tgflag = bio->tgibbs_flag;
 
@@ -177,7 +177,7 @@ void FixKineticsThermo::init_dG0() {
 
 /* ----------------------------------------------------------------------*/
 
-void FixKineticsThermo::init_KhV() {
+void FixKineticsThermo::init_khv() {
   int nnus = bio->nnu;
   for (int i = 1; i < nnus + 1; i++) {
     khv[i] = 0;

@@ -216,7 +216,7 @@ void FixKineticsEnergy::growth(double dt, int gflag) {
       if (!kinetics->gibbs_cata[t][grid]) maint = 0;
       else maint = maintain[t] / -kinetics->gibbs_cata[t][grid];
 
-      if (!grid_yield[t][grid]) inv_yield = 1 / grid_yield[t][grid];
+      if (grid_yield[t][grid]) inv_yield = 1 / grid_yield[t][grid];
       else inv_yield = 0;
 
       for (int nu = 1; nu <= nnu; nu++) {
@@ -226,10 +226,10 @@ void FixKineticsEnergy::growth(double dt, int gflag) {
           double metCoeff = cata_coeff[t][nu] * inv_yield + anab_coeff[t][nu];
           growrate[t][grid] = grid_yield[t][grid] * (qmet - maint);
           // reaction in kg/L
-          nur[nu][grid] += growrate[t][grid] * xdensity[t][grid] * metCoeff / 24.6;
+          if(!nuconv[nu]) nur[nu][grid] += growrate[t][grid] * xdensity[t][grid] * metCoeff / 24.6;
         //microbe maintenance
         } else if (qmet <= 1.2 * maint && maint <= qmet) {
-          nur[nu][grid] += cata_coeff[t][nu] * grid_yield[t][grid] * maint * xdensity[t][grid] / 24.6;
+          if(!nuconv[nu]) nur[nu][grid] += cata_coeff[t][nu] * grid_yield[t][grid] * maint * xdensity[t][grid] / 24.6;
         //microbe decay
         } else {
           double f;
@@ -237,9 +237,10 @@ void FixKineticsEnergy::growth(double dt, int gflag) {
           if (maint == 0) f = 0;
           else f = (maint - qmet) / maint;
 
-          nur[nu][grid] += (decay[t] * f * bio->decay_coeff[t][nu] +
+          if(!nuconv[nu]) nur[nu][grid] += (decay[t] * f * bio->decay_coeff[t][nu] +
               cata_coeff[t][nu] * grid_yield[t][grid] * qmet) * xdensity[t][grid] / 24.6;
         }
+
       }
     }
   }

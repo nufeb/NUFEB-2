@@ -23,28 +23,22 @@ lammpsDir=$PWD
 
 echo "Directory of LAMMPS is: " $lammpsDir
 
-# Copy/link all the extra implementations
-cd $lammpsDir/src
-lammpsSRC=$PWD
-echo $lammpsSRC
-ln -sf $currentDir/interfaceToLammps/*.* . 
-cd $lammpsDir/src/MAKE
-ln -sf $currentDir/interfaceToLammps/MAKE/*.* .
-cd ..
+cd $lammpsDir/src/
 
 # Make packages
 make yes-GRANULAR
 make yes-USER-NUFEB
 make yes-COLLOID
+make yes-USER-CFDDEM
 
 version=`uname`
 # Use different options according to different versions
 if [ $version == "Linux" ]
 then
     echo "The version you choose is openmpi version"
-    make -j4 shanghailinux mode=shlib
+    make -j4 nufebfoam mode=shlib
     cd $FOAM_USER_LIBBIN
-    ln -sf $lammpsDir/src/liblammps_shanghailinux.so .
+    ln -sf $lammpsDir/src/liblammps_nufebfoam.so .
     cd $currentDir/lammpsFoam
     touch Make/options
     echo "LAMMPS_DIR ="$lammpsSRC > Make/options
@@ -52,9 +46,9 @@ then
 elif [ $version == "Darwin" ]
 then
     echo "The version you choose is mac version"
-    make -j4 make shanghailinux mode=shlib
+    make -j4 make nufebfoam mode=shlib
     cd $FOAM_USER_LIBBIN
-    ln -sf $lammpsDir/src/liblammps_shanghaimac.so .
+    ln -sf $lammpsDir/src/liblammps_nufebfoammac.so .
     cd $currentDir/lammpsFoam
     touch Make/options
     echo "LAMMPS_DIR ="$lammpsSRC > Make/options

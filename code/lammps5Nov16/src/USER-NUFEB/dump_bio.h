@@ -75,12 +75,12 @@ class DumpBio : public Dump {
   void pack(tagint *);
   void write_data(int, double *);
 
-  void write_concentration_data(int);
+  void write_nus_data(int);
   void write_avgcon_data();
   void write_gas_data(int);
-  void write_DGRCat_data(int);
-  void write_DGRAn_data(int);
-  void write_pH_data();
+  void write_gibbs_cata_data(int);
+  void write_gibbs_anab_data(int);
+  void write_ph_data();
   void write_yield_data(int);
   void write_biomass_data();
   void write_ntype_data();
