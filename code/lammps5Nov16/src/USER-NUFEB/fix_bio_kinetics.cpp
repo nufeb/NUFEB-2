@@ -287,11 +287,11 @@ void FixKinetics::init() {
   gibbs_anab = memory->create(gibbs_anab, ntypes+1, ngrids, "kinetics:DRGAn");
   keq = memory->create(keq, nnus+1, 4, "kinetics:kEq");
   sh = memory->create(sh, ngrids, "kinetics:Sh");
-  fv = memory->create(fv, 3, ngrids, "kinetcis:fV");
+  fv = memory->create(fv, 3, ngrids, "kinetcis:fv");
   xdensity = memory->create(xdensity, ntypes+1, ngrids, "kinetics:xdensity");
 
   init_param();
-  reset_isConv();
+  reset_isconv();
   update_bgrids();
 
   if (energy != NULL) {
@@ -434,7 +434,7 @@ void FixKinetics::integration() {
 
   // update grid biomass to calculate diffusion coeff
   if (diffusion != NULL && diffusion->dcflag) {
-    diffusion->update_diffCoeff();
+    diffusion->update_diff_coeff();
   }
 
   while (!converge) {
@@ -442,7 +442,7 @@ void FixKinetics::integration() {
 
     // solve for reaction term, no growth happens here
     if (iteration % devery == 0) {
-      reset_nuR();
+      reset_nur();
       if (energy != NULL) {
         if (ph != NULL) ph->solve_ph();
         else compute_activity();
@@ -481,8 +481,8 @@ void FixKinetics::integration() {
     fprintf(screen, "number of iterations: %i \n", iteration);
 
   grow_flag = 1;
-  reset_isConv();
-  reset_nuR();
+  reset_isconv();
+  reset_nur();
 
   // microbe growth
   if (energy != NULL)
@@ -492,7 +492,7 @@ void FixKinetics::integration() {
 
   if (diffusion != NULL) {
     // manually update reaction if none of the surface is using dirichlet BC
-    diffusion->update_nuS();
+    diffusion->update_nus();
     // update concentration in bulk liquid
     diffusion->compute_bulk();
     // update grids
@@ -506,7 +506,7 @@ void FixKinetics::integration() {
 /* ----------------------------------------------------------------------
  get maximum biofilm height
  ------------------------------------------------------------------------- */
-double FixKinetics::getMaxHeight() {
+double FixKinetics::get_max_height() {
   const int nlocal = atom->nlocal;
   double * const * const x = atom->x;
   double * const r = atom->radius;
@@ -525,7 +525,7 @@ double FixKinetics::getMaxHeight() {
 
 void FixKinetics::update_bgrids() {
   if (blayer >= 0) {
-    maxheight = getMaxHeight();
+    maxheight = get_max_height();
     bnz = (int) ((blayer + maxheight) / stepz) + 1;
     bgrids = subn[0] * subn[1] * MIN(subn[2], MAX(0, bnz - subnlo[2]));
   } else {
@@ -584,7 +584,7 @@ int FixKinetics::position(int i) {
 /* ----------------------------------------------------------------------
  reset nutrient reaction array
  ------------------------------------------------------------------------- */
-void FixKinetics::reset_nuR() {
+void FixKinetics::reset_nur() {
   for (int nu = 1; nu < bio->nnu + 1; nu++) {
     for (int j = 0; j < bgrids; j++) {
       nur[nu][j] = 0;
@@ -595,7 +595,7 @@ void FixKinetics::reset_nuR() {
 /* ----------------------------------------------------------------------
  reset convergence status
  ------------------------------------------------------------------------- */
-void FixKinetics::reset_isConv() {
+void FixKinetics::reset_isconv() {
   for (int i = 1; i <= bio->nnu; i++) {
     if (strcmp(bio->nuname[i], "h2o") == 0)
       nuconv[i] = true;

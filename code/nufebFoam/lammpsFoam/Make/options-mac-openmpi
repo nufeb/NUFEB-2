@@ -6,7 +6,7 @@ EXE_INC = \
     -I$(LAMMPS_DIR)/GRANULAR   \
     -I/usr/include/openmpi-x86_64/ \
     -I/usr/lib64/openmpi/lib/ \
-    -I$(LAMMPS_DIR)/Obj_shanghailinux   \
+    -I$(LAMMPS_DIR)/Obj_nufebfoam   \
     -I$(FOAM_SRC)/lagrangian/basic/lnInclude \
     -I$(FOAM_SRC)/meshTools/lnInclude \
     -I$(LIB_SRC)/cfdTools/incompressible \
@@ -25,7 +25,7 @@ EXE_LIBS = \
     -lmeshTools  \
     -llagrangian \
     -L/usr/lib64/openmpi/lib/ -lmpi -lmpi_cxx\
-    -llammps_shanghailinux \
+    -llammps_nufebfoam \
     -ltriSurface \
     -lchPressureGrad-DEM \
     -lstdc++

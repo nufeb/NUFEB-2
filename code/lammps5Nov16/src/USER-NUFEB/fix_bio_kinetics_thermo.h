@@ -31,7 +31,7 @@ class FixKineticsThermo : public Fix {
   int rflag;                       // 0 = open reactor 1 = closed reactor
 
   double stepx, stepy, stepz;       // grids size
-  double xlo,xhi,ylo,yhi,zlo,zhi;   // simulaton box size
+  double xlo,xhi,ylo,yhi,zlo,zhi;   // simulation box size
   double vol;                       // grid volume and gas volume
 
   double **dgzero;
@@ -41,8 +41,8 @@ class FixKineticsThermo : public Fix {
   class FixKinetics *kinetics;
   class BIO *bio;
 
-  void init_dG0();
-  void init_KhV();
+  void init_dgzero();
+  void init_khv();
 };
 
 }

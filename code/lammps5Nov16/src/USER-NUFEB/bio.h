@@ -52,7 +52,7 @@ class BIO : protected Pointers {
   void type_grow();
   void create_type(char *);
   void data_nutrients(int, char **);
-  void set_typeName(int narg, char **arg);
+  void set_tname(int narg, char **arg);
   void set_q(const char *);
   void set_mu(const char *);
   void set_mw(const char *);
@@ -62,19 +62,19 @@ class BIO : protected Pointers {
   void set_maintain(const char *);
   void set_decay(const char *);
   void set_diffusion(const char *);
-  void set_catCoeff(int, char **);
-  void set_decayCoeff(int, char **);
-  void set_anabCoeff(int, char **);
-  void set_nuGCoeff(int, char **);
-  void set_typeGCoeff(int, char **);
+  void set_cata_coeff(int, char **);
+  void set_decay_coeff(int, char **);
+  void set_anab_coeff(int, char **);
+  void set_nugibbs_coeff(int, char **);
+  void set_tgibbs_coeff(int, char **);
   void set_dissipation(const char *);
-  void set_nuChr(int, char **);
-  void set_typeChr(int, char **);
-  void set_kLa(const char *);
+  void set_nucharge(int, char **);
+  void set_tcharge(int, char **);
+  void set_kla(const char *);
   void set_group_mask();
 
-  int find_typeID(char *name);
-  int find_nuID(char *name);
+  int find_typeid(char *name);
+  int find_nuid(char *name);
 
 };
 

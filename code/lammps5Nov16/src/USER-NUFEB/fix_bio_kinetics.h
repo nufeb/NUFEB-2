@@ -64,7 +64,7 @@ class FixKinetics : public Fix, public DecompGrid<FixKinetics> {
   double **xdensity;               // grid biomass density [type][grid]; [0][grid] the overall density
   int *nuconv;
   double diff_dt;                  // diffusion timestep
-  double blayer;
+  double blayer;                   // boundary layer
   double zhi,bzhi,zlo, xlo, xhi, ylo, yhi;
   double stepz, stepx, stepy;
   int grow_flag;                   // microbe growth flag 1 = update biomass; 0 = solve reaction only, growth is negligible
@@ -95,13 +95,13 @@ class FixKinetics : public Fix, public DecompGrid<FixKinetics> {
   void init_keq();
   void integration();
   void grow();
-  double getMaxHeight();
+  double get_max_height();
   void update_bgrids();
   void update_xdensity();
   bool is_inside(int);
   int position(int);
-  void reset_nuR();
-  void reset_isConv();
+  void reset_nur();
+  void reset_isconv();
 
   Subgrid<double, 3> get_subgrid() const { return subgrid; }
   int get_elem_per_cell() const;

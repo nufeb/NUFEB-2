@@ -242,7 +242,7 @@ void FixKineticsDiffusion::init() {
   vol = stepx * stepy * stepz;
   bzhi = kinetics->bnz * stepz;
 
-  if (!isEuqal(stepx, stepy, stepz))
+  if (!is_equal(stepx, stepy, stepz))
     error->all(FLERR, "Grid is not cubic");
 
   nxx = kinetics->subn[0] + 2;
@@ -417,7 +417,7 @@ void FixKineticsDiffusion::update_grids() {
 /* ----------------------------------------------------------------------
  Update dynamic diffusion coeff
  ------------------------------------------------------------------------- */
-void FixKineticsDiffusion::update_diffCoeff() {
+void FixKineticsDiffusion::update_diff_coeff() {
 
   for (int i = 1; i <= bio->nnu; i++) {
     for (int grid = 0; grid < nxx_yy_zz; grid++) {
@@ -710,7 +710,7 @@ void FixKineticsDiffusion::compute_flux(double cellDNu, double &nuCell, double *
  Compare double values for equality
  ------------------------------------------------------------------------- */
 
-bool FixKineticsDiffusion::isEuqal(double a, double b, double c) {
+bool FixKineticsDiffusion::is_equal(double a, double b, double c) {
   double epsilon = 1e-10;
   if ((fabs(a - b) > epsilon) || (fabs(a - c) > epsilon) || (fabs(b - c) > epsilon))
     return false;
@@ -722,7 +722,7 @@ bool FixKineticsDiffusion::isEuqal(double a, double b, double c) {
  Manually update reaction if none of the surface is using dirichlet bc
  ------------------------------------------------------------------------- */
 
-void FixKineticsDiffusion::update_nuS() {
+void FixKineticsDiffusion::update_nus() {
   if ((xbcflag == 0 || xbcflag == 3) && (ybcflag == 0 || ybcflag == 3) && (zbcflag == 0 || zbcflag == 3)) {
     double **nus = kinetics->nus;
     double **nur = kinetics->nur;
