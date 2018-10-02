@@ -5,6 +5,11 @@
 
 #include <vector>
 
+#ifdef NUFEB_DEBUG_COMM
+#include <fstream>
+#include <sstream>
+#endif
+
 namespace LAMMPS_NS {
 template <class Derived>
 class DecompGrid {
@@ -13,6 +18,18 @@ class DecompGrid {
 		      const Box<int, 3> &box,
 		      const std::array<bool, 3> &periodic) {
     Derived *derived = static_cast<Derived *>(this);
+
+#ifdef NUFEB_DEBUG_COMM
+    std::stringstream ss;
+    ss << "debug_comm_" << derived->comm->me << ".txt";
+    debug.open(ss.str().c_str(), std::fstream::app);
+    debug << ">>> Entering setup_exchange" << std::endl;
+    debug << "Grid:    [origin](" << grid.get_origin()[0] << ", " << grid.get_origin()[1] << ", " << grid.get_origin()[2]
+	  << ") [dimensions](" << grid.get_dimensions()[0] << ", " << grid.get_dimensions()[1] << ", " << grid.get_dimensions()[2] << ")" << std::endl;
+    debug << "Subgrid: [lower] (" << box.lower[0] << ", " << box.lower[1] << ", " << box.lower[2]
+	  << ") [upper](" << box.upper[0] << ", " << box.upper[1] << ", " << box.upper[2] << ")" << std::endl;
+#endif
+
     // communicate grid extent
     std::vector<int> boxlo(3 * derived->comm->nprocs); 
     MPI_Allgather(const_cast<int *>(&box.lower[0]), 3, MPI_INT, boxlo.data(), 3, MPI_INT, derived->world);
@@ -34,6 +51,11 @@ class DecompGrid {
       send_begin[p] = send_cells.size() * epc;
       Box<int, 3> other(&boxlo[3 * p], &boxhi[3 * p]);
       if (p != derived->comm->me) {
+#ifdef NUFEB_DEBUG_COMM
+      debug << "Checking for intersections with proc " << p
+	    << ", box: [lower](" << box.lower[0] << ", " << box.lower[1] << ", " << box.lower[2]
+	    << ") [upper](" << box.upper[0] << ", " << box.upper[1] << ", " << box.upper[2] << ")" << std::endl;
+#endif
 	// identify which cell we are going to send and receive
 	setup_comm_cells(subgrid, box, other);
 	// check for periodic boundary conditions
@@ -61,12 +83,43 @@ class DecompGrid {
     }
     recv_buff.resize(recv_end.back());
     send_buff.resize(send_end.back());
+
+#ifdef NUFEB_DEBUG_COMM
+    debug << "<<< Leaving setup_exchange" << std::endl;
+    debug.close();
+#endif
   }
 
   void exchange() {
     Derived *derived = static_cast<Derived *>(this);
+    int epc = derived->get_elem_per_cell();
+
     // pack data to send buffer
     derived->pack_cells(send_cells.begin(), send_cells.end(), send_buff.begin());
+
+#ifdef NUFEB_DEBUG_COMM
+    std::stringstream ss;
+    ss << "debug_comm_" << derived->comm->me << ".txt";
+    debug.open(ss.str().c_str(), std::fstream::app);
+    debug << ">>> Entering exchange" << std::endl;
+    debug << "Packing cells: ";
+    {
+      auto data = send_buff.begin();
+      for (auto cell = send_cells.begin(); cell != send_cells.end(); ++cell) {
+        if (cell != send_cells.begin())
+          debug << ", ";
+        debug << "[" << *cell << "](";
+        for (int i = 0; i < epc; i++, ++data) {
+	  if (i != 0)
+	    debug << ", ";
+	  debug << *data;
+	}
+	debug << ")";
+      }
+      debug << std::endl;
+    }
+#endif
+
     // send and recv grid data
     int nrequests = 0;
     for (int p = 0; p < derived->comm->nprocs; p++) {
@@ -83,7 +136,29 @@ class DecompGrid {
     MPI_Waitall(nrequests, requests.data(), MPI_STATUS_IGNORE);
     // unpack data from recv buffer
     derived->unpack_cells(recv_cells.begin(), recv_cells.end(), recv_buff.begin());
+
+#ifdef NUFEB_DEBUG_COMM
+    debug << "Unpacking cells: ";
+    {
+      auto data = recv_buff.begin();
+      for (auto cell = recv_cells.begin(); cell != recv_cells.end(); ++cell) {
+        if (cell != recv_cells.begin())
+          debug << ", ";
+        debug << "[" << *cell << "](";
+        for (int i = 0; i < epc; i++, ++data) {
+	  if (i != 0)
+	    debug << ", ";
+	  debug << *data;
+	}
+	debug << ")";
+      }
+      debug << std::endl;
+    }
+    debug << "<<< Leaving exchange" << std::endl;
+    debug.close();
+#endif
   }
+
 
   void migrate(const Grid<double, 3> &grid, const Box<int, 3> &from, const Box<int, 3> &to) {
     migrate(grid, from, to, from, to);
@@ -172,6 +247,12 @@ class DecompGrid {
       for (int j = box.lower[1]; j < box.upper[1]; j++) {
 	for (int i = box.lower[0]; i < box.upper[0]; i++) {
 	  cells.push_back(subgrid.get_linear_index({i, j, k}));
+#ifdef NUFEB_DEBUG_COMM
+	  if (i != box.lower[0] || j != box.lower[1] || k != box.lower[2])
+	    debug << ", ";
+	  debug << "[" << subgrid.get_linear_index({i, j, k}) 
+		<< "](" << i << ", " << j << ", " << k << ")";
+#endif
 	}
       }
     }
@@ -201,13 +282,25 @@ class DecompGrid {
     Box<int, 3> recvbox = intersect(extend(box), other);
     int n = cell_count(recvbox);
     if (check_intersection(recvbox)) {
+#ifdef NUFEB_DEBUG_COMM
+      debug << "Receiving cells from proc: ";
+#endif
       add_cells(subgrid, recvbox, recv_cells);
+#ifdef NUFEB_DEBUG_COMM
+    debug << std::endl;
+#endif	  
     }
     // identify which cells we need to send
     Box<int, 3> sendbox = intersect(extend(other), box);
     n = cell_count(sendbox);
     if (check_intersection(sendbox)) {
+#ifdef NUFEB_DEBUG_COMM
+      debug << "Sending cells from proc: ";
+#endif
       add_cells(subgrid, sendbox, send_cells);
+#ifdef NUFEB_DEBUG_COMM
+    debug << std::endl;
+#endif	  
     }
   }
 
@@ -232,6 +325,10 @@ class DecompGrid {
   std::vector<double> recv_buff;
   std::vector<double> send_buff;
   std::vector<MPI_Request> requests;
+
+#ifdef NUFEB_DEBUG_COMM
+  std::ofstream debug;
+#endif
 };
 }
 
