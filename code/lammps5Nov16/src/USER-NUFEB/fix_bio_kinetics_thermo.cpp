@@ -245,9 +245,9 @@ void FixKineticsThermo::thermo(double dt) {
     }
   }
 
-  for (int grid = 0; grid < kinetics->bgrids; grid++) {
-    // gas liquid transfer
-    if (rflag == 1) {
+  // gas liquid transfer
+  if (rflag == 1) {
+    for (int grid = 0; grid < kinetics->bgrids; grid++) {
       for (int nu = 1; nu <= nnus; nu++) {
         if (bio->nustate[nu] != 1) continue;
 
@@ -276,42 +276,57 @@ void FixKineticsThermo::thermo(double dt) {
         }
       }
     }
+  }
 
-    // calculate metablic energy
-    for (int i = 1; i <= atom->ntypes; i++) {
-      double rthT = kinetics->temp * kinetics->rth;
-
+  // calculate metabolic energy
+  double rthT = kinetics->temp * kinetics->rth;
+  for (int i = 1; i <= atom->ntypes; i++) {
+#pragma ivdep
+    for (int grid = 0; grid < kinetics->bgrids; grid++) {
       //Gibbs free energy of the reaction
       gibbs_cata[i][grid] = dgzero[i][0];  //catabolic energy values
       gibbs_anab[i][grid] = dgzero[i][1] + rthT;  //anabolic energy values
+    }
+  }
 
-      for (int nu = 1; nu <= nnus; nu++) {
-        if (bio->nugibbs_coeff[nu][1] >= 1e4)
-          error->all(FLERR, "nuGCoeff[1] is inf value");
-
-        double act = 0;
-        int flag = bio->ngflag[nu];
-        if (activity[nu][flag][grid] == 0)
-          act = 1e-20;
-        else
-          act = activity[nu][flag][grid];
-
-        double dgr = rthT * log(act);
-
-        gibbs_cata[i][grid] += bio->cata_coeff[i][nu] * dgr;
-        gibbs_anab[i][grid] += bio->anab_coeff[i][nu] * dgr;
+  double *act = memory->create(act, kinetics->ngrids, "thermo:act");
+  for (int nu = 1; nu <= nnus; nu++) {
+    if (bio->nugibbs_coeff[nu][1] >= 1e4)
+      error->all(FLERR, "nuGCoeff[1] is inf value");
+    int flag = bio->ngflag[nu];
+#pragma vector aligned
+    for (int grid = 0; grid < kinetics->bgrids; grid++) {
+      if (activity[nu][flag][grid] == 0)
+	act[grid] = 1e-20;
+      else
+	act[grid] = activity[nu][flag][grid];
+      act[grid] = rthT * log(act[grid]);
+    }
+    for (int i = 1; i <= atom->ntypes; i++) {
+#pragma ivdep
+#pragma vector aligned
+      for (int grid = 0; grid < kinetics->bgrids; grid++) {
+	gibbs_cata[i][grid] += bio->cata_coeff[i][nu] * act[grid];
+	gibbs_anab[i][grid] += bio->anab_coeff[i][nu] * act[grid];
       }
+    }
+  }
+  memory->destroy(act);
 
-      //use catabolic and anabolic energy values to derive catabolic reaction equation
-      if (!yflag) continue;
-      if (gibbs_cata[i][grid] < 0) {
-        grid_yield[i][grid] = -(gibbs_anab[i][grid] + bio->dissipation[i]) / gibbs_cata[i][grid] + bio->edoner[i];
-        if (grid_yield[i][grid] != 0)
-          grid_yield[i][grid] = 1 / grid_yield[i][grid];
-      } else {
-        grid_yield[i][grid] = 0;
+  if (yflag) {
+    for (int i = 1; i <= atom->ntypes; i++) {
+#pragma ivdep
+#pragma vector aligned
+      for (int grid = 0; grid < kinetics->bgrids; grid++) {
+	//use catabolic and anabolic energy values to derive catabolic reaction equation
+	if (gibbs_cata[i][grid] < 0) {
+	  grid_yield[i][grid] = -(gibbs_anab[i][grid] + bio->dissipation[i]) / gibbs_cata[i][grid] + bio->edoner[i];
+	  if (grid_yield[i][grid] != 0)
+	    grid_yield[i][grid] = 1 / grid_yield[i][grid];
+	} else {
+	  grid_yield[i][grid] = 0;
+	}
       }
-
     }
   }
 }
