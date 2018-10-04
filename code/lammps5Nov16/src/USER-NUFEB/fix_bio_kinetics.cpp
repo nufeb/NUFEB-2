@@ -381,12 +381,23 @@ void FixKinetics::compute_activity() {
     tmp[2] = gSh2 * keq[k][1] / denm[k];
     tmp[3] = gSh * keq[k][1] * keq[k][2] / denm[k];
     tmp[4] = keq[k][1] * keq[k][2] * keq[k][3] / denm[k];
+    bool is_hydrogen = false;
+    if (strcmp(bio->nuname[k], "h") == 0) {
+      is_hydrogen = true;
+    }
+
+#pragma ivdep
+#pragma vector aligned
     for (int j = 0; j < bgrids; j++) {
       sh[j] = gSh;
       // not hydrated form acitivity
       activity[k][0][j] = nus[k][j] * tmp[0];
       // fully protonated form activity
-      activity[k][1][j] = nus[k][j] * tmp[1];
+      if (is_hydrogen) {
+        activity[k][1][j] = gSh;
+      } else {
+	activity[k][1][j] = nus[k][j] * tmp[1];
+      }
       // 1st deprotonated form activity
       activity[k][2][j] = nus[k][j] * tmp[2];
       // 2nd deprotonated form activity
@@ -394,9 +405,6 @@ void FixKinetics::compute_activity() {
       // 3rd deprotonated form activity
       activity[k][4][j] = nus[k][j] * tmp[4];
      // if(k==1)printf("act = %e, s= %e, flag = %i \n", activity[k][1][j], nus[k][j], bio->ngflag[k]);
-      if (strcmp(bio->nuname[k], "h") == 0) {
-        activity[k][1][j] = gSh;
-      }
     }
   }
   memory->destroy(denm);
