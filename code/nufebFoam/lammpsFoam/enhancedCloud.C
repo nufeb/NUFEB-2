@@ -353,6 +353,7 @@ void enhancedCloud::calcTcFields()
             label cellI = p.cell();
             if(cellI < 0) continue;
             scalar omg = p.Vol()*Jd_[particleI]/(mesh_.V()[cellI]);
+            //omg = 0;
             Omega_.internalField()[cellI] += omg;
             Asrc_.internalField()[cellI] += omg * p.U();
             ++pIter;
@@ -377,7 +378,7 @@ void enhancedCloud::calcTcFields()
             if (cellI < 0) continue;
 
             scalar omg = p.Vol()*Jd_[particleI]/(mesh_.V()[cellI]);
-
+            //omg = 0;
             // accumulate drag from particles to host cells
             // to be smoothed later!
             Omega_.internalField()[cellI] += omg;

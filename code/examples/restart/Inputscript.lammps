@@ -2,7 +2,7 @@
 
 atom_style	bio
 atom_modify	map array sort 100 5.0e-7
-boundary	ff ff ff
+boundary	pp pp ff
 newton		off
 processors  * * 1
 
@@ -28,14 +28,10 @@ timestep 10
 fix 1 all nve/limit 1e-8
 fix fv all viscous 1e-5
 
-fix xw all wall/gran hooke/history 2000 NULL 500.0 NULL 1.5 0 xplane  0.0   1.0e-04
-fix yw all wall/gran hooke/history 2000 NULL 500.0 NULL 1.5 0 yplane  0.0   4.0e-05
 fix zw all wall/gran hooke/history 2000 NULL 500.0 NULL 1.5 0 zplane  0.0   1.0e-04
 
 variable kanc equal 50
 
-fix xwa all walladh v_kanc xplane  0.0   1.0e-04
-fix ywa all walladh v_kanc yplane  0.0   4.0e-05
 fix zwa all walladh v_kanc zplane  0.0   1.0e-04
 
 variable ke equal 5e+10
@@ -81,6 +77,6 @@ compute myNtypes all ntypes
 thermo_style    custom step cpu atoms biomass c_myNtypes[*] 
 thermo		100
 thermo_modify	lost ignore
-restart 500 restart
+restart 40000 restart
 
-run 2000
+run 40000
