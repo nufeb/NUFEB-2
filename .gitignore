@@ -19,6 +19,7 @@ code/inputs/*
 code/post_processing/snapshot.bubblemd
 code/post_processing/0_images/*
 !code/post_processing/
+code/nufebFoam/cases/*
 
 # Ouput files
 *.vtu

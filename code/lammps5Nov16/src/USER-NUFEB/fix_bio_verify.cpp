@@ -244,20 +244,36 @@ void FixVerify::benchmark_one() {
 
 void FixVerify::benchmark_two() {
   // surface concentration
-  double ssurf, gssurf;
+  double ssurf, gssurf, ssurf_2, ssurf_3;
   ssurf = 0;
+  ssurf_2 = 0;
+  ssurf_3 = 0;
+
 
   for(auto const& value: fslist) {
     int grid = kinetics->position(value);
-    ssurf += kinetics->nus[1][grid];
+    int up = grid + kinetics->nx * kinetics->ny;  // z direction
+    int up2 = grid + (kinetics->nx * kinetics->ny)*2;  // z direction
+    int up3 = grid + (kinetics->nx * kinetics->ny)*3;  // z direction
+    ssurf += kinetics->nus[1][up];
+    ssurf_2 += kinetics->nus[1][up2];
+    ssurf_3 +=kinetics->nus[1][up3];
   }
   ssurf /= fslist.size();
+  ssurf_2 /= fslist.size();
+  ssurf_3 /= fslist.size();
 
   MPI_Allreduce(&ssurf,&gssurf,1,MPI_DOUBLE,MPI_SUM,world);
 
   gssurf /= comm->nprocs;
   if (comm->me == 0 && logfile) fprintf(logfile, "ssurf = %e \n",gssurf);
   if (comm->me == 0 && screen) fprintf(screen, "ssurf = %e \n",gssurf);
+
+  if (comm->me == 0 && logfile) fprintf(logfile, "ssurf2 = %e \n",ssurf_2);
+  if (comm->me == 0 && screen) fprintf(screen, "ssurf2 = %e \n",ssurf_2);
+
+  if (comm->me == 0 && logfile) fprintf(logfile, "ssurf3 = %e \n",ssurf_3);
+  if (comm->me == 0 && screen) fprintf(screen, "ssurf3 = %e \n",ssurf_3);
 }
 
 
