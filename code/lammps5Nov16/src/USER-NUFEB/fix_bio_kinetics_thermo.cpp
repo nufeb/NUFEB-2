@@ -249,13 +249,15 @@ void FixKineticsThermo::thermo(double dt) {
   if (rflag == 1) {
     for (int grid = 0; grid < kinetics->bgrids; grid++) {
       for (int nu = 1; nu <= nnus; nu++) {
-        if (bio->nustate[nu] != 1) continue;
+        if (bio->nustate[nu] != 1)
+          continue;
 
         //get corresponding liquid ID
         int liqID = liqtogas[nu];
         double gasT = 0;
 
-        if (!liqID) continue;
+        if (!liqID)
+          continue;
         if (bio->nugibbs_coeff[liqID][0] > 10000) {
           gasT = bio->kla[liqID] * (activity[nu][0][grid] - activity[liqID][1][grid] / khv[liqID]);
         } else {
@@ -297,17 +299,17 @@ void FixKineticsThermo::thermo(double dt) {
 #pragma vector aligned
     for (int grid = 0; grid < kinetics->bgrids; grid++) {
       if (activity[nu][flag][grid] == 0)
-	act[grid] = 1e-20;
+        act[grid] = 1e-20;
       else
-	act[grid] = activity[nu][flag][grid];
+        act[grid] = activity[nu][flag][grid];
       act[grid] = rthT * log(act[grid]);
     }
     for (int i = 1; i <= atom->ntypes; i++) {
 #pragma ivdep
 #pragma vector aligned
       for (int grid = 0; grid < kinetics->bgrids; grid++) {
-	gibbs_cata[i][grid] += bio->cata_coeff[i][nu] * act[grid];
-	gibbs_anab[i][grid] += bio->anab_coeff[i][nu] * act[grid];
+        gibbs_cata[i][grid] += bio->cata_coeff[i][nu] * act[grid];
+        gibbs_anab[i][grid] += bio->anab_coeff[i][nu] * act[grid];
       }
     }
   }
@@ -318,14 +320,14 @@ void FixKineticsThermo::thermo(double dt) {
 #pragma ivdep
 #pragma vector aligned
       for (int grid = 0; grid < kinetics->bgrids; grid++) {
-	//use catabolic and anabolic energy values to derive catabolic reaction equation
-	if (gibbs_cata[i][grid] < 0) {
-	  grid_yield[i][grid] = -(gibbs_anab[i][grid] + bio->dissipation[i]) / gibbs_cata[i][grid] + bio->edoner[i];
-	  if (grid_yield[i][grid] != 0)
-	    grid_yield[i][grid] = 1 / grid_yield[i][grid];
-	} else {
-	  grid_yield[i][grid] = 0;
-	}
+        //use catabolic and anabolic energy values to derive catabolic reaction equation
+        if (gibbs_cata[i][grid] < 0) {
+          grid_yield[i][grid] = -(gibbs_anab[i][grid] + bio->dissipation[i]) / gibbs_cata[i][grid] + bio->edoner[i];
+          if (grid_yield[i][grid] != 0)
+            grid_yield[i][grid] = 1 / grid_yield[i][grid];
+        } else {
+          grid_yield[i][grid] = 0;
+        }
       }
     }
   }
