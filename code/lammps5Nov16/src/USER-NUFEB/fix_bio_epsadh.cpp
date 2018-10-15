@@ -144,11 +144,11 @@ void FixEPSAdh::post_force(int vflag) {
 
       double ccel = 0;
       if (flag == 1) {
-        if (rsq < 4 * radsum * radsum) {
+        if (rsq < 4 * radsum * radsum && rsq > radsum * radsum) {
           ccel = -massSum * ke * del;
         }
       } else if (flag == 2) {
-        if ((rsq < 4 * radsum * ke) && (rsq > radsum)) {
+        if ((rsq < 4 * radsum * ke) && (rsq > radsum * radsum)) {
           ccel = -massSum * ke * (radsum / r) * (radsum / r);
         }
       }
