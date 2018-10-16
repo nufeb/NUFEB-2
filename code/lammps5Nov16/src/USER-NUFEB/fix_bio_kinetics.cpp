@@ -479,6 +479,10 @@ void FixKinetics::integration() {
       }
     }
 
+    if (!converge) {
+      reset_isconv();
+    }
+
     if (niter > 0 && iteration >= niter)
       converge = true;
   }
