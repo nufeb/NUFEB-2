@@ -177,13 +177,18 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
   stepz = (zhi - zlo) / nz;
 
   grid = Grid<double, 3>(Box<double, 3>(domain->boxlo, domain->boxhi), { nx, ny, nz });
-  subgrid = Subgrid<double, 3>(grid, Box<double, 3>(domain->sublo, domain->subhi),
-      static_cast<double (*)(double)>(&std::round));
+  double tmpsublo[3], tmpsubhi[3];
+  const double small = 1e-12;
+  for (int i = 0; i < 3; i++) {
+    tmpsublo[i] = domain->sublo[i] + small;
+    tmpsubhi[i] = domain->subhi[i] + small;
+  }
+  subgrid = Subgrid<double, 3>(grid, Box<double, 3>(tmpsublo, tmpsubhi));
 
 for(  int i = 0; i < 3; i++) {
     // considering that the grid will always have a cubic cell (i.e. stepx = stepy = stepz)
-    subnlo[i] = std::round(domain->sublo[i] / stepz);
-    subnhi[i] = std::round(domain->subhi[i] / stepz);
+    subnlo[i] = tmpsublo[i] / stepz;
+    subnhi[i] = tmpsubhi[i] / stepz;
     sublo[i] = subnlo[i] * stepz;
     subhi[i] = subnhi[i] * stepz;
     subn[i] = subnhi[i] - subnlo[i];
