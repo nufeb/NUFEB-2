@@ -1,0 +1,104 @@
+ Granular Flow Simulation
+
+       2 atoms
+       1 atom types
+       6 nutrients
+
+   0.0   2e-05  xlo xhi
+   0.0   2e-05  ylo yhi
+   0.0   2e-05  zlo zhi
+
+ Atoms
+
+     1 1 1.68389e-6 400 0.5e-5 0.5e-5 0.5e-5 1.68389e-6
+     2 1 1.68389e-6 800 1.5e-5 1.5e-5 1.5e-5 1.68389e-6
+
+
+ Nutrients
+
+     1 nh3 l 0.001765 0.001765 0.001765 0.001765 0.001765 0.001765 0.001765
+     2 no2 l 1e-20 1e-20 1e-20 1e-20 1e-20 1e-20 1e-20
+     3 o2 l  2.81E-04 2.81E-04 2.81E-04 2.81E-04 2.81E-04 2.81E-04 2.81E-04
+     4 co2 l 2.00E-03 2.00E-03 2.00E-03 2.00E-03 2.00E-03 2.00E-03 2.00E-03
+     5 h2o l 1 1 1 1 1 1 1
+     6 h l 0 0 0 0 0 0 0
+
+ Type Name
+
+     1 aob
+
+ Diffusion Coeffs
+
+     nh3 1.958333e-9
+     no2 1.911111e-9
+     o2 2.1e-9
+     co2 1.186111e-9
+     h2o 0
+     h 0
+
+ Ks
+
+     aob 2.11e-6 0 9.38e-7 0 0 0
+
+ Consumption Rate
+
+     aob 0.000057348
+
+ Yield
+
+     aob 0.155468293
+
+ Maintenance
+
+     aob 0
+
+ Electron Donor
+
+     aob 0.9
+
+ Decay
+
+     aob 2.2665e-6
+
+ Catabolism Coeffs
+
+     aob -1 1 -1.5 0 1 1
+
+ Anabolism Coeffs
+
+     aob -0.9 0.7 0 -1 1.1 -1
+
+ Decay Coeffs
+
+     aob 0.2 0 0 1 0 0
+
+ Nutrient Energy
+
+    nh3 inf -79.37 -26.57 inf inf 3
+    no2 inf -50.60 -32.20 inf inf 2
+    o2 inf 16.4 inf inf inf 2
+    co2 -386.00 -623.16 -586.85 -527.80 inf 3
+    h2o inf -237.18 -157.3 inf inf 2
+    h inf 0 inf inf inf 2
+
+ Type Energy
+
+    aob inf -67 inf inf inf 2
+
+ Dissipation
+
+    aob 3500
+
+ Nutrient Charge
+  
+    nh3 na 1 0 na na
+    no2 na 0 -1 na na
+    o2 na 0 na na na
+    co2 0 0 -1 -2 na
+    h2o na 0 -1 na na
+    h na 1 na na na
+
+ Type Charge
+  
+    aob na 0 na na na           
+                                                                                                           

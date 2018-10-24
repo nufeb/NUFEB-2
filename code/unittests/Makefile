@@ -9,7 +9,7 @@ SHELL = /bin/sh
 CC =		g++ -std=c++0x
 CCFLAGS =	-O -g
 # ALl tests to be produced
-TESTS = 	test_fix_division test_read_data test_fix_kinetics_monod test_fix_eps_extract test_fix_diffusion test_fix_epsadh
+TESTS = 	test_fix_kinetics test_fix_kinetics_thermo test_fix_kinetics_energy test_fix_kinetics_ph test_read_data test_fix_division test_fix_eps_extract 
 LAMMPS = 	../lammps5Nov16/src
 USER_DIR = ..
 LINKFLAGS =	-o
@@ -72,12 +72,13 @@ GTEST_HEADERS = $(GTEST_DIR)/include/gtest/*.h \
 #include Makefile.
 all: ${TESTS}
 
-test_fix_division: test_fix_division.o
+test_fix_kinetics: test_fix_kinetics.o 
+test_fix_kinetics_thermo: test_fix_kinetics_thermo.o
+test_fix_kinetics_energy: test_fix_kinetics_energy.o
+test_fix_kinetics_ph: test_fix_kinetics_ph.o
 test_read_data: test_read_data.o
-test_fix_kinetics_monod: test_fix_kinetics_monod.o
+test_fix_division: test_fix_division.o
 test_fix_eps_extract: test_fix_eps_extract.o
-test_fix_diffusion: test_fix_diffusion.o
-test_fix_epsadh: test_fix_epsadh.o
 
 cleanAll:
 	rm -rf ${TESTS} gtest.a gtest_main.a *.o 
