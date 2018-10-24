@@ -13,7 +13,7 @@ F LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
 
 // C or Fortran style library interface to LAMMPS
 // new LAMMPS-specific functions can be added
-//#ifdef ENABLE_CFDDEM
+#ifdef ENABLE_CFDDEM
 #include "mpi.h"
 #include "library.h"
 #include "lammps.h"
@@ -783,4 +783,4 @@ void lammps_delete_particle(void *ptr, int* deleteList, int nDelete) {
   // next_reneighbor = update->ntimestep + nevery;
   // delete [] random;
 }
-//#endif // ENABLE_CFDDEM
+#endif // ENABLE_CFDDEM
