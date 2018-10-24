@@ -63,7 +63,7 @@ namespace {
  TEST_F(FixEPSExtractTest, EPS_Cell) {
    // Make sure the actual eps radio is greater than 1.25
    // Parent cell outer mass = 1.001e-15
-   ASSERT_GT((avec->outerRadius[0]/lmp->atom->radius[0]), 1.25);
+   ASSERT_GT((avec->outer_radius[0]/lmp->atom->radius[0]), 1.25);
 
    char* prefix = "fix e1 HET eps_extract 1 v_EPSratio v_EPSdens ";
 
@@ -93,7 +93,7 @@ namespace {
      ASSERT_TRUE((mass >= 0.39e-15) && (mass <= 0.61e-15))
      << "At " << i << " th iteration mass = " << mass;
      // Parent cell outer mass, note that id has changed from 0 to 1
-     double omass = avec->outerMass[1];
+     double omass = avec->outer_mass[1];
      ASSERT_TRUE((omass >= 0.39e-15) && (omass <= 0.61e-15))
      << "At " << i << " th iteration mass = " << omass;
    }

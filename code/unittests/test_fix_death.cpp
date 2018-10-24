@@ -93,10 +93,10 @@ namespace {
      << "At " << i << " th iteration mass = " << mass2;
 
      // Outer mass range between 0.502e-13 - 0.754e-13
-     double omass1 = avec->outerMass[0];
+     double omass1 = avec->outer_mass[0];
      ASSERT_TRUE((omass1 >= 0.502e-13) && (omass1 <= 0.754e-13))
      << "At " << i << " th iteration; outer mass = " << omass1;
-     double omass2 = avec->outerMass[1];
+     double omass2 = avec->outer_mass[1];
      ASSERT_TRUE((omass2 >= 0.502e-13) && (omass2 <= 0.754e-13))
      << "At " << i << " th iteration outer mass = " << omass2;
 
@@ -105,8 +105,8 @@ namespace {
      ASSERT_TRUE(lmp->atom->type[1] == 1) << "At " << i << " th iteration";
 
      // Growth Rate
-     ASSERT_NEAR(6.9444e-5, avec->atom_mu[0], 1e-6) << "At " << i << " th iteration";
-     ASSERT_NEAR(6.9444e-5, avec->atom_mu[1], 1e-6) << "At " << i << " th iteration";
+     ASSERT_NEAR(6.9444e-5, avec->bio->q[0], 1e-6) << "At " << i << " th iteration";
+     ASSERT_NEAR(6.9444e-5, avec->bio->q[1], 1e-6) << "At " << i << " th iteration";
 
    }
   }

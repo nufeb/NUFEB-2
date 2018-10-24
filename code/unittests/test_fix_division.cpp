@@ -1,7 +1,7 @@
 /*
  *
- *  Created on: 3 Dec 2016
- *      Author: bowen
+ *  Created on: 22 Oct 2018
+ *      Author: Bowen Li
  */
 
 #include "test_fix_division.h"
@@ -35,12 +35,15 @@ namespace {
       lmp->input->one("atom_style bio");
       // Modify atom_style parameters
       lmp->input->one("atom_modify map array sort 1000 5.0e-7");
+
       lmp->input->one("read_data_bio inputs/division.in");
 
       // Create group
       lmp->input->one("group HET type 1");
       // Define variables
       lmp->input->one("variable EPSdens equal 30");
+      // Define variables
+      lmp->input->one("variable divDia equal 1.5631e-6");
 
       avec = (AtomVecBio *) lmp->atom->style_match("bio");
     }
@@ -61,7 +64,9 @@ namespace {
    // Make sure initial mass is greater than divMass
    ASSERT_GT(lmp->atom->rmass[0], 2.77e-16);
 
-   char* prefix = "fix d1 all divide 1 v_EPSdens 1 ";
+   EXPECT_NEAR(1.256037e-13, avec->outer_mass[0], 1e-18);
+
+   char* prefix = "fix d1 all divide 1 v_EPSdens v_divDia ";
 
    // Test with 10 random cases
    for (int i = 0; i < 10; i++) {
@@ -75,7 +80,7 @@ namespace {
      sprintf(str,"%d",iseed);
      seed = str;
 
-     char arg[40];
+     char arg[50];
      strcpy(arg, prefix);
      strcat(arg, str);
 
@@ -93,10 +98,10 @@ namespace {
      << "At " << i << " th iteration mass = " << mass2;
 
      // Outer mass range between 0.502e-13 - 0.754e-13
-     double omass1 = avec->outerMass[0];
+     double omass1 = avec->outer_mass[0];
      ASSERT_TRUE((omass1 >= 0.502e-13) && (omass1 <= 0.754e-13))
      << "At " << i << " th iteration; outer mass = " << omass1;
-     double omass2 = avec->outerMass[1];
+     double omass2 = avec->outer_mass[1];
      ASSERT_TRUE((omass2 >= 0.502e-13) && (omass2 <= 0.754e-13))
      << "At " << i << " th iteration outer mass = " << omass2;
 
@@ -105,8 +110,7 @@ namespace {
      ASSERT_TRUE(lmp->atom->type[1] == 1) << "At " << i << " th iteration";
 
      // Growth Rate
-     ASSERT_NEAR(6.9444e-5, avec->atom_mu[0], 1e-6) << "At " << i << " th iteration";
-     ASSERT_NEAR(6.9444e-5, avec->atom_mu[1], 1e-6) << "At " << i << " th iteration";
+     ASSERT_NEAR(6.9444e-5, avec->bio->q[1], 1e-6) << "At " << i << " th iteration";
 
    }
   }

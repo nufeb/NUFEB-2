@@ -13,6 +13,7 @@
 #include "input.h"
 #include "mpi.h"
 #include "atom_vec_bio.h"
+#include "bio.h"
 #include <string>
 #include <sstream>
 
