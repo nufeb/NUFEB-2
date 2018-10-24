@@ -22,7 +22,7 @@
 #include <algorithm>
 /* ifdef allow this file to be included in a C program */
 
-#ifdef ENABLE_CFDDEM
+//#ifdef ENABLE_CFDDEM
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -88,6 +88,6 @@ extern "C" {
   };
 #ifdef __cplusplus
 }
-#endif // ENABLE_DUMP_HDF5
+//#endif // ENABLE_DUMP_HDF5
 #endif
 
