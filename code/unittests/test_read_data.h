@@ -15,10 +15,10 @@
 #include "input.h"
 #include "mpi.h"
 
-class FixEPSExtractTest{
+class ReadDataTest{
 protected:
-  FixEPSExtractTest();
-  virtual ~FixEPSExtractTest();
+  ReadDataTest();
+  virtual ~ReadDataTest();
   virtual void SetUp();
   virtual void TearDown();
 };

@@ -1,5 +1,5 @@
-#ifndef FIX_KINETICS_MONOD_TEST_H
-#define FIX_KINETICS_MONOD_TEST_H
+#ifndef FIX_KINETICS_TEST_H
+#define FIX_KINETICS_TEST_H
 
 #include "gtest/gtest.h"
 #include <iostream>
@@ -10,8 +10,7 @@
 #include "lammps.h"
 #include "atom_vec.h"
 #include "atom_vec_bio.h"
-#include "fix_kinetics.h"
-#include "fix_kinetics_monod.h"
+#include "fix_bio_kinetics.h"
 #include "bio.h"
 #include "comm.h"
 #include "input.h"
@@ -20,10 +19,10 @@
 #include "update.h"
 #include "library.h"
 
-class FixKineticsMonodTest{
+class FixKineticsTest{
 protected:
-  FixKineticsMonodTest();
-  virtual ~FixKineticsMonodTest();
+  FixKineticsTest();
+  virtual ~FixKineticsTest();
   virtual void SetUp();
   virtual void TearDown();
 };
