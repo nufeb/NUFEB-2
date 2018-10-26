@@ -185,7 +185,7 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
   }
   subgrid = Subgrid<double, 3>(grid, Box<double, 3>(tmpsublo, tmpsubhi));
 
-for(  int i = 0; i < 3; i++) {
+  for (int i = 0; i < 3; i++) {
     // considering that the grid will always have a cubic cell (i.e. stepx = stepy = stepz)
     subnlo[i] = tmpsublo[i] / stepz;
     subnhi[i] = tmpsubhi[i] / stepz;
@@ -282,18 +282,18 @@ void FixKinetics::init() {
   int ntypes = atom->ntypes;
   int nnus = bio->nnu;
 
-  nuconv = new int[nnus+1]();
-  nus = memory->create(nus, nnus+1, ngrids, "kinetics:nuS");
-  nur = memory->create(nur, nnus+1, ngrids, "kinetics:nuR");
-  nubs = memory->create(nubs, nnus+1, "kinetics:nuBS");
+  nuconv = new int[nnus + 1]();
+  nus = memory->create(nus, nnus + 1, ngrids, "kinetics:nuS");
+  nur = memory->create(nur, nnus + 1, ngrids, "kinetics:nuR");
+  nubs = memory->create(nubs, nnus + 1, "kinetics:nuBS");
   grid_yield = memory->create(grid_yield, ntypes + 1, ngrids, "kinetic:gYield");
-  activity = memory->create(activity, nnus+1, 5, ngrids, "kinetics:activity");
-  gibbs_cata = memory->create(gibbs_cata, ntypes+1, ngrids, "kinetics:DRGCat");
-  gibbs_anab = memory->create(gibbs_anab, ntypes+1, ngrids, "kinetics:DRGAn");
-  keq = memory->create(keq, nnus+1, 4, "kinetics:kEq");
+  activity = memory->create(activity, nnus + 1, 5, ngrids, "kinetics:activity");
+  gibbs_cata = memory->create(gibbs_cata, ntypes + 1, ngrids, "kinetics:DRGCat");
+  gibbs_anab = memory->create(gibbs_anab, ntypes + 1, ngrids, "kinetics:DRGAn");
+  keq = memory->create(keq, nnus + 1, 4, "kinetics:kEq");
   sh = memory->create(sh, ngrids, "kinetics:Sh");
   fv = memory->create(fv, 3, ngrids, "kinetcis:fv");
-  xdensity = memory->create(xdensity, ntypes+1, ngrids, "kinetics:xdensity");
+  xdensity = memory->create(xdensity, ntypes + 1, ngrids, "kinetics:xdensity");
 
   init_param();
   reset_isconv();
@@ -376,7 +376,8 @@ void FixKinetics::compute_activity() {
 
   for (int k = 1; k < nnus + 1; k++) {
     double iniNuS = bio->ini_nus[k][0];
-    denm[k] = (1 + keq[k][0]) * gSh3 + keq[k][1] * gSh2 + keq[k][2] * keq[k][3] * gSh + keq[k][3] * keq[k][2] * keq[k][1];
+    denm[k] = (1 + keq[k][0]) * gSh3 + keq[k][1] * gSh2 + keq[k][2] * keq[k][3] * gSh
+        + keq[k][3] * keq[k][2] * keq[k][1];
     if (denm[k] == 0) {
       lmp->error->all(FLERR, "denm returns a zero value");
     }
@@ -401,7 +402,7 @@ void FixKinetics::compute_activity() {
       if (is_hydrogen) {
         activity[k][1][j] = gSh;
       } else {
-	activity[k][1][j] = nus[k][j] * tmp[1];
+        activity[k][1][j] = nus[k][j] * tmp[1];
       }
       // 1st deprotonated form activity
       activity[k][2][j] = nus[k][j] * tmp[2];
@@ -409,7 +410,7 @@ void FixKinetics::compute_activity() {
       activity[k][3][j] = nus[k][j] * tmp[3];
       // 3rd deprotonated form activity
       activity[k][4][j] = nus[k][j] * tmp[4];
-     // if(k==1)printf("act = %e, s= %e, flag = %i \n", activity[k][1][j], nus[k][j], bio->ngflag[k]);
+      // if(k==1)printf("act = %e, s= %e, flag = %i \n", activity[k][1][j], nus[k][j], bio->ngflag[k]);
     }
   }
   memory->destroy(denm);
@@ -457,8 +458,10 @@ void FixKinetics::integration() {
     if (iteration % devery == 0) {
       reset_nur();
       if (energy != NULL) {
-        if (ph != NULL) ph->solve_ph();
-        else compute_activity();
+        if (ph != NULL)
+          ph->solve_ph();
+        else
+          compute_activity();
 
         thermo->thermo(diff_dt * devery);
         energy->growth(diff_dt * devery, grow_flag);
@@ -480,12 +483,9 @@ void FixKinetics::integration() {
     for (int i = 1; i <= nnus; i++) {
       if (!nuconv[i]) {
         converge = false;
+        reset_isconv();
         break;
       }
-    }
-
-    if (!converge) {
-      reset_isconv();
     }
 
     if (niter > 0 && iteration >= niter)
@@ -572,7 +572,6 @@ void FixKinetics::update_xdensity() {
     xdensity[0][pos] += xmass;
   }
 }
-
 
 bool FixKinetics::is_inside(int i) {
   if (atom->x[i][0] < sublo[0] || atom->x[i][0] >= subhi[0] || atom->x[i][1] < sublo[1] || atom->x[i][1] >= subhi[1]
