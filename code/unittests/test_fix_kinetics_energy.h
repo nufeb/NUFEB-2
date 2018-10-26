@@ -1,5 +1,5 @@
-#ifndef FIX_DIFFUSION_TEST_H
-#define FIX_DIFFUSION_TEST_H
+#ifndef FIX_KINETICS_ENERGY_TEST_H
+#define FIX_KINETICS_ENERGY_TEST_H
 
 #include "gtest/gtest.h"
 #include <iostream>
@@ -9,7 +9,10 @@
 #include "atom.h"
 #include "lammps.h"
 #include "atom_vec.h"
-#include "fix_kinetics.h"
+#include "atom_vec_bio.h"
+#include "fix_bio_kinetics.h"
+#include "fix_bio_kinetics_thermo.h"
+#include "fix_bio_kinetics_energy.h"
 #include "bio.h"
 #include "comm.h"
 #include "input.h"
@@ -18,10 +21,10 @@
 #include "update.h"
 #include "library.h"
 
-class FixDiffusionTest{
+class FixKineticsPHTest{
 protected:
-  FixDiffusionTest();
-  virtual ~FixDiffusionTest();
+  FixKineticsPHTest();
+  virtual ~FixKineticsPHTest();
   virtual void SetUp();
   virtual void TearDown();
 };
