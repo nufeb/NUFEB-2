@@ -61,6 +61,11 @@ AtomVecBio::AtomVecBio(LAMMPS *lmp) : AtomVec(lmp)
 
   // instantiate BIO class
   bio = new BIO(lmp);
+
+  for (int i = 0; i < atom->nlocal; i++) {
+    outer_radius[i] = 0;
+    outer_mass[i] = 0;
+  }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -79,9 +84,10 @@ void AtomVecBio::init()
 {
   AtomVec::init();
   set_group_mask();
+
   for (int i = 0; i < atom->nlocal; i++) {
-    outer_radius[i] = atom->radius[i];
-    outer_mass[i] = atom->rmass[i];
+    if (!outer_radius[i]) outer_radius[i] = atom->radius[i];
+    if (!outer_mass[i]) outer_mass[i] = atom->rmass[i];
   }
 }
 

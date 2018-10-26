@@ -305,21 +305,14 @@ void FixKineticsMonod::growth(double dt, int gflag) {
         double R13 = (1 / 2.86) * maintain[i] * eta_het * (nus[ino3][grid] / (ks[i][ino3] + nus[ino3][grid])) * (nus[io2][grid] / (ks[i][io2] + nus[io2][grid]));
         double R14 = (1 / 1.71) * maintain[i] * eta_het * (nus[ino2][grid] / (ks[i][ino2] + nus[ino2][grid])) * (nus[io2][grid] / (ks[i][io2] + nus[io2][grid]));
 
-        if (!nuconv[isub])
-          nur[isub][grid] += ((-1 / yield[i]) * ((R1 + R4 + R5) * xdensity[i][grid]));
-        //if (xtype[i][grid] != 0) printf("nuR = %e \n", xtype[i][grid]);
-        if (!nuconv[io2])
-          nur[io2][grid] += (-((1 - yield[i] - yield_eps) / yield[i]) * R1 * xdensity[i][grid]);
-        if (!nuconv[ino2])
-          nur[ino2][grid] += -(((1 - yield[i] - yield_eps) / (1.17 * yield[i])) * R5 * xdensity[i][grid]);
-        if (!nuconv[ino3])
-          nur[ino3][grid] += -(((1 - yield[i] - yield_eps) / (2.86 * yield[i])) * R4 * xdensity[i][grid]);
-        if (!nuconv[io2])
-          nur[io2][grid] += -(R10 * xdensity[i][grid]);
-        if (!nuconv[ino2])
-          nur[ino2][grid] += -(R14 * xdensity[i][grid]);
-        if (!nuconv[ino3])
-          nur[ino3][grid] += -(R13 * xdensity[i][grid]);
+        nur[isub][grid] += ((-1 / yield[i]) * ((R1 + R4 + R5) * xdensity[i][grid]));
+      //if (xtype[i][grid] != 0) printf("nuR = %e \n", xtype[i][grid]);
+        nur[io2][grid] += (-((1 - yield[i] - yield_eps) / yield[i]) * R1 * xdensity[i][grid]);
+        nur[ino2][grid] += -(((1 - yield[i] - yield_eps) / (1.17 * yield[i])) * R5 * xdensity[i][grid]);
+        nur[ino3][grid] += -(((1 - yield[i] - yield_eps) / (2.86 * yield[i])) * R4 * xdensity[i][grid]);
+        nur[io2][grid] += -(R10 * xdensity[i][grid]);
+        nur[ino2][grid] += -(R14 * xdensity[i][grid]);
+        nur[ino3][grid] += -(R13 * xdensity[i][grid]);
 
         growrate[i][0][grid] = dt * (R1 + R4 + R5 - R6 - R10 - R13 - R14);
         growrate[i][1][grid] = dt * (yield_eps / yield[i]) * (R1 + R4 + R5);
@@ -329,14 +322,10 @@ void FixKineticsMonod::growth(double dt, int gflag) {
         double R7 = decay[i];
         double R11 = maintain[i] * (nus[io2][grid] / (ks[i][io2] + nus[io2][grid]));
 
-        if (!nuconv[io2])
-          nur[io2][grid] += -(((3.42 - yield[i]) / yield[i]) * R2 * xdensity[i][grid]);
-        if (!nuconv[inh4])
-          nur[inh4][grid] += -(1 / yield[i]) * R2 * xdensity[i][grid];
-        if (!nuconv[ino2])
-          nur[ino2][grid] += (1 / yield[i]) * R2 * xdensity[i][grid];
-        if (!nuconv[io2])
-          nur[io2][grid] += -(R11 * xdensity[i][grid]);
+        nur[io2][grid] += -(((3.42 - yield[i]) / yield[i]) * R2 * xdensity[i][grid]);
+        nur[inh4][grid] += -(1 / yield[i]) * R2 * xdensity[i][grid];
+        nur[ino2][grid] += (1 / yield[i]) * R2 * xdensity[i][grid];
+        nur[io2][grid] += -(R11 * xdensity[i][grid]);
 
         growrate[i][0][grid] = dt * (R2 - R7 - R11);
       } else if (spec == 3) {
@@ -345,27 +334,21 @@ void FixKineticsMonod::growth(double dt, int gflag) {
         double R8 = decay[i];
         double R12 = maintain[i] * (nus[io2][grid] / (ks[i][io2] + nus[io2][grid]));
 
-        if (!nuconv[io2])
-          nur[io2][grid] += -(((1.15 - yield[i]) / yield[i]) * R3 * xdensity[i][grid]);
-        if (!nuconv[ino2])
-          nur[ino2][grid] += (1 / yield[i]) * R3 * xdensity[i][grid];
-        if (!nuconv[ino3])
-          nur[ino3][grid] += -(1 / yield[i]) * R3 * xdensity[i][grid];
-        if (!nuconv[io2])
-          nur[io2][grid] += -(R12 * xdensity[i][grid]);
+        nur[io2][grid] += -(((1.15 - yield[i]) / yield[i]) * R3 * xdensity[i][grid]);
+        nur[ino2][grid] += -(1 / yield[i]) * R3 * xdensity[i][grid];
+        nur[ino3][grid] += (1 / yield[i]) * R3 * xdensity[i][grid];
+        nur[io2][grid] += -(R12 * xdensity[i][grid]);
 
         growrate[i][0][grid] = dt * (R3 - R8 - R12);
       } else if (spec == 4) {
         // EPS monod model
         double R9 = decay[i];
 
-        if (!nuconv[isub])
-          nur[isub][grid] += R9 * xdensity[i][grid];
+        nur[isub][grid] += R9 * xdensity[i][grid];
         growrate[i][0][grid] = dt * -decay[i];
       } else if (spec == 5) {
         // DEAD monod model
-        if (!nuconv[isub])
-          nur[isub][grid] += (decay[i] * xdensity[i][grid]);
+        nur[isub][grid] += (decay[i] * xdensity[i][grid]);
         growrate[i][0][grid] = dt * -decay[i];
       }
     }
