@@ -43,9 +43,6 @@
 #include "variable.h"
 #include "update.h"
 
-#include <fstream>
-#include "comm.h"
-
 using namespace LAMMPS_NS;
 using namespace FixConst;
 
