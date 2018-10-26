@@ -10,12 +10,17 @@
 
  Atoms
 
-     1 1 5e-7 150 5e-5 5e-5 5e-5 10e-7 het
+     1 1 5e-7 150 5e-5 5e-5 5e-5 10e-7
 
  Nutrients
 
      1 cod l 0.02 0.03 0.03 0.03 0.03 0.03 0.03
      2 ac g 0.02 0.03 0.03 0.03 0.03 0.03 0.03
+
+
+ Type Name
+
+     1 het
 
  Diffusion Coeffs
      
@@ -24,9 +29,9 @@
 
  Ks
      
-     het 4e-3
+     het 4e-3 1e-2
 
- Growth
+ Consumption Rate
 
     het 0.000069444
 

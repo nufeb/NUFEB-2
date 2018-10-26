@@ -134,18 +134,6 @@ void FixFluidDrag::post_force(int vflag)
   double *rmass = atom->rmass;
   double *r = atom->radius;
 
-  // printf("++++=A> deltaT is: %10f, Vx = %10f, Vy = %10f, Vz = %10f\n", timeStep, v[0][0], v[0][1], v[0][2]);
-  // printf("++++=A> deltaT is: %10f, VxOld = %10f, VyOld = %10f, VzOld = %10f\n", timeStep, vOld[0][0], vOld[0][1], vOld[0][2]);
-
-  // printf("++++=A> deltaT is: %10f, Ax = %10f, Ay = %10f, Az = %10f\n", timeStep, 
-  //       ((v[0][0] - vOld[0][0])/timeStep),
-  //       ((v[0][1] - vOld[0][1])/timeStep),
-  //       ((v[0][2] - vOld[0][2])/timeStep));
-  // int myrank;
-  // MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-
-  // printf("++++=A> myrank = %5d, nlocal = %5d, nghost = %5d,
-  //    ndrag = %5d\n", myrank, nlocal, nghost, ndrag);
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
 
