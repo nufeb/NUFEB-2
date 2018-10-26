@@ -26,6 +26,8 @@ class FixKineticsEnergy : public Fix {
   int setmask();
   void growth(double, int);
 
+  double **growrate;
+
  private:
   char **var;
   int *ivar;
@@ -37,7 +39,6 @@ class FixKineticsEnergy : public Fix {
 
   double eps_dens;
   int epsflag;
-  double **growrate;
 
   class AtomVecBio *avec;
   class FixKinetics *kinetics;
