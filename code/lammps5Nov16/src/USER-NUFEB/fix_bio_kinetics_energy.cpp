@@ -230,11 +230,10 @@ void FixKineticsEnergy::growth(double dt, int gflag) {
         //microbe maintenance
         } else if (qmet <= 1.2 * maint && maint <= qmet) {
           growrate[t][grid] = 0;
-          if(!nuconv[nu]) nur[nu][grid] += cata_coeff[t][nu] * grid_yield[t][grid] * maint * xdensity[t][grid] / 24.6;
+          if(!nuconv[nu]) nur[nu][grid] += cata_coeff[t][nu] * grid_yield[t][grid] * qmet * xdensity[t][grid] / 24.6;
         //microbe decay
         } else {
           double f;
-
           if (maint == 0) f = 0;
           else f = (maint - qmet) / maint;
 
