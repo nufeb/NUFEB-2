@@ -123,7 +123,7 @@ inline void set_gsh(double *gsh, double value) {
 /* ----------------------------------------------------------------------
  ph calculation
  ------------------------------------------------------------------------- */
-void FixKineticsPH::solve_ph() {
+void FixKineticsPH::solve_ph(int first, int last) {
   int w = 1;
 
   double tol = 5e-15;
@@ -162,7 +162,7 @@ void FixKineticsPH::solve_ph() {
       lmp->error->all(FLERR, "denm returns a zero value");
     }
 #pragma ivdep
-    for (int i = 0; i < bgrids; i++) {
+    for (int i = first; i < last; i++) {
       fa[i] += sum_activity(activity, keq, nus, nucharge, denm, gsh, w, k, i); 
     }
   }
@@ -175,13 +175,13 @@ void FixKineticsPH::solve_ph() {
       lmp->error->all(FLERR, "denm returns a zero value");
     }
 #pragma ivdep
-    for (int i = 0; i < bgrids; i++) {
+    for (int i = first; i < last; i++) {
       fb[i] += sum_activity(activity, keq, nus, nucharge, denm, gsh, w, k, i); 
     }
   }
 
   bool wrong = false;
-  for (int i = 0; i < bgrids; i++) {
+  for (int i = first; i < last; i++) {
     if (fa[i] * fb[i] > 0)
       wrong = true;
   }
@@ -190,19 +190,19 @@ void FixKineticsPH::solve_ph() {
 
   // Newton-Raphson method
   int ipH = 1;
-  for (int i = 0; i < bgrids; i++) {
+  for (int i = first; i < last; i++) {
     sh[i] = pow(10, -kinetics->iph);
   }
 
   while (ipH <= max_iter) {
-    for (int i = 0; i < bgrids; i++) {
+    for (int i = first; i < last; i++) {
       fun[i] = 0;
       df[i] = 0;
     }
 
     for (int k = 1; k < nnus + 1; k++) {
 #pragma ivdep
-      for (int i = 0; i < bgrids; i++) {
+      for (int i = first; i < last; i++) {
         set_gsh(gsh, sh[i]);
         double denm = (1 + keq[k][0] / w) * gsh[2] + keq[k][1] * gsh[1] + keq[k][2] * keq[k][1] * gsh[0]
           + keq[k][3] * keq[k][2] * keq[k][1];
@@ -222,7 +222,7 @@ void FixKineticsPH::solve_ph() {
 
     // evaluation of the charge balance for the current Sh value, dF(Sh)
     bool flag = true;
-    for (int i = 0; i < bgrids; i++) {
+    for (int i = first; i < last; i++) {
       double err = (fun[i] + sh[i]) / (1 + df[i]);
       sh[i] -= err;
 
@@ -282,7 +282,7 @@ void FixKineticsPH::solve_ph() {
   
   for (int k = 1; k < nnus + 1; k++) {
     if (strcmp(bio->nuname[k], "h") == 0) {
-      for (int i = 0; i < bgrids; i++) {
+      for (int i = first; i < last; i++) {
         activity[k][1][i] = sh[i];
       }
       break;
