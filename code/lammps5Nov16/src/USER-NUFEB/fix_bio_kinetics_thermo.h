@@ -43,6 +43,10 @@ class FixKineticsThermo : public Fix {
 
   void init_dgzero();
   void init_khv();
+
+  void dynamic_yield();
+  void gas_liq_transfer(double);
+  void compute_energy();
 };
 
 }
