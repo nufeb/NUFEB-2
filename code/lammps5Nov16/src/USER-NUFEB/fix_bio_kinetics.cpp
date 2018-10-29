@@ -459,7 +459,7 @@ void FixKinetics::integration() {
       reset_nur();
       if (energy != NULL) {
         if (ph != NULL)
-          ph->solve_ph();
+          ph->solve_ph(0, bgrids);
         else
           compute_activity();
 
