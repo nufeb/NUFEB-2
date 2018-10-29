@@ -24,7 +24,8 @@ class FixKineticsPH : public Fix {
   ~FixKineticsPH();
   void init();
   int setmask();
-  void solve_ph();
+  void solve_ph(int first, int last); // first - first cell index
+                                      // last - one past the last index (think stl algorithms)
 
  private:
   class FixKinetics *kinetics;
