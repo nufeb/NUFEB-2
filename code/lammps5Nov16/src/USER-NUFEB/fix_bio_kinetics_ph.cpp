@@ -54,6 +54,19 @@ FixKineticsPH::FixKineticsPH(LAMMPS *lmp, int narg, char **arg) :
     Fix(lmp, narg, arg) {
   if (narg != 3)
     error->all(FLERR, "Not enough arguments in fix kinetics/ph command");
+
+  buffer_flag = 0;
+
+  int iarg = 3;
+  while (iarg < narg){
+    if (strcmp(arg[iarg],"buffer_flag") == 0) {
+      buffer_flag = force->inumeric(FLERR, arg[iarg+1]);
+      if (buffer_flag != 0 && buffer_flag != 1)
+        error->all(FLERR, "Illegal fix kinetics/ph command: buffer_flag");
+      iarg += 2;
+    } else
+      error->all(FLERR, "Illegal fix kinetics/ph command");
+  }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -118,6 +131,15 @@ inline void set_gsh(double *gsh, double value) {
   gsh[0] = value;
   gsh[1] = gsh[0] * gsh[0];
   gsh[2] = gsh[1] * gsh[0];
+}
+
+/* ----------------------------------------------------------------------
+ buffer ph if the value is not in defined range
+ ------------------------------------------------------------------------- */
+void  FixKineticsPH::buffer_ph() {
+  int index;
+  int bgrids = kinetics->bgrids;
+
 }
 
 /* ----------------------------------------------------------------------
