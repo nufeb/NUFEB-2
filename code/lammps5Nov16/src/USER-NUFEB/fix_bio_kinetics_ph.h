@@ -26,13 +26,18 @@ class FixKineticsPH : public Fix {
   int setmask();
   void solve_ph(int first, int last); // first - first cell index
                                       // last - one past the last index (think stl algorithms)
+  void buffer_ph();
 
  private:
   class FixKinetics *kinetics;
   class BIO *bio;
 
+  double buffer_flag;
+
   void init_keq();
   void output_data();
+  void compute_activity();
+  void init_keq();
 };
 
 }
