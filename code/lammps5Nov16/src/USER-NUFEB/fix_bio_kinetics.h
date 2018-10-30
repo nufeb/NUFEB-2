@@ -47,7 +47,7 @@ class FixKinetics : public Fix, public DecompGrid<FixKinetics> {
   int nx, ny, nz, bnz;             // number of grids in x y z axis
   int bgrids;                      // # of non-boundary grids
   int ngrids;                      // # of grids
-  double iph;                      // initial ph
+//  double iph;                      // initial ph
 
   double **nus;                    // nutrient concentration [nutrient][grid]
   double **nur;                    // nutrient consumption [nutrient][grid]
@@ -90,9 +90,7 @@ class FixKinetics : public Fix, public DecompGrid<FixKinetics> {
   class FixKineticsThermo *thermo;
   class FixFluid *nufebfoam;
 
-  void compute_activity();
   void init_param();
-  void init_keq();
   void integration();
   void grow();
   double get_max_height();

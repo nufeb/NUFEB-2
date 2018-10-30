@@ -122,7 +122,7 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
   rth = 0.0083144;
   gvol = 8e-14;
   rg = 0.08205746;
-  iph = 7.0;
+ // iph = 7.0;
   demflag = 0;
   niter = -1;
   devery = 1;
@@ -149,11 +149,6 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
       rg = force->numeric(FLERR, arg[iarg + 1]);
       if (rg < 0.0)
         error->all(FLERR, "Illegal fix kinetics command: rg");
-      iarg += 2;
-    } else if (strcmp(arg[iarg], "ph") == 0) {
-      iph = force->numeric(FLERR, arg[iarg + 1]);
-      if (iph < 0.0)
-        error->all(FLERR, "Illegal fix kinetics command: ph");
       iarg += 2;
     } else if (strcmp(arg[iarg], "demflag") == 0) {
       demflag = force->inumeric(FLERR, arg[iarg + 1]);
@@ -215,7 +210,7 @@ FixKinetics::~FixKinetics() {
   memory->destroy(nubs);
   memory->destroy(gibbs_cata);
   memory->destroy(gibbs_anab);
-  memory->destroy(keq);
+//  memory->destroy(keq);
   memory->destroy(sh);
   memory->destroy(fv);
   memory->destroy(xdensity);
@@ -276,6 +271,14 @@ void FixKinetics::init() {
     error->all(FLERR, "fix_kinetics requires Nutrient Energy inputs");
   else if (bio->ini_nus == NULL)
     error->all(FLERR, "fix_kinetics requires Nutrients inputs");
+  if (energy != NULL || thermo != NULL || ph != NULL){
+    if (thermo == NULL)
+      error->all(FLERR, "fix_kinetics requires fix_kinetics/thermo");
+    if (ph == NULL)
+      error->all(FLERR, "fix_kinetics requires fix_kinetics/ph");
+    if (monod != NULL)
+      error->all(FLERR, "kinetics/growth/monod and kinetics/growth/energy cannot be defined at the same time");
+  }
 
   ngrids = subn[0] * subn[1] * subn[2];
 
@@ -283,26 +286,20 @@ void FixKinetics::init() {
   int nnus = bio->nnu;
 
   nuconv = new int[nnus + 1]();
-  nus = memory->create(nus, nnus + 1, ngrids, "kinetics:nuS");
-  nur = memory->create(nur, nnus + 1, ngrids, "kinetics:nuR");
-  nubs = memory->create(nubs, nnus + 1, "kinetics:nuBS");
-  grid_yield = memory->create(grid_yield, ntypes + 1, ngrids, "kinetic:gYield");
+  nus = memory->create(nus, nnus + 1, ngrids, "kinetics:nus");
+  nur = memory->create(nur, nnus + 1, ngrids, "kinetics:nur");
+  nubs = memory->create(nubs, nnus + 1, "kinetics:nubs");
+  grid_yield = memory->create(grid_yield, ntypes + 1, ngrids, "kinetic:grid_yield");
   activity = memory->create(activity, nnus + 1, 5, ngrids, "kinetics:activity");
-  gibbs_cata = memory->create(gibbs_cata, ntypes + 1, ngrids, "kinetics:DRGCat");
-  gibbs_anab = memory->create(gibbs_anab, ntypes + 1, ngrids, "kinetics:DRGAn");
-  keq = memory->create(keq, nnus + 1, 4, "kinetics:kEq");
-  sh = memory->create(sh, ngrids, "kinetics:Sh");
+  gibbs_cata = memory->create(gibbs_cata, ntypes + 1, ngrids, "kinetics:gibbs_cata");
+  gibbs_anab = memory->create(gibbs_anab, ntypes + 1, ngrids, "kinetics:gibbs_anab");
+  sh = memory->create(sh, ngrids, "kinetics:sh");
   fv = memory->create(fv, 3, ngrids, "kinetcis:fv");
   xdensity = memory->create(xdensity, ntypes + 1, ngrids, "kinetics:xdensity");
 
   init_param();
   reset_isconv();
   update_bgrids();
-
-  if (energy != NULL) {
-    init_keq();
-    compute_activity();
-  }
 
   // Fitting initial domain decomposition to the grid 
   for (int i = 0; i < comm->procgrid[0]; i++) {
@@ -339,81 +336,6 @@ void FixKinetics::init_param() {
       nur[i][j] = 0;
     }
   }
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixKinetics::init_keq() {
-  // water Kj/mol
-  double dG0H2O = -237.18;
-  int nnus = bio->nnu;
-  double **nuGCoeff = bio->nugibbs_coeff;
-
-  for (int i = 1; i < nnus + 1; i++) {
-    keq[i][0] = exp((dG0H2O + nuGCoeff[i][0] - nuGCoeff[i][1]) / (-rth * temp));
-    for (int j = 1; j < 4; j++) {
-      double coeff = 0.0;
-
-      if (nuGCoeff[i][j + 1] > 10000) {
-        coeff = j * 10001;
-      } else {
-        coeff = 0;
-      }
-
-      keq[i][j] = exp((nuGCoeff[i][j + 1] + coeff - nuGCoeff[i][j]) / (-rth * temp));
-    }
-  }
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixKinetics::compute_activity() {
-  int nnus = bio->nnu;
-  double *denm = memory->create(denm, nnus + 1, "kinetics:denm");
-  double gSh = pow(10, -iph);
-  double gSh2 = gSh * gSh;
-  double gSh3 = gSh * gSh2;
-
-  for (int k = 1; k < nnus + 1; k++) {
-    double iniNuS = bio->ini_nus[k][0];
-    denm[k] = (1 + keq[k][0]) * gSh3 + keq[k][1] * gSh2 + keq[k][2] * keq[k][3] * gSh
-        + keq[k][3] * keq[k][2] * keq[k][1];
-    if (denm[k] == 0) {
-      lmp->error->all(FLERR, "denm returns a zero value");
-    }
-    double tmp[5];
-    tmp[0] = keq[k][0] * gSh3 / denm[k];
-    tmp[1] = gSh3 / denm[k];
-    tmp[2] = gSh2 * keq[k][1] / denm[k];
-    tmp[3] = gSh * keq[k][1] * keq[k][2] / denm[k];
-    tmp[4] = keq[k][1] * keq[k][2] * keq[k][3] / denm[k];
-    bool is_hydrogen = false;
-    if (strcmp(bio->nuname[k], "h") == 0) {
-      is_hydrogen = true;
-    }
-
-#pragma ivdep
-#pragma vector aligned
-    for (int j = 0; j < bgrids; j++) {
-      sh[j] = gSh;
-      // not hydrated form acitivity
-      activity[k][0][j] = nus[k][j] * tmp[0];
-      // fully protonated form activity
-      if (is_hydrogen) {
-        activity[k][1][j] = gSh;
-      } else {
-        activity[k][1][j] = nus[k][j] * tmp[1];
-      }
-      // 1st deprotonated form activity
-      activity[k][2][j] = nus[k][j] * tmp[2];
-      // 2nd deprotonated form activity
-      activity[k][3][j] = nus[k][j] * tmp[3];
-      // 3rd deprotonated form activity
-      activity[k][4][j] = nus[k][j] * tmp[4];
-      // if(k==1)printf("act = %e, s= %e, flag = %i \n", activity[k][1][j], nus[k][j], bio->ngflag[k]);
-    }
-  }
-  memory->destroy(denm);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -458,11 +380,7 @@ void FixKinetics::integration() {
     if (iteration % devery == 0) {
       reset_nur();
       if (energy != NULL) {
-        if (ph != NULL)
-          ph->solve_ph(0, bgrids);
-        else
-          compute_activity();
-
+        ph->solve_ph();
         thermo->thermo(diff_dt * devery);
         energy->growth(diff_dt * devery, grow_flag);
       } else if (monod != NULL) {

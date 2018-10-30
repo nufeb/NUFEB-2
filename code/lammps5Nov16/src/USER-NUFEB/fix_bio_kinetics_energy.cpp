@@ -182,20 +182,12 @@ void FixKineticsEnergy::init() {
  metabolism and atom update
  ------------------------------------------------------------------------- */
 void FixKineticsEnergy::growth(double dt, int gflag) {
-  int *mask = atom->mask;
-  int nlocal = atom->nlocal;
-  int *type = atom->type;
   int ntypes = atom->ntypes;
 
   double **cata_coeff = bio->cata_coeff;
   double **anab_coeff = bio->anab_coeff;
   double *maintain = bio->maintain;
   double *decay = bio->decay;
-
-  double *radius = atom->radius;
-  double *rmass = atom->rmass;
-  double *outer_mass = avec->outer_mass;
-  double *outer_radius = avec->outer_radius;
 
   double **nur = kinetics->nur;
   int nnu = bio->nnu;
@@ -246,7 +238,21 @@ void FixKineticsEnergy::growth(double dt, int gflag) {
     }
   }
 
-  if (!gflag) return;
+  if (gflag) update_biomass(growrate, dt);
+}
+
+/* ----------------------------------------------------------------------
+ update particle attributes: biomass, outer mass, radius etc
+ ------------------------------------------------------------------------- */
+void FixKineticsEnergy::update_biomass(double **growrate, double dt) {
+  int *mask = atom->mask;
+  int nlocal = atom->nlocal;
+  int *type = atom->type;
+
+  double *radius = atom->radius;
+  double *rmass = atom->rmass;
+  double *outer_mass = avec->outer_mass;
+  double *outer_radius = avec->outer_radius;
 
   const double three_quarters_pi = (3.0 / (4.0 * MY_PI));
   const double four_thirds_pi = 4.0 * MY_PI / 3.0;
@@ -278,7 +284,6 @@ void FixKineticsEnergy::growth(double dt, int gflag) {
       outer_radius[i] = radius[i];
     }
   }
-
 }
 
 /* ----------------------------------------------------------------------
