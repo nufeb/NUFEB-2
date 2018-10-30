@@ -52,26 +52,42 @@ using namespace std;
 
 FixKineticsPH::FixKineticsPH(LAMMPS *lmp, int narg, char **arg) :
     Fix(lmp, narg, arg) {
-  if (narg != 3)
+  if (narg < 4)
     error->all(FLERR, "Not enough arguments in fix kinetics/ph command");
 
+  //set default values
   buffer_flag = 0;
+  phflag = 0;
+  iph = 7.0;
 
-  int iarg = 3;
+  if (strcmp(arg[3], "fix") == 0)
+    phflag = 0;
+  else if (strcmp(arg[3], "dynamic") == 0)
+    phflag = 1;
+  else error->all(FLERR, "Illegal ph parameter:'fix' or 'dynamic'");
+
+  int iarg = 4;
   while (iarg < narg){
     if (strcmp(arg[iarg],"buffer_flag") == 0) {
       buffer_flag = force->inumeric(FLERR, arg[iarg+1]);
       if (buffer_flag != 0 && buffer_flag != 1)
         error->all(FLERR, "Illegal fix kinetics/ph command: buffer_flag");
       iarg += 2;
+    } else if (strcmp(arg[iarg], "ph") == 0) {
+      iph = force->numeric(FLERR, arg[iarg + 1]);
+      if (iph < 0.0 || iph > 14)
+        error->all(FLERR, "Illegal fix kinetics/ph command: ph");
+      iarg += 2;
     } else
       error->all(FLERR, "Illegal fix kinetics/ph command");
   }
+
 }
 
 /* ---------------------------------------------------------------------- */
 
 FixKineticsPH::~FixKineticsPH() {
+  memory->destroy(keq);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -91,11 +107,17 @@ void FixKineticsPH::init() {
     lmp->error->all(FLERR, "The fix kinetics command is required for kinetics/ph styles");
 
   bio = kinetics->bio;
+  int nnus = bio->nnu;
 
   if (bio->nnu == 0)
     error->all(FLERR, "fix_kinetics requires # of Nutrients inputs");
   else if (bio->nucharge == NULL)
     error->all(FLERR, "fix_kinetics requires Nutrient Charge inputs");
+
+  keq = memory->create(keq, nnus + 1, 4, "kinetics/ph:kEq");
+
+  init_keq();
+  compute_activity();
 }
 
 /* ---------------------------------------------------------------------- */
@@ -142,10 +164,99 @@ void  FixKineticsPH::buffer_ph() {
 
 }
 
+
+/* ---------------------------------------------------------------------- */
+
+void FixKineticsPH::init_keq() {
+  // water Kj/mol
+  double dG0H2O = -237.18;
+  int nnus = bio->nnu;
+  double **nuGCoeff = bio->nugibbs_coeff;
+
+  for (int i = 1; i < nnus + 1; i++) {
+    keq[i][0] = exp((dG0H2O + nuGCoeff[i][0] - nuGCoeff[i][1]) / (-kinetics->rth * kinetics->temp));
+    for (int j = 1; j < 4; j++) {
+      double coeff = 0.0;
+
+      if (nuGCoeff[i][j + 1] > 10000) {
+        coeff = j * 10001;
+      } else {
+        coeff = 0;
+      }
+
+      keq[i][j] = exp((nuGCoeff[i][j + 1] + coeff - nuGCoeff[i][j]) / (-kinetics->rth * kinetics->temp));
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixKineticsPH::compute_activity() {
+  int nnus = bio->nnu;
+  double *sh = kinetics->sh;
+  double **nus = kinetics->nus;
+  double ***activity = kinetics->activity;
+
+  double *denm = memory->create(denm, nnus + 1, "kinetics:denm");
+  double gSh = pow(10, -iph);
+  double gSh2 = gSh * gSh;
+  double gSh3 = gSh * gSh2;
+
+  for (int k = 1; k < nnus + 1; k++) {
+    double iniNuS = bio->ini_nus[k][0];
+    denm[k] = (1 + keq[k][0]) * gSh3 + keq[k][1] * gSh2 + keq[k][2] * keq[k][3] * gSh
+        + keq[k][3] * keq[k][2] * keq[k][1];
+    if (denm[k] == 0) {
+      lmp->error->all(FLERR, "denm returns a zero value");
+    }
+    double tmp[5];
+    tmp[0] = keq[k][0] * gSh3 / denm[k];
+    tmp[1] = gSh3 / denm[k];
+    tmp[2] = gSh2 * keq[k][1] / denm[k];
+    tmp[3] = gSh * keq[k][1] * keq[k][2] / denm[k];
+    tmp[4] = keq[k][1] * keq[k][2] * keq[k][3] / denm[k];
+    bool is_hydrogen = false;
+    if (strcmp(bio->nuname[k], "h") == 0) {
+      is_hydrogen = true;
+    }
+
+#pragma ivdep
+#pragma vector aligned
+    for (int j = 0; j < kinetics->bgrids; j++) {
+      sh[j] = gSh;
+      // not hydrated form acitivity
+      activity[k][0][j] = nus[k][j] * tmp[0];
+      // fully protonated form activity
+      if (is_hydrogen) {
+        activity[k][1][j] = gSh;
+      } else {
+        activity[k][1][j] = nus[k][j] * tmp[1];
+      }
+      // 1st deprotonated form activity
+      activity[k][2][j] = nus[k][j] * tmp[2];
+      // 2nd deprotonated form activity
+      activity[k][3][j] = nus[k][j] * tmp[3];
+      // 3rd deprotonated form activity
+      activity[k][4][j] = nus[k][j] * tmp[4];
+      // if(k==1)printf("act = %e, s= %e, flag = %i \n", activity[k][1][j], nus[k][j], bio->ngflag[k]);
+    }
+  }
+  memory->destroy(denm);
+}
+
 /* ----------------------------------------------------------------------
- ph calculation
+
  ------------------------------------------------------------------------- */
-void FixKineticsPH::solve_ph(int first, int last) {
+
+void FixKineticsPH::solve_ph() {
+  if (!phflag) compute_activity();
+  else dynamic_ph(0, kinetics->bgrids);
+}
+
+/* ----------------------------------------------------------------------
+ compute ph field
+ ------------------------------------------------------------------------- */
+void FixKineticsPH::dynamic_ph(int first, int last) {
   int w = 1;
 
   double tol = 5e-15;
@@ -162,10 +273,8 @@ void FixKineticsPH::solve_ph(int first, int last) {
   double temp = kinetics->temp;
   double rth = kinetics->rth;
   double ***activity = kinetics->activity;
-  double **keq = kinetics->keq;
   int **nucharge = bio->nucharge;
   double *sh = kinetics->sh;
-  int bgrids = kinetics->bgrids;
   
   double a = 1e-14;
   double b = 1;
@@ -213,7 +322,7 @@ void FixKineticsPH::solve_ph(int first, int last) {
   // Newton-Raphson method
   int ipH = 1;
   for (int i = first; i < last; i++) {
-    sh[i] = pow(10, -kinetics->iph);
+    sh[i] = pow(10, -iph);
   }
 
   while (ipH <= max_iter) {

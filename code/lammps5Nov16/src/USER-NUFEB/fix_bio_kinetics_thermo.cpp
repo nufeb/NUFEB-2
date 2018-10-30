@@ -60,20 +60,20 @@ FixKineticsThermo::FixKineticsThermo(LAMMPS *lmp, int narg, char **arg) :
   int iarg = 3;
   while (iarg < narg) {
     if (strcmp(arg[iarg], "yield") == 0) {
-      if (strcmp(arg[iarg + 1], "fix") == 0 || !force->inumeric(FLERR, arg[iarg+1]))
+      if (strcmp(arg[iarg + 1], "fix") == 0)
         yflag = 0;
-      else if (strcmp(arg[iarg + 1], "dynamic") == 0 || force->inumeric(FLERR, arg[iarg+1]))
+      else if (strcmp(arg[iarg + 1], "dynamic") == 0 )
         yflag = 1;
       else
-        error->all(FLERR, "Illegal yield parameter:fix or unfix");
+        error->all(FLERR, "Illegal yield parameter:'fix' or 'dynamic'");
       iarg += 2;
-    } else if (strcmp(arg[iarg], "reactor") == 0 || force->inumeric(FLERR, arg[iarg+1])) {
+    } else if (strcmp(arg[iarg], "reactor") == 0) {
       if (strcmp(arg[iarg + 1], "close") == 0)
         rflag = 1;
-      else if (strcmp(arg[iarg + 1], "open") == 0 || !force->inumeric(FLERR, arg[iarg+1]))
+      else if (strcmp(arg[iarg + 1], "open") == 0)
         rflag = 0;
       else
-        error->all(FLERR, "Illegal reactor parameter:open or close");
+        error->all(FLERR, "Illegal reactor parameter:'open' or 'close'");
       iarg += 2;
     } else
       error->all(FLERR, "Illegal fix kinetics/thermo command");
