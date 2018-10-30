@@ -44,8 +44,9 @@ namespace {
       lmp->input->one("variable EPSdens equal 30");
       // set timestep and fix
       lmp->input->one("timestep 3600");
-      lmp->input->one("fix k1 all kinetics 1 2 2 2 v_diffT v_layer ph 7.5");
+      lmp->input->one("fix k1 all kinetics 1 2 2 2 v_diffT v_layer");
       lmp->input->one("fix ki2 all kinetics/thermo");
+      lmp->input->one("fix ki3 all kinetics/ph fix ph 7.5");
       lmp->input->one("fix ki1 all kinetics/growth/energy v_EPSdens");
     }
 
