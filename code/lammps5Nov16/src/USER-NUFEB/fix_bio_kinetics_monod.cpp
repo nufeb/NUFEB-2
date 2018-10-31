@@ -297,8 +297,8 @@ void FixKineticsMonod::growth(double dt, int gflag) {
       // HET monod model
       if (spec == 1) {
         double R1 = mu[i] * (nus[isub][grid] / (ks[i][isub] + nus[isub][grid])) * (nus[io2][grid] / (ks[i][io2] + nus[io2][grid]));
-        double R4 = eta_het * mu[i] * (nus[isub][grid] / (ks[i][isub] + nus[isub][grid])) * (nus[ino3][grid] / (ks[i][ino3] + nus[ino3][grid])) * (nus[io2][grid] / (ks[i][io2] + nus[io2][grid]));
-        double R5 = eta_het * mu[i] * (nus[isub][grid] / (ks[i][isub] + nus[isub][grid])) * (nus[ino2][grid] / (ks[i][ino2] + nus[ino2][grid])) * (nus[io2][grid] / (ks[i][io2] + nus[io2][grid]));
+        double R4 = eta_het * mu[i] * (nus[isub][grid] / (ks[i][isub] + nus[isub][grid])) * (nus[ino3][grid] / (ks[i][ino3] + nus[ino3][grid])) * (ks[i][io2] / (ks[i][io2] + nus[io2][grid]));
+        double R5 = eta_het * mu[i] * (nus[isub][grid] / (ks[i][isub] + nus[isub][grid])) * (nus[ino2][grid] / (ks[i][ino2] + nus[ino2][grid])) * (ks[i][io2] / (ks[i][io2] + nus[io2][grid]));
         double R6 = decay[i];
 
         double R10 = maintain[i] * (nus[io2][grid] / (ks[i][io2] + nus[io2][grid]));
