@@ -47,7 +47,7 @@ public:
   double srate;                 // shear rate
   double tol;                   // tolerance for convergence criteria for nutrient balance equation
 
-  double **nugrid;                    // nutrient concentration in ghost mesh [nutrient][grid]
+  double **nugrid;                    // nutrient concentration in ghost mesh [nutrient][grid], unit in mol or kg/m3
   double **xgrid;                     // grid coordinate [gird][3]
   bool *ghost;
 

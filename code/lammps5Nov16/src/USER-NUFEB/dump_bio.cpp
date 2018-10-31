@@ -688,7 +688,7 @@ void DumpBio::write_bulk_data()
 
   for(int nu = 1; nu < bio->nnu+1; nu++){
     if (bio->nustate[nu] != 0) continue;
-    fprintf(fp, "%e,",  kinetics->nubs[nu]/1000);
+    fprintf(fp, "%e,",  kinetics->nubs[nu]);
   }
   fprintf(fp, "\n");
 }

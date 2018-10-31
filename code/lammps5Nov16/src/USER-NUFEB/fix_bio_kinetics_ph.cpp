@@ -68,7 +68,7 @@ FixKineticsPH::FixKineticsPH(LAMMPS *lmp, int narg, char **arg) :
 
   int iarg = 4;
   while (iarg < narg){
-    if (strcmp(arg[iarg],"buffer_flag") == 0) {
+    if (strcmp(arg[iarg],"buffer") == 0) {
       buffer_flag = force->inumeric(FLERR, arg[iarg+1]);
       if (buffer_flag != 0 && buffer_flag != 1)
         error->all(FLERR, "Illegal fix kinetics/ph command: buffer_flag");
@@ -114,10 +114,10 @@ void FixKineticsPH::init() {
   else if (bio->nucharge == NULL)
     error->all(FLERR, "fix_kinetics requires Nutrient Charge inputs");
 
-  keq = memory->create(keq, nnus + 1, 4, "kinetics/ph:kEq");
+  keq = memory->create(keq, nnus + 1, 4, "kinetics/ph:keq");
 
   init_keq();
-  compute_activity();
+  compute_activity(0, kinetics->ngrids, iph);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -127,6 +127,16 @@ int FixKineticsPH::setmask() {
   mask |= PRE_FORCE;
   return mask;
 }
+
+/* ---------------------------------------------------------------------- */
+
+void FixKineticsPH::solve_ph() {
+  if (!phflag) compute_activity(0, kinetics->bgrids, iph);
+  else dynamic_ph(0, kinetics->bgrids);
+
+  if (buffer_flag) buffer_ph();
+}
+
 
 inline double sum_activity(double ***activity, double **keq, double **nus, int **nucharge, double denm, double *gsh, int w, int n, int c) {
   // not hydrated form acitivity
@@ -155,16 +165,6 @@ inline void set_gsh(double *gsh, double value) {
   gsh[2] = gsh[1] * gsh[0];
 }
 
-/* ----------------------------------------------------------------------
- buffer ph if the value is not in defined range
- ------------------------------------------------------------------------- */
-void  FixKineticsPH::buffer_ph() {
-  int index;
-  int bgrids = kinetics->bgrids;
-
-}
-
-
 /* ---------------------------------------------------------------------- */
 
 void FixKineticsPH::init_keq() {
@@ -189,9 +189,11 @@ void FixKineticsPH::init_keq() {
   }
 }
 
-/* ---------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------
+ compute nutrient form concentration, only called when fix ph is applied
+ ------------------------------------------------------------------------- */
 
-void FixKineticsPH::compute_activity() {
+void FixKineticsPH::compute_activity(int first, int last, double iph) {
   int nnus = bio->nnu;
   double *sh = kinetics->sh;
   double **nus = kinetics->nus;
@@ -203,7 +205,6 @@ void FixKineticsPH::compute_activity() {
   double gSh3 = gSh * gSh2;
 
   for (int k = 1; k < nnus + 1; k++) {
-    double iniNuS = bio->ini_nus[k][0];
     denm[k] = (1 + keq[k][0]) * gSh3 + keq[k][1] * gSh2 + keq[k][2] * keq[k][3] * gSh
         + keq[k][3] * keq[k][2] * keq[k][1];
     if (denm[k] == 0) {
@@ -222,7 +223,7 @@ void FixKineticsPH::compute_activity() {
 
 #pragma ivdep
 #pragma vector aligned
-    for (int j = 0; j < kinetics->bgrids; j++) {
+    for (int j = first; j < last; j++) {
       sh[j] = gSh;
       // not hydrated form acitivity
       activity[k][0][j] = nus[k][j] * tmp[0];
@@ -245,12 +246,43 @@ void FixKineticsPH::compute_activity() {
 }
 
 /* ----------------------------------------------------------------------
-
+ buffer ph if the value is not in defined range
  ------------------------------------------------------------------------- */
+void  FixKineticsPH::buffer_ph() {
+  int nnus = bio->nnu;
 
-void FixKineticsPH::solve_ph() {
-  if (!phflag) compute_activity();
-  else dynamic_ph(0, kinetics->bgrids);
+  if (bio->find_nuid("na") < 0 || !bio->find_nuid("cl") < 0)
+    error->all(FLERR, "buffer ph requires nutreint 'na' and 'cl'");
+
+  int grid;
+  double ph_unbuffer;
+  int **nucharge = bio->nucharge;
+  double ***activity = kinetics->activity;
+
+  // always take the last grid
+  grid = kinetics->ngrids - 1;
+  dynamic_ph(grid, grid+1);
+  ph_unbuffer = -log10(kinetics->sh[grid]);
+
+  if (ph_unbuffer < 6.5 || ph_unbuffer > 9) {
+    double minus = 0;
+    double plus = 0;
+    compute_activity(grid, grid+1, 7);
+
+    for (int nu = 1; nu <= nnus ; nu++){
+      double diff, act, chr;
+      act = activity[nu][bio->ngflag[nu]][grid];
+      chr = nucharge[nu][bio->ngflag[nu]];
+
+      diff = act * chr;
+
+      if (diff > 0) plus += diff;
+      else if (diff < 0) minus -= diff;
+    }
+
+    kinetics->nubs[bio->find_nuid("na")] += minus;
+    kinetics->nubs[bio->find_nuid("cl")] += plus + ph_unbuffer;
+  }
 }
 
 /* ----------------------------------------------------------------------
@@ -264,10 +296,10 @@ void FixKineticsPH::dynamic_ph(int first, int last) {
 
   int nnus = bio->nnu;
 
-  double *fa = memory->create(fa, kinetics->bgrids, "kinetics/ph:fa");
-  double *fb = memory->create(fb, kinetics->bgrids, "kinetics/ph:fb");
-  double *fun = memory->create(fun, kinetics->bgrids, "kinetics/ph:fun");
-  double *df = memory->create(df, kinetics->bgrids, "kinetics/ph:df");
+  double *fa = memory->create(fa, kinetics->ngrids, "kinetics/ph:fa");
+  double *fb = memory->create(fb, kinetics->ngrids, "kinetics/ph:fb");
+  double *fun = memory->create(fun, kinetics->ngrids, "kinetics/ph:fun");
+  double *df = memory->create(df, kinetics->ngrids, "kinetics/ph:df");
 
   double **nus = kinetics->nus;
   double temp = kinetics->temp;
@@ -279,7 +311,7 @@ void FixKineticsPH::dynamic_ph(int first, int last) {
   double a = 1e-14;
   double b = 1;
 
-  for (int i = 0; i < kinetics->bgrids; i++) {
+  for (int i = first; i < last; i++) {
     fa[i] = a;
     fb[i] = b;
   }
@@ -411,12 +443,11 @@ void FixKineticsPH::dynamic_ph(int first, int last) {
     ipH++;
   }
   
-  for (int k = 1; k < nnus + 1; k++) {
-    if (strcmp(bio->nuname[k], "h") == 0) {
-      for (int i = first; i < last; i++) {
-        activity[k][1][i] = sh[i];
-      }
-      break;
+  int id = bio->find_nuid("h");
+
+  if (id > 0) {
+    for (int i = first; i < last; i++) {
+      activity[id][1][i] = sh[i];
     }
   }
 
