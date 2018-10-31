@@ -685,7 +685,7 @@ void BIO::set_nucharge(int narg, char **arg)
 
   for(int i = 0; i < 5; i++) {
     if (strcmp(arg[i+1], "na") == 0) {
-      nucharge[inu][i] = 0;
+      nucharge[inu][i] = 10001;
     } else {
       double value = force->numeric(FLERR,arg[i+1]);
       nucharge[inu][i] = value;
@@ -716,7 +716,7 @@ void BIO::set_tcharge(int narg, char **arg)
 
   for(int i = 0; i < 5; i++) {
     if (strcmp(arg[i+1], "na") == 0) {
-      tcharge[itype][i] = 0;
+      tcharge[itype][i] = 10001;
     } else {
       double value = force->numeric(FLERR,arg[i+1]);
       tcharge[itype][i] = value;

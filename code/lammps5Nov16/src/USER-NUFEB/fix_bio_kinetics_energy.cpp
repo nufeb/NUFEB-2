@@ -217,7 +217,7 @@ void FixKineticsEnergy::growth(double dt, int gflag) {
         if (1.2 * maint < qmet) {
           double metCoeff = cata_coeff[t][nu] * inv_yield + anab_coeff[t][nu];
           growrate[t][grid] = grid_yield[t][grid] * (qmet - maint);
-          // reaction in kg/L
+          // reaction in mol/m3
           if(!nuconv[nu]) nur[nu][grid] += growrate[t][grid] * xdensity[t][grid] * metCoeff / 24.6;
         //microbe maintenance
         } else if (qmet <= 1.2 * maint && maint <= qmet) {

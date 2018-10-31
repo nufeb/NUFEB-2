@@ -51,7 +51,7 @@ class FixKineticsMonod : public Fix {
   class BIO *bio;
 
   void init_param();
-
+  void update_biomass(double***, double);
 };
 
 }

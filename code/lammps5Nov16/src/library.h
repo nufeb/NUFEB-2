@@ -88,6 +88,6 @@ extern "C" {
   };
 #ifdef __cplusplus
 }
-#endif // ENABLE_DUMP_HDF5
+#endif
 #endif
 

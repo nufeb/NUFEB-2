@@ -38,9 +38,9 @@ class FixKineticsPH : public Fix {
   double iph;                      // initial ph
 
   void output_data();
-  void compute_activity();
+  void compute_activity(int, int, double);
   void init_keq();
-  void dynamic_ph(int first, int last);
+  void dynamic_ph(int, int);
 };
 
 }

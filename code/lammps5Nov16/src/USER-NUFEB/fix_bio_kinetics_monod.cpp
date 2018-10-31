@@ -135,7 +135,7 @@ void FixKineticsMonod::init() {
   }
 
   if (kinetics == NULL)
-    lmp->error->all(FLERR, "The fix kinetics command is required for running iBM simulation");
+    lmp->error->all(FLERR, "fix kinetics command is required for running IbM simulation");
 
   eps_dens = input->variable->compute_equal(ivar[0]);
   eta_het = input->variable->compute_equal(ivar[1]);
@@ -314,8 +314,8 @@ void FixKineticsMonod::growth(double dt, int gflag) {
         nur[ino2][grid] += -(R14 * xdensity[i][grid]);
         nur[ino3][grid] += -(R13 * xdensity[i][grid]);
 
-        growrate[i][0][grid] = dt * (R1 + R4 + R5 - R6 - R10 - R13 - R14);
-        growrate[i][1][grid] = dt * (yield_eps / yield[i]) * (R1 + R4 + R5);
+        growrate[i][0][grid] = R1 + R4 + R5 - R6 - R10 - R13 - R14;
+        growrate[i][1][grid] = (yield_eps / yield[i]) * (R1 + R4 + R5);
       } else if (spec == 2) {
         // AOB monod model
         double R2 = mu[i] * (nus[inh4][grid] / (ks[i][inh4] + nus[inh4][grid])) * (nus[io2][grid] / (ks[i][io2] + nus[io2][grid]));
@@ -327,7 +327,7 @@ void FixKineticsMonod::growth(double dt, int gflag) {
         nur[ino2][grid] += (1 / yield[i]) * R2 * xdensity[i][grid];
         nur[io2][grid] += -(R11 * xdensity[i][grid]);
 
-        growrate[i][0][grid] = dt * (R2 - R7 - R11);
+        growrate[i][0][grid] = R2 - R7 - R11;
       } else if (spec == 3) {
         // NOB monod model
         double R3 = mu[i] * (nus[ino2][grid] / (ks[i][ino2] + nus[ino2][grid])) * (nus[io2][grid] / (ks[i][io2] + nus[io2][grid]));
@@ -339,23 +339,36 @@ void FixKineticsMonod::growth(double dt, int gflag) {
         nur[ino3][grid] += (1 / yield[i]) * R3 * xdensity[i][grid];
         nur[io2][grid] += -(R12 * xdensity[i][grid]);
 
-        growrate[i][0][grid] = dt * (R3 - R8 - R12);
+        growrate[i][0][grid] = R3 - R8 - R12;
       } else if (spec == 4) {
         // EPS monod model
         double R9 = decay[i];
 
         nur[isub][grid] += R9 * xdensity[i][grid];
-        growrate[i][0][grid] = dt * -decay[i];
+        growrate[i][0][grid] = -decay[i];
       } else if (spec == 5) {
         // DEAD monod model
         nur[isub][grid] += (decay[i] * xdensity[i][grid]);
-        growrate[i][0][grid] = dt * -decay[i];
+        growrate[i][0][grid] = -decay[i];
       }
     }
   }
 
-  if (!gflag || !external_gflag)
-    return;
+  if (gflag && external_gflag) update_biomass(growrate, dt);
+}
+
+/* ----------------------------------------------------------------------
+ update particle attributes: biomass, outer mass, radius etc
+ ------------------------------------------------------------------------- */
+void FixKineticsMonod::update_biomass(double ***growrate, double dt) {
+  int *mask = atom->mask;
+  int nlocal = atom->nlocal;
+  int *type = atom->type;
+
+  double *radius = atom->radius;
+  double *rmass = atom->rmass;
+  double *outer_mass = avec->outer_mass;
+  double *outer_radius = avec->outer_radius;
 
   const double three_quarters_pi = (3.0 / (4.0 * MY_PI));
   const double four_thirds_pi = 4.0 * MY_PI / 3.0;
@@ -367,7 +380,7 @@ void FixKineticsMonod::growth(double dt, int gflag) {
       int pos = kinetics->position(i);
 
       double density = rmass[i] / (four_thirds_pi * radius[i] * radius[i] * radius[i]);
-      rmass[i] = rmass[i] * (1 + growrate[t][0][pos]);
+      rmass[i] = rmass[i] * (1 + growrate[t][0][pos] * dt);
 
       if (species[t] == 1) {
         outer_mass[i] = four_thirds_pi * (outer_radius[i] * outer_radius[i] * outer_radius[i] - radius[i] * radius[i] * radius[i]) * eps_dens + growrate[t][1][pos] * rmass[i];
