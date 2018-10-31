@@ -302,8 +302,8 @@ void FixKineticsMonod::growth(double dt, int gflag) {
         double R6 = decay[i];
 
         double R10 = maintain[i] * (nus[io2][grid] / (ks[i][io2] + nus[io2][grid]));
-        double R13 = (1 / 2.86) * maintain[i] * eta_het * (nus[ino3][grid] / (ks[i][ino3] + nus[ino3][grid])) * (nus[io2][grid] / (ks[i][io2] + nus[io2][grid]));
-        double R14 = (1 / 1.71) * maintain[i] * eta_het * (nus[ino2][grid] / (ks[i][ino2] + nus[ino2][grid])) * (nus[io2][grid] / (ks[i][io2] + nus[io2][grid]));
+        double R13 = (1 / 2.86) * maintain[i] * eta_het * (nus[ino3][grid] / (ks[i][ino3] + nus[ino3][grid])) * (ks[i][io2] / (ks[i][io2] + nus[io2][grid]));
+        double R14 = (1 / 1.71) * maintain[i] * eta_het * (nus[ino2][grid] / (ks[i][ino2] + nus[ino2][grid])) * (ks[i][io2] / (ks[i][io2] + nus[io2][grid]));
 
         nur[isub][grid] += ((-1 / yield[i]) * ((R1 + R4 + R5) * xdensity[i][grid]));
       //if (xtype[i][grid] != 0) printf("nuR = %e \n", xtype[i][grid]);
@@ -383,8 +383,7 @@ void FixKineticsMonod::update_biomass(double ***growrate, double dt) {
       rmass[i] = rmass[i] * (1 + growrate[t][0][pos] * dt);
 
       if (species[t] == 1) {
-        outer_mass[i] = four_thirds_pi * (outer_radius[i] * outer_radius[i] * outer_radius[i] - radius[i] * radius[i] * radius[i]) * eps_dens + growrate[t][1][pos] * rmass[i];
-
+        outer_mass[i] = four_thirds_pi * (outer_radius[i] * outer_radius[i] * outer_radius[i] - radius[i] * radius[i] * radius[i]) * eps_dens + growrate[t][1][pos] * rmass[i] * dt;
         outer_radius[i] = pow(three_quarters_pi * (rmass[i] / density + outer_mass[i] / eps_dens), third);
         radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
       } else {
