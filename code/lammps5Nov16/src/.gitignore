@@ -82,7 +82,8 @@ style_user.h
 dump_custom_vtk.cpp
 dump_custom_vtk.h
 
-# adding NUFEB GRANULAR CFDDEM packages 
+# adding NUFEB, GRANULAR, CFDDEM, and VTK packages 
 !USER-NUFEB/*
 !GRANULAR/*
+!USER-VTK/*
 !USER-CFDDEM/*
