@@ -24,15 +24,14 @@ class FixKineticsPH : public Fix {
   ~FixKineticsPH();
   void init();
   int setmask();
-  void solve_ph(); // first - first cell index
-                                      // last - one past the last index (think stl algorithms)
+  void solve_ph();
   void buffer_ph();
+  double buffer_flag;
 
  private:
   class FixKinetics *kinetics;
   class BIO *bio;
 
-  double buffer_flag;
   double phflag;
   double **keq;                    // equilibrium constants [nutrient][4]
   double iph;                      // initial ph

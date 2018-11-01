@@ -133,37 +133,35 @@ int FixKineticsPH::setmask() {
 void FixKineticsPH::solve_ph() {
   if (!phflag) compute_activity(0, kinetics->bgrids, iph);
   else dynamic_ph(0, kinetics->bgrids);
-
-  if (buffer_flag) buffer_ph();
 }
 
 
-inline double sum_activity(double ***activity, double **keq, double **nus, int **nucharge, double denm, double *gsh, int w, int n, int c) {
-  // not hydrated form acitivity
-  activity[n][0][c] = keq[n][0] / w * nus[n][c] * gsh[2] / denm;
-  // fully protonated form activity
-  activity[n][1][c] = nus[n][c] * gsh[2] / denm;
-  // 1st deprotonated form activity
-  activity[n][2][c] = nus[n][c] * gsh[1] * keq[n][1] / denm;
-  // 2nd deprotonated form activity
-  activity[n][3][c] = nus[n][c] * gsh[0] * keq[n][1] * keq[n][2] / denm;
-  // 3rd deprotonated form activity
-  activity[n][4][c] = nus[n][c] * keq[n][1] * keq[n][2] * keq[n][3] / denm;
-
-  double tmp[5];
-  tmp[0] = nucharge[n][0] * activity[n][0][c];
-  tmp[1] = nucharge[n][1] * activity[n][1][c];
-  tmp[2] = nucharge[n][2] * activity[n][2][c];
-  tmp[3] = nucharge[n][3] * activity[n][3][c];
-  tmp[4] = nucharge[n][4] * activity[n][4][c];
-  return tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4];
-}
-
-inline void set_gsh(double *gsh, double value) {
-  gsh[0] = value;
-  gsh[1] = gsh[0] * gsh[0];
-  gsh[2] = gsh[1] * gsh[0];
-}
+//inline double sum_activity(double ***activity, double **keq, double **nus, int **nucharge, double denm, double *gsh, int w, int n, int c) {
+//  // not hydrated form acitivity
+//  activity[n][0][c] = keq[n][0] / w * nus[n][c] * gsh[2] / denm;
+//  // fully protonated form activity
+//  activity[n][1][c] = nus[n][c] * gsh[2] / denm;
+//  // 1st deprotonated form activity
+//  activity[n][2][c] = nus[n][c] * gsh[1] * keq[n][1] / denm;
+//  // 2nd deprotonated form activity
+//  activity[n][3][c] = nus[n][c] * gsh[0] * keq[n][1] * keq[n][2] / denm;
+//  // 3rd deprotonated form activity
+//  activity[n][4][c] = nus[n][c] * keq[n][1] * keq[n][2] * keq[n][3] / denm;
+//
+//  double tmp[5];
+//  tmp[0] = nucharge[n][0] * activity[n][0][c];
+//  tmp[1] = nucharge[n][1] * activity[n][1][c];
+//  tmp[2] = nucharge[n][2] * activity[n][2][c];
+//  tmp[3] = nucharge[n][3] * activity[n][3][c];
+//  tmp[4] = nucharge[n][4] * activity[n][4][c];
+//  return tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4];
+//}
+//
+//inline void set_gsh(double *gsh, double value) {
+//  gsh[0] = value;
+//  gsh[1] = gsh[0] * gsh[0];
+//  gsh[2] = gsh[1] * gsh[0];
+//}
 
 /* ---------------------------------------------------------------------- */
 
@@ -281,7 +279,7 @@ void  FixKineticsPH::buffer_ph() {
     }
 
     kinetics->nubs[bio->find_nuid("na")] += minus;
-    kinetics->nubs[bio->find_nuid("cl")] += plus + ph_unbuffer;
+    kinetics->nubs[bio->find_nuid("cl")] += plus + kinetics->sh[grid];
   }
 }
 
@@ -296,140 +294,162 @@ void FixKineticsPH::dynamic_ph(int first, int last) {
 
   int nnus = bio->nnu;
 
-  double *fa = memory->create(fa, kinetics->ngrids, "kinetics/ph:fa");
-  double *fb = memory->create(fb, kinetics->ngrids, "kinetics/ph:fb");
-  double *fun = memory->create(fun, kinetics->ngrids, "kinetics/ph:fun");
-  double *df = memory->create(df, kinetics->ngrids, "kinetics/ph:df");
+  double *denm = memory->create(denm, nnus + 1, "kinetics/ph:denm");
+  double *ddenm = memory->create(ddenm, nnus + 1, "kinetics/ph:denm");
+  double *aux = memory->create(aux, nnus + 1, "kinetics/ph:aux");
 
   double **nus = kinetics->nus;
   double temp = kinetics->temp;
   double rth = kinetics->rth;
   double ***activity = kinetics->activity;
   int **nucharge = bio->nucharge;
-  double *sh = kinetics->sh;
-  
-  double a = 1e-14;
-  double b = 1;
 
   for (int i = first; i < last; i++) {
-    fa[i] = a;
-    fb[i] = b;
-  }
+    double a = 1e-14;
+    double b = 1;
+    int ipH = 1;
 
-  double gsh[3];
-  set_gsh(gsh, a);
-  for (int k = 1; k < nnus + 1; k++) {
-    double denm = (1 + keq[k][0] / w) * gsh[2] + keq[k][1] * gsh[1] + keq[k][2] * keq[k][1] * gsh[0]
-      + keq[k][3] * keq[k][2] * keq[k][1];
-    if (denm <= 0) {
-      lmp->error->all(FLERR, "denm returns a zero value");
-    }
-#pragma ivdep
-    for (int i = first; i < last; i++) {
-      fa[i] += sum_activity(activity, keq, nus, nucharge, denm, gsh, w, k, i); 
-    }
-  }
+    double fun;
+    double df;
+    double fa, fb, fc;
+    double err, err1, err2;
+    double sum_activity;
+    double gsh; // grid Sh
 
-  set_gsh(gsh, b);
-  for (int k = 1; k < nnus + 1; k++) {
-    double denm = (1 + keq[k][0] / w) * gsh[2] + keq[k][1] * gsh[1] + keq[k][2] * keq[k][1] * gsh[0]
-      + keq[k][3] * keq[k][2] * keq[k][1];
-    if (denm <= 0) {
-      lmp->error->all(FLERR, "denm returns a zero value");
-    }
-#pragma ivdep
-    for (int i = first; i < last; i++) {
-      fb[i] += sum_activity(activity, keq, nus, nucharge, denm, gsh, w, k, i); 
-    }
-  }
+    for (int j = 0; j < 2; j++) {
+      sum_activity = 0.0;
+      if (j == 0)
+        gsh = a;
+      else
+        gsh = b;
+      for (int k = 1; k < nnus + 1; k++) {
+        denm[k] = (1 + keq[k][0] / w) * gsh * gsh * gsh + keq[k][1] * gsh * gsh + keq[k][2] * keq[k][1] * gsh
+            + keq[k][3] * keq[k][2] * keq[k][1];
+        if (denm[k] <= 0) {
+          lmp->error->all(FLERR, "denm returns a zero value");
+        }
+        // not hydrated form acitivity
+        activity[k][0][i] = keq[k][0] / w * nus[k][i] * gsh * gsh * gsh / denm[k];
+        // fully protonated form activity
+        activity[k][1][i] = nus[k][i] * gsh * gsh * gsh / denm[k];
+        // 1st deprotonated form activity
+        activity[k][2][i] = nus[k][i] * gsh * gsh * keq[k][1] / denm[k];
+        // 2nd deprotonated form activity
+        activity[k][3][i] = nus[k][i] * gsh * keq[k][1] * keq[k][2] / denm[k];
+        // 3rd deprotonated form activity
+        activity[k][4][i] = nus[k][i] * keq[k][1] * keq[k][2] * keq[k][3] / denm[k];
 
-  bool wrong = false;
-  for (int i = first; i < last; i++) {
-    if (fa[i] * fb[i] > 0)
-      wrong = true;
-  }
-  if (wrong)
-    lmp->error->all(FLERR, "The sum of charges returns a wrong value");
-
-  // Newton-Raphson method
-  int ipH = 1;
-  for (int i = first; i < last; i++) {
-    sh[i] = pow(10, -iph);
-  }
-
-  while (ipH <= max_iter) {
-    for (int i = first; i < last; i++) {
-      fun[i] = 0;
-      df[i] = 0;
-    }
-
-    for (int k = 1; k < nnus + 1; k++) {
-#pragma ivdep
-      for (int i = first; i < last; i++) {
-        set_gsh(gsh, sh[i]);
-        double denm = (1 + keq[k][0] / w) * gsh[2] + keq[k][1] * gsh[1] + keq[k][2] * keq[k][1] * gsh[0]
-          + keq[k][3] * keq[k][2] * keq[k][1];
-        fun[i] += sum_activity(activity, keq, nus, nucharge, denm, gsh, w, k, i); 
-
-        double ddenm = denm * denm;
-        double aux = 3 * gsh[1] * (keq[k][0] / w + 1) + 2 * gsh[0] * keq[k][1] + keq[k][1] * keq[k][2];
-        double tmp[5];
-        tmp[0] = nucharge[k][0] * ((3 * gsh[1] * keq[k][0] * nus[k][i]) / (w * denm) - (keq[k][0] * nus[k][i] * gsh[2] * aux) / (w * ddenm));
-        tmp[1] = nucharge[k][1] * ((3 * gsh[1] * nus[k][i]) / denm - (nus[k][i] * gsh[2] * aux) / ddenm);
-        tmp[2] = nucharge[k][2] * ((2 * gsh[0] * keq[k][1] * nus[k][i]) / denm - (keq[k][1] * nus[k][i] * gsh[1] * aux) / ddenm);
-        tmp[3] = nucharge[k][3] * ((keq[k][1] * keq[k][2] * nus[k][i]) / denm - (keq[k][1] * keq[k][2] * nus[k][i] * gsh[0] * aux) / ddenm);
-        tmp[4] = nucharge[k][4] * (-(keq[k][1] * keq[k][2] * keq[k][3] * nus[k][i] * aux) / ddenm);
-        df[i] += tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4];
+        sum_activity += nucharge[k][0] * activity[k][0][i];
+        sum_activity += nucharge[k][1] * activity[k][1][i];
+        sum_activity += nucharge[k][2] * activity[k][2][i];
+        sum_activity += nucharge[k][3] * activity[k][3][i];
+        sum_activity += nucharge[k][4] * activity[k][4][i];
       }
+
+      if (j == 0)
+        fa = gsh + sum_activity;
+      else
+        fb = gsh + sum_activity;
     }
 
-    // evaluation of the charge balance for the current Sh value, dF(Sh)
-    bool flag = true;
-    for (int i = first; i < last; i++) {
-      double err = (fun[i] + sh[i]) / (1 + df[i]);
-      sh[i] -= err;
+    double ff = fa * fb;
 
-      flag &= ((fabs(err) < 1e-14) && (fabs(fun[i] + sh[i]) < tol));
-      // Checking if a valid pH was obtained
-      if (flag) {
-        if ((sh[i] <= 1e-14) || (sh[i] >= 1)) {
-          // Fallback to false position method (regula falsi)
+    if (ff > 0) {
+      lmp->error->all(FLERR, "The sum of charges returns a wrong value");
+    }
+
+    //Newton-Raphson method
+    gsh = pow(10, -iph);
+
+    while (ipH <= max_iter) {
+      sum_activity = 0.0;
+      for (int k = 1; k < nnus + 1; k++) {
+        denm[k] = (1 + keq[k][0] / w) * gsh * gsh * gsh + keq[k][1] * gsh * gsh + keq[k][2] * keq[k][1] * gsh
+            + keq[k][3] * keq[k][2] * keq[k][1];
+
+        activity[k][0][i] = keq[k][0] / w * nus[k][i] * gsh * gsh * gsh / denm[k];
+        activity[k][1][i] = nus[k][i] * gsh * gsh * gsh / denm[k];
+        activity[k][2][i] = nus[k][i] * gsh * gsh * keq[k][1] / denm[k];
+        activity[k][3][i] = nus[k][i] * gsh * keq[k][1] * keq[k][2] / denm[k];
+        activity[k][4][i] = nus[k][i] * keq[k][1] * keq[k][2] * keq[k][3] / denm[k];
+
+        sum_activity += nucharge[k][0] * activity[k][0][i];
+        sum_activity += nucharge[k][1] * activity[k][1][i];
+        sum_activity += nucharge[k][2] * activity[k][2][i];
+        sum_activity += nucharge[k][3] * activity[k][3][i];
+        sum_activity += nucharge[k][4] * activity[k][4][i];
+      }
+      // evaluation of the charge balance for the current Sh value, F(Sh)
+      fun = gsh + sum_activity;
+
+      sum_activity = 0.0;
+      for (int k = 1; k < nnus + 1; k++) {
+        ddenm[k] = pow(denm[k], 2);
+        aux[k] = 3 * gsh * gsh * (keq[k][0] / w + 1) + 2 * gsh * keq[k][1] + keq[k][1] * keq[k][2];
+
+        sum_activity += nucharge[k][0] * ((3 * gsh * gsh * keq[k][0] * nus[k][i]) / (w * denm[k]) - (keq[k][0] * nus[k][i] * gsh * gsh * gsh * aux[k]) / (w * ddenm[k]));
+        sum_activity += nucharge[k][1] * ((3 * gsh * gsh * nus[k][i]) / denm[k] - (nus[k][i] * gsh * gsh * gsh * aux[k]) / ddenm[k]);
+        sum_activity += nucharge[k][2] * ((2 * gsh * keq[k][1] * nus[k][i]) / denm[k] - (keq[k][1] * nus[k][i] * gsh * gsh * aux[k]) / ddenm[k]);
+        sum_activity += nucharge[k][3] * ((keq[k][1] * keq[k][2] * nus[k][i]) / denm[k] - (keq[k][1] * keq[k][2] * nus[k][i] * gsh * aux[k]) / ddenm[k]);
+        sum_activity += nucharge[k][4] * (-(keq[k][1] * keq[k][2] * keq[k][3] * nus[k][i] * aux[k]) / ddenm[k]);
+      }
+      // evaluation of the charge balance for the current Sh value, dF(Sh)
+      df = 1 + sum_activity;
+      err = fun / df;
+      gsh = gsh - err;
+
+      if ((fabs(err) < 1e-14) && (fabs(fun) < tol)) {
+        // Checking if a valid pH was obtained
+        if ((gsh > 1e-14) && (gsh < 1)) {
+          ipH = max_iter;
+        } else {
+          //Counter of convergence
           ipH = 1;
+          max_iter = 50;
           int n1 = 0;
           int n2 = 0;
-          double fa_ = fa[i];
-          double fb_ = fb[i];
           while (ipH < max_iter) {
-            sh[i] = (fb_ * a - fa_ * b) / (fb_ - fa_);
-            set_gsh(gsh, sh[i]);
-            double fc_ = 0;
-            for (int k = 1; k < nnus + 1; k++) {
-              double denm = (1 + keq[k][0] / w) * gsh[2] + keq[k][1] * gsh[1] + keq[k][2] * keq[k][1] * gsh[0]
-                + keq[k][3] * keq[k][2] * keq[k][1];
-              fc_ += sum_activity(activity, keq, nus, nucharge, denm, gsh, w, k, i); 
-            }
-            fc_ += gsh[0];
+            gsh = (fb * a - fa * b) / (fb - fa);
+            sum_activity = 0.0;
 
-            if (fa_ * fc_ > 0) {
+            for (int k = 1; k < nnus + 1; k++) {
+              denm[k] = (1 + keq[k][0] / w) * gsh * gsh * gsh + keq[k][1] * gsh * gsh + keq[k][2] * keq[k][1] * gsh
+                  + keq[k][3] * keq[k][2] * keq[k][1];
+
+              activity[k][0][i] = keq[k][0] / w * nus[k][i] * gsh * gsh * gsh / denm[k];
+              activity[k][1][i] = nus[k][i] * gsh * gsh * gsh / denm[k];
+              activity[k][2][i] = nus[k][i] * gsh * gsh * keq[k][1] / denm[k];
+              activity[k][3][i] = nus[k][i] * gsh * keq[k][1] * keq[k][2] / denm[k];
+              activity[k][4][i] = nus[k][i] * keq[k][1] * keq[k][2] * keq[k][3] / denm[k];
+
+              sum_activity += nucharge[k][0] * activity[k][0][i];
+              sum_activity += nucharge[k][1] * activity[k][1][i];
+              sum_activity += nucharge[k][2] * activity[k][2][i];
+              sum_activity += nucharge[k][3] * activity[k][3][i];
+              sum_activity += nucharge[k][4] * activity[k][4][i];
+            }
+            fc = gsh + sum_activity;
+
+            if (fa * fc > 0) {
               n1 += 1;
               if (n1 == 2) {
-                fb_ = (fc_ / (fc_ + fa_)) * fb_;
+                fb = (fc / (fc + fa)) * fb;
                 n1 = 0;
               }
-              a = gsh[0];
-              fa_ = fc_;
-            } else if (fb_ * fc_ > 0) {
+              a = gsh;
+              fa = fc;
+            } else if (fb * fc > 0) {
               n2 += 1;
               if (n2 == 2) {
-                fa_ = (fc_ / (fc_ + fb_)) * fa_;
+                fa = (fc / (fc + fb)) * fa;
                 n2 = 0;
               }
-              b = gsh[0];
-              fb_ = fc_;
+              b = gsh;
+              fb = fc;
             }
 
-            double err1 = fabs(fc_);
-            double err2 = fabs(gsh[0] - (fb_ * a - fa_ * b) / (fb_ - fa_));
+            err1 = fabs(fc);
+            err2 = fabs(gsh - (fb * a - fa * b) / (fb - fa));
 
             if ((err1 < tol) && (err2 < 1e-14)) {
               ipH = max_iter;
@@ -438,22 +458,21 @@ void FixKineticsPH::dynamic_ph(int first, int last) {
           }
         }
       }
+      ipH++;
     }
-    if (flag) break;
-    ipH++;
-  }
-  
-  int id = bio->find_nuid("h");
 
-  if (id > 0) {
-    for (int i = first; i < last; i++) {
-      activity[id][1][i] = sh[i];
+    kinetics->sh[i] = gsh;
+
+    for (int k = 1; k < nnus + 1; k++) {
+      if (strcmp(bio->nuname[k], "h") == 0) {
+        activity[k][1][i] = gsh;
+        break;
+      }
     }
   }
 
-  memory->destroy(fa);
-  memory->destroy(fb);
-  memory->destroy(fun);
-  memory->destroy(df);
+  memory->destroy(ddenm);
+  memory->destroy(denm);
+  memory->destroy(aux);
 }
 
