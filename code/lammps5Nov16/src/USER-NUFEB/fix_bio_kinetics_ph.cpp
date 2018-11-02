@@ -88,6 +88,8 @@ FixKineticsPH::FixKineticsPH(LAMMPS *lmp, int narg, char **arg) :
 
 FixKineticsPH::~FixKineticsPH() {
   memory->destroy(keq);
+  memory->destroy(shprev);
+  memory->destroy(fprev);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -116,8 +118,19 @@ void FixKineticsPH::init() {
 
   keq = memory->create(keq, nnus + 1, 4, "kinetics/ph:keq");
 
+  shprev = memory->create(shprev, kinetics->ngrids, "kinetics/ph:shprev");
+  fprev = memory->create(fprev, kinetics->ngrids, "kinetics/ph:fprev");
+  
   init_keq();
   compute_activity(0, kinetics->ngrids, iph);
+
+  // Initilize shprev and fprev
+  int w = 1;
+
+  double ish = pow(10, -iph);
+  for (int i = 0; i < kinetics->ngrids; i++) {
+    kinetics->sh[i] = ish;
+  }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -298,7 +311,7 @@ void FixKineticsPH::dynamic_ph(int first, int last) {
 
   double *fa = memory->create(fa, kinetics->ngrids, "kinetics/ph:fa");
   double *fb = memory->create(fb, kinetics->ngrids, "kinetics/ph:fb");
-  double *fun = memory->create(fun, kinetics->ngrids, "kinetics/ph:fun");
+  double *f = memory->create(f, kinetics->ngrids, "kinetics/ph:f");
   double *df = memory->create(df, kinetics->ngrids, "kinetics/ph:df");
 
   double **nus = kinetics->nus;
@@ -350,17 +363,13 @@ void FixKineticsPH::dynamic_ph(int first, int last) {
   }
   if (wrong)
     lmp->error->all(FLERR, "The sum of charges returns a wrong value");
-
+  
   // Newton-Raphson method
   int ipH = 1;
-  for (int i = first; i < last; i++) {
-    sh[i] = pow(10, -iph);
-  }
-
   while (ipH <= max_iter) {
     for (int i = first; i < last; i++) {
-      fun[i] = 0;
-      df[i] = 0;
+      f[i] = sh[i];
+      df[i] = 1;
     }
 
     for (int k = 1; k < nnus + 1; k++) {
@@ -369,7 +378,7 @@ void FixKineticsPH::dynamic_ph(int first, int last) {
         set_gsh(gsh, sh[i]);
         double denm = (1 + keq[k][0] / w) * gsh[2] + keq[k][1] * gsh[1] + keq[k][2] * keq[k][1] * gsh[0]
           + keq[k][3] * keq[k][2] * keq[k][1];
-        fun[i] += sum_activity(activity, keq, nus, nucharge, denm, gsh, w, k, i); 
+        f[i] += sum_activity(activity, keq, nus, nucharge, denm, gsh, w, k, i); 
 
         double ddenm = denm * denm;
         double aux = 3 * gsh[1] * (keq[k][0] / w + 1) + 2 * gsh[0] * keq[k][1] + keq[k][1] * keq[k][2];
@@ -383,63 +392,26 @@ void FixKineticsPH::dynamic_ph(int first, int last) {
       }
     }
 
-    // evaluation of the charge balance for the current Sh value, dF(Sh)
-    bool flag = true;
+    // Check for convergence
+    bool flag = false;
     for (int i = first; i < last; i++) {
-      double err = (fun[i] + sh[i]) / (1 + df[i]);
-      sh[i] -= err;
-
-      flag &= ((fabs(err) < 1e-14) && (fabs(fun[i] + sh[i]) < tol));
-      // Checking if a valid pH was obtained
-      if (flag) {
-        if ((sh[i] <= 1e-14) || (sh[i] >= 1)) {
-          // Fallback to false position method (regula falsi)
-          ipH = 1;
-          int n1 = 0;
-          int n2 = 0;
-          double fa_ = fa[i];
-          double fb_ = fb[i];
-          while (ipH < max_iter) {
-            sh[i] = (fb_ * a - fa_ * b) / (fb_ - fa_);
-            set_gsh(gsh, sh[i]);
-            double fc_ = 0;
-            for (int k = 1; k < nnus + 1; k++) {
-              double denm = (1 + keq[k][0] / w) * gsh[2] + keq[k][1] * gsh[1] + keq[k][2] * keq[k][1] * gsh[0]
-                + keq[k][3] * keq[k][2] * keq[k][1];
-              fc_ += sum_activity(activity, keq, nus, nucharge, denm, gsh, w, k, i); 
-            }
-            fc_ += gsh[0];
-
-            if (fa_ * fc_ > 0) {
-              n1 += 1;
-              if (n1 == 2) {
-                fb_ = (fc_ / (fc_ + fa_)) * fb_;
-                n1 = 0;
-              }
-              a = gsh[0];
-              fa_ = fc_;
-            } else if (fb_ * fc_ > 0) {
-              n2 += 1;
-              if (n2 == 2) {
-                fa_ = (fc_ / (fc_ + fb_)) * fa_;
-                n2 = 0;
-              }
-              b = gsh[0];
-              fb_ = fc_;
-            }
-
-            double err1 = fabs(fc_);
-            double err2 = fabs(gsh[0] - (fb_ * a - fa_ * b) / (fb_ - fa_));
-
-            if ((err1 < tol) && (err2 < 1e-14)) {
-              ipH = max_iter;
-            }
-            ipH++;
-          }
-        }
-      }
+      if (fabs(f[i]) < tol)
+        flag = true;
     }
     if (flag) break;
+    
+    // Compute next value
+    for (int i = first; i < last; i++) {
+      double tmp;
+      if (ipH == 1)
+        tmp = sh[i] - f[i] / df[i];
+      else
+        tmp = shprev[i] - (shprev[i] - sh[i]) / (1 - (f[i] / fprev[i]) * ((f[i] - fprev[i]) / (sh[i] - shprev[i]) / df[i]));
+      shprev[i] = sh[i];
+      sh[i] = tmp;
+      fprev[i] = f[i];
+    }
+
     ipH++;
   }
   
@@ -447,13 +419,14 @@ void FixKineticsPH::dynamic_ph(int first, int last) {
 
   if (id > 0) {
     for (int i = first; i < last; i++) {
+      if (sh[i] < 0) fprintf(screen, "%d: %e ", i, sh[i]);
       activity[id][1][i] = sh[i];
     }
   }
 
   memory->destroy(fa);
   memory->destroy(fb);
-  memory->destroy(fun);
+  memory->destroy(f);
   memory->destroy(df);
 }
 
