@@ -35,6 +35,7 @@
 #include "input.h"
 #include "lammps.h"
 #include "memory.h"
+#include "comm.h"
 
 #include "bio.h"
 #include "fix_bio_kinetics.h"
@@ -268,14 +269,18 @@ void  FixKineticsPH::buffer_ph() {
     compute_activity(grid, grid+1, 7);
 
     for (int nu = 1; nu <= nnus ; nu++){
-      double diff, act, chr;
-      act = activity[nu][bio->ngflag[nu]][grid];
-      chr = nucharge[nu][bio->ngflag[nu]];
+      for (int i = 0; i < 5; i++) {
+        double diff, act, chr;
+        act = activity[nu][i][grid];
+        chr = nucharge[nu][i];
 
-      diff = act * chr;
+        if (act > 10000 || chr > 10000) continue;
 
-      if (diff > 0) plus += diff;
-      else if (diff < 0) minus -= diff;
+        diff = act * chr;
+
+        if (diff > 0) plus += diff;
+        else if (diff < 0) minus -= diff;
+      }
     }
 
     kinetics->nubs[bio->find_nuid("na")] += minus;
