@@ -397,8 +397,7 @@ void FixKineticsDiffusion::update_grids() {
       ghost[grid] = false;
   }
 
-  if (!bulkflag)
-    return;
+  if (!bulkflag) return;
 
   for (int grid = 0; grid < nxx * nyy * nzz; grid++) {
     if (xgrid[grid][2] > MIN(bzhi, kinetics->subhi[2])) {
@@ -496,8 +495,7 @@ void FixKineticsDiffusion::init_grid() {
  ------------------------------------------------------------------------- */
 
 void FixKineticsDiffusion::compute_bulk() {
-  if (!bulkflag)
-    return;
+  if (!bulkflag) return;
 
   double vol = stepx * stepy * stepz;
   double **ini_nus = bio->ini_nus;

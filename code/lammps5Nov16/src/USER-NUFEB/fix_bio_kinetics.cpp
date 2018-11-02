@@ -425,6 +425,9 @@ void FixKinetics::integration() {
   if (monod != NULL)
     monod->growth(update->dt * nevery, grow_flag);
 
+  if (ph != NULL && ph->buffer_flag)
+    ph->buffer_ph();
+
   if (diffusion != NULL) {
     // manually update reaction if none of the surface is using dirichlet BC
     diffusion->update_nus();
@@ -436,10 +439,6 @@ void FixKinetics::integration() {
 
   if (thermo != NULL)
     thermo->thermo(update->dt * nevery);
-
-
-  if (ph != NULL && ph->buffer_flag)
-    ph->buffer_ph();
 }
 
 /* ----------------------------------------------------------------------
