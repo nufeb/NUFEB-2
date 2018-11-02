@@ -436,6 +436,10 @@ void FixKinetics::integration() {
 
   if (thermo != NULL)
     thermo->thermo(update->dt * nevery);
+
+
+  if (ph != NULL && ph->buffer_flag)
+    ph->buffer_ph();
 }
 
 /* ----------------------------------------------------------------------
