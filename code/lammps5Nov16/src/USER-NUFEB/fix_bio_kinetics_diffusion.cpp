@@ -397,8 +397,8 @@ void FixKineticsDiffusion::update_grids() {
       ghost[grid] = false;
   }
 
-  if (!bulkflag)
-    return;
+  if (!bulkflag) return;
+  double *nubs = kinetics->nubs;
 
   for (int grid = 0; grid < nxx * nyy * nzz; grid++) {
     if (xgrid[grid][2] > MIN(bzhi, kinetics->subhi[2])) {
@@ -406,15 +406,15 @@ void FixKineticsDiffusion::update_grids() {
         if (bio->nustate[nu] != 0)
           continue;
 
-        nugrid[nu][grid] = kinetics->nubs[nu] * 1000;
+        if (kinetics->nubs[nu] == 1e-20) {
+          nugrid[nu][grid] = nubs[nu];
+        } else {
+          nugrid[nu][grid] = (unit == KG) ? nubs[nu] : nubs[nu] * 1000;
+        }
 
         int ind = get_index(grid);
         if (ind >= 0 && ind < kinetics->subn[0] * kinetics->subn[1] * kinetics->subn[2]) {
-          if (kinetics->nubs[nu] == 1e-20) {
-            kinetics->nus[nu][ind] = nugrid[nu][grid];
-          } else {
-            kinetics->nus[nu][ind] = (unit == KG) ? (nugrid[nu][grid]) : (nugrid[nu][grid] / 1000);
-          }
+          kinetics->nus[nu][ind] = nubs[nu];
         }
       }
     }
@@ -496,8 +496,7 @@ void FixKineticsDiffusion::init_grid() {
  ------------------------------------------------------------------------- */
 
 void FixKineticsDiffusion::compute_bulk() {
-  if (!bulkflag)
-    return;
+  if (!bulkflag) return;
 
   double vol = stepx * stepy * stepz;
   double **ini_nus = bio->ini_nus;

@@ -35,6 +35,7 @@
 #include "input.h"
 #include "lammps.h"
 #include "memory.h"
+#include "comm.h"
 
 #include "bio.h"
 #include "fix_bio_kinetics.h"
@@ -119,8 +120,6 @@ FixKineticsPH::FixKineticsPH(LAMMPS *lmp, int narg, char **arg) :
 
 FixKineticsPH::~FixKineticsPH() {
   memory->destroy(keq);
-  memory->destroy(shprev);
-  memory->destroy(fprev);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -148,13 +147,11 @@ void FixKineticsPH::init() {
     error->all(FLERR, "fix_kinetics requires Nutrient Charge inputs");
 
   keq = memory->create(keq, nnus + 1, 4, "kinetics/ph:keq");
-
   shprev = memory->create(shprev, kinetics->ngrids, "kinetics/ph:shprev");
   fprev = memory->create(fprev, kinetics->ngrids, "kinetics/ph:fprev");
-  
+
   init_keq();
   compute_activity(0, kinetics->ngrids, iph);
-  if (buffer_flag) buffer_ph();
 
   // Initilize shprev and fprev
   int w = 1;
@@ -184,8 +181,6 @@ int FixKineticsPH::setmask() {
 void FixKineticsPH::solve_ph() {
   if (!phflag) compute_activity(0, kinetics->bgrids, iph);
   else dynamic_ph(0, kinetics->bgrids);
-
-  if (buffer_flag) buffer_ph();
 }
 
 /* ---------------------------------------------------------------------- */
@@ -278,14 +273,17 @@ void  FixKineticsPH::buffer_ph() {
     error->all(FLERR, "buffer ph requires nutreint 'na' and 'cl'");
 
   int grid;
-  double ph_unbuffer;
+  double oldsh, ph_unbuffer;
   int **nucharge = bio->nucharge;
   double ***activity = kinetics->activity;
 
   // always take the last grid
   grid = kinetics->ngrids - 1;
+  oldsh = kinetics->sh[grid];
+  // evaluate with dynamic ph
   dynamic_ph(grid, grid+1);
-  ph_unbuffer = -log10(kinetics->sh[grid]);
+  ph_unbuffer = -log10(oldsh);
+  kinetics->sh[grid] = oldsh;
 
   if (ph_unbuffer < 6.5 || ph_unbuffer > 9) {
     double minus = 0;
@@ -293,18 +291,23 @@ void  FixKineticsPH::buffer_ph() {
     compute_activity(grid, grid+1, 7);
 
     for (int nu = 1; nu <= nnus ; nu++){
-      double diff, act, chr;
-      act = activity[nu][bio->ngflag[nu]][grid];
-      chr = nucharge[nu][bio->ngflag[nu]];
+      for (int i = 0; i < 5; i++) {
+        double diff, act, chr;
+        act = activity[nu][i][grid];
+        chr = nucharge[nu][i];
 
-      diff = act * chr;
+        if (act > 10000 || chr > 10000) continue;
 
-      if (diff > 0) plus += diff;
-      else if (diff < 0) minus -= diff;
+        diff = act * chr;
+
+        if (diff > 0) plus += diff;
+        else if (diff < 0) minus -= diff;
+      }
+      kinetics->sh[grid] = oldsh;
     }
 
     kinetics->nubs[bio->find_nuid("na")] += minus;
-    kinetics->nubs[bio->find_nuid("cl")] += plus + ph_unbuffer;
+    kinetics->nubs[bio->find_nuid("cl")] += plus + oldsh;
   }
 }
 
@@ -330,7 +333,7 @@ void FixKineticsPH::dynamic_ph(int first, int last) {
   double ***activity = kinetics->activity;
   int **nucharge = bio->nucharge;
   double *sh = kinetics->sh;
-  
+
   double a = 1e-14;
   double b = 1;
 
@@ -349,7 +352,7 @@ void FixKineticsPH::dynamic_ph(int first, int last) {
     }
 #pragma ivdep
     for (int i = first; i < last; i++) {
-      fa[i] += sum_activity(activity, keq, nus, nucharge, denm, gsh, w, k, i); 
+      fa[i] += sum_activity(activity, keq, nus, nucharge, denm, gsh, w, k, i);
     }
   }
 
@@ -362,7 +365,7 @@ void FixKineticsPH::dynamic_ph(int first, int last) {
     }
 #pragma ivdep
     for (int i = first; i < last; i++) {
-      fb[i] += sum_activity(activity, keq, nus, nucharge, denm, gsh, w, k, i); 
+      fb[i] += sum_activity(activity, keq, nus, nucharge, denm, gsh, w, k, i);
     }
   }
 
@@ -376,7 +379,7 @@ void FixKineticsPH::dynamic_ph(int first, int last) {
 
   for (int i = first; i < last; i++) {
     fprev[i] = shprev[i];
-  }  
+  }
   for (int k = 1; k < nnus + 1; k++) {
 #pragma ivdep
     for (int i = first; i < last; i++) {
@@ -386,7 +389,7 @@ void FixKineticsPH::dynamic_ph(int first, int last) {
       fprev[i] += sum_activity(activity, keq, nus, nucharge, denm, gsh, w, k, i);
     }
   }
-  
+
   // Newton-Raphson method
   int ipH = 1;
   while (ipH <= max_iter) {
@@ -401,7 +404,7 @@ void FixKineticsPH::dynamic_ph(int first, int last) {
         set_gsh(gsh, sh[i]);
         double denm = (1 + keq[k][0] / w) * gsh[2] + keq[k][1] * gsh[1] + keq[k][2] * keq[k][1] * gsh[0]
           + keq[k][3] * keq[k][2] * keq[k][1];
-        f[i] += sum_activity(activity, keq, nus, nucharge, denm, gsh, w, k, i); 
+        f[i] += sum_activity(activity, keq, nus, nucharge, denm, gsh, w, k, i);
 
         double ddenm = denm * denm;
         double aux = 3 * gsh[1] * (keq[k][0] / w + 1) + 2 * gsh[0] * keq[k][1] + keq[k][1] * keq[k][2];
@@ -424,7 +427,7 @@ void FixKineticsPH::dynamic_ph(int first, int last) {
       }
     }
     if (flag) break;
-    
+
     // Compute next value
     for (int i = first; i < last; i++) {
       if (fabs(f[i]) < tol) {
@@ -437,7 +440,7 @@ void FixKineticsPH::dynamic_ph(int first, int last) {
 
     ipH++;
   }
-  
+
   int id = bio->find_nuid("h");
 
   if (id > 0) {
