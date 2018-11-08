@@ -507,7 +507,8 @@ void FixKineticsDiffusion::compute_bulk() {
     // convert nubs from l to m3
     if (unit == MOL) nubs_ *= 1000;
     // the concentration of o2 in the bulk liquid is kept constant by aeration
-    if (bio->nustate[nu] != 0 || !strcmp(bio->nuname[nu], "o2") || !strcmp(bio->nuname[nu], "co2"))
+    if (bio->nustate[nu] != 0 || !strcmp(bio->nuname[nu], "o2") || !strcmp(bio->nuname[nu], "co2")
+        || !strcmp(bio->nuname[nu], "na") || !strcmp(bio->nuname[nu], "cl"))
       continue;
 
     double sumR = 0;
