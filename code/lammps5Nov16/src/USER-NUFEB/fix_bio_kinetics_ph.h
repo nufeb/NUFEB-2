@@ -35,6 +35,8 @@ class FixKineticsPH : public Fix {
   double phflag;
   double **keq;                    // equilibrium constants [nutrient][4]
   double iph;                      // initial ph
+  double *shprev;
+  double *fprev;
 
   void output_data();
   void compute_activity(int, int, double);
