@@ -254,7 +254,7 @@ void  FixKineticsPH::buffer_ph() {
     error->all(FLERR, "buffer ph requires nutreint 'na' and 'cl'");
 
   int grid;
-  double oldsh, ph_unbuffer;
+  double oldsh, ph_unbuffer, evash;
   int **nucharge = bio->nucharge;
   double ***activity = kinetics->activity;
 
@@ -263,7 +263,8 @@ void  FixKineticsPH::buffer_ph() {
   oldsh = kinetics->sh[grid];
   // evaluate with dynamic ph
   dynamic_ph(grid, grid+1);
-  ph_unbuffer = -log10(oldsh);
+  evash = kinetics->sh[grid];
+  ph_unbuffer = -log10(kinetics->sh[grid]);
   kinetics->sh[grid] = oldsh;
 
   if (ph_unbuffer < 6.5 || ph_unbuffer > 9) {
@@ -288,7 +289,7 @@ void  FixKineticsPH::buffer_ph() {
     }
 
     kinetics->nubs[bio->find_nuid("na")] += minus;
-    kinetics->nubs[bio->find_nuid("cl")] += plus + oldsh;
+    kinetics->nubs[bio->find_nuid("cl")] += plus + evash;
   }
 }
 
