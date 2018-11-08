@@ -289,7 +289,7 @@ void  FixKineticsPH::buffer_ph() {
   if (ph_unbuffer < 6.5 || ph_unbuffer > 9) {
     double minus = 0;
     double plus = 0;
-    compute_activity(grid, grid+1, 7);
+    compute_activity(grid, grid+1, 7.5);
 
     for (int nu = 1; nu <= nnus ; nu++){
       for (int i = 0; i < 5; i++) {
@@ -431,7 +431,7 @@ void FixKineticsPH::dynamic_ph(int first, int last) {
 
     // Compute next value
     for (int i = first; i < last; i++) {
-      if (fabs(f[i]) < tol) {
+      if (fabs(f[i]) >= tol) {
         double tmp = shprev[i] - (shprev[i] - sh[i]) / (1 - (f[i] / fprev[i]) * ((f[i] - fprev[i]) / (sh[i] - shprev[i]) / df[i]));
         shprev[i] = sh[i];
         sh[i] = tmp;
