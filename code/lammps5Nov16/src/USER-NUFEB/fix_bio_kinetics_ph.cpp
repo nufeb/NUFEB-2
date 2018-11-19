@@ -303,7 +303,7 @@ void FixKineticsPH::dynamic_ph(int first, int last) {
   int w = 1;
 
   double tol = 5e-15;
-  int max_iter = 50;
+  int max_iter = 100;
 
   int nnus = bio->nnu;
 
