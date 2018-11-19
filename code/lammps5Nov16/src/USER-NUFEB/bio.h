@@ -12,6 +12,11 @@
 
 namespace LAMMPS_NS {
 
+enum {
+  INF = INT_MAX,
+  NA = 0,
+};
+
 class BIO : protected Pointers {
  public:
   //type (microbial species)

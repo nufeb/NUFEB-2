@@ -64,10 +64,6 @@ using namespace FixConst;
 
 using namespace std;
 
-enum {
-  TEMPERATURE, RTH, GVOL, RG, PH, DIFFT, BL, ITER
-};
-
 #define BUFMIN 1000
 
 /* ---------------------------------------------------------------------- */
@@ -334,6 +330,12 @@ void FixKinetics::init_param() {
     for (int i = 1; i <= bio->nnu; i++) {
       nus[i][j] = bio->ini_nus[i][0];
       nur[i][j] = 0;
+
+      activity[i][0][j] = 0;
+      activity[i][1][j] = 0;
+      activity[i][2][j] = 0;
+      activity[i][3][j] = 0;
+      activity[i][4][j] = 0;
     }
   }
 }
