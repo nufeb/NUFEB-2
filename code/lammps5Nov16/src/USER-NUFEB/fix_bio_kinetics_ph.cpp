@@ -147,25 +147,9 @@ void FixKineticsPH::init() {
     error->all(FLERR, "fix_kinetics requires Nutrient Charge inputs");
 
   keq = memory->create(keq, nnus + 1, 4, "kinetics/ph:keq");
-  shprev = memory->create(shprev, kinetics->ngrids, "kinetics/ph:shprev");
-  fprev = memory->create(fprev, kinetics->ngrids, "kinetics/ph:fprev");
 
   init_keq();
   compute_activity(0, kinetics->ngrids, iph);
-
-  // Initilize shprev and fprev
-  int w = 1;
-  double **nus = kinetics->nus;
-  double ***activity = kinetics->activity;
-  int **nucharge = bio->nucharge;
-  double *sh = kinetics->sh;
-
-  double ish = pow(10, -iph);
-  double ishprev = pow(10, -(iph + 0.1));
-  for (int i = 0; i < kinetics->ngrids; i++) {
-    sh[i] = ish;
-    shprev[i] = ishprev;
-  }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -378,19 +362,6 @@ void FixKineticsPH::dynamic_ph(int first, int last) {
   if (wrong)
     lmp->error->all(FLERR, "The sum of charges returns a wrong value");
 
-  for (int i = first; i < last; i++) {
-    fprev[i] = shprev[i];
-  }
-  for (int k = 1; k < nnus + 1; k++) {
-#pragma ivdep
-    for (int i = first; i < last; i++) {
-      set_gsh(gsh, shprev[i]);
-      double denm = (1 + keq[k][0] / w) * gsh[2] + keq[k][1] * gsh[1] + keq[k][2] * keq[k][1] * gsh[0]
-        + keq[k][3] * keq[k][2] * keq[k][1];
-      fprev[i] += sum_activity(activity, keq, nus, nucharge, denm, gsh, w, k, i);
-    }
-  }
-
   // Newton-Raphson method
   int ipH = 1;
   while (ipH <= max_iter) {
@@ -430,12 +401,16 @@ void FixKineticsPH::dynamic_ph(int first, int last) {
     if (flag) break;
 
     // Compute next value
+#pragma ivdep
     for (int i = first; i < last; i++) {
       if (fabs(f[i]) >= tol) {
-        double tmp = shprev[i] - (shprev[i] - sh[i]) / (1 - (f[i] / fprev[i]) * ((f[i] - fprev[i]) / (sh[i] - shprev[i]) / df[i]));
-        shprev[i] = sh[i];
-        sh[i] = tmp;
-        fprev[i] = f[i];
+        double d = f[i] / df[i];
+        // Prevent sh below 1e-14. That can happen because sometimes the Newton
+        // method overshoots to a negative sh value, due to a small derivative
+        // value.
+        if (d >= sh[i] - 1e-14)
+          d = sh[i] / 2;
+        sh[i] -= d;
       }
     }
 
