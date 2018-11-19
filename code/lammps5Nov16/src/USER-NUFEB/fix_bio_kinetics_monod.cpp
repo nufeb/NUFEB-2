@@ -388,7 +388,7 @@ void FixKineticsMonod::update_biomass(double ***growrate, double dt) {
         radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
       } else {
         radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
-        outer_mass[i] = 0.0;
+        outer_mass[i] = rmass[i];
         outer_radius[i] = radius[i];
       }
     }

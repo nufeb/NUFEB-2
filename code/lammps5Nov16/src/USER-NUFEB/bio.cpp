@@ -649,7 +649,7 @@ void BIO::set_tgibbs_coeff(int narg, char **arg)
 
   for(int i = 0; i < 5; i++) {
     if (strcmp(arg[i+1], "inf") == 0) {
-      tgibbs_coeff[itype][i] = 10001;
+      tgibbs_coeff[itype][i] = INF;
     } else {
       double value = force->numeric(FLERR,arg[i+1]);
       tgibbs_coeff[itype][i] = value;
@@ -685,7 +685,7 @@ void BIO::set_nucharge(int narg, char **arg)
 
   for(int i = 0; i < 5; i++) {
     if (strcmp(arg[i+1], "na") == 0) {
-      nucharge[inu][i] = 10001;
+      nucharge[inu][i] = NA;
     } else {
       double value = force->numeric(FLERR,arg[i+1]);
       nucharge[inu][i] = value;

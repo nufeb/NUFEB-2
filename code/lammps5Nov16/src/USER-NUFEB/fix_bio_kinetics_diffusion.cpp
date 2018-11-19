@@ -44,8 +44,6 @@
 #include "group.h"
 #include "comm.h"
 
-#define BUFMIN 1000
-
 using namespace LAMMPS_NS;
 using namespace FixConst;
 
