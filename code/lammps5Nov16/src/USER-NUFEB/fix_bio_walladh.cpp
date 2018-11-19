@@ -151,33 +151,26 @@ void FixWallAhd::post_force(int vflag)
   // set shear if pair potential stores history
 
   double **x = atom->x;
-  // double **v = atom->v;
   double **f = atom->f;
-  // double **omega = atom->omega;
-  // double **torque = atom->torque;
-  double *outerRadius = avec->outer_radius;
+  double *outer_radius = avec->outer_radius;
   double *rmass = atom->rmass;
-  double *outerMass = avec->outer_mass;
+  double *outer_mass = avec->outer_mass;
   int *type = atom->type;
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
-  double epsMass;
+  double eps_mass;
   double delta;
   double r, rinv, ccel, ccelx, ccely, ccelz;
   
-
-  // shearupdate = 1;
-  // if (update->setupflag) shearupdate = 0;
-
   for (int i = 0; i < nlocal; i++) {
     if (atom->mask[i] == avec->eps_mask) {
-      epsMass = rmass[i];
+      eps_mass = rmass[i];
     }
     else {
-      epsMass = outerMass[i];
+      eps_mass = outer_mass[i];
     }
-    if ((mask[i] & groupbit) && epsMass > 0) {
-      // fprintf(stdout, "Got Here: 1\n");
+
+    if ((mask[i] & groupbit) && eps_mass > 0) {
 
       dx = dy = dz = 0.0;
 
@@ -199,33 +192,27 @@ void FixWallAhd::post_force(int vflag)
       } else if (wallstyle == ZCYLINDER) {
         delxy = sqrt(x[i][0]*x[i][0] + x[i][1]*x[i][1]);
         delr = cylradius - delxy;
-        if (delr > outerRadius[i]) dz = cylradius;
+        if (delr > outer_radius[i]) dz = cylradius;
         else {
           dx = -delr/delxy * x[i][0];
           dy = -delr/delxy * x[i][1];
         }
       }
-      // fprintf(stdout, "Got Here: 2\n");
 
       rsq = dx*dx + dy*dy + dz*dz;
-
-      // fprintf(stdout, "Got Here: 3\n");
-
-      // fprintf(stdout, "rsq:%e <= outerRadius[i]*outerRadius[i]:%e\n", rsq, outerRadius[i]*outerRadius[i]);
-
-      if (rsq <= outerRadius[i]*outerRadius[i]) {
-        // fprintf(stdout, "Got Here: 4\n");
+    //  printf("j = %i \n", i);
+      //if (rsq < 4*outer_radius[i]*outer_radius[i] && rsq > 0.95*outer_radius[i]*outer_radius[i]) {
+      if (rsq <= 2*outer_radius[i]*outer_radius[i]) {
         r = sqrt(rsq);
         rinv = 1.0/r;
-        delta = r-outerRadius[i];
-        ccel=delta*kanc*epsMass;
-        ccelx = dx*ccel*rinv ;
-        ccely = dy*ccel*rinv ;
-        ccelz = dz*ccel*rinv ;
+        delta = outer_radius[i] - r;
+        ccel= delta*kanc*eps_mass;
+        ccelx = dx*ccel*rinv;
+        ccely = dy*ccel*rinv;
+        ccelz = dz*ccel*rinv;
         f[i][0] += ccelx;
         f[i][1] += ccely;
         f[i][2] += ccelz;
-        // fprintf(stdout, "Got Here: 5\n");
       }
     }
   }

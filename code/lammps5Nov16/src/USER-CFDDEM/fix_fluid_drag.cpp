@@ -137,21 +137,21 @@ void FixFluidDrag::post_force(int vflag)
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
 
-       rho = 3.0*rmass[i]/(4.0*3.14159265358917323846*r[i]*r[i]*r[i]);
-       accX = ((v[i][0] - vOld[i][0])/timeStep),
-       accY = ((v[i][1] - vOld[i][1])/timeStep),
-       accZ = ((v[i][2] - vOld[i][2])/timeStep),
+     rho = 3.0*rmass[i]/(4.0*3.14159265358917323846*r[i]*r[i]*r[i]);
+     accX = ((v[i][0] - vOld[i][0])/timeStep),
+     accY = ((v[i][1] - vOld[i][1])/timeStep),
+     accZ = ((v[i][2] - vOld[i][2])/timeStep),
 
-       f[i][0] += ffluiddrag[i][0] + 
-                  carrier_rho/rho*0.5*rmass[i]*(DuDt[i][0] - accX);
-       f[i][1] += ffluiddrag[i][1] +
-                  carrier_rho/rho*0.5*rmass[i]*(DuDt[i][1] - accY);
-       f[i][2] += ffluiddrag[i][2] +
-                  carrier_rho/rho*0.5*rmass[i]*(DuDt[i][2] - accZ);
+     f[i][0] += ffluiddrag[i][0] +
+                carrier_rho/rho*0.5*rmass[i]*(DuDt[i][0] - accX);
+     f[i][1] += ffluiddrag[i][1] +
+                carrier_rho/rho*0.5*rmass[i]*(DuDt[i][1] - accY);
+     f[i][2] += ffluiddrag[i][2] +
+                carrier_rho/rho*0.5*rmass[i]*(DuDt[i][2] - accZ);
 
-       vOld[i][0] = v[i][0];
-       vOld[i][1] = v[i][1];
-       vOld[i][2] = v[i][2];
+     vOld[i][0] = v[i][0];
+     vOld[i][1] = v[i][1];
+     vOld[i][2] = v[i][2];
 
        //printf("%i, f = %e  %e  %e \n", i, ffluiddrag[i][0], ffluiddrag[i][1],ffluiddrag[i][2]);
     }
