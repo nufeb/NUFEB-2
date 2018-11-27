@@ -612,7 +612,7 @@ void BIO::set_nugibbs_coeff(int narg, char **arg)
 
   for(int i = 0; i < 5; i++) {
     if (strcmp(arg[i+1], "inf") == 0) {
-      nugibbs_coeff[inu][i] = 10001;
+      nugibbs_coeff[inu][i] = INF;
     } else {
       double value = force->numeric(FLERR,arg[i+1]);
       nugibbs_coeff[inu][i] = value;
@@ -621,7 +621,7 @@ void BIO::set_nugibbs_coeff(int narg, char **arg)
 
   int flag = atoi(arg[6]);
 
-  if ((flag > 0) && (flag < 6) && (nugibbs_coeff[inu][flag-1] < 1e4))
+  if ((flag > 0) && (flag < 6) && (nugibbs_coeff[inu][flag-1] != INF))
     ngflag[inu] = flag - 1;
   else error->all(FLERR,"Invalid nutrient energy flag");
 }
@@ -657,7 +657,7 @@ void BIO::set_tgibbs_coeff(int narg, char **arg)
   }
 
   int flag = atoi(arg[6]);
-  if ((flag > 0) && (flag < 6) && (tgibbs_coeff[itype][flag-1] < 1e4))
+  if ((flag > 0) && (flag < 6) && (tgibbs_coeff[itype][flag-1] != INF))
     tgibbs_flag[itype] = flag - 1;
   else error->all(FLERR,"Invalid type energy flag");
 }
