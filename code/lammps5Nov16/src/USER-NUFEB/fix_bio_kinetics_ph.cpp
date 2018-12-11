@@ -60,6 +60,8 @@ FixKineticsPH::FixKineticsPH(LAMMPS *lmp, int narg, char **arg) :
   buffer_flag = 0;
   phflag = 0;
   iph = 7.0;
+  phlo = 6.5;
+  phhi = 9;
 
   if (strcmp(arg[3], "fix") == 0)
     phflag = 0;
@@ -71,9 +73,11 @@ FixKineticsPH::FixKineticsPH(LAMMPS *lmp, int narg, char **arg) :
   while (iarg < narg){
     if (strcmp(arg[iarg],"buffer") == 0) {
       buffer_flag = force->inumeric(FLERR, arg[iarg+1]);
+      phlo = force->numeric(FLERR, arg[iarg + 2]);
+      phhi = force->numeric(FLERR, arg[iarg + 3]);
       if (buffer_flag != 0 && buffer_flag != 1)
         error->all(FLERR, "Illegal fix kinetics/ph command: buffer_flag");
-      iarg += 2;
+      iarg += 4;
     } else if (strcmp(arg[iarg], "ph") == 0) {
       iph = force->numeric(FLERR, arg[iarg + 1]);
       if (iph < 0.0 || iph > 14)
@@ -237,10 +241,10 @@ void  FixKineticsPH::buffer_ph() {
   ph_unbuffer = -log10(kinetics->sh[grid]);
   kinetics->sh[grid] = oldsh;
 
-  if (ph_unbuffer < 6.5 || ph_unbuffer > 9) {
+  if (ph_unbuffer < phlo || ph_unbuffer > phhi) {
     double minus = 0;
     double plus = 0;
-    compute_activity(grid, grid+1, 7.5);
+    compute_activity(grid, grid+1, iph);
 
     for (int nu = 1; nu <= nnus ; nu++){
       for (int i = 0; i < 5; i++) {
