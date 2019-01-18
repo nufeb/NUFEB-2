@@ -293,10 +293,6 @@ void FixKinetics::init() {
   fv = memory->create(fv, 3, ngrids, "kinetcis:fv");
   xdensity = memory->create(xdensity, ntypes + 1, ngrids, "kinetics:xdensity");
 
-  init_param();
-  reset_isconv();
-  update_bgrids();
-
   // Fitting initial domain decomposition to the grid 
   for (int i = 0; i < comm->procgrid[0]; i++) {
     int n = nx * i * 1.0 / comm->procgrid[0];
@@ -311,6 +307,10 @@ void FixKinetics::init() {
     comm->zsplit[i] = (double) n / nz;
   }
   domain->set_local_box();
+
+  init_param();
+  reset_isconv();
+  update_bgrids();
 }
 
 void FixKinetics::init_param() {
@@ -466,8 +466,25 @@ double FixKinetics::get_max_height() {
 void FixKinetics::update_bgrids() {
   if (blayer >= 0) {
     maxheight = get_max_height();
-    bnz = (int) ((blayer + maxheight) / stepz) + 1;
-    bgrids = subn[0] * subn[1] * MIN(subn[2], MAX(0, bnz - subnlo[2]));
+    int new_bnz = (int) ((blayer + maxheight) / stepz) + 1;
+    if (new_bnz != bnz)
+    {
+      bnz = new_bnz;
+      
+      bgrids = subn[0] * subn[1] * MIN(subn[2], MAX(0, bnz - subnlo[2]));
+      
+      double tmpsublo[3], tmpsubhi[3];
+      const double small = 1e-12;
+      for (int i = 0; i < 3; i++) {
+        tmpsublo[i] = domain->sublo[i] + small;
+        if (i == 2)
+          tmpsubhi[i] = bnz * stepz;
+        else
+          tmpsubhi[i] = domain->subhi[i] + small;
+      }
+      subgrid = Subgrid<double, 3>(grid, Box<double, 3>(tmpsublo, tmpsubhi));
+      diffusion->setup_exchange_flag = true;
+    }
   } else {
     bgrids = subn[0] * subn[1] * subn[2];
   }

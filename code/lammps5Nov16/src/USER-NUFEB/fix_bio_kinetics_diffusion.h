@@ -73,6 +73,8 @@ public:
   FixKinetics *kinetics;
   AtomVecBio *avec;
 
+  bool setup_exchange_flag; // flags that setup_exchange needs to be called in the next call to diffusion
+  
   int setmask();
   void init();
   int *diffusion(int*, int, double);
