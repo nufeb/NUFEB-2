@@ -150,6 +150,8 @@ FixKineticsDiffusion::FixKineticsDiffusion(LAMMPS *lmp, int narg, char **arg) :
     } else
       error->all(FLERR, "Illegal fix kinetics/diffusion command");
   }
+  
+  setup_exchange_flag = false;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -271,7 +273,6 @@ void FixKineticsDiffusion::init() {
   setup_exchange(kinetics->grid, kinetics->subgrid.get_box(), { xbcflag == 0, ybcflag == 0, zbcflag == 0 });
 }
 
-
 /* ----------------------------------------------------------------------
  solve diffusion and reaction
  ------------------------------------------------------------------------- */
@@ -283,6 +284,12 @@ int *FixKineticsDiffusion::diffusion(int *nuConv, int iter, double diff_dt) {
   double **nus = kinetics->nus;
   double *nubs = kinetics->nubs;
   double **ini_nus = bio->ini_nus;
+
+  if (setup_exchange_flag)
+  {
+    setup_exchange(kinetics->grid, kinetics->subgrid.get_box(), { xbcflag == 0, ybcflag == 0, zbcflag == 0 });
+    setup_exchange_flag = false;
+  }
 
   DecompGrid<FixKineticsDiffusion>::exchange();
 
