@@ -59,6 +59,7 @@ public:
 
   int nx, ny, nz;               // # of non-ghost grids in x, y and z
   int nxx, nyy, nzz;               // # of all grids in x, y and z
+  int nxx_yy;
   int nxx_yy_zz;                     // total # of grids
   double diff_dt;
   double xlo, xhi, ylo, yhi, zlo, zhi, bzhi;

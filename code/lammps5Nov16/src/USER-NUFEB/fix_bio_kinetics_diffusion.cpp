@@ -253,7 +253,8 @@ void FixKineticsDiffusion::init() {
   nyy = kinetics->subn[1] + 2;
   nzz = kinetics->subn[2] + 2;
 
-  nxx_yy_zz = nxx * nyy * nzz;
+  nxx_yy = nxx * nyy;
+  nxx_yy_zz = nxx_yy * nzz;
   
   int nnus = bio->nnu;
 
@@ -557,15 +558,13 @@ void FixKineticsDiffusion::compute_bulk() {
  ------------------------------------------------------------------------- */
 
 int FixKineticsDiffusion::get_index(int grid) {
-  int ix = (xgrid[grid][0] - kinetics->sublo[0]) / stepx;
-  int iy = (xgrid[grid][1] - kinetics->sublo[1]) / stepy;
-  int iz = (xgrid[grid][2] - kinetics->sublo[2]) / stepz;
-
-  int ind = iz * kinetics->subn[0] * kinetics->subn[1] + iy * kinetics->subn[0] + ix;
-
-  return ind;
+  int k = grid / nxx_yy;
+  int r = grid - k * nxx_yy;
+  int j = r / nxx;
+  int i = r - j * nxx;
+  //if (comm->me == 0) fprintf(screen, "%d -> %d %d %d %d\n", grid, i, j, k, (i - 1) + kinetics->subn[0] * (j - 1) + kinetics->subn[0] * kinetics->subn[1] * (k - 1));
+  return (i - 1) + kinetics->subn[0] * (j - 1) + kinetics->subn[0] * kinetics->subn[1] * (k - 1);
 }
-
 
 /* ----------------------------------------------------------------------
  update concentration for ghost grids
