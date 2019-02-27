@@ -299,8 +299,15 @@ void FixVerify::benchmark_three() {
 
   if (comm->me == 0 && logfile) fprintf(logfile, "maxz = %e \n",global_maxz);
   if (comm->me == 0 && screen) fprintf(screen, "maxz = %e \n",global_maxz);
-
   bm3_output();
+
+  if (global_maxz > 5e-4) {
+    for (int i = 0; i < 50; i++) {
+      kinetics->integration();
+      bm3_output();
+    }
+    error->all(FLERR, "Finish");
+  }
 }
 
 void FixVerify::free_particle_list() {

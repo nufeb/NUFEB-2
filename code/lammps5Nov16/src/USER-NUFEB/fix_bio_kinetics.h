@@ -47,7 +47,6 @@ class FixKinetics : public Fix, public DecompGrid<FixKinetics> {
   int nx, ny, nz, bnz;             // number of grids in x y z axis
   int bgrids;                      // # of non-boundary grids
   int ngrids;                      // # of grids
-//  double iph;                      // initial ph
 
   double **nus;                    // nutrient concentration [nutrient][grid]
   double **nur;                    // nutrient consumption [nutrient][grid]
@@ -55,22 +54,20 @@ class FixKinetics : public Fix, public DecompGrid<FixKinetics> {
   double **fv;                     // velocity field [velo][grid]
   double **grid_yield;             // grid yield [type][grid]
   double ***activity;              // activities of chemical species [nutrient][5 charges][grid]
-  double gvol, rg;                 // gas volume and gas transfer constant
-  double temp, rth;                // uiversal gas constant (thermodynamics) and temperature
+  double temp, rth;                // universal gas constant (thermodynamics) and temperature
   double **gibbs_cata;             // Gibbs free energy of catabolism [type][grid]
   double **gibbs_anab;             // Gibbs free energy of anabolism [type][grid]
   double **keq;                    // equilibrium constants [nutrient][4]
   double *sh;                      // concentration of hydrogen ion
   double **xdensity;               // grid biomass density [type][grid]; [0][grid] the overall density
-  int *nuconv;
+  int *nuconv;                     // convergence flag
   double diff_dt;                  // diffusion timestep
   double blayer;                   // boundary layer
   double zhi,bzhi,zlo, xlo, xhi, ylo, yhi;
-  double stepz, stepx, stepy;
+  double stepz, stepx, stepy;      // grid size
   int grow_flag;                   // microbe growth flag 1 = update biomass; 0 = solve reaction only, growth is negligible
   int demflag;                     // flag for DEM run
-  double maxheight;
-  int nout;
+  double maxheight;                // maximum biofilm height
   int niter;                       // # of iterations
   int devery;                      // # of steps to call ph, thermo and form calculations
 
@@ -81,8 +78,8 @@ class FixKinetics : public Fix, public DecompGrid<FixKinetics> {
   Grid<double, 3> grid;
   Subgrid<double, 3> subgrid;
 
-  class AtomVecBio *avec;
   BIO *bio;
+  class AtomVecBio *avec;
   class FixKineticsDiffusion *diffusion;
   class FixKineticsEnergy *energy;
   class FixKineticsMonod *monod;

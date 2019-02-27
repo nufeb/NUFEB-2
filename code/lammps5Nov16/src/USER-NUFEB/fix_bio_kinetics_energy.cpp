@@ -271,6 +271,7 @@ void FixKineticsEnergy::update_biomass(double **growrate, double dt) {
       //update HET radius
       radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
       //update mass and radius for EPS shell if PES production is on
+      //TODO
       if (epsflag == 1) {
         outer_mass[i] = four_thirds_pi * (outer_radius[i] * outer_radius[i] * outer_radius[i] - radius[i] * radius[i] * radius[i])
             * eps_dens + growrate[t][pos] * rmass[i];

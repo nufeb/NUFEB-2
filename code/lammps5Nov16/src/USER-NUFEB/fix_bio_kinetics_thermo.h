@@ -24,19 +24,19 @@ class FixKineticsThermo : public Fix {
   ~FixKineticsThermo();
   void init();
   int setmask();
-  void thermo(double dt);
+  void thermo(double);
 
- private:
-  int yflag;                        // 0 = fixed yield 1 = dynamic yield
+  int yflag;                       // 0 = fixed yield 1 = dynamic yield
   int rflag;                       // 0 = open reactor 1 = closed reactor
 
-  double stepx, stepy, stepz;       // grids size
-  double xlo,xhi,ylo,yhi,zlo,zhi;   // simulation box size
-  double vol;                       // grid volume and gas volume
+  double stepx, stepy, stepz;      // grids size
+  double xlo,xhi,ylo,yhi,zlo,zhi;  // simulation box size
+  double vol;                      // grid volume and gas volume
 
   double **dgzero;
   double *khv;                     // Henry's constant
-  int *liqtogas;                    // liquids convert to gas
+  int *liqtogas;                   // liquids convert to gas
+  double gvol, rg;                 // gas volume and gas transfer constant
 
   class FixKinetics *kinetics;
   class BIO *bio;

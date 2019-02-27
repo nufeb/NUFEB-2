@@ -446,6 +446,7 @@ public:
 
 
             void updateParticles();
+            int findParticles(int);
         // I-O
 
             virtual void writeFields() const;

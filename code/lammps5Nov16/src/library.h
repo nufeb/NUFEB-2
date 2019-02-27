@@ -70,6 +70,7 @@ extern "C" {
   int lammps_get_nloops(void* ptr);
   double lammps_get_bio_dt(void* ptr);
   double lammps_get_dem_dt(void* ptr);
+  double lammps_get_scale_time(void* ptr);
 
   void lammps_create_particle(void* ptr, int npAdd, double* position, double* tag, 
                               double diameter, double rho, int type, double* vel);

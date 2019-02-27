@@ -27,6 +27,7 @@
 #include "fix.h"
 #include "modify.h"
 #include "fix_bio_kinetics.h"
+#include "fix_bio_kinetics_thermo.h"
 #include "bio.h"
 
 using namespace LAMMPS_NS;
@@ -40,19 +41,24 @@ ComputeNufebGas::ComputeNufebGas(LAMMPS *lmp, int narg, char **arg) :
 
   // register fix kinetics with this class
   kinetics = NULL;
+  thermo = NULL;
   nfix = modify->nfix;
 
-  for (int j = 0; j < nfix; j++) {
-    if (strcmp(modify->fix[j]->style,"kinetics") == 0) {
-      kinetics = static_cast<FixKinetics *>(lmp->modify->fix[j]);
-      break;
+  for (int i = 0; i < nfix; i++) {
+    if (strcmp(modify->fix[i]->style,"kinetics") == 0) {
+      kinetics = static_cast<FixKinetics *>(lmp->modify->fix[i]);
+    } else if (strcmp(modify->fix[i]->style, "kinetics/thermo") == 0) {
+      thermo = static_cast<FixKineticsThermo *>(lmp->modify->fix[i]);
     }
   }
 
   if (kinetics == NULL)
     lmp->error->all(FLERR,"fix kinetics command is required");
+  if (thermo == NULL)
+    lmp->error->all(FLERR,"fix kinetics/thermo command is required");
 
   pressure = force->numeric(FLERR, arg[3]);
+
   if (pressure < 0.0)
     error->all(FLERR, "Illegal fix kinetics/thermo command: pressure");
 
@@ -90,7 +96,7 @@ double ComputeNufebGas::compute_scalar()
 
   MPI_Allreduce(MPI_IN_PLACE, &scalar, 1, MPI_DOUBLE, MPI_SUM, world);
 
-  scalar = scalar * kinetics->rg * kinetics->temp / pressure;
+  scalar = scalar * thermo->rg * kinetics->temp / pressure;
 
   return scalar;
 }

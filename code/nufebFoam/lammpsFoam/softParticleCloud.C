@@ -184,65 +184,95 @@ void softParticleCloud::updateParticles() {
 
   Info << "Update particle information..." << endl;
 
-  label nprocs = Pstream::nProcs();
-  label myrank = Pstream::myProcNo();
+//  label nprocs = Pstream::nProcs();
+//  label myrank = Pstream::myProcNo();
 
   int lmpNLocal = lammps_get_local_n(lmp_);
 
   label lmpNGlobal = lmpNLocal;
 
-  Info << "the number of particles in LAMMPS now is: " << lmpNGlobal << endl;
+//  Info << "the number of particles in LAMMPS now is: " << lmpNGlobal << endl;
+  Info << "the number of particles in OpenFOAM now is: " << size() << endl;
   // deleteAllParticleOF();
 
-  // Harvest more infomation from each lmp cpu
-  double* fromLmpXArrayLocal = new double[3 * lmpNLocal];
-  double* fromLmpVArrayLocal = new double[3 * lmpNLocal];
-  int* fromLmpFoamCpuIdArrayLocal = new int[lmpNLocal];
-  int* fromLmpLmpCpuIdArrayLocal = new int[lmpNLocal];
-  int* fromLmpTagArrayLocal = new int[lmpNLocal];
-  double* fromLmpMArrayLocal = new double[lmpNLocal];
-  double* fromLmpDArrayLocal = new double[lmpNLocal];
-  int* fromLmpTypeArrayLocal = new int[lmpNLocal];
+  if (size() != lmpNGlobal) {
 
-  lammps_get_local_info(lmp_, fromLmpXArrayLocal, fromLmpVArrayLocal,
-      fromLmpFoamCpuIdArrayLocal, fromLmpLmpCpuIdArrayLocal,
-      fromLmpTagArrayLocal, fromLmpMArrayLocal, fromLmpDArrayLocal,
-      fromLmpTypeArrayLocal);
+    // Harvest more infomation from each lmp cpu
+    double* fromLmpXArrayLocal = new double[3 * lmpNLocal];
+    double* fromLmpVArrayLocal = new double[3 * lmpNLocal];
+    int* fromLmpFoamCpuIdArrayLocal = new int[lmpNLocal];
+    int* fromLmpLmpCpuIdArrayLocal = new int[lmpNLocal];
+    int* fromLmpTagArrayLocal = new int[lmpNLocal];
+    double* fromLmpMArrayLocal = new double[lmpNLocal];
+    double* fromLmpDArrayLocal = new double[lmpNLocal];
+    int* fromLmpTypeArrayLocal = new int[lmpNLocal];
 
-  // Transform the data obtained from lammps to openfoam format
-  vectorList fromLmpXList(lmpNLocal, vector::zero);
-  vectorList fromLmpVList(lmpNLocal, vector::zero);
+    lammps_get_local_info(lmp_, fromLmpXArrayLocal, fromLmpVArrayLocal,
+        fromLmpFoamCpuIdArrayLocal, fromLmpLmpCpuIdArrayLocal,
+        fromLmpTagArrayLocal, fromLmpMArrayLocal, fromLmpDArrayLocal,
+        fromLmpTypeArrayLocal);
 
-  labelList foamParticleNo(nprocs, 0);
+    // Transform the data obtained from lammps to openfoam format
+    vectorList fromLmpXList(lmpNLocal, vector::zero);
+    vectorList fromLmpVList(lmpNLocal, vector::zero);
 
-  int maxT = maxTag_;
+//    labelList foamParticleNo(nprocs, 0);
 
-  for (label i = 0; i < lmpNLocal; i++) {
-    fromLmpXList[i] = vector(fromLmpXArrayLocal[3 * i + 0],
-        fromLmpXArrayLocal[3 * i + 1], fromLmpXArrayLocal[3 * i + 2]);
+//    int maxT = maxTag_;
+//
+//    for (label i = 0; i < lmpNLocal; i++) {
+//      fromLmpXList[i] = vector(fromLmpXArrayLocal[3 * i + 0],
+//          fromLmpXArrayLocal[3 * i + 1], fromLmpXArrayLocal[3 * i + 2]);
+//
+//      fromLmpVList[i] = vector(fromLmpVArrayLocal[3 * i + 0],
+//          fromLmpVArrayLocal[3 * i + 1], fromLmpVArrayLocal[3 * i + 2]);
+//
+//      if (fromLmpTagArrayLocal[i] > maxT) {
+//        ConstructParticle(fromLmpXList[i], fromLmpVList[i], fromLmpDArrayLocal[i],
+//            fromLmpMArrayLocal[i], fromLmpTagArrayLocal[i],
+//            fromLmpLmpCpuIdArrayLocal[i], fromLmpTypeArrayLocal[i]);
+//      }
+//    }
 
-    fromLmpVList[i] = vector(fromLmpVArrayLocal[3 * i + 0],
-        fromLmpVArrayLocal[3 * i + 1], fromLmpVArrayLocal[3 * i + 2]);
+//    softParticle::trackingData td0(*this);
+//    Cloud < softParticle > ::move(td0, 0);
 
-    if (fromLmpTagArrayLocal[i] > maxT) {
-      ConstructParticle(fromLmpXList[i], fromLmpVList[i], fromLmpDArrayLocal[i],
-          fromLmpMArrayLocal[i], fromLmpTagArrayLocal[i],
-          fromLmpLmpCpuIdArrayLocal[i], fromLmpTypeArrayLocal[i]);
+    // Delete missing particles, does not work for mpi run
+    for
+    (
+        softParticleCloud::iterator pIter = begin();
+        pIter != end();
+        ++pIter
+    )
+    {
+        softParticle& p = pIter();
+        int del = 1;
+        for (label i = 0; i < lmpNLocal; i++)
+        {
+            softParticle& p = pIter();
+            if (fromLmpTagArrayLocal[i] == p.ptag()) {
+              del = 0;
+              break;
+            }
+        }
+
+       if (del)
+         deleteParticle(p);
     }
+
+    Info << "the number of particles in OpenFOAM after update is: " << size() << endl;
+
+    delete[] fromLmpXArrayLocal;
+    delete[] fromLmpVArrayLocal;
+    delete[] fromLmpFoamCpuIdArrayLocal;
+    delete[] fromLmpLmpCpuIdArrayLocal;
+    delete[] fromLmpTagArrayLocal;
+    delete[] fromLmpMArrayLocal;
+    delete[] fromLmpDArrayLocal;
+    delete[] fromLmpTypeArrayLocal;
   }
-
-  softParticle::trackingData td0(*this);
-  Cloud < softParticle > ::move(td0, 0);
-
-  delete[] fromLmpXArrayLocal;
-  delete[] fromLmpVArrayLocal;
-  delete[] fromLmpFoamCpuIdArrayLocal;
-  delete[] fromLmpLmpCpuIdArrayLocal;
-  delete[] fromLmpTagArrayLocal;
-  delete[] fromLmpMArrayLocal;
-  delete[] fromLmpDArrayLocal;
-  delete[] fromLmpTypeArrayLocal;
 }
+
 
 void softParticleCloud::adjustLampTimestep() {
   // Time step suggested in Lammps input file
@@ -783,6 +813,9 @@ void softParticleCloud::lammpsEvolveForward(std::vector<vector> &XLocal,
   }
 
   Info << "finished moving the particles in LAMMPS." << endl;
+
+  updateParticles();
+
   cpuTimeSplit_[4] += runTime_.elapsedCpuTime() - t0;
   t0 = runTime_.elapsedCpuTime();
   // Start getting information from LAMMPS
