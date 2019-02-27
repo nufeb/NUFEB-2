@@ -119,7 +119,6 @@ void BIO::create_type(char *name) {
 
 void BIO::data_nutrients(int narg, char **arg)
 {
-  //printf("narg = %i, nNu = %i\n", narg, nNutrients);
   if (narg != 10) error->all(FLERR,"Incorrect args for nutrient definitions");
 
   int id = force->numeric(FLERR,arg[0]);
@@ -181,10 +180,8 @@ void BIO::data_nutrients(int narg, char **arg)
 void BIO::set_tname(int narg, char **arg)
 {
   if (narg != 2) error->all(FLERR,"Incorrect args for type name definitions");
-
   int id = force->numeric(FLERR,arg[0]);
-
-  // type name
+  //type name
   char *name;
   int n = strlen(arg[1]) + 1;
   name = new char[n];
@@ -213,13 +210,13 @@ void BIO::set_tname(int narg, char **arg)
 }
 
 /* ----------------------------------------------------------------------
-   set growth values for all types
+   set uptake rate for all types
    called from reading of data file
 ------------------------------------------------------------------------- */
 
 void BIO::set_q(const char *str)
 {
-  if (q == NULL) error->all(FLERR,"Cannot set growth rate for this atom style");
+  if (q == NULL) error->all(FLERR,"Cannot set consumption rate for this atom style");
 
   char* name;
   double growth_one;
@@ -228,24 +225,17 @@ void BIO::set_q(const char *str)
 
   int n = sscanf(str,"%s %lg",name,&growth_one);
 
-  if (n != 2) error->all(FLERR,"Invalid growth line in data file");
+  if (n != 2) error->all(FLERR,"Invalid consumption rate line in data file");
 
   int itype = find_typeid(name);
   delete [] name;
 
   if (itype < 1 || itype > atom->ntypes)
-    error->all(FLERR,"Invalid type for growth set");
+    error->all(FLERR,"Invalid type for consumption rate set");
 
   q[itype] = growth_one;
 
-  if (q[itype] < 0.0) error->all(FLERR,"Invalid growth value");
-
- // AtomVecBio* avec = (AtomVecBio *) atom->style_match("bio");
-  //set consumption rate for each atom
-//  for (int i = 0; i < atom->nlocal; i++) {
-//    if (atom->type[i] == itype)
-//      avec->atom_q[i] = q[itype];
-//  }
+  if (q[itype] < 0.0) error->all(FLERR,"Invalid consumption rate value");
 }
 
 /* ----------------------------------------------------------------------
@@ -255,7 +245,7 @@ void BIO::set_q(const char *str)
 
 void BIO::set_mu(const char *str)
 {
-  if (mu == NULL) error->all(FLERR,"Cannot set consumption rate for this atom style");
+  if (mu == NULL) error->all(FLERR,"Cannot set growth rate for this atom style");
 
   char* name;
   double growth_one;
@@ -333,38 +323,10 @@ void BIO::set_yield(const char *str)
     lmp->error->all(FLERR,"yield cannot be zero or less than zero");
 
   yield[itype] = yield_one;
-  //mass_setflag[itype] = 1;
 
   if (yield[itype] < 0.0) error->all(FLERR,"Invalid set_yield value");
 }
 
-
-/* ----------------------------------------------------------------------
-   set yield values for all types
-   called from reading of data file
-------------------------------------------------------------------------- */
-
-void BIO::set_edoner(const char *str)
-{
-  if (edoner == NULL) error->all(FLERR,"Cannot set eD for this atom style");
-
-  char* name;
-  double edoner_one;
-  int len = strlen(str) + 1;
-  name = new char[len];
-
-  int n = sscanf(str,"%s %lg",name,&edoner_one);
-  if (n != 2) error->all(FLERR,"Invalid set_edoner line in data file");
-
-  int itype = find_typeid(name);
-  delete [] name;
-
-  if (itype < 1 || itype > atom->ntypes)
-    error->all(FLERR,"Invalid type for set_edoner set");
-
-  edoner[itype] = edoner_one;
-  //mass_setflag[itype] = 1;
-}
 
 /* ----------------------------------------------------------------------
    set maintenance values for all types
@@ -473,7 +435,6 @@ void BIO::set_mw(const char *str)
     error->all(FLERR,"Invalid nutrient for molecular weights set");
 
   mw[inu] = mw_one;
-  //mass_setflag[itype] = 1;
 
   if (mw[inu] < 0.0) error->all(FLERR,"Invalid molecular weights value");
 }
@@ -503,7 +464,6 @@ void BIO::set_dissipation(const char *str)
     error->all(FLERR,"Invalid type for dissipation set");
 
   dissipation[itype] = diss_one;
-  //mass_setflag[itype] = 1;
 
   if (dissipation[itype] < 0.0) error->all(FLERR,"Invalid dissipation value");
 }
@@ -660,6 +620,40 @@ void BIO::set_tgibbs_coeff(int narg, char **arg)
   if ((flag > 0) && (flag < 6) && (tgibbs_coeff[itype][flag-1] != INF))
     tgibbs_flag[itype] = flag - 1;
   else error->all(FLERR,"Invalid type energy flag");
+}
+
+/* ----------------------------------------------------------------------
+   set Electron Donor values for all types
+   called from reading of data file
+------------------------------------------------------------------------- */
+
+void BIO::set_edoner(int narg, char **arg)
+{
+  if (edoner == NULL) error->all(FLERR,"Cannot set Electron Donor for this atom style");
+  if (narg != 2) error->all(FLERR,"Incorrect Electron Donor for type name definitions");
+
+  char* name;
+  int len = strlen(arg[0]) + 1;
+  name = new char[len];
+  strcpy(name,arg[0]);
+
+  int itype = find_typeid(name);
+  delete [] name;
+
+  edoner[itype] = -1;
+
+  if (itype < 1 || itype > atom->ntypes)
+    error->all(FLERR,"Invalid type for Electron Donor set");
+
+  for(int i = 1; i < nnu+1; i++) {
+    if (strcmp(arg[1], nuname[i]) == 0) {
+      edoner[itype] = i;
+    } else if (strcmp(arg[1], "null") == 0) {
+      edoner[itype] = 0;
+    }
+  }
+
+  if (edoner[itype] < 0) error->all(FLERR,"Cannot find Electron Donor for this atom style");
 }
 
 /* ----------------------------------------------------------------------

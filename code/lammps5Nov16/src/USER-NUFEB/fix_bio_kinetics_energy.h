@@ -34,11 +34,11 @@ class FixKineticsEnergy : public Fix {
 
   double stepx, stepy, stepz;       // grids size
   double xlo,xhi,ylo,yhi,zlo,zhi;   // computational domain size
-  int nx, ny, nz;
-  double vol;
+  int nx, ny, nz;                   // # of grids
+  double vol;                       // grid volume
 
-  double eps_dens;
-  int epsflag;
+  double eps_dens;                  // EPS density
+  int epsflag;                      // EPS flag
 
   class AtomVecBio *avec;
   class FixKinetics *kinetics;

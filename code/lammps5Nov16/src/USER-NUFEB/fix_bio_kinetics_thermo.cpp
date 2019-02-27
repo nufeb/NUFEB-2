@@ -56,6 +56,8 @@ FixKineticsThermo::FixKineticsThermo(LAMMPS *lmp, int narg, char **arg) :
   // default values
   yflag = 0;
   rflag = 0;
+  gvol = 8e-14;
+  rg = 0.08205746;
 
   int iarg = 3;
   while (iarg < narg) {
@@ -75,7 +77,18 @@ FixKineticsThermo::FixKineticsThermo(LAMMPS *lmp, int narg, char **arg) :
       else
         error->all(FLERR, "Illegal reactor parameter:'open' or 'close'");
       iarg += 2;
-    } else
+    } else if (strcmp(arg[iarg], "gvol") == 0) {
+      gvol = force->numeric(FLERR, arg[iarg + 1]);
+      if (gvol < 0.0)
+        error->all(FLERR, "Illegal fix kinetics/thermo command: gvol");
+      iarg += 2;
+      ;
+    } else if (strcmp(arg[iarg], "rg") == 0) {
+      rg = force->numeric(FLERR, arg[iarg + 1]);
+      if (rg < 0.0)
+        error->all(FLERR, "Illegal fix kinetics/thermo command: rg");
+      iarg += 2;
+    }else
       error->all(FLERR, "Illegal fix kinetics/thermo command");
   }
 }
@@ -117,9 +130,9 @@ void FixKineticsThermo::init() {
   else if (yflag == 1 && bio->dissipation == NULL)
     error->all(FLERR, "fix_kinetics/thermo requires Dissipation inputs for unfix yield");
   else if (rflag == 1 && bio->kla == NULL)
-    error->all(FLERR, "fix_kinetics/thermo requires KLa input for closed reactor");
+    error->all(FLERR, "fix_kinetics/thermo requires Mass Transfer Coeffs input for closed reactor");
   else if (yflag == 1 && bio->edoner == NULL)
-    error->all(FLERR, "fix_kinetics/thermo requires eD input for unfix yield");
+    error->all(FLERR, "fix_kinetics/thermo requires Electron Donor input for unfix yield");
 
   int nnus = bio->nnu;
 
@@ -198,7 +211,7 @@ void FixKineticsThermo::init_khv() {
         if (strcmp(lName, nName2) == 0) {
           liqtogas[i] = j;
 
-          if (bio->nugibbs_coeff[j][0] > 10000) {
+          if (bio->nugibbs_coeff[j][0] == INF) {
             khv[j] = exp((bio->nugibbs_coeff[j][1] - bio->nugibbs_coeff[i][1]) / (-kinetics->rth * kinetics->temp));
           } else {
             khv[j] = exp((bio->nugibbs_coeff[j][0] - bio->nugibbs_coeff[i][1]) / (-kinetics->rth * kinetics->temp));
@@ -228,14 +241,6 @@ void FixKineticsThermo::thermo(double dt) {
   double **gibbs_cata = kinetics->gibbs_cata;
   double **gibbs_anab = kinetics->gibbs_anab;
   double ***activity = kinetics->activity;
-
-
-  if (!rflag) {
-    for (int j = 1; j <= nnus; j++) {
-      if (bio->nustate[j] == 1)
-        kinetics->nuconv[j] = true;
-    }
-  }
 
   // calculate metabolic energy
   double rthT = kinetics->temp * kinetics->rth;
@@ -286,7 +291,7 @@ void FixKineticsThermo::gas_liq_transfer(double dt) {
   double **nus = kinetics->nus;
   double ***activity = kinetics->activity;
   double rGas, rLiq;
-  double vRgT = kinetics->gvol * 1000 / (kinetics->rg * kinetics->temp);
+  double vRgT = gvol * 1000 / (rg * kinetics->temp);
 
 
   for (int grid = 0; grid < kinetics->bgrids; grid++) {
@@ -300,10 +305,10 @@ void FixKineticsThermo::gas_liq_transfer(double dt) {
 
       if (!liqID)
         continue;
-      if (bio->nugibbs_coeff[liqID][0] > 10000) {
-        gasT = bio->kla[liqID] * (activity[nu][0][grid] - activity[liqID][1][grid] / khv[liqID]);
+      if (bio->nugibbs_coeff[liqID][0] == INF) {
+        gasT = bio->kla[liqID] * (activity[nu][1][grid] - activity[liqID][1][grid] / khv[liqID]);
       } else {
-        gasT = bio->kla[liqID] * (activity[nu][0][grid] - activity[liqID][0][grid] / khv[liqID]);
+        gasT = bio->kla[liqID] * (activity[nu][1][grid] - activity[liqID][0][grid] / khv[liqID]);
       }
 
       rGas = -gasT;
@@ -331,12 +336,15 @@ void FixKineticsThermo::dynamic_yield() {
   double **grid_yield = kinetics->grid_yield;
 
   for (int i = 1; i <= atom->ntypes; i++) {
+    double ed = 0;
+    if (bio->edoner[i] > 0)
+      ed = -bio->anab_coeff[i][bio->edoner[i]];
 #pragma ivdep
 #pragma vector aligned
     for (int grid = 0; grid < kinetics->bgrids; grid++) {
       //use catabolic and anabolic energy values to derive catabolic reaction equation
       if (gibbs_cata[i][grid] < 0) {
-        grid_yield[i][grid] = -(gibbs_anab[i][grid] + bio->dissipation[i]) / gibbs_cata[i][grid] + bio->edoner[i];
+        grid_yield[i][grid] = -(gibbs_anab[i][grid] + bio->dissipation[i]) / gibbs_cata[i][grid] + ed;
         if (grid_yield[i][grid] != 0)
           grid_yield[i][grid] = 1 / grid_yield[i][grid];
       } else {
