@@ -22,6 +22,8 @@
 #include "update.h"
 #include "input.h"
 #include "variable.h"
+#include "atom.h"
+#include "domain.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -31,7 +33,7 @@ using namespace FixConst;
 FixFluid::FixFluid(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
-  if (narg != 7) error->all(FLERR,"Illegal fix nufebFoam command");
+  if (narg < 7) error->all(FLERR,"Illegal fix nufebFoam command");
 
   var = new char*[4];
   ivar = new int[4];
@@ -40,6 +42,24 @@ FixFluid::FixFluid(LAMMPS *lmp, int narg, char **arg) :
     int n = strlen(&arg[3+i][2]) + 1;
     var[i] = new char[n];
     strcpy(var[i], &arg[3+i][2]);
+  }
+
+  scaling = 0;
+  scale_dt = 0;
+  scale_nevery = 0;
+
+  int iarg = 7;
+  while (iarg < narg) {
+    if (strcmp(arg[iarg], "scaling") == 0) {
+      scaling = 1;
+      scale_dt = force->numeric(FLERR, arg[iarg + 1]);
+      scale_nevery = force->inumeric(FLERR, arg[iarg + 2]);
+
+      if (scale_nevery < 0 || scale_dt < 0)
+        error->all(FLERR, "Illegal fix nufebFoam command: scaling");
+      iarg += 3;
+    } else
+      error->all(FLERR, "Illegal fix nufebFoam command");
   }
 }
 
@@ -80,11 +100,56 @@ void FixFluid::init()
 
   demflag = 0;
   dem_dt = update->dt;
+
+  //Get computational domain size
+  if (domain->triclinic == 0) {
+    xlo = domain->boxlo[0];
+    xhi = domain->boxhi[0];
+    ylo = domain->boxlo[1];
+    yhi = domain->boxhi[1];
+    zlo = domain->boxlo[2];
+    zhi = domain->boxhi[2];
+  } else {
+    xlo = domain->boxlo_bound[0];
+    xhi = domain->boxhi_bound[0];
+    ylo = domain->boxlo_bound[1];
+    yhi = domain->boxhi_bound[1];
+    zlo = domain->boxlo_bound[2];
+    zhi = domain->boxhi_bound[2];
+  }
 }
 
 /* ---------------------------------------------------------------------- */
 
 int FixFluid::setmask()
 {
-  return 0;
+  int mask = 0;
+  mask |= POST_INTEGRATE;
+  return mask;
 }
+
+/* ---------------------------------------------------------------------- */
+
+void FixFluid::post_integrate()
+{
+  if (scale_nevery == 0 || update->ntimestep % scale_nevery)
+    return;
+
+  double **x = atom->x;
+  double **v = atom->v;
+  int nlocal = atom->nlocal;
+  int *mask = atom->mask;
+
+  double vx = 0;
+  double vy = 0;
+  double vz = 0;
+
+   for (int i = 0; i < nlocal; i++) {
+     if (mask[i] & groupbit) {
+       vx += v[i][0];
+       vy += v[i][1];
+       vz += v[i][2];
+     }
+   }
+}
+

@@ -38,6 +38,7 @@ class ComputeNufebGas : public Compute {
   double vol, pressure;      // grid vol and gas pressure
 
   class FixKinetics *kinetics;
+  class FixKineticsThermo *thermo;
   class BIO *bio;
 };
 }

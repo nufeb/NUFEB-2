@@ -411,7 +411,7 @@ void FixKineticsDiffusion::update_grids() {
         }
 
         int ind = get_index(grid);
-        if (ind >= 0 && ind < kinetics->subn[0] * kinetics->subn[1] * kinetics->subn[2]) {
+        if (ind != -1) {
           kinetics->nus[nu][ind] = nubs[nu];
         }
       }
@@ -427,12 +427,16 @@ void FixKineticsDiffusion::update_diff_coeff() {
   for (int i = 1; i <= bio->nnu; i++) {
     for (int grid = 0; grid < nxx_yy_zz; grid++) {
       int ind = get_index(grid);
-      if(dcflag == 1)
-        grid_diff_coeff[i][grid] = bio->diff_coeff[i] * (1 - (0.43 * pow(kinetics->xdensity[0][ind]/vol,0.92)) / (11.19 + 0.27 * pow(kinetics->xdensity[0][ind]/vol,0.99)));
-      else if (dcflag == 2 && kinetics-> xdensity[0][ind])
-        grid_diff_coeff[i][grid] = bio->diff_coeff[i] * 0.8;
-      else
-        grid_diff_coeff[i][grid] = bio->diff_coeff[i];
+
+      if (ind != -1 && kinetics->xdensity[0][ind]) {
+        if(dcflag == 1) {
+          grid_diff_coeff[i][grid] = bio->diff_coeff[i] * (1 - (0.43 * pow(kinetics->xdensity[0][ind]/vol,0.92)) / (11.19 + 0.27 * pow(kinetics->xdensity[0][ind]/vol,0.99)));
+        } else if (dcflag == 2) {
+          grid_diff_coeff[i][grid] = bio->diff_coeff[i] * 0.8;
+        }
+        continue;
+      }
+      grid_diff_coeff[i][grid] = bio->diff_coeff[i];
     }
   }
 }
@@ -536,13 +540,18 @@ void FixKineticsDiffusion::compute_bulk() {
  ------------------------------------------------------------------------- */
 
 int FixKineticsDiffusion::get_index(int grid) {
+  int ind;
+
   int ix = (xgrid[grid][0] - kinetics->sublo[0]) / stepx;
   int iy = (xgrid[grid][1] - kinetics->sublo[1]) / stepy;
   int iz = (xgrid[grid][2] - kinetics->sublo[2]) / stepz;
 
-  int ind = iz * kinetics->subn[0] * kinetics->subn[1] + iy * kinetics->subn[0] + ix;
+  ind = iz * kinetics->subn[0] * kinetics->subn[1] + iy * kinetics->subn[0] + ix;
 
-  return ind;
+  if (ind < 0 || ind >= kinetics->subn[0] * kinetics->subn[1] * kinetics->subn[2])
+    return -1;
+  else
+    return ind;
 }
 
 

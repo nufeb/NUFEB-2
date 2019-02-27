@@ -116,9 +116,6 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
   //set default values
   temp = 298.15;
   rth = 0.0083144;
-  gvol = 8e-14;
-  rg = 0.08205746;
- // iph = 7.0;
   demflag = 0;
   niter = -1;
   devery = 1;
@@ -134,17 +131,6 @@ FixKinetics::FixKinetics(LAMMPS *lmp, int narg, char **arg) :
       rth = force->numeric(FLERR, arg[iarg + 1]);
       if (rth < 0.0)
         error->all(FLERR, "Illegal fix kinetics command: rth");
-      iarg += 2;
-    } else if (strcmp(arg[iarg], "gvol") == 0) {
-      gvol = force->numeric(FLERR, arg[iarg + 1]);
-      if (gvol < 0.0)
-        error->all(FLERR, "Illegal fix kinetics command: gvol");
-      iarg += 2;
-      ;
-    } else if (strcmp(arg[iarg], "rg") == 0) {
-      rg = force->numeric(FLERR, arg[iarg + 1]);
-      if (rg < 0.0)
-        error->all(FLERR, "Illegal fix kinetics command: rg");
       iarg += 2;
     } else if (strcmp(arg[iarg], "demflag") == 0) {
       demflag = force->inumeric(FLERR, arg[iarg + 1]);
@@ -205,8 +191,7 @@ FixKinetics::~FixKinetics() {
   memory->destroy(nus);
   memory->destroy(nubs);
   memory->destroy(gibbs_cata);
-  memory->destroy(gibbs_anab);
-//  memory->destroy(keq);
+  memory->destroy(gibbs_anab);;
   memory->destroy(sh);
   memory->destroy(fv);
   memory->destroy(xdensity);
@@ -313,21 +298,22 @@ void FixKinetics::init() {
   domain->set_local_box();
 }
 
+/* ---------------------------------------------------------------------- */
+
 void FixKinetics::init_param() {
-  //initialize grid yield, inlet concentration, consumption
   for (int j = 0; j < ngrids; j++) {
     fv[0][j] = 0;
     fv[1][j] = 0;
     fv[2][j] = 0;
 
-    for (int i = 1; i <= atom->ntypes; i++) {
+    for (int i = 0; i <= atom->ntypes; i++) {
       grid_yield[i][j] = bio->yield[i];
       gibbs_cata[i][j] = 0;
       gibbs_anab[i][j] = 0;
       xdensity[i][j] = 0;
     }
 
-    for (int i = 1; i <= bio->nnu; i++) {
+    for (int i = 0; i <= bio->nnu; i++) {
       nus[i][j] = bio->ini_nus[i][0];
       nur[i][j] = 0;
 
@@ -463,6 +449,9 @@ double FixKinetics::get_max_height() {
   return global_max;
 }
 
+/* ----------------------------------------------------------------------
+ update grid size based on boundary layer height
+ ------------------------------------------------------------------------- */
 void FixKinetics::update_bgrids() {
   if (blayer >= 0) {
     maxheight = get_max_height();
@@ -542,13 +531,14 @@ void FixKinetics::reset_isconv() {
       nuconv[i] = true;
     else if (bio->diff_coeff[i] == 0)
       nuconv[i] = true;
+    else if (bio->nustate[i] == 1)
+      nuconv[i] = true;
     else
       nuconv[i] = false;
   }
 }
 
 /* ---------------------------------------------------------------------- */
-
 int FixKinetics::modify_param(int narg, char **arg) {
   if (strcmp(arg[0], "demflag") == 0) {
     if (narg != 2)
@@ -561,6 +551,8 @@ int FixKinetics::modify_param(int narg, char **arg) {
   return 0;
 }
 
+/* ---------------------------------------------------------------------- */
+
 int FixKinetics::get_elem_per_cell() const {
   int result = 2 * bio->nnu; // nuS + nuR
   if (energy) {
@@ -572,6 +564,8 @@ int FixKinetics::get_elem_per_cell() const {
   }
   return result;
 }
+
+/* ---------------------------------------------------------------------- */
 
 void FixKinetics::migrate() {
   Subgrid<double, 3> new_subgrid = Subgrid<double, 3>(grid, Box<double, 3>(domain->sublo, domain->subhi),
@@ -587,6 +581,8 @@ void FixKinetics::migrate() {
   diffusion->migrate(grid, subgrid.get_box(), new_subgrid.get_box());
   subgrid = new_subgrid;
 }
+
+/* ---------------------------------------------------------------------- */
 
 void FixKinetics::resize(const Subgrid<double, 3> &subgrid) {
   int nnus = bio->nnu;

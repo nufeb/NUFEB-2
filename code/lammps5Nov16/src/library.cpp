@@ -457,6 +457,31 @@ int lammps_get_dem_steps(void *ptr) {
 
 /* ---------------------------------------------------------------------- */
 
+double lammps_get_scale_time(void *ptr) {
+  LAMMPS *lammps = (LAMMPS *) ptr;
+
+  // the pointer to the fix_fluid class
+  class FixFluid *fluid_ptr = NULL;
+
+  int i;
+  for (i = 0; i < (lammps->modify->nfix); i++) {
+    if (strcmp(lammps->modify->fix[i]->style, "nufebFoam") == 0) {
+      fluid_ptr = (FixFluid *) lammps->modify->fix[i];
+      break;
+    }
+  }
+
+  double time = 0;
+  //if (fluid_ptr == NULL)  error->all(FLERR, "Cannot finid fix nufebFoam");
+  if (fluid_ptr->scaling == 1)
+    time = lammps->update->ntimestep / fluid_ptr->scale_nevery * fluid_ptr->scale_dt;
+
+  return time;
+}
+
+
+/* ---------------------------------------------------------------------- */
+
 int lammps_get_bio_steps(void *ptr) {
   LAMMPS *lammps = (LAMMPS *) ptr;
 

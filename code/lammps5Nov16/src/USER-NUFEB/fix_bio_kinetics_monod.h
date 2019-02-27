@@ -34,17 +34,17 @@ class FixKineticsMonod : public Fix {
   int *ivar;
 
   int isub, io2, inh4, ino2, ino3;  // nutrient index
-  int idead, ieps;
+  int idead, ieps;                  // type id for EPS and DEAD
 
   int *species;                     // species index 0 = unknow, 1 = het, 2 = aob, 3 = nob, 4 = eps, 5 = dead
-  double ***growrate;
+  double ***growrate;               // growth rate [type][2][grid]
 
   double stepx, stepy, stepz;       // grids size
   double xlo,xhi,ylo,yhi,zlo,zhi;   // computational domain size
   int nx, ny, nz;
   double vol;                       // grid volume and gas volume
-  double eps_dens;                   // EPS density
-  double eta_het;
+  double eps_dens;                  // EPS density
+  double eta_het;                   // HET reduction factor in anoxic condition
 
   class AtomVecBio *avec;
   class FixKinetics *kinetics;

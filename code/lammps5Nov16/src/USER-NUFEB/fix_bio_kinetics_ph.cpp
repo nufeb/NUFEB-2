@@ -149,13 +149,14 @@ void FixKineticsPH::init_keq() {
   double **nugibbs_coeff = bio->nugibbs_coeff;
 
   for (int i = 1; i < nnus + 1; i++) {
-
     for (int j = 0; j < 4; j++) {
-      if (nugibbs_coeff[i][j+1] == INF || nugibbs_coeff[i][j] == INF) {
+      int k = (j == 3) ? j : j+1;
+
+      if (nugibbs_coeff[i][k] == INF || nugibbs_coeff[i][j] == INF) {
         keq[i][j] = 0;
       } else {
-        if (j > 0) keq[i][j] = exp((nugibbs_coeff[i][j+1] - nugibbs_coeff[i][j]) / (-kinetics->rth * kinetics->temp));
-        else keq[j][0] = exp((dG0H2O + nugibbs_coeff[i][0] - nugibbs_coeff[i][1]) / (-kinetics->rth * kinetics->temp));
+        if (j > 0) keq[i][j] = exp((nugibbs_coeff[i][k] - nugibbs_coeff[i][j]) / (-kinetics->rth * kinetics->temp));
+        else keq[i][0] = exp((dG0H2O + nugibbs_coeff[i][0] - nugibbs_coeff[i][1]) / (-kinetics->rth * kinetics->temp));
       }
     }
   }
@@ -223,8 +224,12 @@ void FixKineticsPH::compute_activity(int first, int last, double iph) {
 
 void  FixKineticsPH::buffer_ph() {
   int nnus = bio->nnu;
+  int ind_na, ind_cl;
 
-  if (bio->find_nuid("na") < 0 || !bio->find_nuid("cl") < 0)
+  ind_na = bio->find_nuid("na");
+  ind_cl = bio->find_nuid("cl");
+
+  if (ind_na < 0 || !ind_cl < 0)
     error->all(FLERR, "buffer ph requires nutreint 'na' and 'cl'");
 
   int grid;
@@ -252,7 +257,7 @@ void  FixKineticsPH::buffer_ph() {
         act = activity[nu][i][grid];
         chr = nucharge[nu][i];
 
-        if (chr == NA) continue;
+        if (chr == INF) continue;
 
         diff = act * chr;
 
@@ -262,8 +267,8 @@ void  FixKineticsPH::buffer_ph() {
       kinetics->sh[grid] = oldsh;
     }
 
-    kinetics->nubs[bio->find_nuid("na")] += minus;
-    kinetics->nubs[bio->find_nuid("cl")] += plus + evash;
+    kinetics->nubs[ind_na] += minus;
+    kinetics->nubs[ind_cl] += plus + evash;
   }
 }
 

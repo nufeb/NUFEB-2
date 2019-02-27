@@ -1,0 +1,1330 @@
+LAMMPS (5 Nov 2016)
+# NUFEB simulation
+
+atom_style	bio
+atom_modify	map array sort 100 5.0e-7
+boundary	pp pp ff
+newton		off
+processors  4 1 1
+
+comm_modify	vel yes
+read_data_bio atom.in
+  orthogonal box = (0 0 0) to (0.0001 4e-05 0.0001)
+  4 by 1 by 1 MPI processor grid
+  reading atoms ...
+  44 atoms
+  5 nutrients
+
+group HET type 1
+40 atoms in group HET
+group AOB type 2
+1 atoms in group AOB
+group NOB type 3
+1 atoms in group NOB
+group EPS type 4
+1 atoms in group EPS
+group DEAD type 5
+1 atoms in group DEAD
+
+neighbor	5e-7 bin
+neigh_modify	delay 0 one 5000
+
+##############Define DEM Variables&Commands##############
+
+pair_style  gran/hooke/history 1.e-4 NULL 1.e-5 NULL 0.0 1
+pair_coeff  * *
+
+timestep 1
+
+fix 1 all nve/limit 1e-7
+fix fv all viscous 1e-5
+
+fix zw all wall/gran hooke/history 2000 NULL 500.0 NULL 1.5 0 zplane  0.0   1.0e-04
+
+variable kanc equal 50
+
+fix zwa all walladh v_kanc zplane  0.0   1.0e-04
+
+variable ke equal 5e+10
+#fix j1 all epsadh 1 v_ke 1
+
+##############Define IBm Variables##############
+
+#variables used in fix eps_extract
+variable EPSdens equal 30
+variable EPSratio equal 1.25
+
+#variables used in fix division
+variable divDia equal 1.36e-6
+
+#variables used in fix kinetics
+variable diffT equal 1e-4
+variable tol equal 1e-6
+variable etaHET equal 0.6
+variable layer equal -1
+
+#variables used in fix death
+variable deadDia equal 9e-7
+
+
+##############Define IBm Commands##############
+
+fix k1 all kinetics 1000 30 12 30 v_diffT v_layer niter 10000
+fix kgm all kinetics/growth/monod v_EPSdens v_etaHET
+fix g1 all kinetics/diffusion v_tol pp pp nd kg
+fix d1 all divide 1000 v_EPSdens v_divDia 31231
+fix e1 HET eps_extract 1000 v_EPSratio v_EPSdens 42123
+fix d5 all death 1000 v_deadDia
+
+##############Define IBm Computes##############
+
+compute myNtypes all ntypes
+
+##############Simulation Output##############
+
+#dump		id all custom 1000 snapshot.bubblemd id type diameter x y z
+dump		du1 all custom/vtk 10000 atom%_*.vtu id type diameter x y z
+dump		du2 all grid 10000 grid_%_*.vti con
+#dump            du3 all bio 100 con bulk
+thermo_style    custom step cpu atoms biomass c_myNtypes[*]
+thermo		1000
+thermo_modify	lost ignore
+
+run 600000
+Neighbor list info ...
+  2 neighbor list requests
+  update every 1 steps, delay 0 steps, check yes
+  max neighbors/atom: 5000, page size: 100000
+  master list distance cutoff = 1.5e-06
+  ghost atom cutoff = 1.5e-06
+  binsize = 7.5e-07 -> bins = 134 54 134
+Memory usage per processor = 3.90553 Mbytes
+Step CPU Atoms biomass c_myNtypes[1] c_myNtypes[2] c_myNtypes[3] c_myNtypes[4] c_myNtypes[5] c_myNtypes[6] 
+       0            0       44 3.141593e-15            0           40            1            1            1            1 
+number of iterations: 10000 
+    1000    2.1518791       44 3.7622645e-15            0           40            0            0            1            3 
+number of iterations: 10000 
+    2000    4.2308302       44 4.4952959e-15            0           40            0            0            1            3 
+number of iterations: 10000 
+    3000    6.3012671       44 5.3586563e-15            0           40            0            0            1            3 
+number of iterations: 10000 
+    4000    8.3334911       44 6.3716374e-15            0           40            0            0            1            3 
+number of iterations: 10000 
+    5000    10.382689       44 7.5542339e-15            0           40            0            0            1            3 
+number of iterations: 10000 
+    6000    12.423944       84 9.7119644e-15            0           40            0            0           41            3 
+number of iterations: 10000 
+    7000    14.405834      124 1.1288919e-14            0           80            0            0           41            3 
+number of iterations: 10000 
+    8000    16.399336      124 1.3085375e-14            0           80            0            0           41            3 
+number of iterations: 10000 
+    9000    18.408426      188 1.610435e-14            0           80            0            0          105            3 
+number of iterations: 10000 
+   10000    20.433625      218 1.8638923e-14            0           94            0            0          121            3 
+number of iterations: 10000 
+   11000     22.48346      258 2.1081219e-14            0          134            0            0          121            3 
+number of iterations: 10000 
+   12000    24.559841      340 2.4377524e-14            0          156            0            0          181            3 
+number of iterations: 10000 
+   13000    26.976025      432 2.8365511e-14            0          160            0            0          269            3 
+number of iterations: 10000 
+   14000    30.337426      456 3.1428428e-14            0          172            0            0          281            3 
+number of iterations: 10000 
+   15000    32.900639      478 3.4382529e-14            0          194            0            0          281            3 
+number of iterations: 10000 
+   16000     35.11039      550 3.7899372e-14            0          228            0            0          319            3 
+number of iterations: 10000 
+   17000    37.082149      660 4.2100787e-14            0          250            0            0          407            3 
+number of iterations: 10000 
+   18000    39.039649      756 4.6091214e-14            0          280            0            0          473            3 
+number of iterations: 10000 
+   19000    41.005154      826 4.9958202e-14            0          294            0            0          529            3 
+number of iterations: 10000 
+   20000    42.981439      868 5.3394372e-14            0          316            0            0          549            3 
+number of iterations: 10000 
+   21000    44.976432      888 5.6651757e-14            0          334            0            0          551            3 
+number of iterations: 10000 
+   22000    46.937987      932 6.0194666e-14            0          356            0            0          573            3 
+number of iterations: 10000 
+   23000    48.930836      999 6.4057101e-14            0          376            0            0          620            3 
+number of iterations: 10000 
+   24000     50.91092     1093 6.8317731e-14            0          396            0            0          694            3 
+number of iterations: 10000 
+   25000    52.897515     1211 7.2794432e-14            0          426            0            0          782            3 
+number of iterations: 10000 
+   26000    54.885049     1301 7.6885586e-14            0          455            0            0          843            3 
+number of iterations: 9141 
+   27000    56.727174     1402 8.1102661e-14            0          486            0            0          913            3 
+number of iterations: 9152 
+   28000    58.594324     1474 8.4950912e-14            0          515            0            0          956            3 
+number of iterations: 8924 
+   29000    60.396151     1524 8.8601871e-14            0          541            0            0          980            3 
+number of iterations: 7534 
+   30000    61.929737     1572 9.2208621e-14            0          570            0            0          999            3 
+number of iterations: 6940 
+   31000    63.372789     1618 9.5928115e-14            0          587            0            0         1028            3 
+number of iterations: 6796 
+   32000    64.773609     1662 9.9547574e-14            0          611            0            0         1048            3 
+number of iterations: 6845 
+   33000    66.179432     1738 1.0344578e-13            0          643            0            0         1092            3 
+number of iterations: 6325 
+   34000    67.494123     1808 1.0754396e-13            0          656            0            0         1149            3 
+number of iterations: 5954 
+   35000    68.730211     1892 1.117033e-13            0          677            0            0         1212            3 
+number of iterations: 6018 
+   36000    70.002239     1988 1.1588922e-13            0          705            0            0         1280            3 
+number of iterations: 6110 
+   37000    71.288328     2082 1.2023204e-13            0          724            0            0         1355            3 
+number of iterations: 5053 
+   38000    72.366138     2172 1.2448702e-13            0          744            0            0         1425            3 
+number of iterations: 5908 
+   39000    73.634011     2259 1.2864482e-13            0          771            0            0         1485            3 
+number of iterations: 5470 
+   40000    74.819654     2354 1.3282468e-13            0          801            0            0         1550            3 
+number of iterations: 5110 
+   41000    75.953598     2417 1.3677929e-13            0          822            0            0         1592            3 
+number of iterations: 4607 
+   42000    76.958551     2479 1.4069622e-13            0          840            0            0         1636            3 
+number of iterations: 4511 
+   43000    77.966414     2544 1.4452728e-13            0          869            0            0         1672            3 
+number of iterations: 5095 
+   44000    79.092098     2613 1.4838006e-13            0          899            0            0         1711            3 
+number of iterations: 3927 
+   45000    79.996788     2675 1.5222414e-13            0          923            0            0         1749            3 
+number of iterations: 3830 
+   46000     80.86873     2749 1.5615917e-13            0          947            0            0         1799            3 
+number of iterations: 3998 
+   47000    81.779936     2811 1.5991806e-13            0          973            0            0         1835            3 
+number of iterations: 3757 
+   48000    82.654732     2903 1.6391222e-13            0         1011            0            0         1889            3 
+number of iterations: 4300 
+   49000    83.647952     2968 1.6776736e-13            0         1033            0            0         1932            3 
+number of iterations: 3741 
+   50000    84.535021     3068 1.7183187e-13            0         1068            0            0         1997            3 
+number of iterations: 3509 
+   51000    85.396806     3137 1.7570634e-13            0         1089            0            0         2045            3 
+number of iterations: 3335 
+   52000    86.199337     3231 1.7986876e-13            0         1114            0            0         2114            3 
+number of iterations: 3642 
+   53000     87.06209     3305 1.8383345e-13            0         1135            0            0         2167            3 
+number of iterations: 3720 
+   54000    87.964707     3381 1.8778615e-13            0         1157            0            0         2221            3 
+number of iterations: 3462 
+   55000    88.812099     3448 1.9157424e-13            0         1181            0            0         2264            3 
+number of iterations: 3167 
+   56000    89.601707     3516 1.9542806e-13            0         1206            0            0         2307            3 
+number of iterations: 3068 
+   57000    90.377142     3601 1.9942386e-13            0         1230            0            0         2368            3 
+number of iterations: 2512 
+   58000    91.065671     3688 2.0347075e-13            0         1254            0            0         2431            3 
+number of iterations: 3149 
+   59000    91.866031     3776 2.0742592e-13            0         1285            0            0         2488            3 
+number of iterations: 3031 
+   60000    92.651121     3873 2.116484e-13            0         1303            0            0         2567            3 
+number of iterations: 2709 
+   61000    93.396798     3947 2.1556527e-13            0         1323            0            0         2621            3 
+number of iterations: 2969 
+   62000    94.180244     4040 2.1965103e-13            0         1348            0            0         2689            3 
+number of iterations: 2971 
+   63000    94.966457     4109 2.2354177e-13            0         1363            0            0         2743            3 
+number of iterations: 2747 
+   64000     95.72563     4179 2.2730333e-13            0         1388            0            0         2788            3 
+number of iterations: 2897 
+   65000    96.502807     4262 2.3118531e-13            0         1414            0            0         2845            3 
+number of iterations: 2692 
+   66000    97.247427     4338 2.3499323e-13            0         1438            0            0         2897            3 
+number of iterations: 2607 
+   67000    97.971639     4400 2.3870911e-13            0         1456            0            0         2941            3 
+number of iterations: 2643 
+   68000    98.703061     4476 2.4251439e-13            0         1482            0            0         2991            3 
+number of iterations: 2621 
+   69000    99.433809     4565 2.4651392e-13            0         1504            0            0         3058            3 
+number of iterations: 2096 
+   70000    100.07035     4652 2.5055258e-13            0         1521            0            0         3128            3 
+number of iterations: 2537 
+   71000    100.83468     4738 2.5446255e-13            0         1546            0            0         3189            3 
+number of iterations: 2439 
+   72000    101.54383     4811 2.5825272e-13            0         1568            0            0         3240            3 
+number of iterations: 2219 
+   73000     102.2145     4882 2.6194247e-13            0         1590            0            0         3289            3 
+number of iterations: 2200 
+   74000    102.87083     4964 2.6576552e-13            0         1614            0            0         3347            3 
+number of iterations: 2102 
+   75000    103.52733     5049 2.6948668e-13            0         1649            0            0         3397            3 
+number of iterations: 1997 
+   76000    104.16713     5128 2.7329912e-13            0         1670            0            0         3455            3 
+number of iterations: 2152 
+   77000    104.82705     5208 2.7710857e-13            0         1694            0            0         3511            3 
+number of iterations: 2294 
+   78000    105.52288     5300 2.8095079e-13            0         1725            0            0         3572            3 
+number of iterations: 2098 
+   79000    106.18353     5368 2.8460806e-13            0         1743            0            0         3622            3 
+number of iterations: 1814 
+   80000    106.78799     5444 2.8826142e-13            0         1767            0            0         3674            3 
+number of iterations: 2161 
+   81000    107.51207     5531 2.9208671e-13            0         1792            0            0         3736            3 
+number of iterations: 2154 
+   82000     108.1865     5626 2.9591311e-13            0         1823            0            0         3800            3 
+number of iterations: 2123 
+   83000    108.86765     5701 2.9963378e-13            0         1842            0            0         3856            3 
+number of iterations: 2259 
+   84000     109.5881     5774 3.0321805e-13            0         1869            0            0         3902            3 
+number of iterations: 1762 
+   85000    110.18595     5853 3.0687617e-13            0         1895            0            0         3955            3 
+number of iterations: 2004 
+   86000    110.85945     5938 3.1065183e-13            0         1919            0            0         4016            3 
+number of iterations: 2057 
+   87000    111.53852     6016 3.1441046e-13            0         1938            0            0         4075            3 
+number of iterations: 1998 
+   88000    112.19588     6082 3.1805698e-13            0         1953            0            0         4126            3 
+number of iterations: 1753 
+   89000    112.80478     6165 3.2181786e-13            0         1973            0            0         4189            3 
+number of iterations: 1646 
+   90000    113.42099     6242 3.2537823e-13            0         2001            0            0         4238            3 
+number of iterations: 1735 
+   91000    114.07625     6338 3.2914698e-13            0         2031            0            0         4304            3 
+number of iterations: 1727 
+   92000    114.69805     6437 3.3302171e-13            0         2054            0            0         4380            3 
+number of iterations: 1755 
+   93000    115.33988     6523 3.3669763e-13            0         2077            0            0         4443            3 
+number of iterations: 1784 
+   94000    115.98875     6603 3.4033257e-13            0         2096            0            0         4504            3 
+number of iterations: 1560 
+   95000    116.59266     6685 3.439695e-13            0         2118            0            0         4564            3 
+number of iterations: 1694 
+   96000    117.24309     6762 3.475683e-13            0         2137            0            0         4622            3 
+number of iterations: 1830 
+   97000    117.94851     6852 3.5134163e-13            0         2159            0            0         4690            3 
+number of iterations: 1825 
+   98000    118.60514     6936 3.5493465e-13            0         2187            0            0         4746            3 
+number of iterations: 1868 
+   99000     119.3108     7014 3.5841335e-13            0         2213            0            0         4798            3 
+number of iterations: 1761 
+  100000    119.99355     7089 3.6196539e-13            0         2230            0            0         4856            3 
+number of iterations: 1729 
+  101000    120.69282     7171 3.6564292e-13            0         2249            0            0         4919            3 
+number of iterations: 1635 
+  102000    121.33014     7265 3.6936287e-13            0         2278            0            0         4984            3 
+number of iterations: 1758 
+  103000    122.00791     7351 3.7298831e-13            0         2300            0            0         5048            3 
+number of iterations: 1421 
+  104000    122.62581     7434 3.7661251e-13            0         2317            0            0         5114            3 
+number of iterations: 1296 
+  105000    123.21444     7503 3.8002678e-13            0         2332            0            0         5168            3 
+number of iterations: 1509 
+  106000    123.85763     7584 3.8357658e-13            0         2353            0            0         5228            3 
+number of iterations: 1284 
+  107000    124.45237     7659 3.8707789e-13            0         2375            0            0         5281            3 
+number of iterations: 1343 
+  108000    125.04384     7752 3.9074414e-13            0         2397            0            0         5352            3 
+number of iterations: 1464 
+  109000    125.69407     7841 3.941878e-13            0         2429            0            0         5409            3 
+number of iterations: 1511 
+  110000    126.34206     7939 3.9787965e-13            0         2451            0            0         5485            3 
+number of iterations: 1596 
+  111000    127.05751     8027 4.0146296e-13            0         2473            0            0         5551            3 
+number of iterations: 1224 
+  112000     127.6542     8107 4.0489579e-13            0         2497            0            0         5607            3 
+number of iterations: 1439 
+  113000    128.29926     8200 4.0857254e-13            0         2514            0            0         5683            3 
+number of iterations: 1417 
+  114000    128.93245     8300 4.1209842e-13            0         2546            0            0         5751            3 
+number of iterations: 1373 
+  115000    129.57991     8370 4.1548428e-13            0         2561            0            0         5806            3 
+number of iterations: 1244 
+  116000    130.18042     8458  4.18971e-13            0         2583            0            0         5872            3 
+number of iterations: 1805 
+  117000    130.90548     8550 4.2254824e-13            0         2604            0            0         5943            3 
+number of iterations: 1341 
+  118000    131.54924     8622 4.2592373e-13            0         2619            0            0         6000            3 
+number of iterations: 1269 
+  119000    132.16395     8698 4.2941076e-13            0         2631            0            0         6064            3 
+number of iterations: 1069 
+  120000    132.77506     8780 4.3285643e-13            0         2651            0            0         6126            3 
+number of iterations: 1520 
+  121000    133.50911     8862 4.3634247e-13            0         2668            0            0         6191            3 
+number of iterations: 1364 
+  122000    134.17499     8941 4.3971856e-13            0         2688            0            0         6250            3 
+number of iterations: 1208 
+  123000    134.80957     9019 4.430979e-13            0         2705            0            0         6311            3 
+number of iterations: 1109 
+  124000    135.42671     9101 4.4651174e-13            0         2724            0            0         6374            3 
+number of iterations: 1338 
+  125000    136.09451     9182 4.500414e-13            0         2738            0            0         6441            3 
+number of iterations: 1414 
+  126000    136.76943     9280 4.5367727e-13            0         2756            0            0         6521            3 
+number of iterations: 1353 
+  127000    137.46458     9357 4.5696351e-13            0         2780            0            0         6574            3 
+number of iterations: 1185 
+  128000    138.10767     9446 4.6043774e-13            0         2798            0            0         6645            3 
+number of iterations: 1126 
+  129000    138.74305     9521 4.636765e-13            0         2816            0            0         6702            3 
+number of iterations: 1038 
+  130000    139.36871     9609 4.6714151e-13            0         2832            0            0         6774            3 
+number of iterations: 1282 
+  131000    140.05703     9696 4.7056096e-13            0         2852            0            0         6841            3 
+number of iterations: 1118 
+  132000    140.70832     9779 4.738988e-13            0         2872            0            0         6904            3 
+number of iterations: 1323 
+  133000    141.40575     9850 4.7710018e-13            0         2892            0            0         6955            3 
+number of iterations: 1018 
+  134000    142.05005     9939 4.8043862e-13            0         2914            0            0         7022            3 
+number of iterations: 972 
+  135000    142.67658    10018 4.8375336e-13            0         2928            0            0         7087            3 
+number of iterations: 1112 
+  136000    143.34988    10102 4.8702709e-13            0         2953            0            0         7146            3 
+number of iterations: 1251 
+  137000    144.03663    10198 4.9041093e-13            0         2979            0            0         7216            3 
+number of iterations: 1418 
+  138000    144.76263    10288 4.937053e-13            0         3004            0            0         7281            3 
+number of iterations: 1159 
+  139000     145.4435    10362 4.9690146e-13            0         3020            0            0         7339            3 
+number of iterations: 1371 
+  140000    146.14676    10456 5.0029085e-13            0         3043            0            0         7410            3 
+number of iterations: 1323 
+  141000    146.91417    10544 5.0365117e-13            0         3061            0            0         7480            3 
+number of iterations: 1076 
+  142000    147.59655    10617 5.0675764e-13            0         3078            0            0         7536            3 
+number of iterations: 1284 
+  143000    148.32056    10703 5.1009739e-13            0         3092            0            0         7608            3 
+number of iterations: 1489 
+  144000    149.09738    10784 5.1331981e-13            0         3109            0            0         7672            3 
+number of iterations: 1090 
+  145000    149.77829    10867 5.166033e-13            0         3126            0            0         7738            3 
+number of iterations: 1062 
+  146000    150.44856    10948 5.1986386e-13            0         3142            0            0         7803            3 
+number of iterations: 985 
+  147000    151.12939    11027 5.2303706e-13            0         3160            0            0         7864            3 
+number of iterations: 966 
+  148000    151.79388    11094 5.2611128e-13            0         3171            0            0         7920            3 
+number of iterations: 1133 
+  149000    152.50379    11180 5.2928407e-13            0         3196            0            0         7981            3 
+number of iterations: 1407 
+  150000     153.2834    11266 5.3242353e-13            0         3221            0            0         8042            3 
+number of iterations: 928 
+  151000    154.03955    11350 5.3560868e-13            0         3242            0            0         8105            3 
+number of iterations: 1199 
+  152000    154.75476    11430 5.3877286e-13            0         3257            0            0         8170            3 
+number of iterations: 1049 
+  153000     155.4605    11541 5.422371e-13            0         3279            0            0         8259            3 
+number of iterations: 1270 
+  154000    156.24178    11611 5.4526544e-13            0         3295            0            0         8313            3 
+number of iterations: 1459 
+  155000    157.03407    11694 5.4838005e-13            0         3312            0            0         8379            3 
+number of iterations: 1337 
+  156000    157.81971    11777 5.5159371e-13            0         3323            0            0         8451            3 
+number of iterations: 1041 
+  157000    158.52003    11886 5.5498896e-13            0         3347            0            0         8536            3 
+number of iterations: 1192 
+  158000    159.28666    11983 5.5826153e-13            0         3366            0            0         8614            3 
+number of iterations: 1227 
+  159000    160.07078    12072 5.6148602e-13            0         3385            0            0         8684            3 
+number of iterations: 935 
+  160000    160.79884    12146 5.6460329e-13            0         3392            0            0         8751            3 
+number of iterations: 1209 
+  161000    161.62487    12229 5.6776803e-13            0         3407            0            0         8819            3 
+number of iterations: 1130 
+  162000    162.39761    12316 5.7082466e-13            0         3432            0            0         8881            3 
+number of iterations: 977 
+  163000     163.1438    12374 5.7370408e-13            0         3443            0            0         8928            3 
+number of iterations: 1027 
+  164000    163.89149    12476 5.7699159e-13            0         3466            0            0         9007            3 
+number of iterations: 1163 
+  165000    164.67564    12570 5.8022549e-13            0         3482            0            0         9085            3 
+number of iterations: 1145 
+  166000    165.43789    12656 5.8327645e-13            0         3502            0            0         9151            3 
+number of iterations: 1256 
+  167000    166.24538    12765 5.8661079e-13            0         3522            0            0         9240            3 
+number of iterations: 1538 
+  168000    167.13385    12841 5.895664e-13            0         3541            0            0         9297            3 
+number of iterations: 1194 
+  169000    167.92627    12917 5.926467e-13            0         3550            0            0         9364            3 
+number of iterations: 1301 
+  170000    168.76887    12977 5.954206e-13            0         3565            0            0         9409            3 
+number of iterations: 1282 
+  171000    169.64042    13052 5.9834763e-13            0         3581            0            0         9468            3 
+number of iterations: 1262 
+  172000    170.47737    13164 6.0172763e-13            0         3602            0            0         9559            3 
+number of iterations: 1276 
+  173000    171.30697    13255 6.0491971e-13            0         3617            0            0         9635            3 
+number of iterations: 1053 
+  174000     172.0996    13348 6.0795101e-13            0         3642            0            0         9703            3 
+number of iterations: 1363 
+  175000    172.97555    13437 6.1101393e-13            0         3660            0            0         9774            3 
+number of iterations: 1153 
+  176000    173.80465    13525 6.1412489e-13            0         3675            0            0         9847            3 
+number of iterations: 1380 
+  177000    174.69609    13606 6.1705541e-13            0         3693            0            0         9910            3 
+number of iterations: 1055 
+  178000    175.53284    13703 6.2018818e-13            0         3713            0            0         9987            3 
+number of iterations: 1213 
+  179000    176.36662    13781 6.2315031e-13            0         3724            0            0        10054            3 
+number of iterations: 1224 
+  180000     177.3322    13869 6.2603216e-13            0         3749            0            0        10117            3 
+number of iterations: 931 
+  181000    178.23673    13948 6.2889725e-13            0         3769            0            0        10176            3 
+number of iterations: 1117 
+  182000    179.05509    14045 6.3195778e-13            0         3791            0            0        10251            3 
+number of iterations: 1018 
+  183000    179.88105    14132 6.3500799e-13            0         3804            0            0        10325            3 
+number of iterations: 1118 
+  184000    180.72732    14224 6.3804842e-13            0         3820            0            0        10401            3 
+number of iterations: 1179 
+  185000    181.58533    14304 6.4088819e-13            0         3839            0            0        10462            3 
+number of iterations: 1324 
+  186000    182.49515    14375 6.4363534e-13            0         3851            0            0        10521            3 
+number of iterations: 1157 
+  187000    183.34358    14464 6.4656093e-13            0         3871            0            0        10590            3 
+number of iterations: 1131 
+  188000    184.20663    14564 6.4960151e-13            0         3892            0            0        10669            3 
+number of iterations: 1161 
+  189000    185.06727    14673 6.5274746e-13            0         3910            0            0        10760            3 
+number of iterations: 1113 
+  190000     185.9618    14779 6.5589986e-13            0         3928            0            0        10848            3 
+number of iterations: 1215 
+  191000    186.95014    14874 6.5894069e-13            0         3945            0            0        10926            3 
+number of iterations: 1177 
+  192000    187.88109    14973 6.6202915e-13            0         3964            0            0        11006            3 
+number of iterations: 1200 
+  193000    188.79606    15051 6.6490059e-13            0         3977            0            0        11071            3 
+number of iterations: 1307 
+  194000     189.7424    15142 6.6792842e-13            0         3988            0            0        11151            3 
+number of iterations: 1070 
+  195000    190.64347    15229  6.70771e-13            0         4008            0            0        11218            3 
+number of iterations: 764 
+  196000    191.45228    15319 6.737354e-13            0         4020            0            0        11296            3 
+number of iterations: 1483 
+  197000    192.45375    15397 6.7654089e-13            0         4034            0            0        11360            3 
+number of iterations: 856 
+  198000    193.31907    15482  6.79451e-13            0         4050            0            0        11429            3 
+number of iterations: 1256 
+  199000    194.27754    15568 6.8223899e-13            0         4071            0            0        11494            3 
+number of iterations: 938 
+  200000    195.15365    15672  6.85321e-13            0         4087            0            0        11582            3 
+number of iterations: 1224 
+  201000    196.24386    15762 6.8828644e-13            0         4100            0            0        11659            3 
+number of iterations: 1348 
+  202000    197.25768    15846 6.9110103e-13            0         4115            0            0        11728            3 
+number of iterations: 1530 
+  203000     198.2958    15939 6.9398961e-13            0         4136            0            0        11800            3 
+number of iterations: 1323 
+  204000    199.30556    16023 6.9679195e-13            0         4152            0            0        11868            3 
+number of iterations: 1517 
+  205000    200.35136    16113 6.9963846e-13            0         4170            0            0        11940            3 
+number of iterations: 1341 
+  206000     201.4066    16195 7.0237038e-13            0         4192            0            0        12000            3 
+number of iterations: 1291 
+  207000    202.42416    16298 7.0533254e-13            0         4209            0            0        12086            3 
+number of iterations: 1487 
+  208000    203.49045    16398 7.0826518e-13            0         4227            0            0        12168            3 
+number of iterations: 1163 
+  209000    204.46818    16495 7.1104738e-13            0         4250            0            0        12242            3 
+number of iterations: 1279 
+  210000    205.53507    16588  7.13894e-13            0         4267            0            0        12318            3 
+number of iterations: 1025 
+  211000    206.57998    16667 7.1665868e-13            0         4275            0            0        12389            3 
+number of iterations: 1353 
+  212000    207.63759    16768 7.1953021e-13            0         4293            0            0        12472            3 
+number of iterations: 1139 
+  213000    208.66073    16848 7.2231544e-13            0         4303            0            0        12542            3 
+number of iterations: 1188 
+  214000    209.69326    16933 7.2497928e-13            0         4324            0            0        12606            3 
+number of iterations: 1183 
+  215000    210.71991    17022 7.2784089e-13            0         4335            0            0        12684            3 
+number of iterations: 1158 
+  216000    211.77576    17127 7.3071579e-13            0         4355            0            0        12769            3 
+number of iterations: 1151 
+  217000    212.81838    17214 7.3348311e-13            0         4372            0            0        12839            3 
+number of iterations: 1179 
+  218000    213.88278    17309 7.363528e-13            0         4387            0            0        12919            3 
+number of iterations: 1008 
+  219000    214.89867    17405 7.3914654e-13            0         4407            0            0        12995            3 
+number of iterations: 1351 
+  220000      216.042    17476 7.4163368e-13            0         4422            0            0        13051            3 
+number of iterations: 1187 
+  221000    217.28414    17561 7.4428259e-13            0         4441            0            0        13117            3 
+number of iterations: 1451 
+  222000    218.41683    17668 7.4720006e-13            0         4456            0            0        13209            3 
+number of iterations: 1375 
+  223000    219.56287    17765 7.500263e-13            0         4473            0            0        13289            3 
+number of iterations: 1126 
+  224000    220.66878    17842 7.5262884e-13            0         4486            0            0        13353            3 
+number of iterations: 1141 
+  225000     221.7542    17936 7.5544359e-13            0         4498            0            0        13435            3 
+number of iterations: 1296 
+  226000    222.87829    18011 7.5804706e-13            0         4510            0            0        13498            3 
+number of iterations: 1180 
+  227000    224.02595    18102 7.6072638e-13            0         4529            0            0        13570            3 
+number of iterations: 1232 
+  228000    225.18093    18184 7.6330555e-13            0         4545            0            0        13636            3 
+number of iterations: 985 
+  229000    226.27191    18276 7.6603294e-13            0         4559            0            0        13714            3 
+number of iterations: 1435 
+  230000     227.5133    18388 7.6899567e-13            0         4572            0            0        13813            3 
+number of iterations: 1418 
+  231000    228.77774    18461 7.7147454e-13            0         4587            0            0        13871            3 
+number of iterations: 1174 
+  232000    229.87853    18561 7.7426752e-13            0         4601            0            0        13957            3 
+number of iterations: 1108 
+  233000     231.0402    18667 7.7705302e-13            0         4623            0            0        14041            3 
+number of iterations: 1125 
+  234000    232.24024    18776 7.7991183e-13            0         4643            0            0        14130            3 
+number of iterations: 1248 
+  235000    233.43101    18870 7.8263299e-13            0         4659            0            0        14208            3 
+number of iterations: 1131 
+  236000    234.58857    18957 7.8533864e-13            0         4668            0            0        14286            3 
+number of iterations: 1123 
+  237000      235.753    19053 7.8808995e-13            0         4681            0            0        14369            3 
+number of iterations: 1123 
+  238000    236.92762    19140 7.907501e-13            0         4692            0            0        14445            3 
+number of iterations: 1071 
+  239000    238.14008    19212 7.9321688e-13            0         4703            0            0        14506            3 
+number of iterations: 1396 
+  240000    239.36649    19307 7.9588369e-13            0         4717            0            0        14587            3 
+number of iterations: 1131 
+  241000      240.638    19394 7.984756e-13            0         4733            0            0        14658            3 
+number of iterations: 1325 
+  242000    241.90819    19485 8.0107316e-13            0         4745            0            0        14737            3 
+number of iterations: 1178 
+  243000    243.11047    19574 8.0375208e-13            0         4756            0            0        14815            3 
+number of iterations: 1015 
+  244000    244.27841    19650 8.0615178e-13            0         4773            0            0        14874            3 
+number of iterations: 1044 
+  245000    245.41063    19752 8.0880957e-13            0         4793            0            0        14956            3 
+number of iterations: 1270 
+  246000    246.65224    19844 8.1144263e-13            0         4804            0            0        15037            3 
+number of iterations: 868 
+  247000     247.7984    19934 8.1404177e-13            0         4818            0            0        15113            3 
+number of iterations: 1168 
+  248000    249.01226    20036 8.1671831e-13            0         4841            0            0        15192            3 
+number of iterations: 1449 
+  249000    250.31704    20120 8.1916898e-13            0         4856            0            0        15261            3 
+number of iterations: 1133 
+  250000    251.55834    20190 8.2156981e-13            0         4864            0            0        15323            3 
+number of iterations: 1094 
+  251000    252.86335    20288 8.2417868e-13            0         4884            0            0        15401            3 
+number of iterations: 1345 
+  252000    254.16632    20395 8.2688947e-13            0         4903            0            0        15489            3 
+number of iterations: 990 
+  253000    255.38133    20511 8.2970831e-13            0         4926            0            0        15582            3 
+number of iterations: 1121 
+  254000    256.63341    20630 8.3255329e-13            0         4949            0            0        15678            3 
+number of iterations: 1168 
+  255000    257.91696    20712 8.348777e-13            0         4969            0            0        15740            3 
+number of iterations: 1148 
+  256000    259.17574    20842 8.3797637e-13            0         4984            0            0        15855            3 
+number of iterations: 1082 
+  257000    260.46615    20936 8.4052249e-13            0         4999            0            0        15934            3 
+number of iterations: 1031 
+  258000    261.73044    21015 8.4285826e-13            0         5015            0            0        15997            3 
+number of iterations: 1307 
+  259000    263.04666    21107 8.4532237e-13            0         5034            0            0        16070            3 
+number of iterations: 1207 
+  260000    264.41683    21197 8.4768914e-13            0         5057            0            0        16137            3 
+number of iterations: 1165 
+  261000    265.89752    21282 8.5012419e-13            0         5071            0            0        16208            3 
+number of iterations: 922 
+  262000    267.18583    21372 8.5259945e-13            0         5087            0            0        16282            3 
+number of iterations: 1045 
+  263000    268.51108    21459 8.5502255e-13            0         5101            0            0        16355            3 
+number of iterations: 1152 
+  264000    269.84633    21553 8.5746065e-13            0         5117            0            0        16433            3 
+number of iterations: 1117 
+  265000    271.16424    21639 8.5996196e-13            0         5125            0            0        16511            3 
+number of iterations: 1122 
+  266000    272.48895    21739 8.6263582e-13            0         5137            0            0        16599            3 
+number of iterations: 1259 
+  267000    273.86943    21849 8.653458e-13            0         5152            0            0        16694            3 
+number of iterations: 1275 
+  268000    275.27634    21933 8.6764547e-13            0         5168            0            0        16762            3 
+number of iterations: 1087 
+  269000    276.65516    22027 8.7018823e-13            0         5181            0            0        16843            3 
+number of iterations: 1023 
+  270000    278.09196    22118 8.7271827e-13            0         5191            0            0        16924            3 
+number of iterations: 972 
+  271000    279.55863    22213 8.7530049e-13            0         5200            0            0        17010            3 
+number of iterations: 1269 
+  272000     280.9801    22312 8.7778993e-13            0         5217            0            0        17092            3 
+number of iterations: 939 
+  273000    282.32683    22394 8.8009862e-13            0         5231            0            0        17160            3 
+number of iterations: 1003 
+  274000    283.68729    22493 8.8244326e-13            0         5257            0            0        17233            3 
+number of iterations: 1052 
+  275000    285.05247    22608 8.8494703e-13            0         5282            0            0        17323            3 
+number of iterations: 1152 
+  276000    286.55975    22710 8.8742186e-13            0         5302            0            0        17405            3 
+number of iterations: 1253 
+  277000    288.09972    22825 8.9007014e-13            0         5321            0            0        17501            3 
+number of iterations: 1322 
+  278000    289.67849    22926 8.9259734e-13            0         5336            0            0        17587            3 
+number of iterations: 792 
+  279000    291.13552    23037 8.9522779e-13            0         5349            0            0        17685            3 
+number of iterations: 1219 
+  280000    292.69761    23140 8.9763991e-13            0         5368            0            0        17769            3 
+number of iterations: 960 
+  281000    294.38064    23240 9.0007745e-13            0         5387            0            0        17850            3 
+number of iterations: 1145 
+  282000    295.96804    23336 9.0249061e-13            0         5404            0            0        17929            3 
+number of iterations: 1212 
+  283000     297.4883    23440 9.0497104e-13            0         5419            0            0        18018            3 
+number of iterations: 934 
+  284000    299.21733    23539 9.0738633e-13            0         5437            0            0        18099            3 
+number of iterations: 1105 
+  285000    300.81726    23618 9.0956191e-13            0         5452            0            0        18163            3 
+number of iterations: 1421 
+  286000    302.50149    23710 9.1189155e-13            0         5469            0            0        18238            3 
+number of iterations: 934 
+  287000    304.07179    23820 9.1446291e-13            0         5478            0            0        18339            3 
+number of iterations: 1079 
+  288000    305.68178    23930 9.1702016e-13            0         5497            0            0        18430            3 
+number of iterations: 977 
+  289000    307.30031    24031 9.1954576e-13            0         5507            0            0        18521            3 
+number of iterations: 1065 
+  290000    308.87958    24121 9.219007e-13            0         5515            0            0        18603            3 
+number of iterations: 1226 
+  291000    310.71854    24226 9.2446508e-13            0         5528            0            0        18695            3 
+number of iterations: 1102 
+  292000    312.29891    24304 9.2653053e-13            0         5547            0            0        18754            3 
+number of iterations: 1046 
+  293000     313.8541    24407 9.2906476e-13            0         5558            0            0        18846            3 
+number of iterations: 1079 
+  294000    315.42981    24505 9.3154449e-13            0         5570            0            0        18932            3 
+number of iterations: 1289 
+  295000    317.05852    24604 9.3384328e-13            0         5592            0            0        19009            3 
+number of iterations: 898 
+  296000    318.61449    24736 9.3655582e-13            0         5614            0            0        19119            3 
+number of iterations: 1117 
+  297000    320.22565    24854 9.3911689e-13            0         5635            0            0        19216            3 
+number of iterations: 915 
+  298000    321.80633    24971 9.4159955e-13            0         5655            0            0        19313            3 
+number of iterations: 1375 
+  299000    323.49909    25053 9.4377792e-13            0         5670            0            0        19380            3 
+number of iterations: 1382 
+  300000     325.2028    25141 9.4601177e-13            0         5682            0            0        19456            3 
+number of iterations: 1116 
+  301000    327.11458    25240 9.4823251e-13            0         5703            0            0        19534            3 
+number of iterations: 1190 
+  302000    328.77079    25333 9.5043531e-13            0         5721            0            0        19609            3 
+number of iterations: 1225 
+  303000    330.45379    25429 9.526274e-13            0         5743            0            0        19683            3 
+number of iterations: 1206 
+  304000    332.17089    25533 9.5505478e-13            0         5755            0            0        19775            3 
+number of iterations: 1153 
+  305000    333.88931    25624 9.5720704e-13            0         5773            0            0        19848            3 
+number of iterations: 944 
+  306000    335.63329    25734 9.5957697e-13            0         5790            0            0        19941            3 
+number of iterations: 1011 
+  307000    337.36057    25833 9.6192735e-13            0         5804            0            0        20026            3 
+number of iterations: 1061 
+  308000    339.14107    25926 9.6421102e-13            0         5815            0            0        20108            3 
+number of iterations: 1048 
+  309000    340.91241    26040 9.6668087e-13            0         5831            0            0        20206            3 
+number of iterations: 1060 
+  310000     342.7819    26136 9.6891508e-13            0         5847            0            0        20286            3 
+number of iterations: 836 
+  311000    344.62375    26234 9.7112139e-13            0         5866            0            0        20365            3 
+number of iterations: 1398 
+  312000    346.57915    26338 9.7355265e-13            0         5876            0            0        20459            3 
+number of iterations: 1125 
+  313000    348.52544    26442 9.7588934e-13            0         5892            0            0        20547            3 
+number of iterations: 1474 
+  314000    350.53877    26542 9.7811217e-13            0         5914            0            0        20625            3 
+number of iterations: 1138 
+  315000    352.35307    26650 9.8052177e-13            0         5929            0            0        20718            3 
+number of iterations: 1256 
+  316000    354.21663    26752 9.8282603e-13            0         5940            0            0        20809            3 
+number of iterations: 1018 
+  317000    356.03139    26864 9.8517262e-13            0         5961            0            0        20900            3 
+number of iterations: 647 
+  318000    357.85568    26989 9.8767831e-13            0         5980            0            0        21006            3 
+number of iterations: 1462 
+  319000    359.85324    27127 9.9019094e-13            0         6006            0            0        21118            3 
+number of iterations: 1281 
+  320000     361.8583    27234 9.9254408e-13            0         6019            0            0        21212            3 
+number of iterations: 701 
+  321000    363.82919    27317 9.9463006e-13            0         6029            0            0        21285            3 
+number of iterations: 971 
+  322000    365.76302    27408 9.9679179e-13            0         6040            0            0        21365            3 
+number of iterations: 1080 
+  323000    367.72452    27509 9.990169e-13            0         6053            0            0        21453            3 
+number of iterations: 1096 
+  324000    369.65724    27619 1.0012464e-12            0         6074            0            0        21542            3 
+number of iterations: 878 
+  325000    371.57262    27728 1.0036013e-12            0         6088            0            0        21637            3 
+number of iterations: 1439 
+  326000    373.66052    27819 1.0057302e-12            0         6102            0            0        21714            3 
+number of iterations: 1055 
+  327000    375.59923    27912 1.0079275e-12            0         6113            0            0        21796            3 
+number of iterations: 1258 
+  328000    377.60923    28032 1.0103228e-12            0         6132            0            0        21897            3 
+number of iterations: 1323 
+  329000    379.63746    28124 1.0123988e-12            0         6147            0            0        21974            3 
+number of iterations: 966 
+  330000    381.57291    28227 1.0145964e-12            0         6170            0            0        22054            3 
+number of iterations: 1344 
+  331000    383.72427    28335 1.016758e-12            0         6193            0            0        22139            3 
+number of iterations: 1231 
+  332000    385.76362    28423 1.0187687e-12            0         6209            0            0        22211            3 
+number of iterations: 1177 
+  333000    387.76707    28514 1.0209149e-12            0         6218            0            0        22293            3 
+number of iterations: 1099 
+  334000    389.79363    28623 1.0231222e-12            0         6233            0            0        22387            3 
+number of iterations: 1181 
+  335000      391.916    28734 1.0254151e-12            0         6250            0            0        22481            3 
+number of iterations: 1083 
+  336000    394.13593    28863 1.0278991e-12            0         6264            0            0        22596            3 
+number of iterations: 1321 
+  337000    396.54181    28950 1.0299364e-12            0         6276            0            0        22671            3 
+number of iterations: 916 
+  338000    398.62136    29059 1.0321961e-12            0         6292            0            0        22764            3 
+number of iterations: 1017 
+  339000     400.7927    29150 1.0342493e-12            0         6303            0            0        22844            3 
+number of iterations: 1156 
+  340000    402.97013    29235 1.0361951e-12            0         6319            0            0        22913            3 
+number of iterations: 1500 
+  341000    405.25531    29337 1.0383415e-12            0         6338            0            0        22996            3 
+number of iterations: 1150 
+  342000    407.42125    29439 1.0405414e-12            0         6351            0            0        23085            3 
+number of iterations: 942 
+  343000    409.59807    29544 1.0426623e-12            0         6369            0            0        23172            3 
+number of iterations: 893 
+  344000    411.77896    29656 1.0449366e-12            0         6382            0            0        23271            3 
+number of iterations: 1307 
+  345000    414.04657    29764 1.0470494e-12            0         6404            0            0        23357            3 
+number of iterations: 1050 
+  346000    416.29561    29865 1.0491264e-12            0         6419            0            0        23443            3 
+number of iterations: 1150 
+  347000    418.54071    29970 1.0511632e-12            0         6442            0            0        23525            3 
+number of iterations: 1242 
+  348000    420.80697    30087 1.0535045e-12            0         6452            0            0        23632            3 
+number of iterations: 978 
+  349000    423.08843    30200 1.0557448e-12            0         6467            0            0        23730            3 
+number of iterations: 898 
+  350000    425.37201    30301 1.0578416e-12            0         6483            0            0        23815            3 
+number of iterations: 1011 
+  351000    427.68413    30412 1.0600936e-12            0         6497            0            0        23912            3 
+number of iterations: 744 
+  352000    429.86607    30527 1.0621635e-12            0         6520            0            0        24004            3 
+number of iterations: 1174 
+  353000    432.16481    30631 1.0640938e-12            0         6546            0            0        24082            3 
+number of iterations: 1205 
+  354000    434.53252    30742 1.0661857e-12            0         6564            0            0        24175            3 
+number of iterations: 1289 
+  355000    436.89706    30861 1.0683639e-12            0         6583            0            0        24275            3 
+number of iterations: 1169 
+  356000    439.28875    30970 1.0704428e-12            0         6601            0            0        24366            3 
+number of iterations: 1170 
+  357000    441.63025    31086 1.0727486e-12            0         6616            0            0        24467            3 
+number of iterations: 1294 
+  358000    444.02384    31186 1.0747398e-12            0         6632            0            0        24551            3 
+number of iterations: 1208 
+  359000    446.35969    31288 1.0768275e-12            0         6644            0            0        24641            3 
+number of iterations: 983 
+  360000    448.71407    31384 1.0787717e-12            0         6661            0            0        24720            3 
+number of iterations: 1158 
+  361000    451.21518    31513 1.0810924e-12            0         6680            0            0        24830            3 
+number of iterations: 1129 
+  362000    453.68589    31612 1.0831072e-12            0         6691            0            0        24918            3 
+number of iterations: 979 
+  363000    456.02607    31739 1.0855026e-12            0         6701            0            0        25035            3 
+number of iterations: 1009 
+  364000    458.48372    31859 1.0877519e-12            0         6714            0            0        25142            3 
+number of iterations: 1451 
+  365000    461.04824    31959 1.0898609e-12            0         6722            0            0        25234            3 
+number of iterations: 1327 
+  366000    463.58361    32056 1.0918091e-12            0         6739            0            0        25314            3 
+number of iterations: 984 
+  367000    465.98418    32156 1.0937369e-12            0         6757            0            0        25396            3 
+number of iterations: 1274 
+  368000    468.44744    32278 1.095915e-12            0         6780            0            0        25495            3 
+number of iterations: 961 
+  369000    470.96109    32395 1.0980985e-12            0         6796            0            0        25596            3 
+number of iterations: 1020 
+  370000    473.50226    32508 1.1002046e-12            0         6817            0            0        25688            3 
+number of iterations: 1215 
+  371000    476.15494    32588 1.1019949e-12            0         6827            0            0        25758            3 
+number of iterations: 1121 
+  372000    478.74856    32685 1.1039422e-12            0         6840            0            0        25842            3 
+number of iterations: 1189 
+  373000    481.28365    32798 1.1060914e-12            0         6854            0            0        25941            3 
+number of iterations: 1104 
+  374000    483.82395    32896 1.1079933e-12            0         6870            0            0        26023            3 
+number of iterations: 1132 
+  375000    486.31916    32997 1.1100246e-12            0         6879            0            0        26115            3 
+number of iterations: 1352 
+  376000    488.94819    33112 1.1120529e-12            0         6902            0            0        26207            3 
+number of iterations: 1318 
+  377000    491.56559    33221 1.1141833e-12            0         6915            0            0        26303            3 
+number of iterations: 1577 
+  378000    494.26157    33336 1.1163076e-12            0         6928            0            0        26405            3 
+number of iterations: 1123 
+  379000    496.84049    33430 1.1181101e-12            0         6945            0            0        26482            3 
+number of iterations: 1041 
+  380000    499.45733    33529 1.1201439e-12            0         6955            0            0        26571            3 
+number of iterations: 760 
+  381000    502.14082    33670 1.1225424e-12            0         6972            0            0        26695            3 
+number of iterations: 1364 
+  382000    504.86131    33785 1.1246139e-12            0         6987            0            0        26794            4 
+number of iterations: 1544 
+  383000    507.63518    33870 1.1263868e-12            0         7002            0            0        26864            4 
+number of iterations: 807 
+  384000    510.24773    33978 1.1283286e-12            0         7022            0            0        26952            4 
+number of iterations: 1143 
+  385000    512.89363    34098 1.1304764e-12            0         7038            0            0        27056            4 
+number of iterations: 1241 
+  386000    515.60062    34206 1.1325167e-12            0         7048            0            0        27154            4 
+number of iterations: 1366 
+  387000    518.35017    34321 1.1345066e-12            0         7064            0            0        27253            4 
+number of iterations: 1260 
+  388000    521.10724    34417 1.1362633e-12            0         7086            0            0        27327            4 
+number of iterations: 1160 
+  389000     523.8697    34520 1.1381745e-12            0         7103            0            0        27413            4 
+number of iterations: 1222 
+  390000    526.61377    34633 1.1401769e-12            0         7122            0            0        27507            4 
+number of iterations: 1384 
+  391000     529.5304    34742 1.1421544e-12            0         7139            0            0        27598            5 
+number of iterations: 1216 
+  392000    532.32591    34873 1.144356e-12            0         7157            0            0        27711            5 
+number of iterations: 1026 
+  393000    535.03351    34982 1.1464194e-12            0         7170            0            0        27807            5 
+number of iterations: 1407 
+  394000    537.92941    35114 1.1486509e-12            0         7193            0            0        27916            5 
+number of iterations: 1049 
+  395000    540.74876    35230 1.1506619e-12            0         7210            0            0        28015            5 
+number of iterations: 1151 
+  396000    543.55717    35344 1.1526297e-12            0         7229            0            0        28110            5 
+number of iterations: 896 
+  397000    546.33156    35461 1.1546172e-12            0         7248            0            0        28208            5 
+number of iterations: 1459 
+  398000    549.24389    35574 1.1566112e-12            0         7262            0            0        28306            6 
+number of iterations: 1345 
+  399000    552.12494    35683 1.1585015e-12            0         7279            0            0        28398            6 
+number of iterations: 1327 
+  400000    555.01507    35817 1.1606994e-12            0         7293            0            0        28518            6 
+number of iterations: 1346 
+  401000     558.0053    35927 1.1625505e-12            0         7311            0            0        28610            6 
+number of iterations: 1475 
+  402000    560.92624    36042 1.1644971e-12            0         7327            0            0        28709            6 
+number of iterations: 1042 
+  403000    563.74764    36155 1.1663708e-12            0         7350            0            0        28799            6 
+number of iterations: 1385 
+  404000    566.67245    36290 1.1685187e-12            0         7368            0            0        28916            6 
+number of iterations: 1380 
+  405000    569.65185    36415 1.1705295e-12            0         7389            0            0        29019            7 
+number of iterations: 1209 
+  406000    572.63182    36545 1.1725881e-12            0         7413            0            0        29125            7 
+number of iterations: 1499 
+  407000    575.70841    36663 1.1745243e-12            0         7432            0            0        29223            8 
+number of iterations: 1094 
+  408000    578.62201    36782 1.1765187e-12            0         7449            0            0        29325            8 
+number of iterations: 1205 
+  409000    581.58672    36910 1.1785228e-12            0         7471            0            0        29431            8 
+number of iterations: 1462 
+  410000    584.67518    37032 1.1805671e-12            0         7482            0            0        29541            9 
+number of iterations: 1381 
+  411000    587.69794    37158 1.1826709e-12            0         7496            0            0        29653            9 
+number of iterations: 1187 
+  412000    590.67451    37266 1.184492e-12            0         7512            0            0        29745            9 
+number of iterations: 1329 
+  413000    593.74238    37378 1.1864311e-12            0         7525            0            0        29844            9 
+number of iterations: 1280 
+  414000    596.78356    37499 1.1883356e-12            0         7547            0            0        29943            9 
+number of iterations: 1311 
+  415000    599.85896    37601 1.1901279e-12            0         7563            0            0        30029            9 
+number of iterations: 1212 
+  416000    602.90672    37720 1.1920933e-12            0         7574            0            0        30136           10 
+number of iterations: 1480 
+  417000    606.01347    37824 1.1938265e-12            0         7591            0            0        30221           12 
+number of iterations: 1197 
+  418000    609.07677    37943 1.1957721e-12            0         7609            0            0        30322           12 
+number of iterations: 1409 
+  419000    612.19575    38050 1.1975567e-12            0         7621            0            0        30415           14 
+number of iterations: 1307 
+  420000    615.34802    38164 1.1994715e-12            0         7637            0            0        30513           14 
+number of iterations: 1160 
+  421000    618.57284    38275 1.2013882e-12            0         7649            0            0        30611           15 
+number of iterations: 1633 
+  422000    621.80236    38377 1.2030911e-12            0         7662            0            0        30698           17 
+number of iterations: 970 
+  423000    624.81224    38473 1.2048955e-12            0         7667            0            0        30786           20 
+number of iterations: 1211 
+  424000    627.95806    38587 1.206705e-12            0         7686            0            0        30880           21 
+number of iterations: 1254 
+  425000    631.14524    38703 1.2085769e-12            0         7699            0            0        30982           22 
+number of iterations: 1002 
+  426000    634.25561    38817 1.2103574e-12            0         7719            0            0        31074           24 
+number of iterations: 1205 
+  427000    637.45373    38940 1.2123375e-12            0         7735            0            0        31178           27 
+number of iterations: 1176 
+  428000    640.57681    39026 1.2138828e-12            0         7748            0            0        31251           27 
+number of iterations: 1362 
+  429000    643.71058    39131 1.2157397e-12            0         7759            0            0        31342           30 
+number of iterations: 1263 
+  430000    646.95266    39248 1.2176701e-12            0         7771            0            0        31444           33 
+number of iterations: 982 
+  431000    650.19584    39378 1.2198106e-12            0         7784            0            0        31561           33 
+number of iterations: 1460 
+  432000    653.55852    39507 1.2218529e-12            0         7797            0            0        31675           35 
+number of iterations: 1315 
+  433000    656.74027    39640 1.2238145e-12            0         7819            0            0        31786           35 
+number of iterations: 1203 
+  434000     660.0291    39746 1.2256159e-12            0         7835            0            0        31876           35 
+number of iterations: 1310 
+  435000    663.25706    39853 1.2274018e-12            0         7846            0            0        31968           39 
+number of iterations: 1394 
+  436000    666.50471    39978 1.2292513e-12            0         7867            0            0        32070           41 
+number of iterations: 1282 
+  437000    669.78689    40107 1.2312343e-12            0         7886            0            0        32179           42 
+number of iterations: 1548 
+  438000    673.15533    40229 1.2332185e-12            0         7897            0            0        32286           46 
+number of iterations: 1299 
+  439000    676.49783    40344 1.2350364e-12            0         7914            0            0        32382           48 
+number of iterations: 1167 
+  440000    679.78718    40468 1.2369551e-12            0         7927            0            0        32491           50 
+number of iterations: 1140 
+  441000    683.22458    40594 1.2390107e-12            0         7939            0            0        32605           50 
+number of iterations: 692 
+  442000    686.49955    40708 1.2408008e-12            0         7954            0            0        32703           51 
+number of iterations: 1179 
+  443000    689.79006    40842 1.2427755e-12            0         7973            0            0        32818           51 
+number of iterations: 1165 
+  444000     693.1828    40965 1.2447236e-12            0         7985            0            0        32929           51 
+number of iterations: 1162 
+  445000    696.55865    41068 1.2462519e-12            0         8003            0            0        33011           54 
+number of iterations: 1256 
+  446000    699.96749    41202 1.2483765e-12            0         8018            0            0        33127           57 
+number of iterations: 1052 
+  447000    703.34363    41338 1.2503529e-12            0         8030            0            0        33245           63 
+number of iterations: 1168 
+  448000    706.76491    41447 1.2521204e-12            0         8036            0            0        33343           68 
+number of iterations: 1275 
+  449000    710.13547    41570 1.2539567e-12            0         8051            0            0        33446           73 
+number of iterations: 1427 
+  450000    713.68013    41682 1.2558276e-12            0         8060            0            0        33548           74 
+number of iterations: 1341 
+  451000    717.28635    41802 1.2577338e-12            0         8068            0            0        33654           80 
+number of iterations: 1513 
+  452000    720.84624    41933 1.2597803e-12            0         8081            0            0        33770           82 
+number of iterations: 1481 
+  453000     724.4472    42069 1.2617852e-12            0         8103            0            0        33883           83 
+number of iterations: 1514 
+  454000    728.00097    42179 1.2633917e-12            0         8119            0            0        33976           84 
+number of iterations: 1058 
+  455000    731.40936    42309 1.265282e-12            0         8138            0            0        34084           87 
+number of iterations: 1494 
+  456000    735.04331    42409 1.2669664e-12            0         8150            0            0        34170           89 
+number of iterations: 856 
+  457000    738.43863    42537 1.2687265e-12            0         8173            0            0        34274           90 
+number of iterations: 1549 
+  458000     742.0646    42635 1.2703455e-12            0         8182            0            0        34358           95 
+number of iterations: 1142 
+  459000    745.54215    42744 1.2719592e-12            0         8200            0            0        34447           97 
+number of iterations: 1298 
+  460000    749.13511    42854 1.2736003e-12            0         8215            0            0        34538          101 
+number of iterations: 1099 
+  461000    752.85445    42957 1.275206e-12            0         8231            0            0        34624          102 
+number of iterations: 1224 
+  462000    756.43289    43088 1.2770776e-12            0         8241            0            0        34740          107 
+number of iterations: 1529 
+  463000    760.12153    43209 1.2789242e-12            0         8250            0            0        34849          110 
+number of iterations: 1199 
+  464000     763.7466    43318 1.2805211e-12            0         8266            0            0        34940          112 
+number of iterations: 981 
+  465000    767.20723    43420 1.2822781e-12            0         8271            0            0        35034          115 
+number of iterations: 1333 
+  466000    770.86002    43530 1.2840098e-12            0         8282            0            0        35130          118 
+number of iterations: 1139 
+  467000    774.48837    43649 1.2857455e-12            0         8299            0            0        35230          120 
+number of iterations: 1014 
+  468000    778.15796    43781 1.2876877e-12            0         8310            0            0        35345          126 
+number of iterations: 1453 
+  469000    781.84481    43910 1.2895939e-12            0         8326            0            0        35456          128 
+number of iterations: 1060 
+  470000    785.54577    44033 1.2913392e-12            0         8343            0            0        35559          131 
+number of iterations: 1011 
+  471000    789.29763    44162 1.2931107e-12            0         8369            0            0        35660          133 
+number of iterations: 965 
+  472000    792.92843    44301 1.2950109e-12            0         8391            0            0        35775          135 
+number of iterations: 1243 
+  473000    796.66159    44443 1.2969855e-12            0         8401            0            0        35901          141 
+number of iterations: 1281 
+  474000    800.41045    44562 1.298727e-12            0         8408            0            0        36009          145 
+number of iterations: 1321 
+  475000    804.12595    44671 1.3003858e-12            0         8420            0            0        36102          149 
+number of iterations: 1519 
+  476000    807.93153    44802 1.3022129e-12            0         8430            0            0        36217          155 
+number of iterations: 1234 
+  477000    811.71634    44932 1.3041015e-12            0         8437            0            0        36332          163 
+number of iterations: 1402 
+  478000    815.50836    45050 1.3058083e-12            0         8451            0            0        36432          167 
+number of iterations: 1209 
+  479000    819.28687    45179 1.3076349e-12            0         8467            0            0        36540          172 
+number of iterations: 1456 
+  480000    823.17355    45292 1.3093075e-12            0         8475            0            0        36640          177 
+number of iterations: 1662 
+  481000     827.1577    45409 1.3110653e-12            0         8484            0            0        36745          180 
+number of iterations: 1240 
+  482000    830.90249    45543 1.3129753e-12            0         8495            0            0        36862          186 
+number of iterations: 1656 
+  483000    834.83692    45672 1.3149113e-12            0         8505            0            0        36978          189 
+number of iterations: 1052 
+  484000    838.72228    45785 1.3165693e-12            0         8513            0            0        37077          195 
+number of iterations: 1231 
+  485000    842.69499    45896 1.3181287e-12            0         8531            0            0        37166          199 
+number of iterations: 1414 
+  486000    846.75867    46015 1.3198843e-12            0         8540            0            0        37269          206 
+number of iterations: 1437 
+  487000    850.74661    46134 1.3215284e-12            0         8557            0            0        37367          210 
+number of iterations: 892 
+  488000    854.76211    46260 1.3232943e-12            0         8568            0            0        37475          217 
+number of iterations: 1112 
+  489000     858.7443    46391 1.3252222e-12            0         8572            0            0        37594          225 
+number of iterations: 1266 
+  490000    862.77693    46519 1.3270088e-12            0         8590            0            0        37701          228 
+number of iterations: 1245 
+  491000    866.83529    46653 1.3287969e-12            0         8603            0            0        37818          232 
+number of iterations: 1572 
+  492000    870.85315    46786 1.3306192e-12            0         8622            0            0        37929          235 
+number of iterations: 1415 
+  493000    874.83341    46925 1.3324419e-12            0         8635            0            0        38047          243 
+number of iterations: 1348 
+  494000    878.86637    47045 1.3341667e-12            0         8643            0            0        38154          248 
+number of iterations: 1321 
+  495000    882.90964    47182 1.3359612e-12            0         8665            0            0        38264          253 
+number of iterations: 1135 
+  496000    886.88696    47305 1.3376692e-12            0         8678            0            0        38365          262 
+number of iterations: 1001 
+  497000    890.92721    47425 1.3392967e-12            0         8698            0            0        38462          265 
+number of iterations: 1444 
+  498000    894.99417    47549 1.3410351e-12            0         8712            0            0        38568          269 
+number of iterations: 1105 
+  499000    899.08737    47677 1.3428371e-12            0         8723            0            0        38679          275 
+number of iterations: 1486 
+  500000    903.26628    47783 1.3444015e-12            0         8729            0            0        38774          280 
+number of iterations: 1061 
+  501000    907.32254    47889 1.3459687e-12            0         8737            0            0        38868          284 
+number of iterations: 1225 
+  502000    911.31371    48021 1.3478242e-12            0         8748            0            0        38981          292 
+number of iterations: 1041 
+  503000    915.36928    48137 1.3495179e-12            0         8749            0            0        39084          304 
+number of iterations: 1034 
+  504000    919.38153    48268 1.351317e-12            0         8758            0            0        39199          311 
+number of iterations: 1549 
+  505000    923.52988    48383 1.3529067e-12            0         8778            0            0        39291          314 
+number of iterations: 1528 
+  506000    927.65218    48516 1.3546777e-12            0         8789            0            0        39404          323 
+number of iterations: 1294 
+  507000    931.81755    48642 1.3564717e-12            0         8801            0            0        39515          326 
+number of iterations: 1161 
+  508000    935.98722    48767 1.3582516e-12            0         8810            0            0        39623          334 
+number of iterations: 1395 
+  509000    940.16676    48922 1.3603248e-12            0         8820            0            0        39763          339 
+number of iterations: 1345 
+  510000    944.50228    49014 1.3616882e-12            0         8822            0            0        39844          348 
+number of iterations: 1476 
+  511000    948.73384    49161 1.3636869e-12            0         8838            0            0        39971          352 
+number of iterations: 1506 
+  512000    953.00971    49280 1.3653385e-12            0         8846            0            0        40072          362 
+number of iterations: 1525 
+  513000    957.22201    49405 1.367022e-12            0         8857            0            0        40179          369 
+number of iterations: 1503 
+  514000    961.57825    49537 1.3688789e-12            0         8867            0            0        40298          372 
+number of iterations: 1675 
+  515000    965.90128    49674 1.3706864e-12            0         8883            0            0        40413          378 
+number of iterations: 1306 
+  516000    970.17265    49796 1.3724138e-12            0         8888            0            0        40521          387 
+number of iterations: 1412 
+  517000     974.4843    49935 1.3742711e-12            0         8905            0            0        40640          390 
+number of iterations: 1811 
+  518000    978.93448    50058 1.3759418e-12            0         8912            0            0        40744          402 
+number of iterations: 1344 
+  519000    983.25541    50186 1.3776849e-12            0         8919            0            0        40861          406 
+number of iterations: 1252 
+  520000    987.55794    50308 1.3793462e-12            0         8933            0            0        40965          410 
+number of iterations: 1576 
+  521000    991.97699    50445 1.3811892e-12            0         8945            0            0        41083          417 
+number of iterations: 1411 
+  522000    996.38789    50570 1.3829331e-12            0         8953            0            0        41192          425 
+number of iterations: 1501 
+  523000    1000.7834    50736  1.38497e-12            0         8972            0            0        41331          433 
+number of iterations: 1471 
+  524000    1005.2339    50864 1.3866898e-12            0         8990            0            0        41439          435 
+number of iterations: 1984 
+  525000    1009.6944    50988 1.3883395e-12            0         9003            0            0        41545          440 
+number of iterations: 1280 
+  526000    1014.1119    51121 1.3899964e-12            0         9022            0            0        41652          447 
+number of iterations: 1016 
+  527000    1018.5451    51266 1.3918728e-12            0         9030            0            0        41779          457 
+number of iterations: 1299 
+  528000    1023.0365    51385 1.3933785e-12            0         9039            0            0        41876          470 
+number of iterations: 1402 
+  529000    1027.4972    51522 1.3952501e-12            0         9043            0            0        42000          479 
+number of iterations: 1211 
+  530000    1031.9982    51662 1.3969669e-12            0         9065            0            0        42114          483 
+number of iterations: 1418 
+  531000    1036.5689    51804 1.3988442e-12            0         9074            0            0        42240          490 
+number of iterations: 1454 
+  532000    1041.0787    51940 1.4006362e-12            0         9084            0            0        42359          497 
+number of iterations: 1395 
+  533000    1045.6396    52081 1.4025794e-12            0         9084            0            0        42492          505 
+number of iterations: 1362 
+  534000    1050.1127    52197 1.4042012e-12            0         9091            0            0        42596          510 
+number of iterations: 1278 
+  535000    1054.6008    52311 1.4057579e-12            0         9097            0            0        42696          518 
+number of iterations: 1901 
+  536000    1059.2317    52438 1.4074464e-12            0         9105            0            0        42805          528 
+number of iterations: 1343 
+  537000    1063.8195    52572 1.4092975e-12            0         9108            0            0        42924          540 
+number of iterations: 1121 
+  538000    1068.4087    52699 1.4108417e-12            0         9123            0            0        43026          550 
+number of iterations: 1024 
+  539000     1072.836    52808 1.4123596e-12            0         9133            0            0        43117          558 
+number of iterations: 1240 
+  540000    1077.4553    52906 1.413812e-12            0         9135            0            0        43199          572 
+number of iterations: 1326 
+  541000    1082.0228    53043 1.4156186e-12            0         9146            0            0        43318          579 
+number of iterations: 1729 
+  542000    1086.6273    53179 1.4173979e-12            0         9158            0            0        43431          590 
+number of iterations: 1112 
+  543000    1091.1586    53334 1.419298e-12            0         9174            0            0        43560          600 
+number of iterations: 1522 
+  544000    1095.7654    53481 1.4212226e-12            0         9179            0            0        43693          609 
+number of iterations: 1436 
+  545000    1100.4011    53595 1.4228207e-12            0         9184            0            0        43795          616 
+number of iterations: 1595 
+  546000    1105.0765    53727 1.4245826e-12            0         9193            0            0        43912          622 
+number of iterations: 1334 
+  547000    1109.7591    53876  1.42641e-12            0         9209            0            0        44039          628 
+number of iterations: 1515 
+  548000    1114.4986    53999 1.428058e-12            0         9219            0            0        44143          637 
+number of iterations: 1162 
+  549000    1119.0465    54137 1.4298758e-12            0         9223            0            0        44268          646 
+number of iterations: 1658 
+  550000    1123.8919    54272 1.4316471e-12            0         9229            0            0        44383          660 
+number of iterations: 1665 
+  551000    1128.6353    54402 1.4332972e-12            0         9241            0            0        44491          670 
+number of iterations: 1478 
+  552000    1133.4371    54529 1.4349013e-12            0         9249            0            0        44596          684 
+number of iterations: 1149 
+  553000     1138.069    54665 1.4366534e-12            0         9249            0            0        44719          697 
+number of iterations: 1428 
+  554000    1142.7235    54805 1.438464e-12            0         9254            0            0        44845          706 
+number of iterations: 1280 
+  555000    1147.4412    54933 1.4401721e-12            0         9263            0            0        44955          715 
+number of iterations: 1305 
+  556000    1152.1942    55051 1.4417141e-12            0         9273            0            0        45053          725 
+number of iterations: 1676 
+  557000     1157.088    55176 1.4434679e-12            0         9273            0            0        45169          734 
+number of iterations: 1240 
+  558000    1161.7452    55306 1.4451899e-12            0         9278            0            0        45284          744 
+number of iterations: 1419 
+  559000    1166.5484    55441 1.4469903e-12            0         9286            0            0        45401          754 
+number of iterations: 1545 
+  560000    1171.4667    55568 1.4486203e-12            0         9300            0            0        45509          759 
+number of iterations: 1444 
+  561000    1176.3565    55683 1.4502071e-12            0         9306            0            0        45608          769 
+number of iterations: 1551 
+  562000    1181.2328    55816 1.4519805e-12            0         9308            0            0        45726          782 
+number of iterations: 1168 
+  563000    1186.0413    55964 1.4538935e-12            0         9321            0            0        45856          787 
+number of iterations: 1424 
+  564000    1190.9636    56101 1.4556251e-12            0         9337            0            0        45968          796 
+number of iterations: 1302 
+  565000    1195.7992    56224 1.4573053e-12            0         9332            0            0        46077          815 
+number of iterations: 1547 
+  566000    1200.7638    56355 1.4589458e-12            0         9342            0            0        46189          824 
+number of iterations: 1031 
+  567000    1205.4938    56494 1.4607609e-12            0         9346            0            0        46316          832 
+number of iterations: 1427 
+  568000    1210.3861    56629 1.4625598e-12            0         9338            0            0        46437          854 
+number of iterations: 970 
+  569000    1215.1558    56769 1.4643899e-12            0         9343            0            0        46562          864 
+number of iterations: 1595 
+  570000    1220.1834    56902 1.4661289e-12            0         9355            0            0        46673          874 
+number of iterations: 1338 
+  571000     1225.228    57047 1.4680253e-12            0         9362            0            0        46799          886 
+number of iterations: 1219 
+  572000     1230.159    57203 1.4699898e-12            0         9372            0            0        46932          899 
+number of iterations: 1533 
+  573000    1235.1639    57367 1.471924e-12            0         9383            0            0        47073          911 
+number of iterations: 1351 
+  574000    1240.1929    57490 1.4734755e-12            0         9396            0            0        47173          921 
+number of iterations: 1451 
+  575000    1245.2303    57645 1.4753529e-12            0         9412            0            0        47307          926 
+number of iterations: 1766 
+  576000     1250.401    57772 1.4769377e-12            0         9424            0            0        47413          935 
+number of iterations: 1155 
+  577000    1255.4579    57904 1.4786025e-12            0         9428            0            0        47527          949 
+number of iterations: 1457 
+  578000     1260.552    58010 1.4800124e-12            0         9428            0            0        47618          964 
+number of iterations: 1033 
+  579000    1265.5398    58135 1.4815727e-12            0         9437            0            0        47722          976 
+number of iterations: 1227 
+  580000    1270.6658    58261 1.4832658e-12            0         9435            0            0        47836          990 
+number of iterations: 1608 
+  581000    1275.8046    58389 1.4849663e-12            0         9436            0            0        47950         1003 
+number of iterations: 1670 
+  582000     1280.908    58504 1.4864744e-12            0         9444            0            0        48048         1012 
+number of iterations: 1063 
+  583000    1285.9275    58656 1.4884068e-12            0         9453            0            0        48182         1021 
+number of iterations: 1293 
+  584000    1291.0697    58783 1.4900606e-12            0         9463            0            0        48287         1033 
+number of iterations: 1181 
+  585000    1296.0824    58926 1.4919964e-12            0         9461            0            0        48416         1049 
+number of iterations: 1397 
+  586000    1301.1467    59042 1.4935665e-12            0         9459            0            0        48521         1062 
+number of iterations: 1415 
+  587000    1306.3088    59175 1.4952282e-12            0         9470            0            0        48635         1070 
+number of iterations: 1370 
+  588000    1311.4516    59303 1.4967432e-12            0         9483            0            0        48737         1083 
+number of iterations: 1415 
+  589000    1316.5308    59428 1.498254e-12            0         9489            0            0        48841         1098 
+number of iterations: 1718 
+  590000    1321.8403    59574 1.5002151e-12            0         9492            0            0        48976         1106 
+number of iterations: 1712 
+  591000    1327.2351    59683 1.5016953e-12            0         9496            0            0        49069         1118 
+number of iterations: 1598 
+  592000    1332.4673    59810 1.5033188e-12            0         9499            0            0        49176         1135 
+number of iterations: 1310 
+  593000    1337.6154    59946 1.5050967e-12            0         9508            0            0        49293         1145 
+number of iterations: 1610 
+  594000    1342.9054    60059 1.5065657e-12            0         9519            0            0        49385         1155 
+number of iterations: 1365 
+  595000    1348.0029    60182 1.5082368e-12            0         9523            0            0        49492         1167 
+number of iterations: 1658 
+  596000    1353.3281    60319 1.5099799e-12            0         9530            0            0        49610         1179 
+number of iterations: 1502 
+  597000    1358.6331    60429 1.5114718e-12            0         9537            0            0        49702         1190 
+number of iterations: 1011 
+  598000    1364.1589    60585 1.5134167e-12            0         9543            0            0        49836         1206 
+number of iterations: 1151 
+  599000    1369.6809    60748 1.5151756e-12            0         9568            0            0        49966         1214 
+number of iterations: 1670 
+  600000    1375.2344    60887 1.516993e-12            0         9573            0            0        50087         1227 
+Loop time of 1375.23 on 4 procs for 600000 steps with 60887 atoms
+
+Performance: 37695390.053 tau/day, 436.289 timesteps/s
+99.8% CPU use with 4 MPI tasks x no OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 476.33     | 527.76     | 570.43     | 185.1 | 38.38
+Neigh   | 98.78      | 107.81     | 115        |  66.5 |  7.84
+Comm    | 117.01     | 121.01     | 124.58     |  32.3 |  8.80
+Output  | 1.9714     | 2.0633     | 2.1873     |   6.5 |  0.15
+Modify  | 469.62     | 486.55     | 496.48     |  50.1 | 35.38
+Other   |            | 130        |            |       |  9.46
+
+Nlocal:    15221.8 ave 15875 max 14039 min
+Histogram: 1 0 0 0 0 1 0 0 0 2
+Nghost:    2925.25 ave 3039 max 2754 min
+Histogram: 1 0 0 0 1 0 0 0 0 2
+Neighs:    86313.5 ave 90899 max 79402 min
+Histogram: 1 0 0 0 1 0 0 0 0 2
+
+Total # of neighbors = 345254
+Ave neighs/atom = 5.67041
+Neighbor list builds = 14163
+Dangerous builds = 0
+Total wall time: 0:22:55

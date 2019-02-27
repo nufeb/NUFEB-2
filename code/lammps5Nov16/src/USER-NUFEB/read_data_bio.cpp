@@ -563,6 +563,7 @@ void ReadDataBIO::command(int narg, char **arg)
       } else if (strcmp(keyword,"Electron Donor") == 0) {
         if (tnflag == 0) error->all(FLERR,"Must read Type Name before Lines");
         if (atomflag == 0) error->all(FLERR,"Must read Atoms before Lines");
+        if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
         if (firstpass) edoner();
         else skip_lines(atom->ntypes);
       } else if (strcmp(keyword,"Maintenance") == 0) {
@@ -617,7 +618,7 @@ void ReadDataBIO::command(int narg, char **arg)
         if (tnflag == 0) error->all(FLERR,"Must read Type Name before Lines");
         if (firstpass) tcharge();
         else skip_lines(atom->ntypes);
-      } else if (strcmp(keyword,"KLa") == 0) {
+      } else if (strcmp(keyword,"Mass Transfer Coeffs") == 0) {
         if (nuflag == 0) error->all(FLERR,"Must read Nutrients before Lines");
         if (firstpass) kla();
         else skip_lines(bio->nnu);
@@ -2215,7 +2216,30 @@ void ReadDataBIO::tname()
        avec_bio->type_dead = atoi(arg[0]);
     }
 
+    buf = next + 1;
+  }
+  delete [] original;
+}
 
+/* ---------------------------------------------------------------------- */
+
+void ReadDataBIO::edoner()
+{
+  int i,m;
+  char *next;
+  char *buf = new char[atom->ntypes*MAXLINE];
+
+  int eof = comm->read_lines_from_file(fp,atom->ntypes,MAXLINE,buf);
+  if (eof) error->all(FLERR,"Unexpected end of data file");
+
+  bio->edoner = memory->create(bio->edoner,atom->ntypes+1,"bio:Electron Donor");
+
+  char *original = buf;
+  for (i = 0; i < atom->ntypes; i++) {
+    next = strchr(buf,'\n');
+    *next = '\0';
+    parse_coeffs(buf,NULL,0,0,boffset);
+    bio->set_edoner(narg,arg);
     buf = next + 1;
   }
   delete [] original;
@@ -2390,28 +2414,6 @@ void ReadDataBIO::yield()
   delete [] original;
 }
 
-/* ---------------------------------------------------------------------- */
-
-void ReadDataBIO::edoner()
-{
-  int i,m;
-  char *next;
-  char *buf = new char[atom->ntypes*MAXLINE];
-
-  int eof = comm->read_lines_from_file(fp,atom->ntypes,MAXLINE,buf);
-  if (eof) error->all(FLERR,"Unexpected end of data file");
-
-  bio->edoner = memory->create(bio->edoner,atom->ntypes+1,"bio:eD");
-
-  char *original = buf;
-  for (i = 0; i < atom->ntypes; i++) {
-    next = strchr(buf,'\n');
-    *next = '\0';
-    bio->set_edoner(buf);
-    buf = next + 1;
-  }
-  delete [] original;
-}
 
 /* ---------------------------------------------------------------------- */
 
