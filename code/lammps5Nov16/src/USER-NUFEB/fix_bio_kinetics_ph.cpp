@@ -115,9 +115,9 @@ void FixKineticsPH::init() {
   int nnus = bio->nnu;
 
   if (bio->nnu == 0)
-    error->all(FLERR, "fix_kinetics requires # of Nutrients inputs");
+    error->all(FLERR, "fix kinetics/ph requires # of Nutrients inputs");
   else if (bio->nucharge == NULL)
-    error->all(FLERR, "fix_kinetics requires Nutrient Charge inputs");
+    error->all(FLERR, "fix_kinetics/ph requires Nutrient Charge inputs");
 
   keq = memory->create(keq, nnus + 1, 4, "kinetics/ph:keq");
 
