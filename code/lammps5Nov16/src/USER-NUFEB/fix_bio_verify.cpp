@@ -472,7 +472,7 @@ double FixVerify::get_ave_s_sub_base() {
   int nX = kinetics->subn[0] + 2;
   int nY = kinetics->subn[1] + 2;
 
-  for (int grid = 0; grid < kinetics->diffusion->nxx_yy_zz; grid++) {
+  for (int grid = 0; grid < kinetics->diffusion->snxx_yy_zz; grid++) {
     for (int nu = 1; nu <= nnus; nu++) {
       if (strcmp(bio->nuname[nu], "sub") == 0) {
         int up = grid + nX * nY;
@@ -496,7 +496,7 @@ double FixVerify::get_ave_s_o2_base() {
   int nX = kinetics->subn[0] + 2;
   int nY = kinetics->subn[1] + 2;
 
-  for (int grid = 0; grid < kinetics->diffusion->nxx_yy_zz; grid++) {
+  for (int grid = 0; grid < kinetics->diffusion->snxx_yy_zz; grid++) {
     for (int nu = 1; nu <= nnus; nu++) {
       if (strcmp(bio->nuname[nu], "o2") == 0) {
         int up = grid + nX * nY;
@@ -520,7 +520,7 @@ double FixVerify::get_ave_s_nh4_base() {
   int nX = kinetics->subn[0] + 2;
   int nY = kinetics->subn[1] + 2;
 
-  for (int grid = 0; grid < kinetics->diffusion->nxx_yy_zz; grid++) {
+  for (int grid = 0; grid < kinetics->diffusion->snxx_yy_zz; grid++) {
     for (int nu = 1; nu <= nnus; nu++) {
       if (strcmp(bio->nuname[nu], "nh4") == 0) {
         int up = grid + nX * nY;

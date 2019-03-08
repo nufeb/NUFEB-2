@@ -44,24 +44,28 @@ public:
   int bulkflag;                           // 1=solve mass balance for bulk liquid
   int shearflag, dragflag, dcflag;        // flags for shear, drag(nufebfoam), and diffusion coefficent
 
+  int *ghost;                             // ghost grid flag [gird] 1=ghost gird, 0=non-ghost grid
+
   double srate;                           // shear rate
   double tol;                             // tolerance for convergence criteria
 
   double **nugrid;                        // nutrient concentration in ghost grid [nutrient][grid], unit in mol or kg/m3
   double **xgrid;                         // grid coordinate [gird][3]
-  bool *ghost;                            // ghost grid flag [gird] 1=ghost gird, 0=non-ghost grid
   double **nuprev;                        // nutrient concentration in previous diffusion step
   double **grid_diff_coeff;               // diffusion coeffs at each grid
-
   double vol;                             // grid volume
 
   double q, rvol, af;                     // parameters used for dynamic bulk
   int unit;                               // concentration unit 0=mol/l; 1=kg/m3
 
   int nx, ny, nz;                         // # of non-ghost grids in x, y and z
-  int nxx, nyy, nzz;                      // # of all grids in x, y and z
-  int nxx_yy_zz;                          // total # of grids
-  double diff_dt;                         // diffusion timestep
+  int snxyz;                              // total # of local non-ghost grid
+  int snxx, snyy, snzz;                   // # of local grids in x, y and z
+  int snxx_yy;                            // # of local grids in x and y
+  int snxx_yy_zz;                         // total # of local grids
+
+  double diff_dt;
+
   double xlo, xhi, ylo, yhi, zlo, zhi, bzhi;
   double xbcm, xbcp, ybcm, ybcp, zbcm, zbcp; // inlet BC concentrations for each surface
 
@@ -71,6 +75,8 @@ public:
   FixKinetics *kinetics;
   AtomVecBio *avec;
 
+  bool setup_exchange_flag; // flags that setup_exchange needs to be called in the next call to diffusion
+  
   int setmask();
   void init();
   int *diffusion(int*, int, double);
