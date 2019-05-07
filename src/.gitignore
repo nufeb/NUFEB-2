@@ -1239,3 +1239,5 @@
 /pair_vashishta*.cpp
 /pair_vashishta*.h
 
+/atom_vec_nufeb.cpp
+/atom_vec_nufeb.h
