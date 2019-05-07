@@ -110,6 +110,10 @@ class Atom : protected Pointers {
   double *edpd_cv;               // heat capacity
   int cc_species;
 
+  // USER-NUFEB package
+
+  double *outer_radius, *outer_mass;
+  
   // molecular info
 
   int **nspecial;               // 0,1,2 = cumulative # of 1-2,1-3,1-4 neighs
@@ -155,7 +159,7 @@ class Atom : protected Pointers {
   int rho_flag,e_flag,cv_flag,vest_flag;
   int dpd_flag,edpd_flag,tdpd_flag;
 
-  //USER-SPIN package
+  // USER-SPIN package
 
   int sp_flag;
 

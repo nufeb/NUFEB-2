@@ -121,6 +121,10 @@ Atom::Atom(LAMMPS *lmp) : Pointers(lmp)
   eff_plastic_strain_rate = NULL;
   damage = NULL;
 
+  // USER-NUFEB
+  outer_radius = NULL;
+  outer_mass = NULL;
+  
   // molecular info
 
   bond_per_atom =  extra_bond_per_atom = 0;
@@ -321,6 +325,9 @@ Atom::~Atom()
   memory->destroy(edpd_flux);
   memory->destroy(edpd_cv);
 
+  memory->destroy(outer_radius);
+  memory->destroy(outer_mass);
+  
   memory->destroy(nspecial);
   memory->destroy(special);
 
