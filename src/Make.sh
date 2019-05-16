@@ -86,6 +86,10 @@ if (test $1 = "style") then
   style READER_CLASS    reader_     reader     read_dump
   style REGION_CLASS    region_     region     domain
 
+  # NUFEB specific
+
+  style GRID_CLASS      grid_vec_   grid       grid
+  
 # edit Makefile.lib, for creating non-shared lib
 # called by "make makelib"
 # use current list of *.cpp and *.h files in src dir w/out main.cpp

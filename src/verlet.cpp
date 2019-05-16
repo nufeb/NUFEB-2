@@ -34,6 +34,11 @@
 #include "memory.h"
 #include "error.h"
 
+// NUFEB specific
+
+#include "grid.h"
+#include "comm_grid.h"
+
 using namespace LAMMPS_NS;
 
 /* ---------------------------------------------------------------------- */
@@ -124,6 +129,11 @@ void Verlet::setup(int flag)
   modify->setup_post_neighbor();
   neighbor->ncalls = 0;
 
+  // NUFEB specific
+
+  grid->setup();
+  comm_grid->setup();
+  
   // compute all forces
 
   force->setup();
@@ -261,6 +271,7 @@ void Verlet::run(int n)
       timer->stamp();
       comm->forward_comm();
       timer->stamp(Timer::COMM);
+      comm_grid->forward_comm();
     } else {
       if (n_pre_exchange) {
         timer->stamp();

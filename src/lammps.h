@@ -63,6 +63,11 @@ class LAMMPS {
 
   class CiteMe *citeme;          // citation info
 
+  // NUFEB specific
+
+  class Grid *grid;
+  class CommGrid *comm_grid;
+  
   static const char * installed_packages[];
 
   static const bool has_git_info;
