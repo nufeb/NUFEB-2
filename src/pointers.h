@@ -58,7 +58,9 @@ class Pointers {
     logfile(ptr->logfile),
     atomKK(ptr->atomKK),
     memoryKK(ptr->memoryKK),
-    python(ptr->python) {}
+    python(ptr->python),
+    grid(ptr->grid),
+    comm_grid(ptr->comm_grid) {}
   virtual ~Pointers() {}
 
  protected:
@@ -87,6 +89,11 @@ class Pointers {
   class AtomKokkos *&atomKK;
   class MemoryKokkos *&memoryKK;
   class Python *&python;
+
+  // NUFEB specific
+
+  Grid *&grid;
+  CommGrid *&comm_grid;
 };
 
 }

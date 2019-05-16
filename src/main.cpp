@@ -18,6 +18,10 @@
 #include <cstdio>
 #include <cstdlib>
 
+#if defined(LAMMPS_WAIT_GDB_ATTACH)
+#include <unistd.h>
+#endif
+
 #if defined(LAMMPS_TRAP_FPE) && defined(_GNU_SOURCE)
 #include <fenv.h>
 #endif
@@ -35,6 +39,18 @@ using namespace LAMMPS_NS;
 int main(int argc, char **argv)
 {
   MPI_Init(&argc,&argv);
+
+#ifdef LAMMPS_WAIT_GDB_ATTACH
+  {
+    volatile int i = 0;
+    char hostname[256];
+    gethostname(hostname, sizeof(hostname));
+    printf("PID %d on %s ready for attach\n", getpid(), hostname);
+    fflush(stdout);
+    while (0 == i)
+        sleep(5);
+  }
+#endif
 
 // enable trapping selected floating point exceptions.
 // this uses GNU extensions and is only tested on Linux

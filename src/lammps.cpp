@@ -54,6 +54,11 @@
 #include "lmpinstalledpkgs.h"
 #include "lmpgitversion.h"
 
+// NUFEB specific
+
+#include "grid.h"
+#include "comm_grid.h"
+
 using namespace LAMMPS_NS;
 
 static void print_style(FILE *fp, const char *str, int &pos);
@@ -70,7 +75,8 @@ LAMMPS::LAMMPS(int narg, char **arg, MPI_Comm communicator) :
   memory(NULL), error(NULL), universe(NULL), input(NULL), atom(NULL),
   update(NULL), neighbor(NULL), comm(NULL), domain(NULL), force(NULL),
   modify(NULL), group(NULL), output(NULL), timer(NULL), kokkos(NULL),
-  atomKK(NULL), memoryKK(NULL), python(NULL), citeme(NULL)
+  atomKK(NULL), memoryKK(NULL), python(NULL), citeme(NULL),
+  grid(NULL)
 {
   memory = new Memory(this);
   error = new Error(this);
@@ -741,6 +747,14 @@ void LAMMPS::create()
   timer = new Timer(this);
 
   python = new Python(this);
+
+  // NUFEB specific
+
+  // if (kokkos) grid = new GridKokkos(this);
+  grid = new Grid(this);
+
+  // if (kokkos) comm_grid = new CommGridKokkos(this);
+  comm_grid = new CommGrid(this);
 }
 
 /* ----------------------------------------------------------------------
@@ -817,10 +831,19 @@ void LAMMPS::init()
                          //   used by fix shear_history::unpack_restart()
                          //     when force->pair->gran_history creates fix
                          //   atom_vec init uses deform_vremap
+
+  // NUFEB specific
+
+  grid->init();
+  
   modify->init();        // modify must come after update, force, atom, domain
   neighbor->init();      // neighbor must come after force, modify
   comm->init();          // comm must come after force, modify, neighbor, atom
   output->init();        // output must come after domain, force, modify
+
+  // NUFEB specific
+
+  comm_grid->init();
 }
 
 /* ----------------------------------------------------------------------
@@ -865,6 +888,9 @@ void LAMMPS::destroy()
 
   delete python;
   python = NULL;
+
+  delete grid;
+  grid = NULL;
 }
 
 /* ----------------------------------------------------------------------
@@ -1006,7 +1032,7 @@ void LAMMPS::help()
   fprintf(fp,"\n\n");
 
   pos = 80;
-  fprintf(fp,"* Fix styles\n");
+  fprintf(fp,"* Fix styles:\n");
 #define FIX_CLASS
 #define FixStyle(key,Class) print_style(fp,#key,pos);
 #include "style_fix.h"
@@ -1038,11 +1064,21 @@ void LAMMPS::help()
   fprintf(fp,"\n\n");
 
   pos = 80;
-  fprintf(fp,"* Command styles\n");
+  fprintf(fp,"* Command styles:\n");
 #define COMMAND_CLASS
 #define CommandStyle(key,Class) print_style(fp,#key,pos);
 #include "style_command.h"
 #undef COMMAND_CLASS
+  fprintf(fp,"\n\n");
+
+  // NUFEB specific
+  
+  pos = 80;
+  fprintf(fp,"* Grid styles:\n");
+#define GRID_CLASS
+#define GridStyle(key,Class) print_style(fp,#key,pos);
+#include "style_grid.h"
+#undef GRID_CLASS
   fprintf(fp,"\n\n");
 
   // close pipe to pager, if active
