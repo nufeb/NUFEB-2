@@ -26,7 +26,7 @@ class CommGrid : protected Pointers {
   virtual void init();
   virtual void setup();                 // setup 3d comm pattern
   virtual void forward_comm();          // forward comm of grid data
-  virtual void exchange();              // move cells to new procs
+  virtual void migrate();               // move cells to new procs
   
  protected:
   int size_forward;                     // # of data in forward comm
@@ -58,11 +58,8 @@ class CommGrid : protected Pointers {
   void grow_recv(int);
   void grow_send(int);
   void grow_self(int);
-  int intersect(int *lo1, int *hi1,
-		int *lo2, int *hi2,
-		int ext1, int ext2,
-		int xshift, int yshift, int zshift,
-		int *intlo, int *inthi);
+  int intersect(int *, int *, int *, int *, int, int, int, int, int,
+		int *, int *, bool);
 };
 
 }

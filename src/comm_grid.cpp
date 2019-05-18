@@ -117,7 +117,7 @@ void CommGrid::setup()
   for (int p = 0; p < comm->nprocs; p++) {
     if (comm->me != p) {
       int n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
-			0, -1, 0, 0, 0, lo, hi);
+			0, -1, 0, 0, 0, lo, hi, false);
       if (n > 0) {
 	recvproc[nrecvproc] = p;
 	recv_begin[nrecvproc] = nrecv;
@@ -126,7 +126,7 @@ void CommGrid::setup()
 	recvlist.add(p, lo, hi, n);
       }
       n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
-		    -1, 0, 0, 0, 0, lo, hi);
+		    -1, 0, 0, 0, 0, lo, hi, false);
       if (n > 0) {
 	sendproc[nsendproc] = p;
 	send_begin[nsendproc] = nsend;
@@ -137,7 +137,7 @@ void CommGrid::setup()
     }
     if (domain->xperiodic) {
       int n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
-			0, -1, -grid->box[0], 0, 0, lo, hi);
+			0, -1, -grid->box[0], 0, 0, lo, hi, false);
       if (n > 0) {
 	if (comm->me != p) {
 	  if (nrecvproc > 0 && recvproc[nrecvproc-1] == p) {
@@ -154,7 +154,7 @@ void CommGrid::setup()
 	recvlist.add(p, lo, hi, n);
       }
       n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
-		    -1, 0, grid->box[0], 0, 0, lo, hi);
+		    -1, 0, grid->box[0], 0, 0, lo, hi, false);
       if (n > 0) {
 	if (comm->me != p) {
 	  if (nsendproc > 0 && sendproc[nsendproc-1] == p) {
@@ -171,7 +171,7 @@ void CommGrid::setup()
 	sendlist.add(p, lo, hi, n);
       }
       n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
-		    0, -1, grid->box[0], 0, 0, lo, hi);
+		    0, -1, grid->box[0], 0, 0, lo, hi, false);
       if (n > 0) {
 	if (comm->me != p) {
 	  if (nrecvproc > 0 && recvproc[nrecvproc-1] == p) {
@@ -188,7 +188,7 @@ void CommGrid::setup()
 	recvlist.add(p, lo, hi, n);
       }
       n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
-		    -1, 0, -grid->box[0], 0, 0, lo, hi);
+		    -1, 0, -grid->box[0], 0, 0, lo, hi, false);
       if (n > 0) {
 	if (comm->me != p) {
 	  if (nsendproc > 0 && sendproc[nsendproc-1] == p) {
@@ -207,7 +207,7 @@ void CommGrid::setup()
     }
     if (domain->yperiodic) {
       int n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
-			0, -1, 0, -grid->box[1], 0, lo, hi);
+			0, -1, 0, -grid->box[1], 0, lo, hi, false);
       if (n > 0) {
 	if (comm->me != p) {
 	  if (nrecvproc > 0 && recvproc[nrecvproc-1] == p) {
@@ -224,7 +224,7 @@ void CommGrid::setup()
 	recvlist.add(p, lo, hi, n);
       }
       n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
-		    -1, 0, 0, grid->box[1], 0, lo, hi);
+		    -1, 0, 0, grid->box[1], 0, lo, hi, false);
       if (n > 0) {
 	if (comm->me != p) {
 	  if (nsendproc > 0 && sendproc[nsendproc-1] == p) {
@@ -241,7 +241,7 @@ void CommGrid::setup()
 	sendlist.add(p, lo, hi, n);
       }
       n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
-		    0, -1, 0, grid->box[1], 0, lo, hi);
+		    0, -1, 0, grid->box[1], 0, lo, hi, false);
       if (n > 0) {
 	if (comm->me != p) {
 	  if (nrecvproc > 0 && recvproc[nrecvproc-1] == p) {
@@ -258,7 +258,7 @@ void CommGrid::setup()
 	recvlist.add(p, lo, hi, n);
       }
       n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
-		    -1, 0, 0, -grid->box[1], 0, lo, hi);
+		    -1, 0, 0, -grid->box[1], 0, lo, hi, false);
       if (n > 0) {
 	if (comm->me != p) {
 	  if (nsendproc > 0 && sendproc[nsendproc-1] == p) {
@@ -277,7 +277,7 @@ void CommGrid::setup()
     }
     if (domain->zperiodic) {
       int n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
-			0, -1, 0, 0, -grid->box[2], lo, hi);
+			0, -1, 0, 0, -grid->box[2], lo, hi, false);
       if (n > 0) {
 	if (comm->me != p) {
 	  if (nrecvproc > 0 && recvproc[nrecvproc-1] == p) {
@@ -294,7 +294,7 @@ void CommGrid::setup()
 	recvlist.add(p, lo, hi, n);
       }
       n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
-		    -1, 0, 0, 0, grid->box[2], lo, hi);
+		    -1, 0, 0, 0, grid->box[2], lo, hi, false);
       if (n > 0) {
 	if (comm->me != p) {
 	  if (nsendproc > 0 && sendproc[nsendproc-1] == p) {
@@ -311,7 +311,7 @@ void CommGrid::setup()
 	sendlist.add(p, lo, hi, n);
       }
       n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
-		    0, -1, 0, 0, grid->box[2], lo, hi);
+		    0, -1, 0, 0, grid->box[2], lo, hi, false);
       if (n > 0) {
 	if (comm->me != p) {
 	  if (nrecvproc > 0 && recvproc[nrecvproc-1] == p) {
@@ -328,7 +328,7 @@ void CommGrid::setup()
 	recvlist.add(p, lo, hi, n);
       }
       n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
-		    -1, 0, 0, 0, -grid->box[2], lo, hi);
+		    -1, 0, 0, 0, -grid->box[2], lo, hi, false);
       if (n > 0) {
 	if (comm->me != p) {
 	  if (nsendproc > 0 && sendproc[nsendproc-1] == p) {
@@ -356,12 +356,10 @@ void CommGrid::setup()
   
   int irecv = 0;
   int irecv_self = 0;
-  // if (comm->me == 0) fprintf(screen, "recvlist: ");
   for (int i = 0; i < recvlist.n; i++) {
     for (int z = recvlist.boxlo[3*i+2]; z < recvlist.boxhi[3*i+2]; z++) {
       for (int y = recvlist.boxlo[3*i+1]; y < recvlist.boxhi[3*i+1]; y++) {
 	for (int x = recvlist.boxlo[3*i]; x < recvlist.boxhi[3*i]; x++) {
-	  // if (comm->me == 0) fprintf(screen, "(%d, %d, %d) ", x, y, z);
 	  if (comm->me != recvlist.procs[i]) {
 	    recv_cells[irecv++] = x - grid->sublo[0] +
 	      (y - grid->sublo[1]) * grid->subbox[0] +
@@ -374,17 +372,14 @@ void CommGrid::setup()
   	}
       }
     }
-    // if (comm->me == 0) fprintf(screen, "\n");
   }
 
   int isend = 0;
   int isend_self = 0;
-  // if (comm->me == 0) fprintf(screen, "sendlist: ");
   for (int i = 0; i < sendlist.n; i++) {
     for (int z = sendlist.boxlo[3*i+2]; z < sendlist.boxhi[3*i+2]; z++) {
       for (int y = sendlist.boxlo[3*i+1]; y < sendlist.boxhi[3*i+1]; y++) {
 	for (int x = sendlist.boxlo[3*i]; x < sendlist.boxhi[3*i]; x++) {
-	  // if (comm->me == 0) fprintf(screen, "(%d, %d, %d) ", x, y, z);
 	  if (comm->me != sendlist.procs[i]) {
 	    send_cells[isend++] = x - grid->sublo[0] +
 	      (y - grid->sublo[1]) * grid->subbox[0] +
@@ -397,24 +392,7 @@ void CommGrid::setup()
   	}
       }
     }
-    // if (comm->me == 0) fprintf(screen, "\n");
   }
-
-  // for (int p = 0; p < nrecvproc; p++) {
-  //   if (comm->me == 0) fprintf(screen, "[%d] receiving from %d: ", comm->me, recvproc[p]);
-  //   for (int c = recv_begin[p]; c < recv_end[p]; c++) {
-  //     if (comm->me == 0) fprintf(screen, "%d ", recv_cells[c]);
-  //   }
-  //   if (comm->me == 0) fprintf(screen, "\n");
-  // }
-  
-  // for (int p = 0; p < nsendproc; p++) {
-  //   if (comm->me == 0) fprintf(screen, "[%d] sending to %d: ", comm->me, sendproc[p]);
-  //   for (int c = send_begin[p]; c < send_end[p]; c++) {
-  //     if (comm->me == 0) fprintf(screen, "%d ", send_cells[c]);
-  //   }
-  //   if (comm->me == 0) fprintf(screen, "\n");
-  // }
   
   if (requests) delete [] requests;
   requests = new MPI_Request[nrecvproc];
@@ -449,9 +427,162 @@ void CommGrid::forward_comm()
 
 /* ---------------------------------------------------------------------- */
 
-void CommGrid::exchange()
+void CommGrid::migrate()
 {
+  int boxlo[3*comm->nprocs];
+  MPI_Allgather(grid->sublo, 3, MPI_INT, boxlo, 3, MPI_INT, world);
 
+  int boxhi[3*comm->nprocs];
+  MPI_Allgather(grid->subhi, 3, MPI_INT, boxhi, 3, MPI_INT, world);
+
+  int newsublo[3];  // new subgrid lower bound
+  int newsubhi[3];  // new subgrid upper bound
+  int newsubbox[3]; // new subgrid box
+  const double small = 1e-12;
+  for (int i = 0; i < 3; i++) {
+    newsublo[i] = static_cast<int>((domain->sublo[i] - domain->boxlo[i]) /
+				   grid->cell_size + small) - 1;
+    newsubhi[i] = static_cast<int>((domain->subhi[i] - domain->boxlo[i]) /
+				   grid->cell_size + small) + 1;
+    newsubbox[i] = newsubhi[i] - newsublo[i];
+  }
+
+  int newboxlo[3*comm->nprocs];
+  MPI_Allgather(newsublo, 3, MPI_INT, newboxlo, 3, MPI_INT, world);
+
+  int newboxhi[3*comm->nprocs];
+  MPI_Allgather(newsubhi, 3, MPI_INT, newboxhi, 3, MPI_INT, world);
+  
+  int *recv_begin_ = memory->create(recv_begin_, comm->nprocs, "comm_grid:recv_begin_");
+  int *send_begin_ = memory->create(send_begin_, comm->nprocs, "comm_grid:send_begin_");
+  int *recv_end_ = memory->create(recv_end_, comm->nprocs, "comm_grid:recv_end_");
+  int *send_end_ = memory->create(send_end_, comm->nprocs, "comm_grid:send_end_");
+      
+  IntersectList recvlist(lmp, comm->nprocs);
+  IntersectList sendlist(lmp, comm->nprocs);
+  
+  int nrecv_ = 0;
+  int nsend_ = 0;
+  int nrecv_self_ = 0;
+  int nsend_self_ = 0;
+  int nrecvproc_ = 0;
+  int nsendproc_ = 0;
+  int lo[3];
+  int hi[3];
+  for (int p = 0; p < comm->nprocs; p++) {
+    // receiving from other procs and self
+    int n = intersect(newsublo, newsubhi, &boxlo[3*p], &boxhi[3*p],
+		      -1, -1, 0, 0, 0, lo, hi, true);
+    if (n > 0) {
+      recvlist.add(p, lo, hi, n);
+      recv_begin_[nrecvproc_] = nrecv_;
+      if (comm->me == p) nrecv_self_ += n;
+      else nrecv_ += n;
+      recv_end_[nrecvproc_++] = nrecv_;
+    }
+    // sending to other procs and self
+    n = intersect(grid->sublo, grid->subhi, &newboxlo[3*p], &newboxhi[3*p],
+		  -1, -1, 0, 0, 0, lo, hi, true);
+    if (n > 0) {
+      sendlist.add(p, lo, hi, n);
+      send_begin_[nsendproc_] = nsend_;
+      if (comm->me == p) nsend_self_ += n;
+      else nsend_ += n;
+      send_end_[nsendproc_++] = nsend_;
+    }
+  }  
+
+  if (nrecv_self_ != nsend_self_)
+    error->all(FLERR, "Conflicting self send and recv sizes (this is possibly a bug)");
+
+  int *recv_cells_ = memory->create(recv_cells_, nrecv_, "comm_grid:recv_cells_");
+  int *send_cells_ = memory->create(send_cells_, nsend_, "comm_grid:send_cells_");
+  int *recv_cells_self_ = memory->create(recv_cells_self_, nrecv_self_, "comm_grid:recv_cells_self_");
+  int *send_cells_self_ = memory->create(send_cells_self_, nsend_self_, "comm_grid:send_cells_self_");
+  
+  int irecv = 0;
+  int irecv_self = 0;
+  for (int i = 0; i < recvlist.n; i++) {
+    for (int z = recvlist.boxlo[3*i+2]; z < recvlist.boxhi[3*i+2]; z++) {
+      for (int y = recvlist.boxlo[3*i+1]; y < recvlist.boxhi[3*i+1]; y++) {
+	for (int x = recvlist.boxlo[3*i]; x < recvlist.boxhi[3*i]; x++) {
+	  if (comm->me != recvlist.procs[i]) {
+	    recv_cells_[irecv++] = x - newsublo[0] +
+	      (y - newsublo[1]) * newsubbox[0] +
+	      (z - newsublo[2]) * newsubbox[0] * newsubbox[1];
+	  } else {
+	    recv_cells_self_[irecv_self++] = x - newsublo[0] +
+	      (y - newsublo[1]) * newsubbox[0] +
+	      (z - newsublo[2]) * newsubbox[0] * newsubbox[1];
+	  }
+  	}
+      }
+    }
+  }
+
+  int isend = 0;
+  int isend_self = 0;
+  for (int i = 0; i < sendlist.n; i++) {
+    for (int z = sendlist.boxlo[3*i+2]; z < sendlist.boxhi[3*i+2]; z++) {
+      for (int y = sendlist.boxlo[3*i+1]; y < sendlist.boxhi[3*i+1]; y++) {
+	for (int x = sendlist.boxlo[3*i]; x < sendlist.boxhi[3*i]; x++) {
+	  if (comm->me != sendlist.procs[i]) {
+	    send_cells_[isend++] = x - grid->sublo[0] +
+	      (y - grid->sublo[1]) * grid->subbox[0] +
+	      (z - grid->sublo[2]) * grid->subbox[0] * grid->subbox[1];
+	  } else {
+	    send_cells_self_[isend_self++] = x - grid->sublo[0] +
+	      (y - grid->sublo[1]) * grid->subbox[0] +
+	      (z - grid->sublo[2]) * grid->subbox[0] * grid->subbox[1];
+	  }
+  	}
+      }
+    }
+  }
+
+  double *buf_recv_ = memory->create(buf_recv_, nrecv_ * size_exchange, "comm_grid:buf_recv_");
+  double *buf_send_ = memory->create(buf_send_, nsend_ * size_exchange, "comm_grid:buf_send_");
+  double *buf_self_ = memory->create(buf_self_, nrecv_self_ * size_exchange, "comm_grid:buf_self_");
+  
+  int nrequest = 0;
+  for (int p = 0; p < recvlist.n; p++) {
+    if (comm->me != recvlist.procs[p]) {
+      MPI_Irecv(&buf_recv_[recv_begin_[p] * size_exchange],
+		(recv_end_[p] - recv_begin_[p]) * size_exchange,
+		MPI_DOUBLE, recvlist.procs[p], 0, world, &requests[nrequest++]);
+    }
+  }
+  for (int p = 0; p < sendlist.n; p++) {
+    if (comm->me != sendlist.procs[p]) {
+      int n = grid->gvec->pack_exchange(send_end_[p] - send_begin_[p],
+					&send_cells_[send_begin_[p]],
+					buf_send_);
+      MPI_Send(buf_send_, n, MPI_DOUBLE, sendlist.procs[p], 0, world);
+    }
+  }
+  int n = grid->gvec->pack_exchange(nsend_self_, send_cells_self_, buf_self_);
+  // safe to call grid::setup() here because all grid data are in local buffers
+  grid->setup();
+  MPI_Waitall(nrequest, requests, MPI_STATUS_IGNORE);
+  for (int p = 0; p < recvlist.n; p++) {
+    grid->gvec->unpack_exchange(recv_end_[p] - recv_begin_[p],
+				&recv_cells_[recv_begin_[p]],
+				&buf_recv_[recv_begin_[p] * size_exchange]);
+  }
+
+  grid->gvec->unpack_exchange(nrecv_self_, recv_cells_self_, buf_self_);
+
+  memory->destroy(recv_begin_);
+  memory->destroy(send_begin_);
+  memory->destroy(recv_end_);
+  memory->destroy(send_end_);
+  memory->destroy(recv_cells_);
+  memory->destroy(send_cells_);
+  memory->destroy(recv_cells_self_);
+  memory->destroy(send_cells_self_);
+  memory->destroy(buf_recv_);
+  memory->destroy(buf_send_);
+  memory->destroy(buf_self_);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -492,7 +623,7 @@ int CommGrid::intersect(int *lo1, int *hi1,
 			int *lo2, int *hi2,
 			int ext1, int ext2,
 			int xshift, int yshift, int zshift,
-			int *intlo, int *inthi)
+			int *intlo, int *inthi, bool corner)
 {
   int tmplo1[3];
   memcpy(tmplo1, lo1, 3*sizeof(int));
@@ -513,14 +644,15 @@ int CommGrid::intersect(int *lo1, int *hi1,
 
   int size[3];
   for (int d = 0; d < 3; d++) {
-    intlo[d] = MAX(tmplo1[d] - ext1, tmplo2[d] - ext2);
-    inthi[d] = MIN(tmphi1[d] + ext1, tmphi2[d] + ext2);
+    tmplo1[d] -= ext1;
+    tmphi1[d] += ext1;
+    tmplo2[d] -= ext2;
+    tmphi2[d] += ext2;
+    intlo[d] = MAX(tmplo1[d], tmplo2[d]);
+    inthi[d] = MIN(tmphi1[d], tmphi2[d]);
     size[d] = inthi[d] - intlo[d];
   }
-  if ((size[0] > 1 && size[1] > 1) ||
-      (size[0] > 1 && size[2] > 1) ||
-      (size[1] > 1 && size[2] > 1)) {
-    return size[0] * size[1] * size[2];
-  }
-  return 0;
+  if (size[0] <= 0 || size[1] <= 0 || size[2] <= 0)
+    return 0;
+  return size[0] * size[1] * size[2];
 }
