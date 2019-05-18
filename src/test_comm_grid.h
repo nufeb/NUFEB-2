@@ -32,6 +32,9 @@ class TestCommGrid : public Integrate {
   virtual void setup(int flag);
   virtual void setup_minimal(int);
   virtual void run(int);
+
+ private:
+  bool check();
 };
 
 }
