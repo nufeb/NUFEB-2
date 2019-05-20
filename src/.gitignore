@@ -391,6 +391,8 @@
 /dump_custom_gz.h
 /dump_custom_mpiio.cpp
 /dump_custom_mpiio.h
+/dump_grid_vtk.cpp
+/dump_grid_vtk.h
 /dump_h5md.cpp
 /dump_h5md.h
 /dump_netcdf.cpp
