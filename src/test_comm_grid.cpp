@@ -259,7 +259,7 @@ bool TestCommGrid::check()
 	    fprintf(screen, "[%d] Wrong value at cell %d (+z periodic boundary): expected %d got %e\n",
 		    comm->me, i, j - grid->extbox[0] * grid->extbox[1] * grid->box[2], conc[0][i]);
 	  }
-	} else {
+	} else if (!(mask[i] & GHOST_MASK)) {
 	  if (fabs(conc[0][i] - j) > small) {
 	    result = true;
 	    fprintf(screen, "[%d] Wrong value at cell %d (local domain): expected %d got %e\n",
