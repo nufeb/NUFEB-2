@@ -419,10 +419,8 @@ void CommGrid::forward_comm()
 			    &recv_cells[recv_begin[p]],
 			    &buf_recv[recv_begin[p] * size_forward]);
   }
-  for (int i = 0; i < nsend_self; i++) {
-    int n = grid->gvec->pack_comm(nsend_self, send_cells_self, buf_self);
-    grid->gvec->unpack_comm(nrecv_self, recv_cells_self, buf_self);
-  }
+  int n = grid->gvec->pack_comm(nsend_self, send_cells_self, buf_self);
+  grid->gvec->unpack_comm(nrecv_self, recv_cells_self, buf_self);
 }
 
 /* ---------------------------------------------------------------------- */
