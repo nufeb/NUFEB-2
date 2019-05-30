@@ -12,7 +12,6 @@
 ------------------------------------------------------------------------- */
 
 #include "dump_grid_vtk.h"
-
 #include "atom.h"
 #include "comm.h"
 #include "error.h"
@@ -21,6 +20,7 @@
 #include "grid.h"
 #include "grid_masks.h"
 #include "domain.h"
+#include "group.h"
 
 #include <vtkCellData.h>
 #include <vtkDataArray.h>
@@ -49,9 +49,12 @@ void DumpGridVTK::init_style() {
   for (auto it = fields.begin(); it != fields.end(); ++it) {
     if (*it == "con") {
       packs.push_back(std::bind(&DumpGridVTK::pack_concentration, this, _1));
-    }
-    else if (*it == "rea") {
+    } else if (*it == "rea") {
       packs.push_back(std::bind(&DumpGridVTK::pack_reaction, this, _1));
+    } else if (*it == "den") {
+      packs.push_back(std::bind(&DumpGridVTK::pack_density, this, _1));
+    } else if (*it == "gro") {
+      packs.push_back(std::bind(&DumpGridVTK::pack_growth, this, _1));
     }
   }
 }
@@ -95,17 +98,11 @@ int DumpGridVTK::parse_fields(int narg, char **arg) {
     i = iarg;
     if (strcmp(arg[iarg],"con") == 0) {
       fields.push_back(arg[iarg]);
-    } else if (strcmp(arg[iarg], "upt") == 0) {
+    } else if (strcmp(arg[iarg], "rea") == 0) {
       fields.push_back(arg[iarg]);
-    } else if (strcmp(arg[iarg], "act") == 0) {
+    } else if (strcmp(arg[iarg], "den") == 0) {
       fields.push_back(arg[iarg]);
-    } else if (strcmp(arg[iarg], "yie") == 0) {
-      fields.push_back(arg[iarg]);
-    } else if (strcmp(arg[iarg], "cat") == 0) {
-      fields.push_back(arg[iarg]);
-    } else if (strcmp(arg[iarg], "ana") == 0) {
-      fields.push_back(arg[iarg]);
-    } else if (strcmp(arg[iarg], "hyd") == 0) {
+    } else if (strcmp(arg[iarg], "gro") == 0) {
       fields.push_back(arg[iarg]);
     }
   }
@@ -117,6 +114,14 @@ void DumpGridVTK::pack_concentration(vtkSmartPointer<vtkImageData> image) {
 
 void DumpGridVTK::pack_reaction(vtkSmartPointer<vtkImageData> image) {
   pack_tuple1(image, "reaction", grid->reac, grid->sub_names, grid->nsubs);
+}
+
+void DumpGridVTK::pack_density(vtkSmartPointer<vtkImageData> image) {
+  pack_tuple1(image, "density", grid->dens, group->names, group->ngroup);
+}
+
+void DumpGridVTK::pack_growth(vtkSmartPointer<vtkImageData> image) {
+  pack_tuple<2>(image, "growth", grid->growth, group->names, group->ngroup);
 }
 
 void DumpGridVTK::pack_tuple1(vtkSmartPointer<vtkImageData> image, const char *name, double *data) {
@@ -145,18 +150,19 @@ void DumpGridVTK::pack_tuple1(vtkSmartPointer<vtkImageData> image, const char *n
   }
 }
 
-void DumpGridVTK::pack_tuple5(vtkSmartPointer<vtkImageData> image, const char *name, double ***data, char **names, int count) {
+template <int N>
+void DumpGridVTK::pack_tuple(vtkSmartPointer<vtkImageData> image, const char *name, double ***data, char **names, int count) {
   for (int n = 0; n < count; n++) {
     vtkSmartPointer<vtkDoubleArray> array = vtkSmartPointer<vtkDoubleArray>::New();
     std::ostringstream oss;
     oss << names[n] << " " << name;
     array->SetName(oss.str().c_str());
-    array->SetNumberOfComponents(5);
+    array->SetNumberOfComponents(N);
     for (int i = 0; i < grid->ncells; i++) {
       if (!(grid->mask[i] & GHOST_MASK)) {
-	double tuple[5];
-	for (int j = 0; j < 5; j++)
-	  tuple[j] = data[n][j][i];
+	double tuple[N];
+	for (int j = 0; j < N; j++)
+	  tuple[j] = data[n][i][j];
 	array->InsertNextTuple(tuple);
       }
     }
