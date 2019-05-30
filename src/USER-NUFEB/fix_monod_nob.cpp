@@ -14,7 +14,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cmath>
-#include "fix_monod_het.h"
+#include "fix_monod_nob.h"
 #include "atom.h"
 #include "force.h"
 #include "error.h"
@@ -30,38 +30,26 @@ using namespace MathConst;
 
 /* ---------------------------------------------------------------------- */
 
-FixMonodHET::FixMonodHET(LAMMPS *lmp, int narg, char **arg) :
+FixMonodNOB::FixMonodNOB(LAMMPS *lmp, int narg, char **arg) :
   FixMonod(lmp, narg, arg)
 {
   dynamic_group_allow = 1;
 
-  isub = -1;
   io2 = -1;
   ino2 = -1;
   ino3 = -1;
 
-  sub_affinity = 0.0;
   o2_affinity = 0.0;
   no2_affinity = 0.0;
-  no3_affinity = 0.0;
 
   growth = 0.0;
   yield = 1.0;
   maintain = 0.0;
   decay = 0.0;
-  eps_yield = 0.0;
-  anoxic = 1.0;
-  eps_dens = 1.0;
   
   int iarg = 3;
   while (iarg < narg) {
-    if (strcmp(arg[iarg], "sub") == 0) {
-      isub = grid->find(arg[iarg+1]);
-      if (isub < 0)
-	error->all(FLERR, "Can't find substrate name");
-      sub_affinity = force->numeric(FLERR, arg[iarg+2]);
-      iarg += 3;
-    } else if (strcmp(arg[iarg], "o2") == 0) {
+    if (strcmp(arg[iarg], "o2") == 0) {
       io2 = grid->find(arg[iarg+1]);
       if (io2 < 0)
 	error->all(FLERR, "Can't find substrate name");
@@ -77,8 +65,7 @@ FixMonodHET::FixMonodHET(LAMMPS *lmp, int narg, char **arg) :
       ino3 = grid->find(arg[iarg+1]);
       if (ino3 < 0)
 	error->all(FLERR, "Can't find substrate name");
-      no3_affinity = force->numeric(FLERR, arg[iarg+2]);
-      iarg += 3;
+      iarg += 2;
     } else if (strcmp(arg[iarg], "growth") == 0) {
       growth = force->numeric(FLERR, arg[iarg+1]);
       iarg += 2;
@@ -91,24 +78,15 @@ FixMonodHET::FixMonodHET(LAMMPS *lmp, int narg, char **arg) :
     } else if (strcmp(arg[iarg], "decay") == 0) {
       decay = force->numeric(FLERR, arg[iarg+1]);
       iarg += 2;
-    } else if (strcmp(arg[iarg], "epsyield") == 0) {
-      eps_yield = force->numeric(FLERR, arg[iarg+1]);
-      iarg += 2;
-    } else if (strcmp(arg[iarg], "anoxic") == 0) {
-      anoxic = force->numeric(FLERR, arg[iarg+1]);
-      iarg += 2;
-    } else if (strcmp(arg[iarg], "epsdens") == 0) {
-      eps_dens = force->numeric(FLERR, arg[iarg+1]);
-      iarg += 2;
     } else {
-      error->all(FLERR, "Illegal fix nufeb/monod/het command");
+      error->all(FLERR, "Illegal fix nufeb/monod/nob command");
     }
   }
 }
 
 /* ---------------------------------------------------------------------- */
 
-int FixMonodHET::setmask()
+int FixMonodNOB::setmask()
 {
   int mask = 0;
   mask |= POST_INTEGRATE;
@@ -117,7 +95,7 @@ int FixMonodHET::setmask()
 
 /* ---------------------------------------------------------------------- */
 
-void FixMonodHET::post_integrate()
+void FixMonodNOB::post_integrate()
 {
   if (!compute_flag)
     return;
@@ -136,7 +114,7 @@ void FixMonodHET::post_integrate()
 /* ---------------------------------------------------------------------- */
 
 template <int Reaction, int Growth>
-void FixMonodHET::update_cells()
+void FixMonodNOB::update_cells()
 {
   double **conc = grid->conc;
   double **reac = grid->reac;
@@ -144,30 +122,23 @@ void FixMonodHET::update_cells()
 
   for (int i = 0; i < grid->ncells; i++) {
     if (!(grid->mask[i] & GHOST_MASK)) {
-      double tmp1 = growth * conc[isub][i] / (sub_affinity + conc[isub][i]) * conc[io2][i] / (o2_affinity + conc[io2][i]);
-      double tmp2 = anoxic * growth * conc[isub][i] / (sub_affinity + conc[isub][i]) * conc[ino3][i] / (no3_affinity + conc[ino3][i]) * o2_affinity / (o2_affinity + conc[io2][i]);
-      double tmp3 = anoxic * growth * conc[isub][i] / (sub_affinity + conc[isub][i]) * conc[ino2][i] / (no2_affinity + conc[ino2][i]) * o2_affinity / (o2_affinity + conc[io2][i]);
-      double tmp4 = maintain * conc[io2][i] / (o2_affinity + conc[io2][i]);
-      double tmp5 = 1 / 2.86 * maintain * anoxic * conc[ino3][i] / (no3_affinity + conc[ino3][i]) * o2_affinity / (o2_affinity + conc[io2][i]);
-      double tmp6 = 1 / 1.17 * maintain * anoxic * conc[ino2][i] / (no2_affinity + conc[ino2][i]) * o2_affinity / (o2_affinity + conc[io2][i]);
+      double tmp1 = growth * conc[ino2][i] / (no2_affinity + conc[ino2][i]) * conc[io2][i] / (o2_affinity + conc[io2][i]);
+      double tmp2 = maintain * conc[io2][i] / (o2_affinity + conc[io2][i]);
 
       if (Reaction) {
-	reac[isub][i] -= 1 / yield * (tmp1 + tmp2 + tmp3) * dens[igroup][i];
-	reac[io2][i] -= (1 - yield - eps_yield) / yield * tmp1 * dens[igroup][i] + tmp4 * dens[igroup][i];
-	reac[ino2][i] -= (1 - yield - eps_yield) / (1.17 * yield) * tmp3 * dens[igroup][i] + tmp6 * dens[igroup][i];
-	reac[ino3][i] -= (1 - yield - eps_yield) / (2.86 * yield) * tmp2 * dens[igroup][i] + tmp5 * dens[igroup][i];
+	reac[ino2][i] -= 1 / yield * tmp1 * dens[igroup][i];
+	reac[io2][i] -= (1.15 - yield) / yield * tmp1 * dens[igroup][i] + tmp2 * dens[igroup][i];
+	reac[ino3][i] += 1 / yield * tmp1 * dens[igroup][i];
       }
   
       if (Growth) {
-	double ***grow = grid->growth;
-	grow[igroup][i][0] = tmp1 + tmp2 + tmp3 - tmp4 - tmp5 - tmp6 - decay;
-	grow[igroup][i][1] = (eps_yield / yield) * (tmp1 + tmp2 + tmp3);
+	grid->growth[igroup][i][0] = tmp1 - tmp2 - decay;
       }
     }
   }
 }
 
-void FixMonodHET::update_atoms()
+void FixMonodNOB::update_atoms()
 {
   double **x = atom->x;
   double *radius = atom->radius;
@@ -189,13 +160,8 @@ void FixMonodHET::update_atoms()
 	(four_thirds_pi * radius[i] * radius[i] * radius[i]);
       rmass[i] = rmass[i] * (1 + growth[t][cell][0] * update->dt);
       radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
-      outer_mass[i] = four_thirds_pi *
-	(outer_radius[i] * outer_radius[i] * outer_radius[i] -
-	 radius[i] * radius[i] * radius[i]) *
-	eps_dens + growth[t][cell][1] * rmass[i] * update->dt;
-      outer_radius[i] = pow(three_quarters_pi *
-			    (rmass[i] / density + outer_mass[i] / eps_dens),
-			    third);
+      outer_mass[i] = rmass[i];
+      outer_radius[i] = radius[i];
     }
   }
 }
