@@ -73,6 +73,8 @@ Grid::Grid(LAMMPS *lmp) : Pointers(lmp)
 
   conc = NULL;
   reac = NULL;
+  dens = NULL;
+  growth = NULL;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -93,9 +95,6 @@ Grid::~Grid()
 
 void Grid::modify_params(int narg, char **arg)
 {
-  // for (int i = 0; i < narg; i++)
-  //   if (comm->me == 0) fprintf(screen, "%s ", arg[i]);
-  // if (comm->me == 0) fprintf(screen, "\n");
   if (strcmp(arg[0], "set") == 0) {
     if (narg < 9) error->all(FLERR, "Invalid grid_modify command");
     lmp->init();
@@ -215,4 +214,18 @@ int Grid::find(const char *name)
       return i;
   }
   return -1;
+}
+
+/* ---------------------------------------------------------------------- */
+
+int Grid::cell(double *x)
+{
+  int c[3];
+  const double small = 1e-12;
+  for (int i = 0; i < 3; i++) {
+    c[i] = static_cast<int>((x[i] - domain->boxlo[i]) /
+			    grid->cell_size + small) - grid->sublo[i];
+  }
+  return c[0] + c[1] * grid->subbox[0] +
+    c[2] * grid->subbox[0] * grid->subbox[1];
 }

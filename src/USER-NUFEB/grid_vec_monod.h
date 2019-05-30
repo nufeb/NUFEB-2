@@ -27,9 +27,11 @@ namespace LAMMPS_NS {
 class GridVecMonod : public GridVec {
  public:
   int *mask;
-  double **conc; // concentration
-  double **reac; // reaction rate
-
+  double **conc;    // concentration
+  double **reac;    // reaction rate
+  double **dens;    // density
+  double ***growth; // growth rate
+  
   GridVecMonod(class LAMMPS *);
   ~GridVecMonod() {}
   void init();

@@ -43,9 +43,12 @@ class DumpGridVTK : public Dump {
 
   void pack_concentration(vtkSmartPointer<vtkImageData>);
   void pack_reaction(vtkSmartPointer<vtkImageData>);
+  void pack_density(vtkSmartPointer<vtkImageData>);
+  void pack_growth(vtkSmartPointer<vtkImageData>);
   void pack_tuple1(vtkSmartPointer<vtkImageData>, const char *, double *);
   void pack_tuple1(vtkSmartPointer<vtkImageData>, const char *, double **, char **, int);
-  void pack_tuple5(vtkSmartPointer<vtkImageData>, const char *, double ***, char **, int);
+  template <int>
+  void pack_tuple(vtkSmartPointer<vtkImageData>, const char *, double ***, char **, int);
 
   std::vector<std::string> fields;
   std::vector<std::function<void(vtkSmartPointer<vtkImageData>)> > packs;

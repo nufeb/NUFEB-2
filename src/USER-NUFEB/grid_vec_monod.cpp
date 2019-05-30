@@ -17,6 +17,8 @@
 #include "memory.h"
 #include "grid_masks.h"
 #include "comm.h"
+#include "atom.h"
+#include "group.h"
 
 using namespace LAMMPS_NS;
 
@@ -27,6 +29,7 @@ GridVecMonod::GridVecMonod(LAMMPS *lmp) : GridVec(lmp)
   mask = NULL;
   conc = NULL;
   reac = NULL;
+  dens = NULL;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -37,7 +40,6 @@ void GridVecMonod::init()
 
   size_forward = grid->nsubs;
   size_exchange = grid->nsubs;
-  size_exchange = 2 * grid->nsubs;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -51,6 +53,8 @@ void GridVecMonod::grow(int n)
     mask = memory->grow(grid->mask, n, "nufeb/monod:mask");
     conc = memory->grow(grid->conc, grid->nsubs, n, "nufeb/monod:conc");
     reac = memory->grow(grid->reac, grid->nsubs, n, "nufeb/monod:reac");
+    dens = memory->grow(grid->dens, group->ngroup, n, "nufeb/monod:dens");
+    growth = memory->grow(grid->growth, group->ngroup, n, 2, "nufeb/monod:grow");
     nmax = n;
     grid->nmax = nmax;
   }
@@ -91,11 +95,6 @@ int GridVecMonod::pack_exchange(int n, int *cells, double *buf)
       buf[m++] = conc[s][cells[c]];
     }
   }
-  for (int s = 0; s < grid->nsubs; s++) {
-    for (int c = 0; c < n; c++) {
-      buf[m++] = reac[s][cells[c]];
-    }
-  }
   return m;
 }
 
@@ -107,11 +106,6 @@ void GridVecMonod::unpack_exchange(int n, int *cells, double *buf)
   for (int s = 0; s < grid->nsubs; s++) {
     for (int c = 0; c < n; c++) {
       conc[s][cells[c]] = buf[m++];
-    }
-  }
-  for (int s = 0; s < grid->nsubs; s++) {
-    for (int c = 0; c < n; c++) {
-      reac[s][cells[c]] = buf[m++];
     }
   }
 }

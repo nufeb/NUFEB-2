@@ -46,14 +46,17 @@ class Grid : protected Pointers {
   virtual class GridVec *new_gvec(const char *, int, int &);
   void init();
   void setup();
-  int find(const char*);
-
+  int find(const char *);
+  int cell(double *);
+  
   int *mask;
 
   // nufeb/monod
   
-  double **conc;
-  double **reac;
+  double **conc;    // concentration
+  double **reac;    // reaction rate
+  double **dens;    // density
+  double ***growth; // growth rate
   
 private:
   template <typename T> static GridVec *gvec_creator(LAMMPS *);
