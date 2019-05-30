@@ -256,6 +256,12 @@ void Verlet::run(int n)
     ntimestep = ++update->ntimestep;
     ev_set(ntimestep);
 
+    if (grid->grid_exist) {
+      timer->stamp();
+      comm_grid->forward_comm();
+      timer->stamp(Timer::COMM);
+    }
+
     // initial time integration
 
     timer->stamp();
@@ -271,7 +277,6 @@ void Verlet::run(int n)
       timer->stamp();
       comm->forward_comm();
       timer->stamp(Timer::COMM);
-      comm_grid->forward_comm();
     } else {
       if (n_pre_exchange) {
         timer->stamp();
