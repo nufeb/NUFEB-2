@@ -36,6 +36,8 @@ action fix_diffusion_reaction.cpp
 action fix_diffusion_reaction.h
 action fix_monod.cpp
 action fix_monod.h
+action fix_monod_aob.cpp
+action fix_monod_aob.h
 action fix_monod_het.cpp
 action fix_monod_het.h
 action grid_vec_monod.cpp
