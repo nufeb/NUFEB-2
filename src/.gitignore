@@ -1251,6 +1251,8 @@
 /fix_monod.h
 /fix_monod_aob.cpp
 /fix_monod_aob.h
+/fix_monod_eps.cpp
+/fix_monod_eps.h
 /fix_monod_het.cpp
 /fix_monod_het.h
 /fix_monod_nob.cpp
