@@ -163,4 +163,5 @@ double FixDiffusionReaction::compute_scalar()
       result = MAX(result, fabs((grid->conc[isub][i] - prev[i]) / prev[i]));
     }
   }
+  return result;
 }
