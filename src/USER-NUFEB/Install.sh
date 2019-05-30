@@ -30,5 +30,7 @@ action () {
 
 action atom_vec_nufeb.cpp
 action atom_vec_nufeb.h
+action fix_density.cpp
+action fix_density.h
 action grid_vec_monod.cpp
 action grid_vec_monod.h
