@@ -1243,5 +1243,15 @@
 
 /atom_vec_nufeb.cpp
 /atom_vec_nufeb.h
+/fix_density.cpp
+/fix_density.h
+/fix_diffusion_reaction.cpp
+/fix_diffusion_reaction.h
+/fix_monod.cpp
+/fix_monod.h
+/fix_monod_het.cpp
+/fix_monod_het.h
 /grid_vec_monod.cpp
 /grid_vec_monod.h
+/nufeb_run.cpp
+/nufeb_run.h
