@@ -34,5 +34,9 @@ action fix_density.cpp
 action fix_density.h
 action fix_diffusion_reaction.cpp
 action fix_diffusion_reaction.h
+action fix_monod.cpp
+action fix_monod.h
+action fix_monod_het.cpp
+action fix_monod_het.h
 action grid_vec_monod.cpp
 action grid_vec_monod.h
