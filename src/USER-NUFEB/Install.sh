@@ -38,6 +38,8 @@ action fix_monod.cpp
 action fix_monod.h
 action fix_monod_aob.cpp
 action fix_monod_aob.h
+action fix_monod_eps.cpp
+action fix_monod_eps.h
 action fix_monod_het.cpp
 action fix_monod_het.h
 action fix_monod_nob.cpp
