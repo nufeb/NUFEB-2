@@ -1249,8 +1249,12 @@
 /fix_diffusion_reaction.h
 /fix_monod.cpp
 /fix_monod.h
+/fix_monod_aob.cpp
+/fix_monod_aob.h
 /fix_monod_het.cpp
 /fix_monod_het.h
+/fix_monod_nob.cpp
+/fix_monod_nob.h
 /grid_vec_monod.cpp
 /grid_vec_monod.h
 /nufeb_run.cpp
