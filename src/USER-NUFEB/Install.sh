@@ -32,5 +32,7 @@ action atom_vec_nufeb.cpp
 action atom_vec_nufeb.h
 action fix_density.cpp
 action fix_density.h
+action fix_diffusion_reaction.cpp
+action fix_diffusion_reaction.h
 action grid_vec_monod.cpp
 action grid_vec_monod.h
