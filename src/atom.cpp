@@ -122,12 +122,13 @@ Atom::Atom(LAMMPS *lmp) : Pointers(lmp)
   damage = NULL;
 
   // USER-NUFEB
+  outer_radius_flag = outer_mass_flag = 0;
   outer_radius = NULL;
   outer_mass = NULL;
   
   // molecular info
 
-  bond_per_atom =  extra_bond_per_atom = 0;
+  bond_per_atom = extra_bond_per_atom = 0;
   num_bond = NULL;
   bond_type = NULL;
   bond_atom = NULL;
