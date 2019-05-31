@@ -33,6 +33,9 @@ using namespace MathConst;
 FixMonodNOB::FixMonodNOB(LAMMPS *lmp, int narg, char **arg) :
   FixMonod(lmp, narg, arg)
 {
+  if (narg < 8)
+    error->all(FLERR, "Illegal fix nufeb/monod/aob command");
+
   dynamic_group_allow = 1;
 
   io2 = -1;
@@ -46,27 +49,24 @@ FixMonodNOB::FixMonodNOB(LAMMPS *lmp, int narg, char **arg) :
   yield = 1.0;
   maintain = 0.0;
   decay = 0.0;
-  
-  int iarg = 3;
+
+  io2 = grid->find(arg[3]);
+  if (io2 < 0)
+    error->all(FLERR, "Can't find substrate name");
+  o2_affinity = force->numeric(FLERR, arg[4]);
+
+  ino2 = grid->find(arg[5]);
+  if (ino2 < 0)
+    error->all(FLERR, "Can't find substrate name");
+  no2_affinity = force->numeric(FLERR, arg[6]);
+
+  ino3 = grid->find(arg[7]);
+  if (ino3 < 0)
+    error->all(FLERR, "Can't find substrate name");
+
+  int iarg = 8;
   while (iarg < narg) {
-    if (strcmp(arg[iarg], "o2") == 0) {
-      io2 = grid->find(arg[iarg+1]);
-      if (io2 < 0)
-	error->all(FLERR, "Can't find substrate name");
-      o2_affinity = force->numeric(FLERR, arg[iarg+2]);
-      iarg += 3;
-    } else if (strcmp(arg[iarg], "no2") == 0) {
-      ino2 = grid->find(arg[iarg+1]);
-      if (ino2 < 0)
-	error->all(FLERR, "Can't find substrate name");
-      no2_affinity = force->numeric(FLERR, arg[iarg+2]);
-      iarg += 3;
-    } else if (strcmp(arg[iarg], "no3") == 0) {
-      ino3 = grid->find(arg[iarg+1]);
-      if (ino3 < 0)
-	error->all(FLERR, "Can't find substrate name");
-      iarg += 2;
-    } else if (strcmp(arg[iarg], "growth") == 0) {
+    if (strcmp(arg[iarg], "growth") == 0) {
       growth = force->numeric(FLERR, arg[iarg+1]);
       iarg += 2;
     } else if (strcmp(arg[iarg], "yield") == 0) {

@@ -33,6 +33,9 @@ using namespace MathConst;
 FixMonodHET::FixMonodHET(LAMMPS *lmp, int narg, char **arg) :
   FixMonod(lmp, narg, arg)
 {
+  if (narg < 11)
+    error->all(FLERR, "Illegal fix nufeb/monod/het command");
+  
   dynamic_group_allow = 1;
 
   isub = -1;
@@ -52,34 +55,30 @@ FixMonodHET::FixMonodHET(LAMMPS *lmp, int narg, char **arg) :
   eps_yield = 0.0;
   anoxic = 1.0;
   eps_dens = 1.0;
+
+  isub = grid->find(arg[3]);
+  if (isub < 0)
+    error->all(FLERR, "Can't find substrate name");
+  sub_affinity = force->numeric(FLERR, arg[4]);
+
+  io2 = grid->find(arg[5]);
+  if (io2 < 0)
+    error->all(FLERR, "Can't find substrate name");
+  o2_affinity = force->numeric(FLERR, arg[6]);
+
+  ino2 = grid->find(arg[7]);
+  if (ino2 < 0)
+    error->all(FLERR, "Can't find substrate name");
+  no2_affinity = force->numeric(FLERR, arg[8]);
+
+  ino3 = grid->find(arg[9]);
+  if (ino3 < 0)
+    error->all(FLERR, "Can't find substrate name");
+  no3_affinity = force->numeric(FLERR, arg[10]);
   
-  int iarg = 3;
+  int iarg = 11;
   while (iarg < narg) {
-    if (strcmp(arg[iarg], "sub") == 0) {
-      isub = grid->find(arg[iarg+1]);
-      if (isub < 0)
-	error->all(FLERR, "Can't find substrate name");
-      sub_affinity = force->numeric(FLERR, arg[iarg+2]);
-      iarg += 3;
-    } else if (strcmp(arg[iarg], "o2") == 0) {
-      io2 = grid->find(arg[iarg+1]);
-      if (io2 < 0)
-	error->all(FLERR, "Can't find substrate name");
-      o2_affinity = force->numeric(FLERR, arg[iarg+2]);
-      iarg += 3;
-    } else if (strcmp(arg[iarg], "no2") == 0) {
-      ino2 = grid->find(arg[iarg+1]);
-      if (ino2 < 0)
-	error->all(FLERR, "Can't find substrate name");
-      no2_affinity = force->numeric(FLERR, arg[iarg+2]);
-      iarg += 3;
-    } else if (strcmp(arg[iarg], "no3") == 0) {
-      ino3 = grid->find(arg[iarg+1]);
-      if (ino3 < 0)
-	error->all(FLERR, "Can't find substrate name");
-      no3_affinity = force->numeric(FLERR, arg[iarg+2]);
-      iarg += 3;
-    } else if (strcmp(arg[iarg], "growth") == 0) {
+    if (strcmp(arg[iarg], "growth") == 0) {
       growth = force->numeric(FLERR, arg[iarg+1]);
       iarg += 2;
     } else if (strcmp(arg[iarg], "yield") == 0) {
@@ -182,17 +181,17 @@ void FixMonodHET::update_atoms()
 
   for (int i = 0; i < atom->nlocal; i++) {
     if (atom->mask[i] & groupbit) {
-      const int t = atom->type[i];
       const int cell = grid->cell(x[i]);
 
       const double density = rmass[i] /
 	(four_thirds_pi * radius[i] * radius[i] * radius[i]);
-      rmass[i] = rmass[i] * (1 + growth[t][cell][0] * update->dt);
-      radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
+      double m = rmass[i];
+      rmass[i] = m * (1 + growth[igroup][cell][0] * update->dt);
       outer_mass[i] = four_thirds_pi *
 	(outer_radius[i] * outer_radius[i] * outer_radius[i] -
 	 radius[i] * radius[i] * radius[i]) *
-	eps_dens + growth[t][cell][1] * rmass[i] * update->dt;
+	eps_dens + growth[igroup][cell][1] * m * update->dt;
+      radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
       outer_radius[i] = pow(three_quarters_pi *
 			    (rmass[i] / density + outer_mass[i] / eps_dens),
 			    third);
