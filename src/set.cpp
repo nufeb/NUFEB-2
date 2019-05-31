@@ -48,7 +48,8 @@ enum{TYPE,TYPE_FRACTION,MOLECULE,X,Y,Z,CHARGE,MASS,SHAPE,LENGTH,TRI,
      THETA,THETA_RANDOM,ANGMOM,OMEGA,
      DIAMETER,DENSITY,VOLUME,IMAGE,BOND,ANGLE,DIHEDRAL,IMPROPER,
      MESO_E,MESO_CV,MESO_RHO,EDPD_TEMP,EDPD_CV,CC,SMD_MASS_DENSITY,
-     SMD_CONTACT_RADIUS,DPDTHETA,INAME,DNAME,VX,VY,VZ};
+     SMD_CONTACT_RADIUS,DPDTHETA,INAME,DNAME,VX,VY,VZ,
+     OUTER_MASS,OUTER_DIAMETER,OUTER_DENSITY};
 
 #define BIG INT_MAX
 
@@ -565,6 +566,34 @@ void Set::command(int narg, char **arg)
       set(DNAME);
       iarg += 2;
 
+      // NUFEB specific
+    } else if (strcmp(arg[iarg],"outer_mass") == 0) {
+      if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
+      if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
+      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      if (!atom->outer_mass_flag)
+        error->all(FLERR,"Cannot set this attribute for this atom style");
+      set(OUTER_MASS);
+      iarg += 2;
+
+    } else if (strcmp(arg[iarg],"outer_diameter") == 0) {
+      if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
+      if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
+      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      if (!atom->outer_radius_flag)
+        error->all(FLERR,"Cannot set this attribute for this atom style");
+      set(OUTER_DIAMETER);
+      iarg += 2;
+
+    } else if (strcmp(arg[iarg],"outer_density") == 0) {
+      if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
+      if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
+      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      if (!atom->outer_radius_flag || !atom->outer_mass_flag)
+        error->all(FLERR,"Cannot set this attribute for this atom style");
+      set(OUTER_DENSITY);
+      iarg += 2;
+
     } else error->all(FLERR,"Illegal set command");
 
     // statistics
@@ -961,6 +990,26 @@ void Set::set(int keyword)
       atom->dvector[index_custom][i] = dvalue;
     }
 
+    // NUFEB specific
+
+    else if (keyword == OUTER_MASS) {
+      if (dvalue <= 0.0) error->one(FLERR,"Invalid outer mass in set command");
+      atom->outer_mass[i] = dvalue;
+    }
+
+    else if (keyword == OUTER_DIAMETER) {
+      if (dvalue <= 0.0) error->one(FLERR,"Invalid outer diameter in set command");
+      atom->outer_radius[i] = 0.5*dvalue;
+    }
+
+    else if (keyword == OUTER_DENSITY) {
+      if (dvalue <= 0.0) error->one(FLERR,"Invalid density in set command");
+      if (atom->outer_radius_flag && atom->outer_radius[i] > 0.0)
+	atom->outer_mass[i] = 4.0*MY_PI/3.0 *
+	  (atom->outer_radius[i]*atom->outer_radius[i]*atom->outer_radius[i] -
+	   atom->radius[i]*atom->radius[i]*atom->radius[i]) * dvalue;
+    }
+    
     count++;
   }
 
