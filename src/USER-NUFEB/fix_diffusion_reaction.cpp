@@ -163,5 +163,6 @@ double FixDiffusionReaction::compute_scalar()
       result = MAX(result, fabs((grid->conc[isub][i] - prev[i]) / prev[i]));
     }
   }
+  MPI_Allreduce(MPI_IN_PLACE, &result, 1, MPI_INT, MPI_MAX, world);
   return result;
 }
