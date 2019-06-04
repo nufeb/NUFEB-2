@@ -1245,6 +1245,8 @@
 /atom_vec_nufeb.h
 /fix_density.cpp
 /fix_density.h
+/fix_divide.cpp
+/fix_divide.h
 /fix_diffusion_reaction.cpp
 /fix_diffusion_reaction.h
 /fix_monod.cpp
@@ -1257,6 +1259,8 @@
 /fix_monod_het.h
 /fix_monod_nob.cpp
 /fix_monod_nob.h
+/fix_wall_adhesion.cpp
+/fix_wall_adhesion.h
 /grid_vec_monod.cpp
 /grid_vec_monod.h
 /nufeb_run.cpp
