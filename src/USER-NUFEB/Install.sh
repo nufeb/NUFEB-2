@@ -46,6 +46,8 @@ action fix_monod_het.cpp
 action fix_monod_het.h
 action fix_monod_nob.cpp
 action fix_monod_nob.h
+action fix_wall_adhesion.cpp
+action fix_wall_adhesion.h
 action grid_vec_monod.cpp
 action grid_vec_monod.h
 action nufeb_run.cpp
