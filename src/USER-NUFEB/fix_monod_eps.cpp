@@ -33,20 +33,21 @@ using namespace MathConst;
 FixMonodEPS::FixMonodEPS(LAMMPS *lmp, int narg, char **arg) :
   FixMonod(lmp, narg, arg)
 {
+  if (narg < 4)
+    error->all(FLERR, "Illegal fix nufeb/monod/aob command");
+
   dynamic_group_allow = 1;
 
   isub = -1;
-
   decay = 0.0;
-  
-  int iarg = 3;
+
+  isub = grid->find(arg[3]);
+  if (isub < 0)
+    error->all(FLERR, "Can't find substrate name");
+
+  int iarg = 4;
   while (iarg < narg) {
-    if (strcmp(arg[iarg], "sub") == 0) {
-      isub = grid->find(arg[iarg+1]);
-      if (isub < 0)
-	error->all(FLERR, "Can't find substrate name");
-      iarg += 2;
-    } else if (strcmp(arg[iarg], "decay") == 0) {
+    if (strcmp(arg[iarg], "decay") == 0) {
       decay = force->numeric(FLERR, arg[iarg+1]);
       iarg += 2;
     } else {
