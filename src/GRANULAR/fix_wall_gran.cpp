@@ -74,7 +74,9 @@ FixWallGran::FixWallGran(LAMMPS *lmp, int narg, char **arg) :
     error->all(FLERR,"Fix wall/gran requires atom style sphere");
 
   create_attribute = 1;
-
+  thermo_virial = 1;
+  virial_flag = 1;
+  
   // set interaction style
   // disable bonded/history option for now
 
@@ -594,6 +596,9 @@ void FixWallGran::post_force(int /*vflag*/)
 
   rwall = 0.0;
 
+  for (int i = 0; i < 6; i++)
+    virial[i] = 0.0;
+  
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
 
@@ -795,6 +800,13 @@ void FixWallGran::hooke(double rsq, double dx, double dy, double dz,
   torque[0] -= radius*tor1;
   torque[1] -= radius*tor2;
   torque[2] -= radius*tor3;
+
+  virial[0] += dx*fx;
+  virial[1] += dy*fy;
+  virial[2] += dz*fz;
+  virial[3] += dx*fy;
+  virial[4] += dy*fz;
+  virial[5] += dy*fz;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -919,6 +931,13 @@ void FixWallGran::hooke_history(double rsq, double dx, double dy, double dz,
   torque[0] -= radius*tor1;
   torque[1] -= radius*tor2;
   torque[2] -= radius*tor3;
+
+  virial[0] += dx*fx;
+  virial[1] += dy*fy;
+  virial[2] += dz*fz;
+  virial[3] += dx*fy;
+  virial[4] += dy*fz;
+  virial[5] += dy*fz;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1050,6 +1069,13 @@ void FixWallGran::hertz_history(double rsq, double dx, double dy, double dz,
   torque[0] -= radius*tor1;
   torque[1] -= radius*tor2;
   torque[2] -= radius*tor3;
+
+  virial[0] += dx*fx;
+  virial[1] += dy*fy;
+  virial[2] += dz*fz;
+  virial[3] += dx*fy;
+  virial[4] += dy*fz;
+  virial[5] += dy*fz;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1426,6 +1452,13 @@ void FixWallGran::granular(double rsq, double dx, double dy, double dz,
     torque[1] += torroll2;
     torque[2] += torroll3;
   }
+
+  virial[0] += dx*fx;
+  virial[1] += dy*fy;
+  virial[2] += dz*fz;
+  virial[3] += dx*fy;
+  virial[4] += dy*fz;
+  virial[5] += dy*fz;
 }
 
 /* ----------------------------------------------------------------------
