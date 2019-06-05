@@ -30,7 +30,6 @@ using namespace LAMMPS_NS;
 using namespace FixConst;
 using namespace MathConst;
 
-#define EPSILON 0.001
 #define DELTA 1.005
 
 /* ---------------------------------------------------------------------- */
@@ -41,9 +40,9 @@ FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 6)
     error->all(FLERR, "Illegal fix nufeb/divide command");
 
-  diameter = force->numeric(FLERR, arg[4]);
-  eps_density = force->numeric(FLERR, arg[5]);
-  seed = force->inumeric(FLERR, arg[6]);
+  diameter = force->numeric(FLERR, arg[3]);
+  eps_density = force->numeric(FLERR, arg[4]);
+  seed = force->inumeric(FLERR, arg[5]);
 
   // Random number generator, same for all procs
   random = new RanPark(lmp, seed);
@@ -88,15 +87,6 @@ void FixDivide::post_integrate()
         double parentOuterMass = atom->outer_mass[i] * splitF;
         double childOuterMass = atom->outer_mass[i] - parentOuterMass;
 
-        double parentfx = atom->f[i][0] * splitF;
-        double childfx = atom->f[i][0] - parentfx;
-
-        double parentfy = atom->f[i][1] * splitF;
-        double childfy = atom->f[i][1] - parentfy;
-
-        double parentfz = atom->f[i][2] * splitF;
-        double childfz = atom->f[i][2] - parentfz;
-
         double thetaD = random->uniform() * 2 * MY_PI;
         double phiD = random->uniform() * (MY_PI);
 
@@ -107,9 +97,6 @@ void FixDivide::post_integrate()
         // update parent
         atom->rmass[i] = parentMass;
         atom->outer_mass[i] = parentOuterMass;
-        atom->f[i][0] = parentfx;
-        atom->f[i][1] = parentfy;
-        atom->f[i][2] = parentfz;
         atom->radius[i] = pow(((6 * atom->rmass[i]) / (density * MY_PI)), (1.0 / 3.0)) * 0.5;
         atom->outer_radius[i] = pow((3.0 / (4.0 * MY_PI)) * ((atom->rmass[i] / density) + (parentOuterMass / eps_density)), (1.0 / 3.0));
         newX = oldX + (atom->outer_radius[i] * cos(thetaD) * sin(phiD) * DELTA);
@@ -171,9 +158,6 @@ void FixDivide::post_integrate()
         atom->v[n][0] = atom->v[i][0];
         atom->v[n][1] = atom->v[i][1];
         atom->v[n][2] = atom->v[i][2];
-        atom->f[n][0] = atom->f[i][0];
-        atom->f[n][1] = atom->f[i][1];
-        atom->f[n][2] = atom->f[i][2];
 
         atom->omega[n][0] = atom->omega[i][0];
         atom->omega[n][1] = atom->omega[i][1];
@@ -181,14 +165,6 @@ void FixDivide::post_integrate()
 
         atom->rmass[n] = childMass;
         atom->outer_mass[n] = childOuterMass;
-
-        atom->f[n][0] = childfx;
-        atom->f[n][1] = childfy;
-        atom->f[n][2] = childfz;
-
-        atom->torque[n][0] = atom->torque[i][0];
-        atom->torque[n][1] = atom->torque[i][1];
-        atom->torque[n][2] = atom->torque[i][2];
 
         atom->radius[n] = childRadius;
         atom->outer_radius[n] = childOuterRadius;
