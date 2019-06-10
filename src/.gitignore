@@ -1249,6 +1249,8 @@
 /fix_divide.h
 /fix_diffusion_reaction.cpp
 /fix_diffusion_reaction.h
+/fix_eps_adhesion.cpp
+/fix_eps_adhesion.h
 /fix_monod.cpp
 /fix_monod.h
 /fix_monod_aob.cpp
