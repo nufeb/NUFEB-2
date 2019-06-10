@@ -93,7 +93,7 @@ void FixMonodEPS::update_cells()
   double **dens = grid->dens;
 
   for (int i = 0; i < grid->ncells; i++) {
-    if (!(grid->mask[i] & GHOST_MASK)) {
+    if (!(grid->mask[i] & BOUNDARY_MASK || grid->mask[i] & CORNER_MASK)) {
       if (Reaction) {
 	reac[isub][i] += decay * dens[igroup][i];
       }
