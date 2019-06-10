@@ -74,7 +74,6 @@ FixWallGran::FixWallGran(LAMMPS *lmp, int narg, char **arg) :
     error->all(FLERR,"Fix wall/gran requires atom style sphere");
 
   create_attribute = 1;
-  thermo_virial = 1;
   virial_flag = 1;
   
   // set interaction style
@@ -527,11 +526,16 @@ void FixWallGran::setup(int vflag)
 
 /* ---------------------------------------------------------------------- */
 
-void FixWallGran::post_force(int /*vflag*/)
+void FixWallGran::post_force(int vflag)
 {
   int i,j;
   double dx,dy,dz,del1,del2,delxy,delr,rsq,rwall,meff;
   double vwall[3];
+  
+  // energy and virial setup
+
+  if (vflag) v_setup(vflag);
+  else evflag = 0;
 
   // do not update history during setup
 
@@ -685,21 +689,32 @@ void FixWallGran::post_force(int /*vflag*/)
         else
           contact = NULL;
 
+	double df[3];
         if (pairstyle == HOOKE)
           hooke(rsq,dx,dy,dz,vwall,v[i],f[i],
-              omega[i],torque[i],radius[i],meff, contact);
+		omega[i],torque[i],radius[i],meff,contact,df);
         else if (pairstyle == HOOKE_HISTORY)
           hooke_history(rsq,dx,dy,dz,vwall,v[i],f[i],
-              omega[i],torque[i],radius[i],meff,history_one[i],
-              contact);
+			omega[i],torque[i],radius[i],meff,history_one[i],
+			contact,df);
         else if (pairstyle == HERTZ_HISTORY)
           hertz_history(rsq,dx,dy,dz,vwall,rwall,v[i],f[i],
-              omega[i],torque[i],radius[i],meff,history_one[i],
-              contact);
+			omega[i],torque[i],radius[i],meff,history_one[i],
+			contact,df);
         else if (pairstyle == GRANULAR)
           granular(rsq,dx,dy,dz,vwall,rwall,v[i],f[i],
-              omega[i],torque[i],radius[i],meff,history_one[i],
-              contact);
+		   omega[i],torque[i],radius[i],meff,history_one[i],
+		   contact,df);
+	if (evflag) {
+	  double vi[6];
+	  vi[0] = dx*df[0];
+	  vi[1] = dy*df[1];
+	  vi[2] = dz*df[2];
+	  vi[3] = dx*df[1];
+	  vi[4] = dx*df[2];
+	  vi[5] = dy*df[2];
+	  v_tally(i, vi);
+	}
       }
     }
   }
@@ -715,9 +730,10 @@ void FixWallGran::post_force_respa(int vflag, int ilevel, int /*iloop*/)
 /* ---------------------------------------------------------------------- */
 
 void FixWallGran::hooke(double rsq, double dx, double dy, double dz,
-    double *vwall, double *v,
-    double *f, double *omega, double *torque,
-    double radius, double meff, double* contact)
+			double *vwall, double *v,
+			double *f, double *omega, double *torque,
+			double radius, double meff,
+			double *contact, double *df)
 {
   double r,vr1,vr2,vr3,vnnr,vn1,vn2,vn3,vt1,vt2,vt3;
   double wr1,wr2,wr3,damp,ccel,vtr1,vtr2,vtr3,vrel;
@@ -801,21 +817,20 @@ void FixWallGran::hooke(double rsq, double dx, double dy, double dz,
   torque[1] -= radius*tor2;
   torque[2] -= radius*tor3;
 
-  virial[0] += dx*fx;
-  virial[1] += dy*fy;
-  virial[2] += dz*fz;
-  virial[3] += dx*fy;
-  virial[4] += dy*fz;
-  virial[5] += dy*fz;
+  if (df) {
+    df[0] = fx;
+    df[1] = fy;
+    df[2] = fz;
+  }
 }
 
 /* ---------------------------------------------------------------------- */
 
 void FixWallGran::hooke_history(double rsq, double dx, double dy, double dz,
-    double *vwall, double *v,
-    double *f, double *omega, double *torque,
-    double radius, double meff, double *history,
-    double *contact)
+				double *vwall, double *v,
+				double *f, double *omega, double *torque,
+				double radius, double meff, double *history,
+				double *contact, double* df)
 {
   double r,vr1,vr2,vr3,vnnr,vn1,vn2,vn3,vt1,vt2,vt3;
   double wr1,wr2,wr3,damp,ccel,vtr1,vtr2,vtr3,vrel;
@@ -932,21 +947,20 @@ void FixWallGran::hooke_history(double rsq, double dx, double dy, double dz,
   torque[1] -= radius*tor2;
   torque[2] -= radius*tor3;
 
-  virial[0] += dx*fx;
-  virial[1] += dy*fy;
-  virial[2] += dz*fz;
-  virial[3] += dx*fy;
-  virial[4] += dy*fz;
-  virial[5] += dy*fz;
+  if (df) {
+    df[0] = fx;
+    df[1] = fy;
+    df[2] = fz;
+  }
 }
 
 /* ---------------------------------------------------------------------- */
 
 void FixWallGran::hertz_history(double rsq, double dx, double dy, double dz,
-    double *vwall, double rwall, double *v,
-    double *f, double *omega, double *torque,
-    double radius, double meff, double *history,
-    double *contact)
+				double *vwall, double rwall, double *v,
+				double *f, double *omega, double *torque,
+				double radius, double meff, double *history,
+				double *contact, double* df)
 {
   double r,vr1,vr2,vr3,vnnr,vn1,vn2,vn3,vt1,vt2,vt3;
   double wr1,wr2,wr3,damp,ccel,vtr1,vtr2,vtr3,vrel;
@@ -1070,12 +1084,11 @@ void FixWallGran::hertz_history(double rsq, double dx, double dy, double dz,
   torque[1] -= radius*tor2;
   torque[2] -= radius*tor3;
 
-  virial[0] += dx*fx;
-  virial[1] += dy*fy;
-  virial[2] += dz*fz;
-  virial[3] += dx*fy;
-  virial[4] += dy*fz;
-  virial[5] += dy*fz;
+  if (df) {
+    df[0] = fx;
+    df[1] = fy;
+    df[2] = fz;
+  }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1084,7 +1097,7 @@ void FixWallGran::granular(double rsq, double dx, double dy, double dz,
                            double *vwall, double rwall, double *v,
                            double *f, double *omega, double *torque,
                            double radius, double meff, double *history,
-                           double *contact)
+                           double *contact, double *df)
 {
   double fx,fy,fz,nx,ny,nz;
   double radsum,r,rinv;
@@ -1453,12 +1466,11 @@ void FixWallGran::granular(double rsq, double dx, double dy, double dz,
     torque[2] += torroll3;
   }
 
-  virial[0] += dx*fx;
-  virial[1] += dy*fy;
-  virial[2] += dz*fz;
-  virial[3] += dx*fy;
-  virial[4] += dy*fz;
-  virial[5] += dy*fz;
+  if (df) {
+    df[0] = fx;
+    df[1] = fy;
+    df[2] = fz;
+  }
 }
 
 /* ----------------------------------------------------------------------

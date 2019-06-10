@@ -47,16 +47,17 @@ class FixWallGran : public Fix {
   void reset_dt();
 
   void hooke(double, double, double, double, double *, double *,
-             double *, double *, double *, double, double, double*);
+             double *, double *, double *, double, double, double *,
+	     double * = NULL);
   void hooke_history(double, double, double, double, double *,
                      double *, double *, double *, double *, double,
-                     double, double *, double *);
+                     double, double *, double *, double * = NULL);
   void hertz_history(double, double, double, double, double *,
                      double, double *, double *, double *, double *,
-                     double, double, double *, double *);
+                     double, double, double *, double *, double * = NULL);
   void granular(double, double, double, double, double *, double,
                 double *, double *, double *, double *, double,
-                double, double *, double *);
+                double, double *, double *, double * = NULL);
 
   double pulloff_distance(double);
 
