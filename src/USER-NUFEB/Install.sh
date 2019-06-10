@@ -36,6 +36,8 @@ action fix_diffusion_reaction.cpp
 action fix_diffusion_reaction.h
 action fix_divide.cpp
 action fix_divide.h
+action fix_eps_adhesion.cpp
+action fix_eps_adhesion.h
 action fix_monod.cpp
 action fix_monod.h
 action fix_monod_aob.cpp
