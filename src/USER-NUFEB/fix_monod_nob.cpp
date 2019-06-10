@@ -121,7 +121,7 @@ void FixMonodNOB::update_cells()
   double **dens = grid->dens;
 
   for (int i = 0; i < grid->ncells; i++) {
-    if (!(grid->mask[i] & GHOST_MASK)) {
+    if (!(grid->mask[i] & BOUNDARY_MASK || grid->mask[i] & CORNER_MASK)) {
       double tmp1 = growth * conc[ino2][i] / (no2_affinity + conc[ino2][i]) * conc[io2][i] / (o2_affinity + conc[io2][i]);
       double tmp2 = maintain * conc[io2][i] / (o2_affinity + conc[io2][i]);
 

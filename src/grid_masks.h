@@ -17,13 +17,15 @@
 #define EMPTY_MASK     0x00000000
 #define ALL_MASK       0xffffffff
 
+#define BOUNDARY_MASK  0x000000ff
 #define X_NB_MASK      0x00000001 // X negative boundary
 #define X_PB_MASK      0x00000002 // X positive boundary
 #define Y_NB_MASK      0x00000004 // Y negative boundary
 #define Y_PB_MASK      0x00000008 // Y positive boundary
 #define Z_NB_MASK      0x00000010 // Z negative boundary
 #define Z_PB_MASK      0x00000020 // Z positive boundary
-#define CORNER_MASK    0x00000040
-#define GHOST_MASK     0x00000080
+#define CORNER_MASK    0x00000100
+#define GHOST_MASK     0x00000200
 
 #endif
+
