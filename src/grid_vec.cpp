@@ -12,7 +12,6 @@
 ------------------------------------------------------------------------- */
 
 #include <cstring>
-// #include <cstdlib>
 #include <cmath>
 #include "grid_vec.h"
 #include "grid.h"
@@ -51,23 +50,19 @@ void GridVec::store_args(int narg, char **arg)
 
 void GridVec::process_args(int narg, char **arg)
 {
-  // fprintf(screen, "narg: %d\n", narg);
   if (narg < 1) error->all(FLERR,"Invalid grid_style command");
 
   grid->nsubs = force->inumeric(FLERR,arg[0]);
-  // fprintf(screen, "grid->nsubs: %d\n", grid->nsubs);
   if (narg < grid->nsubs + 1)
     error->all(FLERR,"Missing substrate names in grid_style command");
   grid->sub_names = new char*[grid->nsubs];
   for (int i = 0; i < grid->nsubs; i++) {
     grid->sub_names[i] = new char[strlen(arg[i+1])+1];
     strcpy(grid->sub_names[i], arg[i+1]);
-    // fprintf(screen, "  %s\n", grid->sub_names[i]);
   }
   if (narg < grid->nsubs + 2)
     error->all(FLERR,"Missing cell size in grid_style command");
   grid->cell_size = force->numeric(FLERR,arg[grid->nsubs+1]);
-  // fprintf(screen, "grid->cell_size: %e\n", grid->cell_size);
 }
 
 /* ---------------------------------------------------------------------- */
