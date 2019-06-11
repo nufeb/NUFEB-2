@@ -53,7 +53,8 @@ class NufebRun : public Integrate {
   class FixMonod **fix_monod;
   class FixDiffusionReaction **fix_diffusion;
   class ComputePressure *comp_pressure;
-
+  class ComputeVolume *comp_volume;
+  
   void growth();
   int diffusion();
 };
