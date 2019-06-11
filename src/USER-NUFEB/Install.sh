@@ -30,6 +30,8 @@ action () {
 
 action atom_vec_nufeb.cpp
 action atom_vec_nufeb.h
+action compute_volume.cpp
+action compute_volume.h
 action fix_density.cpp
 action fix_density.h
 action fix_diffusion_reaction.cpp
