@@ -36,12 +36,14 @@ class FixDiffusionReaction : public Fix {
   virtual void initial_integrate(int);
   virtual void final_integrate();
   virtual double compute_scalar();
-
+  virtual void reset_dt();
+  
  protected:
   int isub;
   double diff_coef;
   int ncells;
   double *prev;
+  double dt;
 };
 
 }
