@@ -134,15 +134,35 @@ void NufebRun::init()
     }
   }
 
+  // create compute volume
+  char **volarg = new char*[3];
+  volarg[0] = (char *)"nufeb_volume";
+  volarg[1] = (char *)"all";
+  volarg[2] = (char *)"nufeb/volume";
+  modify->add_compute(3, volarg, 1);
+  delete [] volarg;
+  comp_pressure = (ComputePressure *)modify->compute[modify->ncompute-1];
+
+  // create compute volume variable
+  char **vararg = new char*[3];
+  vararg[0] = (char *)"nufeb_volume";
+  vararg[1] = (char *)"equal";
+  vararg[2] = (char *)"c_nufeb_volume";
+  input->variable->set(3, vararg);
+  delete [] vararg;
+  
   // create compute pressure
-  char **comparg = new char*[5];
-  comparg[0] = (char *)"nufeb_pressure";
-  comparg[1] = (char *)"all";
-  comparg[2] = (char *)"pressure";
-  comparg[3] = (char *)"NULL";
-  comparg[4] = (char *)"pair";
-  modify->add_compute(5, comparg, 1);
-  delete [] comparg;
+  char **pressarg = new char*[8];
+  pressarg[0] = (char *)"nufeb_pressure";
+  pressarg[1] = (char *)"all";
+  pressarg[2] = (char *)"pressure";
+  pressarg[3] = (char *)"NULL";
+  pressarg[4] = (char *)"pair";
+  pressarg[5] = (char *)"fix";
+  pressarg[6] = (char *)"vol";
+  pressarg[7] = (char *)"v_nufeb_volume";
+  modify->add_compute(8, pressarg, 1);
+  delete [] pressarg;
   comp_pressure = (ComputePressure *)modify->compute[modify->ncompute-1];
 
   Integrate::init();
