@@ -43,7 +43,11 @@ class ComputePressure : public Compute {
   double virial[6];
   int keflag,pairflag,bondflag,angleflag,dihedralflag,improperflag;
   int fixflag,kspaceflag;
-
+  int vol_style;
+  double vol;
+  char *vol_str;
+  int vol_index;
+  
   void virial_compute(int, int);
 };
 
