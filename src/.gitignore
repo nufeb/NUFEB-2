@@ -1243,6 +1243,8 @@
 
 /atom_vec_nufeb.cpp
 /atom_vec_nufeb.h
+/compute_volume.cpp
+/compute_volume.h
 /fix_density.cpp
 /fix_density.h
 /fix_divide.cpp
