@@ -42,6 +42,7 @@ FixDiffusionReaction::FixDiffusionReaction(LAMMPS *lmp, int narg, char **arg) :
   
   ncells = 0;
   prev = NULL;
+  dt = 1.0;
   
   isub = grid->find(arg[3]);
   if (isub < 0)
@@ -95,6 +96,7 @@ void FixDiffusionReaction::init()
   prev = memory->create(prev, ncells, "nufeb/diffusion_reaction:prev");
   for (int i = 0; i < ncells; i++)
     prev[i] = 0.0;
+  dt = update->dt;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -165,4 +167,11 @@ double FixDiffusionReaction::compute_scalar()
   }
   MPI_Allreduce(MPI_IN_PLACE, &result, 1, MPI_DOUBLE, MPI_MAX, world);
   return result;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixDiffusionReaction::reset_dt()
+{
+  dt = update->dt;
 }

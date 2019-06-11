@@ -15,6 +15,7 @@
 #include <cstring>
 #include "fix_monod.h"
 #include "error.h"
+#include "update.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -27,6 +28,7 @@ FixMonod::FixMonod(LAMMPS *lmp, int narg, char **arg) :
   compute_flag = 1;
   reaction_flag = 1;
   growth_flag = 1;
+  dt = 1.0;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -67,4 +69,18 @@ int FixMonod::modify_param(int narg, char **arg)
     }
   }
   return iarg;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixMonod::init()
+{
+  dt = update->dt;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixMonod::reset_dt()
+{
+  dt = update->dt;
 }

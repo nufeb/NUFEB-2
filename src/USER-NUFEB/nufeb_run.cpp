@@ -265,7 +265,8 @@ void NufebRun::setup(int flag)
   
   // run diffusion until it reaches steady state
   int niter = diffusion();
-  fprintf(screen, "Initial diffusion reaction converged in %d steps\n", niter);
+  if (comm->me == 0)
+    fprintf(screen, "Initial diffusion reaction converged in %d steps\n", niter);
 
   for (int i = 0; i < nfix_monod; i++) {
     fix_monod[i]->reaction_flag = 0;
@@ -377,6 +378,7 @@ void NufebRun::run(int n)
     // store current dt
     double dt = update->dt;
     update->dt = pairdt;
+    reset_dt();
 
     // disable density computation
     fix_density->compute_flag = 0;
@@ -489,24 +491,26 @@ void NufebRun::run(int n)
       modify->final_integrate();
       if (n_end_of_step) modify->end_of_step();
       timer->stamp(Timer::MODIFY);
-
+    
       // double press = comp_pressure->compute_scalar();
-      // fprintf(screen, "%e\n", press);
+      // fprintf(screen, "press:%e\n", press);
       ++niter;
-    } while(comp_pressure->compute_scalar() > pairtol);
-    fprintf(screen, "pair interaction: %d steps\n", niter);
+    } while(fabs(comp_pressure->compute_scalar()) > pairtol);
+    if (comm->me == 0) fprintf(screen, "pair interaction: %d steps\n", niter);
 
     // update densities
     fix_density->compute_flag = 1;
     fix_density->post_integrate();
 
     // run diffusion until it reaches steady state
-    update->dt = diffdt;
+    update->dt = diffdt; 
+    reset_dt();
     niter = diffusion();
-    fprintf(screen, "diffusion: %d steps\n", niter);
+    // fprintf(screen, "diffusion: %d steps\n", niter);
 
     // restore original dt
     update->dt = dt;
+    reset_dt();
     
     // all output
 
@@ -516,6 +520,14 @@ void NufebRun::run(int n)
       timer->stamp(Timer::OUTPUT);
     }
   }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void NufebRun::reset_dt()
+{
+  if (force->pair) force->pair->reset_dt();
+  for (int i = 0; i < modify->nfix; i++) modify->fix[i]->reset_dt();
 }
 
 /* ---------------------------------------------------------------------- */

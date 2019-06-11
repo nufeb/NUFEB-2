@@ -32,7 +32,8 @@ class NufebRun : public Integrate {
   virtual void setup(int flag);
   virtual void setup_minimal(int);
   virtual void run(int);
-  void cleanup();
+  virtual void reset_dt();
+  virtual void cleanup();
 
  protected:
   int triclinic;                    // 0 if domain is orthog, 1 if triclinic

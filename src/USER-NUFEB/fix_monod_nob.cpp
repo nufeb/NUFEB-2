@@ -21,7 +21,6 @@
 #include "grid.h"
 #include "group.h"
 #include "grid_masks.h"
-#include "update.h"
 #include "math_const.h"
 
 using namespace LAMMPS_NS;
@@ -158,7 +157,7 @@ void FixMonodNOB::update_atoms()
 
       const double density = rmass[i] /
 	(four_thirds_pi * radius[i] * radius[i] * radius[i]);
-      rmass[i] = rmass[i] * (1 + growth[t][cell][0] * update->dt);
+      rmass[i] = rmass[i] * (1 + growth[t][cell][0] * dt);
       radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
       outer_mass[i] = rmass[i];
       outer_radius[i] = radius[i];
