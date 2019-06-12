@@ -135,7 +135,7 @@ void CommGrid::setup()
 	sendlist.add(p, lo, hi, n);
       }
     }
-    if (domain->xperiodic) {
+    if (grid->periodic[0]) {
       int n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
 			0, -1, -grid->box[0], 0, 0, lo, hi, false);
       if (n > 0) {
@@ -205,7 +205,7 @@ void CommGrid::setup()
 	sendlist.add(p, lo, hi, n);
       }
     }
-    if (domain->yperiodic) {
+    if (grid->periodic[1]) {
       int n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
 			0, -1, 0, -grid->box[1], 0, lo, hi, false);
       if (n > 0) {
@@ -275,7 +275,7 @@ void CommGrid::setup()
 	sendlist.add(p, lo, hi, n);
       }
     }
-    if (domain->zperiodic) {
+    if (grid->periodic[2]) {
       int n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
 			0, -1, 0, 0, -grid->box[2], lo, hi, false);
       if (n > 0) {

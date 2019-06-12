@@ -11,32 +11,14 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-// #include <mpi.h>
-// #include <cmath>
-// #include <cstdio>
-// #include <cstdlib>
 #include <cstring>
-// #include <climits>
 #include "grid.h"
 #include "style_grid.h"
 #include "grid_vec.h"
-// #include "atom_vec_ellipsoid.h"
 #include "comm.h"
 #include "comm_grid.h"
-// #include "neighbor.h"
 #include "force.h"
-// #include "modify.h"
-// #include "fix.h"
-// #include "compute.h"
-// #include "output.h"
-// #include "thermo.h"
-// #include "update.h"
 #include "domain.h"
-// #include "group.h"
-// #include "input.h"
-// #include "variable.h"
-// #include "molecule.h"
-// #include "atom_masks.h"
 #include "math_const.h"
 #include "memory.h"
 #include "error.h"
@@ -68,7 +50,11 @@ Grid::Grid(LAMMPS *lmp) : Pointers(lmp)
   cell_size = 1.0;
   box[0] = box[1] = box[2] = 0;
   ncells = 0;
-
+  boundary[0] = boundary[1] = boundary[2] = boundary[3] =
+    boundary[4] = boundary[5] = -1;
+  periodic[0] = periodic[1] = periodic[2] = 0;
+  ndirichlet = 0;
+  
   mask = NULL;
 
   conc = NULL;

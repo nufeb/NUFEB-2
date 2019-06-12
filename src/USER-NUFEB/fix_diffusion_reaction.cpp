@@ -28,12 +28,14 @@
 using namespace LAMMPS_NS;
 using namespace FixConst;
 
+enum{DIRICHLET,NEUMANN,PERIODIC};
+
 /* ---------------------------------------------------------------------- */
 
 FixDiffusionReaction::FixDiffusionReaction(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
-  if (strcmp(style,"nufeb/diffusion_reaction") != 0 && narg < 4)
+  if (narg < 5)
     error->all(FLERR,"Illegal fix nufeb/diffusion_reaction command");
 
   compute_flag = 1;
@@ -49,6 +51,17 @@ FixDiffusionReaction::FixDiffusionReaction(LAMMPS *lmp, int narg, char **arg) :
     error->all(FLERR, "Can't find substrate for nufeb/diffusion_reaction");
 
   diff_coef = force->numeric(FLERR, arg[4]);
+
+  if (narg < grid->ndirichlet + 5)
+    error->all(FLERR, "Not enough values for dirichlet boundaries");
+  int iarg = 5;
+  for (int i = 0; i < 6; i++) {
+    if (grid->boundary[i] == DIRICHLET) {
+      dirichlet[i] = force->numeric(FLERR, arg[iarg++]);
+    } else {
+      dirichlet[i] = 0.0;
+    }
+  }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -106,8 +119,23 @@ void FixDiffusionReaction::initial_integrate(int)
   if (!compute_flag)
     return;
   
-  for (int i = 0; i < grid->ncells; i++)
+  for (int i = 0; i < grid->ncells; i++) {
+    // Dirichlet boundary conditions
+    if (grid->mask[i] & X_NB_MASK && grid->boundary[0] == DIRICHLET) {
+      grid->conc[isub][i] = dirichlet[0];
+    } else if (grid->mask[i] & X_PB_MASK && grid->boundary[1] == DIRICHLET) {
+      grid->conc[isub][i] = dirichlet[1];
+    } else if (grid->mask[i] & Y_NB_MASK && grid->boundary[2] == DIRICHLET) {
+      grid->conc[isub][i] = dirichlet[2];
+    } else if (grid->mask[i] & Y_PB_MASK && grid->boundary[3] == DIRICHLET) {
+      grid->conc[isub][i] = dirichlet[3];
+    } else if (grid->mask[i] & Z_NB_MASK && grid->boundary[4] == DIRICHLET) {
+      grid->conc[isub][i] = dirichlet[4];
+    } else if (grid->mask[i] & Z_PB_MASK && grid->boundary[5] == DIRICHLET) {
+      grid->conc[isub][i] = dirichlet[5];
+    }
     grid->reac[isub][i] = 0.0;
+  }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -122,11 +150,25 @@ void FixDiffusionReaction::final_integrate()
     prev = memory->grow(prev, ncells, "nufeb/diffusion_reaction:prev");
   }
 
+  int nx = grid->subbox[0];
   int nxy = grid->subbox[0] * grid->subbox[1];
   for (int i = 0; i < grid->ncells; i++) {
-    // Neumann boundary condition. THIS NEEDS TO GO SOMEWHERE ELSE!
-    if (grid->mask[i] & Z_NB_MASK) {
+    // Neumann boundary conditions
+    if (grid->mask[i] & X_NB_MASK && grid->boundary[0] == NEUMANN) {
+      grid->conc[isub][i] = grid->conc[isub][i+1];
+    } else if (grid->mask[i] & X_PB_MASK && grid->boundary[1] == NEUMANN) {
+      grid->conc[isub][i] = grid->conc[isub][i-1];
+    } else if (grid->mask[i] & Y_NB_MASK && grid->boundary[2] == NEUMANN) {
+      int py = i + nx;
+      grid->conc[isub][i] = grid->conc[isub][py];
+    } else if (grid->mask[i] & Y_PB_MASK && grid->boundary[3] == NEUMANN) {
+      int py = i - nx;
+      grid->conc[isub][i] = grid->conc[isub][py];
+    } else if (grid->mask[i] & Z_NB_MASK && grid->boundary[4] == NEUMANN) {
       int pz = i + nxy;
+      grid->conc[isub][i] = grid->conc[isub][pz];
+    } else if (grid->mask[i] & Z_PB_MASK && grid->boundary[5] == NEUMANN) {
+      int pz = i - nxy;
       grid->conc[isub][i] = grid->conc[isub][pz];
     }
     prev[i] = grid->conc[isub][i];

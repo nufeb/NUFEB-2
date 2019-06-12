@@ -44,6 +44,7 @@ class FixDiffusionReaction : public Fix {
   int ncells;
   double *prev;
   double dt;
+  double dirichlet[6];
 };
 
 }
