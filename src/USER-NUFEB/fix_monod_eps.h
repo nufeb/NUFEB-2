@@ -28,12 +28,10 @@ class FixMonodEPS: public FixMonod {
  public:
   FixMonodEPS(class LAMMPS *, int, char **);
   virtual ~FixMonodEPS() {}
-  int setmask();
-  virtual void post_integrate();
+  virtual void compute();
 
  protected:
   int isub;
-
   double decay;
   
   template <int, int> void update_cells();

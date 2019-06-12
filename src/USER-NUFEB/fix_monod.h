@@ -29,6 +29,9 @@ class FixMonod : public Fix {
   int modify_param(int, char **);
   virtual void init();
   virtual void reset_dt();
+  virtual int setmask();
+  virtual void post_integrate();
+  virtual void compute() = 0;
   
  protected:
   double dt;

@@ -85,20 +85,8 @@ FixMonodAOB::FixMonodAOB(LAMMPS *lmp, int narg, char **arg) :
 
 /* ---------------------------------------------------------------------- */
 
-int FixMonodAOB::setmask()
+void FixMonodAOB::compute()
 {
-  int mask = 0;
-  mask |= POST_INTEGRATE;
-  return mask;
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixMonodAOB::post_integrate()
-{
-  if (!compute_flag)
-    return;
-  
   if (reaction_flag && growth_flag) {
     update_cells<1, 1>();
     update_atoms();
@@ -136,6 +124,8 @@ void FixMonodAOB::update_cells()
     }
   }
 }
+
+/* ---------------------------------------------------------------------- */
 
 void FixMonodAOB::update_atoms()
 {

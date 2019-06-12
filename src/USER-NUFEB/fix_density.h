@@ -33,6 +33,7 @@ class FixDensity : public Fix {
   int setmask();
   int modify_param(int, char **);
   virtual void post_integrate();
+  virtual void compute();
 };
 
 }

@@ -44,6 +44,9 @@
 #include "fix_density.h"
 #include "fix_diffusion_reaction.h"
 #include "fix_monod.h"
+#include "fix_eps_extract.h"
+#include "fix_divide.h"
+#include "fix_death.h"
 
 using namespace LAMMPS_NS;
 
@@ -55,12 +58,16 @@ NufebRun::NufebRun(LAMMPS *lmp, int narg, char **arg) :
   diffdt = 1.0;
   difftol = 1.0;
 
+  biodt = 1.0;
   pairdt = 1.0;
   pairtol = 1.0;
   
   nfix_monod = 0;
-  nfix_diff = 0;
-
+  nfix_diffusion = 0;
+  nfix_eps_extract = 0;
+  nfix_divide = 0;
+  nfix_death = 0;
+  
   fix_density = NULL;
   fix_monod = NULL;
   fix_diffusion = NULL;
@@ -92,6 +99,9 @@ NufebRun::~NufebRun()
 {
   delete [] fix_monod;
   delete [] fix_diffusion;
+  delete [] fix_eps_extract;
+  delete [] fix_divide;
+  delete [] fix_death;
 }
 
 /* ----------------------------------------------------------------------
@@ -114,26 +124,28 @@ void NufebRun::init()
   delete [] fixarg;
   fix_density = (FixDensity *)modify->fix[modify->nfix-1];
 
-  // allocate space for storing nufeb/monod fixes
+  // allocate space for storing fixes
   fix_monod = new FixMonod*[modify->nfix];
+  fix_diffusion = new FixDiffusionReaction*[modify->nfix];
+  fix_eps_extract = new FixEPSExtract*[modify->nfix];
+  fix_divide = new FixDivide*[modify->nfix];
+  fix_death = new FixDeath*[modify->nfix];
   
-  // find all nufeb/monod fixes
+  // find fixes
   for (int i = 0; i < modify->nfix; i++) {
     if (strstr(modify->fix[i]->style, "nufeb/monod")) {
       fix_monod[nfix_monod++] = (FixMonod *)modify->fix[i];
+    } else if (strstr(modify->fix[i]->style, "nufeb/diffusion_reaction")) {
+      fix_diffusion[nfix_diffusion++] = (FixDiffusionReaction *)modify->fix[i];
+    } else if (strstr(modify->fix[i]->style, "nufeb/eps_extract")) {
+      fix_eps_extract[nfix_eps_extract++] = (FixEPSExtract *)modify->fix[i];
+    } else if (strstr(modify->fix[i]->style, "nufeb/divide")) {
+      fix_divide[nfix_divide++] = (FixDivide *)modify->fix[i];
+    } else if (strstr(modify->fix[i]->style, "nufeb/death")) {
+      fix_death[nfix_death++] = (FixDeath *)modify->fix[i];
     }
   }
-
-  // allocate space for storing nufeb/diffusion_reaction fixes
-  fix_diffusion = new FixDiffusionReaction*[modify->nfix];
   
-  // find all nufeb/diffusion_reaction fixes
-  for (int i = 0; i < modify->nfix; i++) {
-    if (strstr(modify->fix[i]->style, "nufeb/diffusion_reaction")) {
-      fix_diffusion[nfix_diff++] = (FixDiffusionReaction *)modify->fix[i];
-    }
-  }
-
   // create compute volume
   char **volarg = new char*[3];
   volarg[0] = (char *)"nufeb_volume";
@@ -280,22 +292,28 @@ void NufebRun::setup(int flag)
 
   // NUFEB specific
 
+  biodt = update->dt;
+  
+  // disable all fixes that will be called directly
+  fix_density->compute_flag = 0;
+  for (int i = 0; i < nfix_monod; i++)
+    fix_monod[i]->compute_flag = 0;
+  for (int i = 0; i < nfix_diffusion; i++)
+    fix_diffusion[i]->compute_flag = 0;
+  for (int i = 0; i < nfix_eps_extract; i++)
+    fix_eps_extract[i]->compute_flag = 0;
+  for (int i = 0; i < nfix_divide; i++)
+    fix_divide[i]->compute_flag = 0;
+  for (int i = 0; i < nfix_death; i++)
+    fix_death[i]->compute_flag = 0;
+
   // compute density
-  fix_density->post_integrate();
+  fix_density->compute();
   
   // run diffusion until it reaches steady state
   int niter = diffusion();
   if (comm->me == 0)
     fprintf(screen, "Initial diffusion reaction converged in %d steps\n", niter);
-
-  for (int i = 0; i < nfix_monod; i++) {
-    fix_monod[i]->reaction_flag = 0;
-    fix_monod[i]->growth_flag = 1;
-  }
-
-  for (int i = 0; i < nfix_diff; i++) {
-    fix_diffusion[i]->compute_flag = 0;
-  }
 }
 
 /* ----------------------------------------------------------------------
@@ -395,23 +413,8 @@ void NufebRun::run(int n)
     
     growth();
 
-    // store current dt
-    double dt = update->dt;
     update->dt = pairdt;
     reset_dt();
-
-    // disable density computation
-    fix_density->compute_flag = 0;
-    
-    // disable compute of monod growth fixes
-    for (int i = 0; i < nfix_monod; i++) {
-      fix_monod[i]->compute_flag = 0;
-    }
-
-    // disable compute of diffusion fixes
-    for (int i = 0; i < nfix_diff; i++) {
-      fix_diffusion[i]->compute_flag = 0;
-    }
 
     int niter = 0;
     do {
@@ -511,26 +514,19 @@ void NufebRun::run(int n)
       modify->final_integrate();
       if (n_end_of_step) modify->end_of_step();
       timer->stamp(Timer::MODIFY);
-    
-      // double press = comp_pressure->compute_scalar();
-      // fprintf(screen, "press:%e\n", press);
+
       ++niter;
     } while(fabs(comp_pressure->compute_scalar()) > pairtol);
     if (comm->me == 0) fprintf(screen, "pair interaction: %d steps\n", niter);
 
     // update densities
-    fix_density->compute_flag = 1;
-    fix_density->post_integrate();
+
+    fix_density->compute();
 
     // run diffusion until it reaches steady state
-    update->dt = diffdt; 
-    reset_dt();
-    niter = diffusion();
-    // fprintf(screen, "diffusion: %d steps\n", niter);
 
-    // restore original dt
-    update->dt = dt;
-    reset_dt();
+    niter = diffusion();
+    if (comm->me == 0) fprintf(screen, "diffusion: %d steps\n", niter);
     
     // all output
 
@@ -613,36 +609,50 @@ void NufebRun::force_clear()
 
 void NufebRun::growth()
 {
+  // set biological dt
+
+  update->dt = biodt;
+  reset_dt();
+
+  for (int i = 0; i < nfix_death; i++) {
+    fix_death[i]->compute();
+  }
+
+  for (int i = 0; i < nfix_eps_extract; i++) {
+    fix_eps_extract[i]->compute();
+  }
+
+  for (int i = 0; i < nfix_divide; i++) {
+    fix_divide[i]->compute();
+  }
+
   // setup monod growth fixes for growth
+
   for (int i = 0; i < nfix_monod; i++) {
-    fix_monod[i]->compute_flag = 1;
     fix_monod[i]->reaction_flag = 0;
     fix_monod[i]->growth_flag = 1;
   }
 
   // grow atoms
+
   for (int i = 0; i < nfix_monod; i++) {
-    fix_monod[i]->post_integrate();
+    fix_monod[i]->compute();
   }
 }
 
 int NufebRun::diffusion()
 {
   // setup monod growth fixes for diffusion
+
   for (int i = 0; i < nfix_monod; i++) {
-    fix_monod[i]->compute_flag = 1;
     fix_monod[i]->reaction_flag = 1;
     fix_monod[i]->growth_flag = 0;
   }
 
-  // make sure diffusion fixes are enabled
-  for (int i = 0; i < nfix_diff; i++) {
-    fix_diffusion[i]->compute_flag = 1;
-  }
+  // set diffusion dt
 
-  // store current dt before changing it
-  double dt = update->dt;
   update->dt = diffdt;
+  reset_dt();
   
   int niter = 0;
   bool flag;
@@ -652,25 +662,19 @@ int NufebRun::diffusion()
     timer->stamp(Timer::COMM);
 
     flag = true;
-    for (int i = 0; i < nfix_diff; i++) {
-      fix_diffusion[i]->initial_integrate(0);
+    for (int i = 0; i < nfix_diffusion; i++) {
+      fix_diffusion[i]->compute_initial();
     }
     for (int i = 0; i < nfix_monod; i++) {
-      fix_monod[i]->post_integrate();
+      fix_monod[i]->compute();
     }
-    for (int i = 0; i < nfix_diff; i++) {
-      fix_diffusion[i]->final_integrate();
+    for (int i = 0; i < nfix_diffusion; i++) {
+      fix_diffusion[i]->compute_final();
       double res = fix_diffusion[i]->compute_scalar();
-      // fprintf(screen, "%e ", res);
       flag &= res < difftol;
     }
-    // fprintf(screen, "\n");
     timer->stamp(Timer::MODIFY);
     ++niter;
   } while (!flag);
-
-  // restore previous dt
-  update->dt = dt;
-
   return niter;
 }

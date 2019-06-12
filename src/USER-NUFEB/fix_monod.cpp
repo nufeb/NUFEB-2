@@ -84,3 +84,20 @@ void FixMonod::reset_dt()
 {
   dt = update->dt;
 }
+
+/* ---------------------------------------------------------------------- */
+
+int FixMonod::setmask()
+{
+  int mask = 0;
+  mask |= POST_INTEGRATE;
+  return mask;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixMonod::post_integrate()
+{
+  if (compute_flag)
+    compute();
+}

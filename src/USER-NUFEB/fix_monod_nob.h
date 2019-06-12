@@ -28,8 +28,7 @@ class FixMonodNOB: public FixMonod {
  public:
   FixMonodNOB(class LAMMPS *, int, char **);
   virtual ~FixMonodNOB() {}
-  int setmask();
-  virtual void post_integrate();
+  virtual void compute();
 
  protected:
   int io2;

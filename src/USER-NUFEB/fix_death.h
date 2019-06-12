@@ -26,11 +26,15 @@ namespace LAMMPS_NS {
 
 class FixDeath : public Fix {
  public:
+  int compute_flag;
+
   FixDeath(class LAMMPS *, int, char **);
   virtual ~FixDeath() {}
   int setmask();
+  int modify_param(int, char **);
   void post_integrate();
-
+  void compute();
+  
  private:
   int idead;
   double diameter;
