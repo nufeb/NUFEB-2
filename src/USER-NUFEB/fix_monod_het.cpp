@@ -106,20 +106,8 @@ FixMonodHET::FixMonodHET(LAMMPS *lmp, int narg, char **arg) :
 
 /* ---------------------------------------------------------------------- */
 
-int FixMonodHET::setmask()
-{
-  int mask = 0;
-  mask |= POST_INTEGRATE;
-  return mask;
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixMonodHET::post_integrate()
-{
-  if (!compute_flag)
-    return;
-  
+void FixMonodHET::compute()
+{ 
   if (reaction_flag && growth_flag) {
     update_cells<1, 1>();
     update_atoms();
@@ -164,6 +152,8 @@ void FixMonodHET::update_cells()
     }
   }
 }
+
+/* ---------------------------------------------------------------------- */
 
 void FixMonodHET::update_atoms()
 {

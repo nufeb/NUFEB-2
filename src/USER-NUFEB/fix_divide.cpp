@@ -40,6 +40,8 @@ FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 6)
     error->all(FLERR, "Illegal fix nufeb/divide command");
 
+  compute_flag = 1;
+  
   diameter = force->numeric(FLERR, arg[3]);
   eps_density = force->numeric(FLERR, arg[4]);
   seed = force->inumeric(FLERR, arg[5]);
@@ -68,8 +70,38 @@ int FixDivide::setmask()
 
 /* ---------------------------------------------------------------------- */
 
+int FixDivide::modify_param(int narg, char **arg)
+{
+  int iarg = 0;
+  while (iarg < narg) {
+    if (strcmp(arg[iarg], "compute") == 0) {
+      if (strcmp(arg[iarg+1], "yes") == 0) {
+	compute_flag = 1;
+      } else if (strcmp(arg[iarg+1], "no") == 0) {
+	compute_flag = 0;
+      } else {
+	error->all(FLERR, "Illegal fix_modify command");
+      }
+      iarg += 2;
+    } else {
+      error->all(FLERR, "Illegal fix_modify command");
+    }
+  }
+  return iarg;
+}
+
+/* ---------------------------------------------------------------------- */
+
 void FixDivide::post_integrate()
 {
+  if (compute_flag)
+    compute();
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixDivide::compute()
+{  
   int nlocal = atom->nlocal;
 
   for (int i = 0; i < nlocal; i++) {

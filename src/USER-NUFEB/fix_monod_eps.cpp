@@ -57,20 +57,8 @@ FixMonodEPS::FixMonodEPS(LAMMPS *lmp, int narg, char **arg) :
 
 /* ---------------------------------------------------------------------- */
 
-int FixMonodEPS::setmask()
+void FixMonodEPS::compute()
 {
-  int mask = 0;
-  mask |= POST_INTEGRATE;
-  return mask;
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixMonodEPS::post_integrate()
-{
-  if (!compute_flag)
-    return;
-  
   if (reaction_flag && growth_flag) {
     update_cells<1, 1>();
     update_atoms();
@@ -103,6 +91,8 @@ void FixMonodEPS::update_cells()
     }
   }
 }
+
+/* ---------------------------------------------------------------------- */
 
 void FixMonodEPS::update_atoms()
 {

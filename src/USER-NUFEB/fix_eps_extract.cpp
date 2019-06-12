@@ -40,6 +40,8 @@ FixEPSExtract::FixEPSExtract(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 8)
     error->all(FLERR, "Illegal fix nufeb/eps_extract command");
 
+  compute_flag = 1;
+  
   type = force->inumeric(FLERR, arg[3]);
   ieps = group->find(arg[4]);
   if (ieps < 0)
@@ -72,7 +74,37 @@ int FixEPSExtract::setmask()
 
 /* ---------------------------------------------------------------------- */
 
+int FixEPSExtract::modify_param(int narg, char **arg)
+{
+  int iarg = 0;
+  while (iarg < narg) {
+    if (strcmp(arg[iarg], "compute") == 0) {
+      if (strcmp(arg[iarg+1], "yes") == 0) {
+	compute_flag = 1;
+      } else if (strcmp(arg[iarg+1], "no") == 0) {
+	compute_flag = 0;
+      } else {
+	error->all(FLERR, "Illegal fix_modify command");
+      }
+      iarg += 2;
+    } else {
+      error->all(FLERR, "Illegal fix_modify command");
+    }
+  }
+  return iarg;
+}
+
+/* ---------------------------------------------------------------------- */
+
 void FixEPSExtract::post_integrate()
+{
+  if (compute_flag)
+    compute();
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixEPSExtract::compute()
 {
   int nlocal = atom->nlocal;
 

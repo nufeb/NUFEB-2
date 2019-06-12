@@ -26,11 +26,15 @@ namespace LAMMPS_NS {
 
 class FixDivide : public Fix {
  public:
+  int compute_flag;
+  
   FixDivide(class LAMMPS *, int, char **);
   ~FixDivide();
   int setmask();
+  int modify_param(int, char **);
   void post_integrate();
-
+  void compute();
+  
  private:
   double diameter;
   double eps_density;

@@ -26,11 +26,15 @@ namespace LAMMPS_NS {
 
 class FixEPSExtract : public Fix {
  public:
+  int compute_flag;
+  
   FixEPSExtract(class LAMMPS *, int, char **);
   ~FixEPSExtract();
   int setmask();
+  int modify_param(int, char **);
   void post_integrate();
-
+  void compute();
+  
  private:
   int type;
   int ieps;

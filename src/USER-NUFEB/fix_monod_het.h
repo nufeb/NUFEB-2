@@ -28,9 +28,8 @@ class FixMonodHET: public FixMonod {
  public:
   FixMonodHET(class LAMMPS *, int, char **);
   virtual ~FixMonodHET() {}
-  int setmask();
-  virtual void post_integrate();
-
+  virtual void compute();
+  
  protected:
   int isub;
   int io2;

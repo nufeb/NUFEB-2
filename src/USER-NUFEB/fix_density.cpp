@@ -69,9 +69,14 @@ int FixDensity::modify_param(int narg, char **arg)
 
 void FixDensity::post_integrate()
 {
-  if (!compute_flag)
-    return;
-  
+  if (compute_flag)
+    compute();
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixDensity::compute()
+{
   for (int igroup = 0; igroup < group->ngroup; igroup++) {
     for (int i = 0; i < grid->ncells; i++)
       grid->dens[igroup][i] = 0.0;

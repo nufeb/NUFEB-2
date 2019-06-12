@@ -41,19 +41,26 @@ class NufebRun : public Integrate {
 
   virtual void force_clear();
 
+  double biodt;
   double diffdt;
   double difftol;
   double pairdt;
   double pairtol;
   
   int nfix_monod;
-  int nfix_diff;
-
+  int nfix_diffusion;
+  int nfix_eps_extract;
+  int nfix_divide;
+  int nfix_death;
+  
   class FixDensity *fix_density;
   class FixMonod **fix_monod;
   class FixDiffusionReaction **fix_diffusion;
   class ComputePressure *comp_pressure;
   class ComputeVolume *comp_volume;
+  class FixEPSExtract **fix_eps_extract;
+  class FixDivide **fix_divide;
+  class FixDeath **fix_death;
   
   void growth();
   int diffusion();

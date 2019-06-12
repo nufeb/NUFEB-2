@@ -116,9 +116,43 @@ void FixDiffusionReaction::init()
 
 void FixDiffusionReaction::initial_integrate(int)
 {
-  if (!compute_flag)
-    return;
-  
+  if (compute_flag)
+    compute_initial();
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixDiffusionReaction::final_integrate()
+{
+  if (compute_flag)
+    compute_final();
+}
+
+/* ---------------------------------------------------------------------- */
+
+double FixDiffusionReaction::compute_scalar()
+{
+  double result = 0.0;
+  for (int i = 0; i < grid->ncells; i++) {
+    if (!(grid->mask[i] & GHOST_MASK)) {
+      result = MAX(result, fabs((grid->conc[isub][i] - prev[i]) / prev[i]));
+    }
+  }
+  MPI_Allreduce(MPI_IN_PLACE, &result, 1, MPI_DOUBLE, MPI_MAX, world);
+  return result;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixDiffusionReaction::reset_dt()
+{
+  dt = update->dt;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixDiffusionReaction::compute_initial()
+{
   for (int i = 0; i < grid->ncells; i++) {
     // Dirichlet boundary conditions
     if (grid->mask[i] & X_NB_MASK && grid->boundary[0] == DIRICHLET) {
@@ -140,11 +174,8 @@ void FixDiffusionReaction::initial_integrate(int)
 
 /* ---------------------------------------------------------------------- */
 
-void FixDiffusionReaction::final_integrate()
+void FixDiffusionReaction::compute_final()
 {
-  if (!compute_flag)
-    return;
-
   if (ncells != grid->ncells) {
     ncells = grid->ncells;
     prev = memory->grow(prev, ncells, "nufeb/diffusion_reaction:prev");
@@ -195,25 +226,4 @@ void FixDiffusionReaction::final_integrate()
       grid->conc[isub][i] = MAX(0, prev[i] + update->dt * (ddx + ddy + ddz + grid->reac[isub][i]));
     }
   }
-}
-
-/* ---------------------------------------------------------------------- */
-
-double FixDiffusionReaction::compute_scalar()
-{
-  double result = 0.0;
-  for (int i = 0; i < grid->ncells; i++) {
-    if (!(grid->mask[i] & GHOST_MASK)) {
-      result = MAX(result, fabs((grid->conc[isub][i] - prev[i]) / prev[i]));
-    }
-  }
-  MPI_Allreduce(MPI_IN_PLACE, &result, 1, MPI_DOUBLE, MPI_MAX, world);
-  return result;
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixDiffusionReaction::reset_dt()
-{
-  dt = update->dt;
 }
