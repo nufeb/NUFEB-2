@@ -171,7 +171,6 @@ void FixMonodHET::update_atoms()
   for (int i = 0; i < atom->nlocal; i++) {
     if (atom->mask[i] & groupbit) {
       const int cell = grid->cell(x[i]);
-
       const double density = rmass[i] /
 	(four_thirds_pi * radius[i] * radius[i] * radius[i]);
       double m = rmass[i];
