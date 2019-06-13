@@ -142,12 +142,10 @@ void FixMonodAOB::update_atoms()
 
   for (int i = 0; i < atom->nlocal; i++) {
     if (atom->mask[i] & groupbit) {
-      const int t = atom->type[i];
       const int cell = grid->cell(x[i]);
-
       const double density = rmass[i] /
 	(four_thirds_pi * radius[i] * radius[i] * radius[i]);
-      rmass[i] = rmass[i] * (1 + growth[t][cell][0] * dt);
+      rmass[i] = rmass[i] * (1 + growth[igroup][cell][0] * dt);
       radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
       outer_mass[i] = rmass[i];
       outer_radius[i] = radius[i];
