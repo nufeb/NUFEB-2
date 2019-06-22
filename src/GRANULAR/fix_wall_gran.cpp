@@ -75,7 +75,18 @@ FixWallGran::FixWallGran(LAMMPS *lmp, int narg, char **arg) :
 
   create_attribute = 1;
   virial_flag = 1;
+
+  normal_model = NORMAL_HOOKE;
+  damping_model = VELOCITY;
+  tangential_model = TANGENTIAL_NOHISTORY;
+  roll_model = ROLL_NONE;
+  twist_model = TWIST_NONE;
   
+  normal_history = 0;
+  tangential_history = 0;
+  roll_history = 0;
+  twist_history = 0;
+
   // set interaction style
   // disable bonded/history option for now
 
