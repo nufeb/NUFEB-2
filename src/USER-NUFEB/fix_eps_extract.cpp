@@ -107,7 +107,8 @@ void FixEPSExtract::post_integrate()
 void FixEPSExtract::compute()
 {
   int nlocal = atom->nlocal;
-
+  int eps_mask = group->bitmask[ieps];
+  
   for (int i = 0; i < nlocal; i++) {
     if (atom->mask[i] & groupbit) {
       if ((atom->outer_radius[i] / atom->radius[i]) > ratio) {
@@ -159,7 +160,7 @@ void FixEPSExtract::compute()
         int n = atom->nlocal - 1;
 
         atom->tag[n] = 0;
-        atom->mask[n] = ieps;
+        atom->mask[n] = 1 | eps_mask;
         atom->v[n][0] = atom->v[i][0];
         atom->v[n][1] = atom->v[i][1];
         atom->v[n][2] = atom->v[i][2];
