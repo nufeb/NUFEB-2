@@ -36,6 +36,7 @@
 #include "input.h"
 #include "variable.h"
 #include "compute_pressure.h"
+#include "compute_ke.h"
 
 // NUFEB specific
 
@@ -47,6 +48,7 @@
 #include "fix_eps_extract.h"
 #include "fix_divide.h"
 #include "fix_death.h"
+#include "compute_volume.h"
 
 using namespace LAMMPS_NS;
 
@@ -55,12 +57,13 @@ using namespace LAMMPS_NS;
 NufebRun::NufebRun(LAMMPS *lmp, int narg, char **arg) :
   Integrate(lmp, narg, arg)
 {
+  biodt = 1.0;
   diffdt = 1.0;
   difftol = 1.0;
-
-  biodt = 1.0;
+  diffmax = -1;
   pairdt = 1.0;
   pairtol = 1.0;
+  pairmax = -1;
   
   nfix_monod = 0;
   nfix_diffusion = 0;
@@ -81,11 +84,17 @@ NufebRun::NufebRun(LAMMPS *lmp, int narg, char **arg) :
     } else if (strcmp(arg[iarg], "difftol") == 0) {
       difftol = force->numeric(FLERR, arg[iarg+1]);
       iarg += 2;
+    } else if (strcmp(arg[iarg], "diffmax") == 0) {
+      diffmax = force->inumeric(FLERR, arg[iarg+1]);
+      iarg += 2;
     } else if (strcmp(arg[iarg], "pairdt") == 0) {
       pairdt = force->numeric(FLERR, arg[iarg+1]);
       iarg += 2;
     } else if (strcmp(arg[iarg], "pairtol") == 0) {
       pairtol = force->numeric(FLERR, arg[iarg+1]);
+      iarg += 2;
+    } else if (strcmp(arg[iarg], "pairmax") == 0) {
+      pairmax = force->inumeric(FLERR, arg[iarg+1]);
       iarg += 2;
     } else {
       error->all(FLERR, "Illegal run_style nufeb command");
@@ -153,29 +162,28 @@ void NufebRun::init()
   volarg[2] = (char *)"nufeb/volume";
   modify->add_compute(3, volarg, 1);
   delete [] volarg;
-  comp_pressure = (ComputePressure *)modify->compute[modify->ncompute-1];
-
-  // create compute volume variable
-  char **vararg = new char*[3];
-  vararg[0] = (char *)"nufeb_volume";
-  vararg[1] = (char *)"equal";
-  vararg[2] = (char *)"c_nufeb_volume";
-  input->variable->set(3, vararg);
-  delete [] vararg;
+  comp_volume = (ComputeVolume *)modify->compute[modify->ncompute-1];
   
   // create compute pressure
-  char **pressarg = new char*[8];
+  char **pressarg = new char*[6];
   pressarg[0] = (char *)"nufeb_pressure";
   pressarg[1] = (char *)"all";
   pressarg[2] = (char *)"pressure";
   pressarg[3] = (char *)"NULL";
   pressarg[4] = (char *)"pair";
   pressarg[5] = (char *)"fix";
-  pressarg[6] = (char *)"vol";
-  pressarg[7] = (char *)"v_nufeb_volume";
-  modify->add_compute(8, pressarg, 1);
+  modify->add_compute(6, pressarg, 1);
   delete [] pressarg;
   comp_pressure = (ComputePressure *)modify->compute[modify->ncompute-1];
+
+  // create compute ke
+  char **kearg = new char*[3];
+  kearg[0] = (char *)"nufeb_ke";
+  kearg[1] = (char *)"all";
+  kearg[2] = (char *)"ke";
+  modify->add_compute(3, kearg, 1);
+  delete [] kearg;
+  comp_ke = (ComputeKE *)modify->compute[modify->ncompute-1];
 
   Integrate::init();
 
@@ -412,11 +420,13 @@ void NufebRun::run(int n)
     ev_set(ntimestep);
     
     growth();
-
+    
     update->dt = pairdt;
     reset_dt();
-
+    
+    double vol = comp_volume->compute_scalar();
     int niter = 0;
+    double press = 0.0;
     do {
       // initial time integration
 
@@ -516,8 +526,12 @@ void NufebRun::run(int n)
       timer->stamp(Timer::MODIFY);
 
       ++niter;
-    } while(fabs(comp_pressure->compute_scalar()) > pairtol);
-    if (comm->me == 0) fprintf(screen, "pair interaction: %d steps\n", niter);
+
+      press = comp_pressure->compute_scalar() * domain->xprd * domain->yprd * domain->zprd;
+      press += comp_ke->compute_scalar();
+      press /= 3.0 * vol;
+    } while(fabs(press) > pairtol && ((pairmax > 0) ? niter < pairmax : true));
+    if (comm->me == 0) fprintf(screen, "pair interaction: %d steps (pressure %e N/m2)\n", niter, press);
 
     // update densities
 
@@ -614,18 +628,6 @@ void NufebRun::growth()
   update->dt = biodt;
   reset_dt();
 
-  for (int i = 0; i < nfix_death; i++) {
-    fix_death[i]->compute();
-  }
-
-  for (int i = 0; i < nfix_eps_extract; i++) {
-    fix_eps_extract[i]->compute();
-  }
-
-  for (int i = 0; i < nfix_divide; i++) {
-    fix_divide[i]->compute();
-  }
-
   // setup monod growth fixes for growth
 
   for (int i = 0; i < nfix_monod; i++) {
@@ -637,6 +639,18 @@ void NufebRun::growth()
 
   for (int i = 0; i < nfix_monod; i++) {
     fix_monod[i]->compute();
+  }
+
+  for (int i = 0; i < nfix_eps_extract; i++) {
+    fix_eps_extract[i]->compute();
+  }
+
+  for (int i = 0; i < nfix_divide; i++) {
+    fix_divide[i]->compute();
+  }
+
+  for (int i = 0; i < nfix_death; i++) {
+    fix_death[i]->compute();
   }
 }
 
@@ -675,6 +689,10 @@ int NufebRun::diffusion()
     }
     timer->stamp(Timer::MODIFY);
     ++niter;
+
+    if (diffmax > 0 && niter >= diffmax)
+      flag = true;
+    
   } while (!flag);
   return niter;
 }

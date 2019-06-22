@@ -44,8 +44,10 @@ class NufebRun : public Integrate {
   double biodt;
   double diffdt;
   double difftol;
+  int diffmax;
   double pairdt;
   double pairtol;
+  int pairmax;
   
   int nfix_monod;
   int nfix_diffusion;
@@ -57,6 +59,7 @@ class NufebRun : public Integrate {
   class FixMonod **fix_monod;
   class FixDiffusionReaction **fix_diffusion;
   class ComputePressure *comp_pressure;
+  class ComputeKE *comp_ke;
   class ComputeVolume *comp_volume;
   class FixEPSExtract **fix_eps_extract;
   class FixDivide **fix_divide;
