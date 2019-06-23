@@ -69,6 +69,7 @@ int FixEPSExtract::setmask()
 {
   int mask = 0;
   mask |= POST_INTEGRATE;
+  mask |= POST_NEIGHBOR;
   return mask;
 }
 
@@ -100,6 +101,14 @@ void FixEPSExtract::post_integrate()
 {
   if (compute_flag)
     compute();
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixEPSExtract::post_neighbor()
+{
+  // reset reneighbor flag
+  next_reneighbor = 0;
 }
 
 /* ---------------------------------------------------------------------- */

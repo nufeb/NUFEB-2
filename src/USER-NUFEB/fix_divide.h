@@ -33,6 +33,7 @@ class FixDivide : public Fix {
   int setmask();
   int modify_param(int, char **);
   void post_integrate();
+  void post_neighbor();
   void compute();
   
  private:
