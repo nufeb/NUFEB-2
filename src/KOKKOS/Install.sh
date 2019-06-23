@@ -73,6 +73,8 @@ action atom_vec_kokkos.cpp
 action atom_vec_kokkos.h
 action atom_vec_molecular_kokkos.cpp atom_vec_molecular.cpp
 action atom_vec_molecular_kokkos.h atom_vec_molecular.h
+action atom_vec_nufeb_kokkos.cpp atom_vec_nufeb.cpp
+action atom_vec_nufeb_kokkos_h atom_vec_nufeb.h
 action atom_vec_sphere_kokkos.cpp atom_vec_sphere.cpp
 action atom_vec_sphere_kokkos.h atom_vec_sphere.h
 action bond_class2_kokkos.cpp bond_class2.cpp 
