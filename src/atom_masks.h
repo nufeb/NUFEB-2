@@ -98,4 +98,9 @@
 #define VEST_MASK      0x00200000
 #define CV_MASK        0x00400000
 
+// NUFEB
+
+#define OUTER_MASS_MASK   0x0200000
+#define OUTER_RADIUS_MASK 0x0400000
+
 #endif
