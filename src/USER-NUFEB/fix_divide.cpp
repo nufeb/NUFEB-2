@@ -65,6 +65,7 @@ int FixDivide::setmask()
 {
   int mask = 0;
   mask |= POST_INTEGRATE;
+  mask |= POST_NEIGHBOR;
   return mask;
 }
 
@@ -96,6 +97,14 @@ void FixDivide::post_integrate()
 {
   if (compute_flag)
     compute();
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixDivide::post_neighbor()
+{
+  // reset reneighbour flag
+  next_reneighbor = 0;
 }
 
 /* ---------------------------------------------------------------------- */
