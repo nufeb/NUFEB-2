@@ -11,42 +11,34 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#ifdef GRID_CLASS
+#include "grid.h"
+#include "kokkos_type.h"
 
-GridStyle(nufeb/monod,GridVecMonod)
-
-#else
-
-#ifndef LMP_GRID_VEC_MONOD_H
-#define LMP_GRID_VEC_MONOD_H
-
-#include "grid_vec.h"
+#ifndef LMP_GRID_KOKKOS_H
+#define LMP_GRID_KOKKOS_H
 
 namespace LAMMPS_NS {
 
-class GridVecMonod : public GridVec {
+class GridKokkos : public Grid {
  public:
-  GridVecMonod(class LAMMPS *);
-  ~GridVecMonod() {}
-  void init();
-  void grow(int);
+  DAT::tdual_int_1d k_mask;
+  DAT::tdual_float_2d k_conc;
+  DAT::tdual_float_2d k_reac;
+  DAT::tdual_float_2d k_dens;
+  DAT::tdual_float_3d k_growth;
 
-  int pack_comm(int, int *, double *);
-  void unpack_comm(int, int *, double *);
-  int pack_exchange(int, int *, double *);
-  void unpack_exchange(int, int *, double *);
+  GridKokkos(class LAMMPS *);
+  ~GridKokkos();
 
-  void set(int, double, double, double, double, double, double, double);
+  void sync(const ExecutionSpace, unsigned int);
+  void modified(const ExecutionSpace, unsigned int);
+  void sync_overlapping_device(const ExecutionSpace, unsigned int);
+  void sync_modify(ExecutionSpace, unsigned int, unsigned int);
 
  private:
-  int *mask;
-  double **conc;    // concentration
-  double **reac;    // reaction rate
-  double **dens;    // density
-  double ***growth; // growth rate
+  virtual class GridVec *new_gvec(const char *, int, int &);
 };
 
 }
 
-#endif
 #endif

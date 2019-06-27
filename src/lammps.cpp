@@ -76,7 +76,7 @@ LAMMPS::LAMMPS(int narg, char **arg, MPI_Comm communicator) :
   update(NULL), neighbor(NULL), comm(NULL), domain(NULL), force(NULL),
   modify(NULL), group(NULL), output(NULL), timer(NULL), kokkos(NULL),
   atomKK(NULL), memoryKK(NULL), python(NULL), citeme(NULL),
-  grid(NULL)
+  grid(NULL), gridKK(NULL)
 {
   memory = new Memory(this);
   error = new Error(this);
@@ -750,8 +750,8 @@ void LAMMPS::create()
 
   // NUFEB specific
 
-  // if (kokkos) grid = new GridKokkos(this);
-  grid = new Grid(this);
+  if (kokkos) grid = new GridKokkos(this);
+  else grid = new Grid(this);
 
   // if (kokkos) comm_grid = new CommGridKokkos(this);
   comm_grid = new CommGrid(this);

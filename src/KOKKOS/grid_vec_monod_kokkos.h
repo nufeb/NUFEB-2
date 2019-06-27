@@ -13,21 +13,23 @@
 
 #ifdef GRID_CLASS
 
-GridStyle(nufeb/monod,GridVecMonod)
+GridStyle(nufeb/monod/kk,GridVecMonodKokkos)
+GridStyle(nufeb/monod/kk/device,GridVecMonodKokkos)
+GridStyle(nufeb/monod/kk/host,GridVecMonodKokkos)
 
 #else
 
-#ifndef LMP_GRID_VEC_MONOD_H
-#define LMP_GRID_VEC_MONOD_H
+#ifndef LMP_GRID_VEC_MONOD_KOKKOS_H
+#define LMP_GRID_VEC_MONOD_KOKKOS_H
 
-#include "grid_vec.h"
+#include "grid_vec_kokkos.h"
 
 namespace LAMMPS_NS {
 
-class GridVecMonod : public GridVec {
+class GridVecMonodKokkos : public GridVecKokkos {
  public:
-  GridVecMonod(class LAMMPS *);
-  ~GridVecMonod() {}
+  GridVecMonodKokkos(class LAMMPS *);
+  ~GridVecMonodKokkos() {}
   void init();
   void grow(int);
 
@@ -36,7 +38,16 @@ class GridVecMonod : public GridVec {
   int pack_exchange(int, int *, double *);
   void unpack_exchange(int, int *, double *);
 
+  int pack_comm_kokkos(int, const DAT::tdual_int_2d &, const DAT::tdual_xfloat_2d &);
+  void unpack_comm_kokkos(int, const DAT::tdual_int_2d &, const DAT::tdual_xfloat_2d &);
+  int pack_exchange_kokkos(int, const DAT::tdual_int_2d &, const DAT::tdual_xfloat_2d &);
+  void unpack_exchange_kokkos(int, const DAT::tdual_int_2d &, const DAT::tdual_xfloat_2d &);
+
   void set(int, double, double, double, double, double, double, double);
+
+  void sync(ExecutionSpace, unsigned int);
+  void modified(ExecutionSpace, unsigned int);
+  void sync_overlapping_device(ExecutionSpace, unsigned int);
 
  private:
   int *mask;
@@ -44,6 +55,17 @@ class GridVecMonod : public GridVec {
   double **reac;    // reaction rate
   double **dens;    // density
   double ***growth; // growth rate
+
+  DAT::t_int_1d d_mask;
+  HAT::t_int_1d h_mask;
+  DAT::t_float_2d d_conc;
+  HAT::t_float_2d h_conc;
+  DAT::t_float_2d d_reac;
+  HAT::t_float_2d h_reac;
+  DAT::t_float_2d d_dens;
+  HAT::t_float_2d h_dens;
+  DAT::t_float_3d d_growth;
+  HAT::t_float_3d h_growth;
 };
 
 }

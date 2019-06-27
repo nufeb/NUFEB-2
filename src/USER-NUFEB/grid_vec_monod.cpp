@@ -57,6 +57,12 @@ void GridVecMonod::grow(int n)
     growth = memory->grow(grid->growth, group->ngroup, n, 2, "nufeb/monod:grow");
     nmax = n;
     grid->nmax = nmax;
+
+    grid->mask = mask;
+    grid->conc = conc;
+    grid->reac = reac;
+    grid->dens = dens;
+    grid->growth = growth;
   }
 }
 

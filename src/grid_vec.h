@@ -28,7 +28,7 @@ class GridVec : protected Pointers {
 
   int size_forward;      // # of data in forward comm
   int size_exchange;     // # of data in exchange comm
-  
+
   GridVec(class LAMMPS *);
   virtual ~GridVec() {}
   void store_args(int, char **);
