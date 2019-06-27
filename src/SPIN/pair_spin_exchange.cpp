@@ -75,7 +75,7 @@ PairSpinExchange::~PairSpinExchange()
 
 void PairSpinExchange::settings(int narg, char **arg)
 {
-  if (narg < 1 || narg > 2)
+  if (narg < 1 || narg > 7) 
     error->all(FLERR,"Incorrect number of args in pair_style pair/spin command");
 
   if (strcmp(update->unit_style,"metal") != 0)
@@ -153,15 +153,16 @@ void PairSpinExchange::init_style()
   neighbor->requests[irequest]->half = 0;
   neighbor->requests[irequest]->full = 1;
 
-  // checking if nve/spin is a listed fix
+  // checking if nve/spin or neb/spin are a listed fix
 
   int ifix = 0;
   while (ifix < modify->nfix) {
     if (strcmp(modify->fix[ifix]->style,"nve/spin") == 0) break;
+    if (strcmp(modify->fix[ifix]->style,"neb/spin") == 0) break;
     ifix++;
   }
   if ((ifix == modify->nfix) && (comm->me == 0))
-    error->warning(FLERR,"Using pair/spin style without nve/spin");
+    error->warning(FLERR,"Using pair/spin style without nve/spin or neb/spin");
 
   // get the lattice_flag from nve/spin
 
@@ -463,8 +464,6 @@ void PairSpinExchange::allocate()
   memory->create(cutsq,n+1,n+1,"pair:cutsq");
 }
 
-
-
 /* ----------------------------------------------------------------------
    proc 0 writes to restart file
 ------------------------------------------------------------------------- */
@@ -549,5 +548,3 @@ void PairSpinExchange::read_restart_settings(FILE *fp)
   MPI_Bcast(&offset_flag,1,MPI_INT,0,world);
   MPI_Bcast(&mix_flag,1,MPI_INT,0,world);
 }
-
-
