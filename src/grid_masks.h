@@ -27,5 +27,14 @@
 #define CORNER_MASK    0x00000100
 #define GHOST_MASK     0x00000200
 
+#define GMASK_MASK     0x00001000
+
+// Monod
+
+#define CONC_MASK      0x00010000
+#define REAC_MASK      0x00020000
+#define DENS_MASK      0x00040000
+#define GROWTH_MASK    0x00080000
+
 #endif
 

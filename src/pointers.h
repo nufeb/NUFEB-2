@@ -60,7 +60,8 @@ class Pointers {
     memoryKK(ptr->memoryKK),
     python(ptr->python),
     grid(ptr->grid),
-    comm_grid(ptr->comm_grid) {}
+    comm_grid(ptr->comm_grid),
+    gridKK(ptr->gridKK) {}
   virtual ~Pointers() {}
 
  protected:
@@ -94,6 +95,8 @@ class Pointers {
 
   Grid *&grid;
   CommGrid *&comm_grid;
+
+  class GridKokkos *&gridKK;
 };
 
 }

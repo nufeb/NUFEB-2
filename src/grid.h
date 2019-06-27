@@ -43,7 +43,7 @@ class Grid : protected Pointers {
   int ndirichlet;
   
   Grid(class LAMMPS *);
-  ~Grid();
+  virtual ~Grid();
   void modify_params(int, char**);
   void create_gvec(const char *, int, char **, int);
   virtual class GridVec *new_gvec(const char *, int, int &);

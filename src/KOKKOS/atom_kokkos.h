@@ -64,7 +64,7 @@ class AtomKokkos : public Atom {
   // NUFEB
 
   DAT::tdual_float_1d k_outer_radius;
-  DAT::tdual_float_1d k_outer_rmass;
+  DAT::tdual_float_1d k_outer_mass;
   
   AtomKokkos(class LAMMPS *);
   ~AtomKokkos();

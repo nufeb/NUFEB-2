@@ -74,7 +74,7 @@ action atom_vec_kokkos.h
 action atom_vec_molecular_kokkos.cpp atom_vec_molecular.cpp
 action atom_vec_molecular_kokkos.h atom_vec_molecular.h
 action atom_vec_nufeb_kokkos.cpp atom_vec_nufeb.cpp
-action atom_vec_nufeb_kokkos_h atom_vec_nufeb.h
+action atom_vec_nufeb_kokkos.h atom_vec_nufeb.h
 action atom_vec_sphere_kokkos.cpp atom_vec_sphere.cpp
 action atom_vec_sphere_kokkos.h atom_vec_sphere.h
 action bond_class2_kokkos.cpp bond_class2.cpp 
@@ -147,6 +147,12 @@ action fix_rx_kokkos.cpp fix_rx.cpp
 action fix_rx_kokkos.h fix_rx.h
 action gridcomm_kokkos.cpp gridcomm.cpp
 action gridcomm_kokkos.h gridcomm.h
+action grid_kokkos.cpp grid.cpp
+action grid_kokkos.h grid.h
+action grid_vec_kokkos.cpp grid_vec.cpp
+action grid_vec_kokkos.h grid_vec.h
+action grid_vec_monod_kokkos.cpp grid_vec_monod.cpp
+action grid_vec_monod_kokkos.h grid_vec_monod.h
 action improper_class2_kokkos.cpp improper_class2.cpp 
 action improper_class2_kokkos.h improper_class2.h
 action improper_harmonic_kokkos.cpp improper_harmonic.cpp
@@ -179,6 +185,8 @@ action nbin_kokkos.cpp
 action nbin_kokkos.h
 action nbin_ssa_kokkos.cpp nbin_ssa.cpp
 action nbin_ssa_kokkos.h nbin_ssa.h
+action nufeb_run_kokkos.cpp nufeb_run.cpp
+action nufeb_run_kokkos.h nufeb_run.h
 action math_special_kokkos.cpp
 action math_special_kokkos.h
 action pair_buck_coul_cut_kokkos.cpp

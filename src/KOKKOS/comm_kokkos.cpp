@@ -96,8 +96,10 @@ void CommKokkos::init()
   maxsend = BUFMIN;
   maxrecv = BUFMIN;
 
-  grow_send_kokkos(maxsend+bufextra,0,Host);
-  grow_recv_kokkos(maxrecv,Host);
+  // if (!buf_send)
+  //   grow_send_kokkos(maxsend+bufextra,0,Host);
+  // if (!buf_recv)
+  //   grow_recv_kokkos(maxrecv,Host);
 
   atomKK = (AtomKokkos *) atom;
   exchange_comm_classic = lmp->kokkos->exchange_comm_classic;

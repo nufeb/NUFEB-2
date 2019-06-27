@@ -28,6 +28,10 @@
 #include "memory_kokkos.h"
 #include "modify_kokkos.h"
 
+// NUFEB specific
+
+#include "grid_kokkos.h"
+
 #define LAMMPS_INLINE KOKKOS_INLINE_FUNCTION
 
 #else
@@ -114,6 +118,14 @@ class DAT {
   typedef double tdual_FFT_SCALAR_1d;
   typedef int tdual_int_1d;
   typedef int tdual_int_2d;
+};
+
+// NUFEB specific
+
+class GridKokkos : public Grid {
+ public:
+  GridKokkos(class LAMMPS *lmp) : Grid(lmp) {}
+  ~GridKokkos() {}
 };
 
 }
