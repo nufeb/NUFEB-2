@@ -1001,7 +1001,8 @@ void AtomVecNufebKokkos::unpack_comm_kokkos(
       buf,first);
     Kokkos::parallel_for(n,f);
   } else {
-    modified(Device,X_MASK|RADIUS_MASK|RMASS_MASK);
+    modified(Device,X_MASK|RADIUS_MASK|RMASS_MASK|
+	     OUTER_RADIUS_MASK|OUTER_MASS_MASK);
     struct AtomVecNufebKokkos_UnpackComm<LMPDeviceType> f(
       atomKK->k_x,
       atomKK->k_radius,atomKK->k_rmass,

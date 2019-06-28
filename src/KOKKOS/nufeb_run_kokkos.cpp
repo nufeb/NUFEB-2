@@ -340,6 +340,7 @@ void NufebRunKokkos::run(int n)
   int n_post_integrate = modify->n_post_integrate;
   int n_pre_exchange = modify->n_pre_exchange;
   int n_pre_neighbor = modify->n_pre_neighbor;
+  int n_post_neighbor = modify->n_post_neighbor;
   int n_pre_force = modify->n_pre_force;
   int n_pre_reverse = modify->n_pre_reverse;
   int n_post_force = modify->n_post_force;
@@ -441,6 +442,10 @@ void NufebRunKokkos::run(int n)
 	}
 	neighbor->build(1);
 	timer->stamp(Timer::NEIGH);
+    	if (n_post_neighbor) {
+    	  modify->post_neighbor();
+    	  timer->stamp(Timer::MODIFY);
+    	}
       }
 
       // force computations
@@ -606,7 +611,7 @@ void NufebRunKokkos::run(int n)
       timer->stamp(Timer::MODIFY);
 
       ++niter;
-
+      
       press = comp_pressure->compute_scalar() * domain->xprd * domain->yprd * domain->zprd;
       press += comp_ke->compute_scalar();
       press /= 3.0 * vol;
