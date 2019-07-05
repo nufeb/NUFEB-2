@@ -25,10 +25,10 @@ class GridVecKokkos : public GridVec {
   virtual void sync(ExecutionSpace, unsigned int) = 0;
   virtual void modified(ExecutionSpace, unsigned int) = 0;
   virtual void sync_overlapping_device(ExecutionSpace, unsigned int) = 0;
-  virtual int pack_comm_kokkos(int, const DAT::tdual_int_2d &, const DAT::tdual_xfloat_2d &) = 0;
-  virtual void unpack_comm_kokkos(int, const DAT::tdual_int_2d &, const DAT::tdual_xfloat_2d &) = 0;
-  virtual int pack_exchange_kokkos(int, const DAT::tdual_int_2d &, const DAT::tdual_xfloat_2d &) = 0;
-  virtual void unpack_exchange_kokkos(int, const DAT::tdual_int_2d &, const DAT::tdual_xfloat_2d &) = 0;
+  virtual int pack_comm_kokkos(int, int, const DAT::tdual_int_1d &, const DAT::tdual_xfloat_1d &) = 0;
+  virtual void unpack_comm_kokkos(int, int, const DAT::tdual_int_1d &, const DAT::tdual_xfloat_1d &) = 0;
+  virtual int pack_exchange_kokkos(int, int, const DAT::tdual_int_1d &, const DAT::tdual_xfloat_1d &) = 0;
+  virtual void unpack_exchange_kokkos(int, int, const DAT::tdual_int_1d &, const DAT::tdual_xfloat_1d &) = 0;
 
  protected:
   size_t buffer_size;

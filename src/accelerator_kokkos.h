@@ -30,6 +30,7 @@
 
 // NUFEB specific
 
+#include "comm_grid_kokkos.h"
 #include "grid_kokkos.h"
 
 #define LAMMPS_INLINE KOKKOS_INLINE_FUNCTION

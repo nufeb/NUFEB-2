@@ -77,6 +77,7 @@ AtomKokkos::~AtomKokkos()
   memoryKK->destroy_kokkos(k_improper_atom4, improper_atom4);
 
   // USER-DPD package
+
   memoryKK->destroy_kokkos(k_uCond,uCond);
   memoryKK->destroy_kokkos(k_uMech,uMech);
   memoryKK->destroy_kokkos(k_uChem,uChem);
@@ -86,6 +87,11 @@ AtomKokkos::~AtomKokkos()
   memoryKK->destroy_kokkos(k_dpdTheta,dpdTheta);
   memoryKK->destroy_kokkos(k_duChem,duChem);
 
+  // USER-NUFEB package
+
+  memoryKK->destroy_kokkos(k_outer_radius, outer_radius);
+  memoryKK->destroy_kokkos(k_outer_mass, outer_mass);
+  
   memoryKK->destroy_kokkos(k_dvector,dvector);
   dvector = NULL;
 }

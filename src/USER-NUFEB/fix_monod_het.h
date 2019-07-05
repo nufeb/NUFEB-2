@@ -29,7 +29,10 @@ class FixMonodHET: public FixMonod {
   FixMonodHET(class LAMMPS *, int, char **);
   virtual ~FixMonodHET() {}
   virtual void compute();
-  
+
+  template <int, int> void update_cells();
+  void update_atoms();
+
  protected:
   int isub;
   int io2;
@@ -48,9 +51,6 @@ class FixMonodHET: public FixMonod {
   double eps_yield;
   double anoxic;
   double eps_dens;
-  
-  template <int, int> void update_cells();
-  void update_atoms();
 };
 
 }

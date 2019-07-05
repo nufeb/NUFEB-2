@@ -123,6 +123,7 @@ Atom::Atom(LAMMPS *lmp) : Pointers(lmp)
   damage = NULL;
 
   // USER-NUFEB
+
   outer_radius_flag = outer_mass_flag = 0;
   outer_radius = NULL;
   outer_mass = NULL;

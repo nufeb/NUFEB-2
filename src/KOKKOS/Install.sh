@@ -85,6 +85,8 @@ action bond_harmonic_kokkos.cpp bond_harmonic.cpp
 action bond_harmonic_kokkos.h bond_harmonic.h
 action comm_kokkos.cpp
 action comm_kokkos.h
+action comm_grid_kokkos.cpp
+action comm_grid_kokkos.h
 action comm_tiled_kokkos.cpp
 action comm_tiled_kokkos.h
 action compute_temp_kokkos.cpp
@@ -99,16 +101,22 @@ action domain_kokkos.cpp
 action domain_kokkos.h
 action fix_deform_kokkos.cpp
 action fix_deform_kokkos.h
+action fix_diffusion_reaction_kokkos.cpp
+action fix_diffusion_reaction_kokkos.h
 action fix_enforce2d_kokkos.cpp
 action fix_enforce2d_kokkos.h
 action fix_eos_table_rx_kokkos.cpp fix_eos_table_rx.cpp
-action fix_eos_table_rx_kokkos.h fix_eos_table_rx.h  
+action fix_eos_table_rx_kokkos.h fix_eos_table_rx.h
+action fix_eps_adhesion_kokkos.cpp fix_eps_adhesion.cpp
+action fix_eps_adhesion_kokkos.h fix_eps_adhesion.h
 action fix_freeze_kokkos.cpp fix_freeze.cpp
 action fix_freeze_kokkos.h fix_freeze.h
 action fix_gravity_kokkos.cpp
 action fix_gravity_kokkos.h
 action fix_langevin_kokkos.cpp
 action fix_langevin_kokkos.h
+action fix_monod_het_kokkos.cpp fix_monod_het.cpp
+action fix_monod_het_kokkos.h fix_monod_het.h
 action fix_neigh_history_kokkos.cpp
 action fix_neigh_history_kokkos.h
 action fix_nh_kokkos.cpp
