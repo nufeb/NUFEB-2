@@ -33,7 +33,7 @@ class FixDiffusionReaction : public Fix {
   int setmask();
   int modify_param(int, char **);
   virtual void init();
-  virtual void initial_integrate(int);
+  virtual void pre_force(int);
   virtual void final_integrate();
   virtual double compute_scalar();
   virtual void reset_dt();

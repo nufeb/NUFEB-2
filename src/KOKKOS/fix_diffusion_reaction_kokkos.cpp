@@ -134,11 +134,6 @@ void FixDiffusionReactionKokkos<DeviceType>::compute_final()
   d_conc = gridKK->k_conc.template view<DeviceType>();
   d_reac = gridKK->k_reac.template view<DeviceType>();
   
-  if (ncells < grid->ncells) {
-    grow_arrays(grid->ncells);
-    ncells = grid->ncells;
-  }
-
   gridKK->sync(execution_space, GMASK_MASK);
   gridKK->sync(execution_space, REAC_MASK);
   

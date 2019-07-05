@@ -77,7 +77,7 @@ FixDiffusionReaction::~FixDiffusionReaction()
 int FixDiffusionReaction::setmask()
 {
   int mask = 0;
-  mask |= INITIAL_INTEGRATE;
+  mask |= PRE_FORCE;
   mask |= FINAL_INTEGRATE;
   return mask;
 }
@@ -115,7 +115,7 @@ void FixDiffusionReaction::init()
 
 /* ---------------------------------------------------------------------- */
 
-void FixDiffusionReaction::initial_integrate(int)
+void FixDiffusionReaction::pre_force(int)
 {
   if (compute_flag)
     compute_initial();
@@ -182,11 +182,6 @@ void FixDiffusionReaction::compute_initial()
 
 void FixDiffusionReaction::compute_final()
 {
-  if (ncells != grid->ncells) {
-    ncells = grid->ncells;
-    prev = memory->grow(prev, ncells, "nufeb/diffusion_reaction:prev");
-  }
-
   int nx = grid->subbox[0];
   int nxy = grid->subbox[0] * grid->subbox[1];
   for (int i = 0; i < grid->ncells; i++) {
