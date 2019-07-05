@@ -75,6 +75,11 @@ NufebRun::NufebRun(LAMMPS *lmp, int narg, char **arg) :
   fix_monod = NULL;
   fix_diffusion = NULL;
   comp_pressure = NULL;
+  comp_ke = NULL;
+  comp_volume = NULL;
+  fix_eps_extract = NULL;
+  fix_divide = NULL;
+  fix_death = NULL;
   
   int iarg = 0;
   while (iarg < narg) {

@@ -60,6 +60,7 @@ AtomVecNufebKokkos::AtomVecNufebKokkos(LAMMPS *lmp) : AtomVecKokkos(lmp)
   commKK = (CommKokkos *) comm;
 
   no_border_vel_flag = 0;
+  unpack_exchange_indices_flag = 1;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -2448,7 +2449,7 @@ int AtomVecNufebKokkos::pack_exchange(int i, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-template<class DeviceType>
+template<class DeviceType,int OUTPUT_INDICES>
 struct AtomVecNufebKokkos_UnpackExchangeFunctor {
   typedef DeviceType device_type;
   typedef ArrayTypes<DeviceType> AT;
@@ -2465,6 +2466,7 @@ struct AtomVecNufebKokkos_UnpackExchangeFunctor {
   typename AT::t_v_array _omega;
   typename AT::t_xfloat_2d_um _buf;
   typename AT::t_int_1d _nlocal;
+  typename AT::t_int_1d _indices;
   int _dim;
   X_FLOAT _lo,_hi;
 
@@ -2472,6 +2474,7 @@ struct AtomVecNufebKokkos_UnpackExchangeFunctor {
     const AtomKokkos* atom,
     const typename AT::tdual_xfloat_2d buf,
     typename AT::tdual_int_1d nlocal,
+    typename AT::tdual_int_1d indices,
     int dim, X_FLOAT lo, X_FLOAT hi):
     _x(atom->k_x.view<DeviceType>()),
     _v(atom->k_v.view<DeviceType>()),
@@ -2484,7 +2487,9 @@ struct AtomVecNufebKokkos_UnpackExchangeFunctor {
     _oradius(atom->k_outer_radius.view<DeviceType>()),
     _omass(atom->k_outer_mass.view<DeviceType>()),
     _omega(atom->k_omega.view<DeviceType>()),
-    _nlocal(nlocal.template view<DeviceType>()),_dim(dim),
+    _nlocal(nlocal.template view<DeviceType>()),
+    _indices(indices.template view<DeviceType>()),
+    _dim(dim),
     _lo(lo),_hi(hi)
   {
     const size_t elements = 18;
@@ -2496,8 +2501,9 @@ struct AtomVecNufebKokkos_UnpackExchangeFunctor {
   KOKKOS_INLINE_FUNCTION
   void operator() (const int &myrecv) const {
     X_FLOAT x = _buf(myrecv,_dim+1);
+    int i = -1;
     if (x >= _lo && x < _hi) {
-      int i = Kokkos::atomic_fetch_add(&_nlocal(0),1);
+      i = Kokkos::atomic_fetch_add(&_nlocal(0),1);
       _x(i,0) = _buf(myrecv,1);
       _x(i,1) = _buf(myrecv,2);
       _x(i,2) = _buf(myrecv,3);
@@ -2516,22 +2522,36 @@ struct AtomVecNufebKokkos_UnpackExchangeFunctor {
       _omega(i,1) = _buf(myrecv,16);
       _omega(i,2) = _buf(myrecv,17);
     }
+    if (OUTPUT_INDICES)
+      _indices(myrecv) = i;
   }
 };
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecNufebKokkos::unpack_exchange_kokkos(DAT::tdual_xfloat_2d &k_buf,int nrecv,int nlocal,int dim,X_FLOAT lo,X_FLOAT hi,ExecutionSpace space) {
+int AtomVecNufebKokkos::unpack_exchange_kokkos(
+  DAT::tdual_xfloat_2d &k_buf,DAT::tdual_int_1d &indices,int nrecv,int nlocal,
+  int dim,X_FLOAT lo,X_FLOAT hi,ExecutionSpace space) {
   if(space == Host) {
     k_count.h_view(0) = nlocal;
-    AtomVecNufebKokkos_UnpackExchangeFunctor<LMPHostType> f(atomKK,k_buf,k_count,dim,lo,hi);
-    Kokkos::parallel_for(nrecv/18,f);
+    if (indices.extent(0) == 0) {
+      AtomVecNufebKokkos_UnpackExchangeFunctor<LMPHostType,0> f(atomKK,k_buf,k_count,indices,dim,lo,hi);
+      Kokkos::parallel_for(nrecv/18,f);
+    } else {
+      AtomVecNufebKokkos_UnpackExchangeFunctor<LMPHostType,1> f(atomKK,k_buf,k_count,indices,dim,lo,hi);
+      Kokkos::parallel_for(nrecv/18,f);
+    }
   } else {
     k_count.h_view(0) = nlocal;
     k_count.modify<LMPHostType>();
     k_count.sync<LMPDeviceType>();
-    AtomVecNufebKokkos_UnpackExchangeFunctor<LMPDeviceType> f(atomKK,k_buf,k_count,dim,lo,hi);
-    Kokkos::parallel_for(nrecv/18,f);
+    if (indices.extent(0) == 0) {
+      AtomVecNufebKokkos_UnpackExchangeFunctor<LMPDeviceType,0> f(atomKK,k_buf,k_count,indices,dim,lo,hi);
+      Kokkos::parallel_for(nrecv/18,f);
+    } else {
+      AtomVecNufebKokkos_UnpackExchangeFunctor<LMPDeviceType,1> f(atomKK,k_buf,k_count,indices,dim,lo,hi);
+      Kokkos::parallel_for(nrecv/18,f);
+    }
     k_count.modify<LMPDeviceType>();
     k_count.sync<LMPHostType>();
   }
@@ -2540,6 +2560,15 @@ int AtomVecNufebKokkos::unpack_exchange_kokkos(DAT::tdual_xfloat_2d &k_buf,int n
 	   RADIUS_MASK|RMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK|OMEGA_MASK);
 
   return k_count.h_view(0);
+}
+
+/* ---------------------------------------------------------------------- */
+
+int AtomVecNufebKokkos::unpack_exchange_kokkos(
+  DAT::tdual_xfloat_2d &k_buf,int nrecv,int nlocal,
+  int dim,X_FLOAT lo,X_FLOAT hi,ExecutionSpace space) {
+  DAT::tdual_int_1d indices = DAT::tdual_int_1d("atom:indices");
+  return unpack_exchange_kokkos(k_buf,indices,nrecv,nlocal,dim,lo,hi,space);
 }
 
 /* ---------------------------------------------------------------------- */

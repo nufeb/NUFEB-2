@@ -11,55 +11,39 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#ifndef LMP_COMM_GRID_H
-#define LMP_COMM_GRID_H
+#ifndef LMP_COMM_GRID_KOKKOS_H
+#define LMP_COMM_GRID_KOKKOS_H
 
-#include "pointers.h"
+#include "comm_grid.h"
+#include "kokkos_type.h"
 
 namespace LAMMPS_NS {
 
-class CommGrid : protected Pointers {
+class CommGridKokkos : public CommGrid {
  public:
-  CommGrid(class LAMMPS *);
-  virtual ~CommGrid();
+  CommGridKokkos(class LAMMPS *);
+  virtual ~CommGridKokkos();
 
   virtual void init();
   virtual void setup();                 // setup 3d comm pattern
   virtual void forward_comm();          // forward comm of grid data
   virtual void migrate();               // move cells to new procs
+
+  template <class DeviceType>
+  void forward_comm_device();
   
  protected:
-  int size_forward;                     // # of data in forward comm
-  int size_exchange;                    // # of data in exchange comm
-  int max_size;                         // maximum size between forward and
-                                        // exchange comm data
+  DAT::tdual_int_1d k_recv_begin, k_recv_end;
+  DAT::tdual_int_1d k_send_begin, k_send_end;
+  DAT::tdual_int_1d k_recv_cells, k_send_cells;
+  DAT::tdual_xfloat_1d k_buf_recv, k_buf_send;
 
-  int nrecv;
-  int nsend;
-  int nrecvproc;
-  int nsendproc;
-  int *recvproc;
-  int *sendproc;
-  int *recv_begin, *recv_end;
-  int *send_begin, *send_end;
-  int *recv_cells;
-  int *send_cells;
-  double *buf_recv;
-  double *buf_send;
-
-  int nrecv_self;
-  int nsend_self;
-  int *recv_cells_self;
-  int *send_cells_self;
-  double *buf_self;
-  
-  MPI_Request *requests;
+  DAT::tdual_int_1d k_recv_cells_self, k_send_cells_self;
+  DAT::tdual_xfloat_1d k_buf_self;
   
   virtual void grow_recv(int);
   virtual void grow_send(int);
   virtual void grow_self(int);
-  int intersect(int *, int *, int *, int *, int, int, int, int, int,
-		int *, int *, bool);
 };
 
 }

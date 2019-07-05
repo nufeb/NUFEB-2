@@ -16,10 +16,11 @@
 #include "error.h"
 #include "memory_kokkos.h"
 #include "grid_masks.h"
-#include "comm.h"
 #include "atom_kokkos.h"
 #include "atom_vec_kokkos.h"
 #include "group.h"
+#include "lammps.h"
+#include "kokkos.h"
 
 using namespace LAMMPS_NS;
 
@@ -142,28 +143,119 @@ void GridVecMonodKokkos::unpack_exchange(int n, int *cells, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-int GridVecMonodKokkos::pack_comm_kokkos(int, const DAT::tdual_int_2d &list, const DAT::tdual_xfloat_2d &buf)
+template <class DeviceType>
+struct GridVecMonodKokkos_PackComm
+{
+  int _nsubs;
+  
+  typedef ArrayTypes<DeviceType> AT;
+  typename AT::t_float_2d _conc;
+  typename AT::t_int_1d _list;
+  typename AT::t_xfloat_2d _buf;
+  
+  GridVecMonodKokkos_PackComm(
+    int nsubs,
+    const typename DAT::tdual_float_2d &conc,
+    const DAT::tdual_int_1d &list,
+    const DAT::tdual_xfloat_1d &buf):
+    _nsubs(nsubs),
+    _conc(conc.view<DeviceType>()),
+    _list(list.view<DeviceType>())
+  {
+    _buf = typename AT::t_xfloat_2d_um(
+      buf.view<DeviceType>().data(),
+      buf.view<DeviceType>().extent(0)/nsubs,
+      nsubs);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(int i) const
+  {
+    int cell = _list(i);
+    for (int j = 0; j < _nsubs; j++) {
+      _buf(i, j) = _conc(j, cell);
+    }
+  }
+};
+
+/* ---------------------------------------------------------------------- */
+
+int GridVecMonodKokkos::pack_comm_kokkos(int first, int last, const DAT::tdual_int_1d &list, const DAT::tdual_xfloat_1d &buf)
+{
+  // if (lmp->kokkos->forward_comm_on_host) {
+  //   gridKK->sync(Host, CONC_MASK);
+  //   struct GridVecMonodKokkos_PackComm<LMPHostType> f(grid->nsubs, gridKK->k_conc, list, buf);
+  //   Kokkos::parallel_for(Kokkos::RangePolicy<LMPHostType>(first, last), f);
+  // } else {
+    gridKK->sync(Device, CONC_MASK);
+    struct GridVecMonodKokkos_PackComm<LMPDeviceType> f(grid->nsubs, gridKK->k_conc, list, buf);
+    Kokkos::parallel_for(Kokkos::RangePolicy<LMPDeviceType>(first, last), f);
+    //}
+  return (last-first)*grid->nsubs;
+}
+
+/* ---------------------------------------------------------------------- */
+template <class DeviceType>
+struct GridVecMonodKokkos_UnpackComm
+{
+  int _nsubs;
+  
+  typedef ArrayTypes<DeviceType> AT;
+  typename AT::t_float_2d _conc;
+  typename AT::t_int_1d _list;
+  typename AT::t_xfloat_2d _buf;
+  
+  GridVecMonodKokkos_UnpackComm(
+    int nsubs,
+    const typename DAT::tdual_float_2d &conc,
+    const DAT::tdual_int_1d &list,
+    const DAT::tdual_xfloat_1d &buf):
+    _nsubs(nsubs),
+    _conc(conc.view<DeviceType>()),
+    _list(list.view<DeviceType>())
+  {
+    _buf = typename AT::t_xfloat_2d_um(
+      buf.view<DeviceType>().data(),
+      buf.view<DeviceType>().extent(0)/nsubs,
+      nsubs);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(int i) const
+  {
+    int cell = _list(i);
+    for (int j = 0; j < _nsubs; j++) {
+      _conc(j, cell) = _buf(i, j);
+    }
+  }
+};
+
+/* ---------------------------------------------------------------------- */
+
+void GridVecMonodKokkos::unpack_comm_kokkos(int first, int last, const DAT::tdual_int_1d &list, const DAT::tdual_xfloat_1d &buf)
+{
+  // if (lmp->kokkos->forward_comm_on_host) {
+  //   struct GridVecMonodKokkos_UnpackComm<LMPHostType> f(grid->nsubs, gridKK->k_conc, list, buf);
+  //   Kokkos::parallel_for(n, f);
+  //   gridKK->modified(Host, CONC_MASK);
+  // } else {
+    gridKK->sync(Device, CONC_MASK);
+    struct GridVecMonodKokkos_UnpackComm<LMPDeviceType> f(grid->nsubs, gridKK->k_conc, list, buf);
+    Kokkos::parallel_for(Kokkos::RangePolicy<LMPDeviceType>(first, last), f);
+    gridKK->modified(Device, CONC_MASK);
+    //}
+}
+
+/* ---------------------------------------------------------------------- */
+
+int GridVecMonodKokkos::pack_exchange_kokkos(int first, int last, const DAT::tdual_int_1d &list, const DAT::tdual_xfloat_1d &buf)
 {
 
 }
 
 /* ---------------------------------------------------------------------- */
 
-void GridVecMonodKokkos::unpack_comm_kokkos(int, const DAT::tdual_int_2d &list, const DAT::tdual_xfloat_2d &buf)
-{
-
-}
-
-/* ---------------------------------------------------------------------- */
-
-int GridVecMonodKokkos::pack_exchange_kokkos(int, const DAT::tdual_int_2d &list, const DAT::tdual_xfloat_2d &buf)
-{
-
-}
-
-/* ---------------------------------------------------------------------- */
-
-void GridVecMonodKokkos::unpack_exchange_kokkos(int, const DAT::tdual_int_2d &list, const DAT::tdual_xfloat_2d &buf)
+void GridVecMonodKokkos::unpack_exchange_kokkos(int first, int last, const DAT::tdual_int_1d &list, const DAT::tdual_xfloat_1d &buf)
 {
 
 }
@@ -173,6 +265,9 @@ void GridVecMonodKokkos::unpack_exchange_kokkos(int, const DAT::tdual_int_2d &li
 void GridVecMonodKokkos::set(int sub, double domain, double nx, double px,
 			     double ny, double py, double nz, double pz)
 {
+  sync(Host, GMASK_MASK);
+  sync(Host, CONC_MASK);
+  
   for (int i = 0; i < grid->ncells; i++) {
     if (!(mask[i] & CORNER_MASK)) {
       if (mask[i] & X_NB_MASK) {

@@ -31,7 +31,7 @@ class FixEPSAdhesion : public Fix {
   int setmask();
   virtual void post_force(int);
 
- private:
+ protected:
   int ieps;
   double ke;
   int disp;

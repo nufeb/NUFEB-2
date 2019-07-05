@@ -41,7 +41,8 @@
 
 // NUFEB specific
 
-#include "grid.h"
+#include "grid_kokkos.h"
+#include "grid_masks.h"
 #include "comm_grid.h"
 #include "fix_density.h"
 #include "fix_diffusion_reaction.h"
@@ -190,7 +191,7 @@ void NufebRunKokkos::setup(int flag)
 
   modify->setup(vflag);
   output->setup(flag);
-  lmp->kokkos->auto_sync = 1;
+  // lmp->kokkos->auto_sync = 1;
   update->setupflag = 0;
 
   // NUFEB specific
@@ -214,6 +215,8 @@ void NufebRunKokkos::setup(int flag)
 
   // compute density
   fix_density->compute();
+
+  gridKK->modified(Host,ALL_MASK);
   
   // run diffusion until it reaches steady state
   int niter = diffusion();
@@ -324,7 +327,7 @@ void NufebRunKokkos::setup_minimal(int flag)
   if (force->newton) comm->reverse_comm();
 
   modify->setup(vflag);
-  lmp->kokkos->auto_sync = 1;
+  // lmp->kokkos->auto_sync = 1;
   update->setupflag = 0;
 }
 
@@ -374,6 +377,7 @@ void NufebRunKokkos::run(int n)
     atomKK->sync(Host,ALL_MASK);
     growth();
     atomKK->modified(Host,ALL_MASK);
+    atomKK->sync(Device,ALL_MASK);
     
     update->dt = pairdt;
     reset_dt();
@@ -618,24 +622,21 @@ void NufebRunKokkos::run(int n)
     } while(fabs(press) > pairtol && ((pairmax > 0) ? niter < pairmax : true));
     if (comm->me == 0) fprintf(screen, "pair interaction: %d steps (pressure %e N/m2)\n", niter, press);
 
-    atomKK->sync(Host,ALL_MASK);
-
     // update densities
 
+    atomKK->sync(Host,ALL_MASK);
     fix_density->compute();
+    gridKK->modified(Host,DENS_MASK);
 
     // run diffusion until it reaches steady state
 
     niter = diffusion();
     if (comm->me == 0) fprintf(screen, "diffusion: %d steps\n", niter);
 
-    atomKK->modified(Host,ALL_MASK);
-
     // all output
 
     if (ntimestep == output->next) {
        atomKK->sync(Host,ALL_MASK);
-
       timer->stamp();
       output->write(ntimestep);
       timer->stamp(Timer::OUTPUT);
@@ -700,4 +701,90 @@ void NufebRunKokkos::force_clear()
   }
 }
 
+/* ---------------------------------------------------------------------- */
 
+void NufebRunKokkos::growth()
+{
+  // set biological dt
+
+  update->dt = biodt;
+  reset_dt();
+
+  // setup monod growth fixes for growth
+
+  for (int i = 0; i < nfix_monod; i++) {
+    fix_monod[i]->reaction_flag = 0;
+    fix_monod[i]->growth_flag = 1;
+  }
+
+  // grow atoms
+
+  for (int i = 0; i < nfix_monod; i++) {
+    fix_monod[i]->compute();
+  }
+
+  for (int i = 0; i < nfix_eps_extract; i++) {
+    fix_eps_extract[i]->compute();
+  }
+
+  for (int i = 0; i < nfix_divide; i++) {
+    fix_divide[i]->compute();
+  }
+
+  for (int i = 0; i < nfix_death; i++) {
+    fix_death[i]->compute();
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+int NufebRunKokkos::diffusion()
+{
+  // setup monod growth fixes for diffusion
+
+  for (int i = 0; i < nfix_monod; i++) {
+    fix_monod[i]->reaction_flag = 1;
+    fix_monod[i]->growth_flag = 0;
+  }
+
+  // set diffusion dt
+
+  update->dt = diffdt;
+  reset_dt();
+  
+  int niter = 0;
+  bool flag;
+  do {
+    timer->stamp();
+    comm_grid->forward_comm();
+    timer->stamp(Timer::COMM);
+
+    flag = true;
+    for (int i = 0; i < nfix_diffusion; i++) {
+      fix_diffusion[i]->compute_initial();
+    }
+
+    // gridKK->sync(Host, CONC_MASK);
+    // gridKK->sync(Host, REAC_MASK);
+    
+    for (int i = 0; i < nfix_monod; i++) {
+      fix_monod[i]->compute();
+    }
+
+    // gridKK->modified(Host, REAC_MASK);
+
+    for (int i = 0; i < nfix_diffusion; i++) {
+      fix_diffusion[i]->compute_final();
+      double res = fix_diffusion[i]->compute_scalar();
+      flag &= res < difftol;
+    }
+
+    timer->stamp(Timer::MODIFY);
+    ++niter;
+
+    if (diffmax > 0 && niter >= diffmax)
+      flag = true;
+    
+  } while (!flag);
+  return niter;
+}

@@ -36,7 +36,7 @@ class GridVecMonod : public GridVec {
   int pack_exchange(int, int *, double *);
   void unpack_exchange(int, int *, double *);
 
-  void set(int, double, double, double, double, double, double, double);
+  virtual void set(int, double, double, double, double, double, double, double);
 
  private:
   int *mask;

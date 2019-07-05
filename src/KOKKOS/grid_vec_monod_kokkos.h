@@ -38,10 +38,10 @@ class GridVecMonodKokkos : public GridVecKokkos {
   int pack_exchange(int, int *, double *);
   void unpack_exchange(int, int *, double *);
 
-  int pack_comm_kokkos(int, const DAT::tdual_int_2d &, const DAT::tdual_xfloat_2d &);
-  void unpack_comm_kokkos(int, const DAT::tdual_int_2d &, const DAT::tdual_xfloat_2d &);
-  int pack_exchange_kokkos(int, const DAT::tdual_int_2d &, const DAT::tdual_xfloat_2d &);
-  void unpack_exchange_kokkos(int, const DAT::tdual_int_2d &, const DAT::tdual_xfloat_2d &);
+  int pack_comm_kokkos(int, int, const DAT::tdual_int_1d &, const DAT::tdual_xfloat_1d &);
+  void unpack_comm_kokkos(int, int, const DAT::tdual_int_1d &, const DAT::tdual_xfloat_1d &);
+  int pack_exchange_kokkos(int, int, const DAT::tdual_int_1d &, const DAT::tdual_xfloat_1d &);
+  void unpack_exchange_kokkos(int, int, const DAT::tdual_int_1d &, const DAT::tdual_xfloat_1d &);
 
   void set(int, double, double, double, double, double, double, double);
 

@@ -82,9 +82,9 @@ void FixEPSAdhesion::post_force(int vflag)
   if (vflag) v_setup(vflag);
   else evflag = 0;
 
-  if (disp = DEFAULT) {
+  if (disp == DEFAULT) {
     compute<0>(vflag);
-  } else if (disp = SQUARE) {
+  } else if (disp == SQUARE) {
     compute<1>(vflag);
   }
 }

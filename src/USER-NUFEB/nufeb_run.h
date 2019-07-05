@@ -65,8 +65,8 @@ class NufebRun : public Integrate {
   class FixDivide **fix_divide;
   class FixDeath **fix_death;
   
-  void growth();
-  int diffusion();
+  virtual void growth();
+  virtual int diffusion();
 };
 
 }

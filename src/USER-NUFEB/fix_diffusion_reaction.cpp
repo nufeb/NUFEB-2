@@ -68,6 +68,7 @@ FixDiffusionReaction::FixDiffusionReaction(LAMMPS *lmp, int narg, char **arg) :
 
 FixDiffusionReaction::~FixDiffusionReaction()
 {
+  if (copymode) return;
   memory->destroy(prev);
 }
 
@@ -153,6 +154,11 @@ void FixDiffusionReaction::reset_dt()
 
 void FixDiffusionReaction::compute_initial()
 {
+  if (ncells != grid->ncells) {
+    ncells = grid->ncells;
+    prev = memory->grow(prev, ncells, "nufeb/diffusion_reaction:prev");
+  }
+
   for (int i = 0; i < grid->ncells; i++) {
     // Dirichlet boundary conditions
     if (grid->mask[i] & X_NB_MASK && grid->boundary[0] == DIRICHLET) {
@@ -223,7 +229,7 @@ void FixDiffusionReaction::compute_final()
       double dpz = diff_coef * (prev[pz] - prev[i]) / grid->cell_size;
       double ddz = (dpz - dnz) / grid->cell_size;
       // prevent negative concentrations
-      grid->conc[isub][i] = MAX(0, prev[i] + update->dt * (ddx + ddy + ddz + grid->reac[isub][i]));
+      grid->conc[isub][i] = MAX(0, prev[i] + dt * (ddx + ddy + ddz + grid->reac[isub][i]));
     }
   }
 }
