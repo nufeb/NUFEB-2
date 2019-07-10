@@ -13,29 +13,29 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/monod/het/kk,FixMonodHETKokkos<LMPDeviceType>)
-FixStyle(nufeb/monod/het/kk/device,FixMonodHETKokkos<LMPDeviceType>)
-FixStyle(nufeb/monod/het/kk/host,FixMonodHETKokkos<LMPHostType>)
+FixStyle(nufeb/monod/eps/kk,FixMonodEPSKokkos<LMPDeviceType>)
+FixStyle(nufeb/monod/eps/kk/device,FixMonodEPSKokkos<LMPDeviceType>)
+FixStyle(nufeb/monod/eps/kk/host,FixMonodEPSKokkos<LMPHostType>)
 
 #else
 
-#ifndef LMP_FIX_MONOD_HET_KOKKOS_H
-#define LMP_FIX_MONOD_HET_KOKKOS_H
+#ifndef LMP_FIX_MONOD_EPS_KOKKOS_H
+#define LMP_FIX_MONOD_EPS_KOKKOS_H
 
-#include "fix_monod_het.h"
+#include "fix_monod_eps.h"
 #include "kokkos_type.h"
 
 namespace LAMMPS_NS {
 
 template <int, int>
-struct FixMonodHETCellsTag {};
-struct FixMonodHETAtomsTag {};
+struct FixMonodEPSCellsTag {};
+struct FixMonodEPSAtomsTag {};
 
 template <class DeviceType>
-class FixMonodHETKokkos: public FixMonodHET {
+class FixMonodEPSKokkos: public FixMonodEPS {
  public:
-  FixMonodHETKokkos(class LAMMPS *, int, char **);
-  virtual ~FixMonodHETKokkos() {}
+  FixMonodEPSKokkos(class LAMMPS *, int, char **);
+  virtual ~FixMonodEPSKokkos() {}
   virtual void compute();
 
   template <int, int> void update_cells();
@@ -45,42 +45,25 @@ class FixMonodHETKokkos: public FixMonodHET {
   {
     int igroup;
     int isub;
-    int io2;
-    int ino2;
-    int ino3;
-    
-    double sub_affinity;
-    double o2_affinity;
-    double no2_affinity;
-    double no3_affinity;
-
-    double growth;
-    double yield;
-    double maintain;
     double decay;
-    double eps_yield;
-    double anoxic;
-    double eps_dens;
 
     typedef ArrayTypes<DeviceType> AT;
     typename AT::t_int_1d d_mask;
-    typename AT::t_float_2d d_conc;
     typename AT::t_float_2d d_reac;
     typename AT::t_float_2d d_dens;
     typename AT::t_float_3d d_growth;
 
-    Functor(FixMonodHETKokkos *ptr);
+    Functor(FixMonodEPSKokkos *ptr);
     
     template <int Reaction, int Growth>
     KOKKOS_INLINE_FUNCTION
-    void operator()(FixMonodHETCellsTag<Reaction, Growth>, int) const;
+    void operator()(FixMonodEPSCellsTag<Reaction, Growth>, int) const;
   };
 
  protected:
   typedef ArrayTypes<DeviceType> AT;
 
   typename AT::t_int_1d d_mask;
-  typename AT::t_float_2d d_conc;
   typename AT::t_float_2d d_reac;
   typename AT::t_float_2d d_dens;
   typename AT::t_float_3d d_growth;

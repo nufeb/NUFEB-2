@@ -42,15 +42,34 @@ class FixDiffusionReactionKokkos : public FixDiffusionReaction {
   virtual void compute_initial();
   virtual void compute_final();
 
-  KOKKOS_INLINE_FUNCTION
-  void operator()(FixDiffusionReactionInitialTag, int) const;
-  KOKKOS_INLINE_FUNCTION
-  void operator()(FixDiffusionReactionPreFinalTag, int) const;
-  KOKKOS_INLINE_FUNCTION
-  void operator()(FixDiffusionReactionFinalTag, int) const;
-  KOKKOS_INLINE_FUNCTION
-  void operator()(FixDiffusionReactionScalarTag, int, double &) const;
+  struct Functor
+  {
+    typedef ArrayTypes<DeviceType> AT;
 
+    typename AT::t_float_1d d_prev;
+    typename AT::t_float_2d d_conc;
+    typename AT::t_float_2d d_reac;
+    typename AT::t_int_1d d_mask;
+    double cell_size;
+    double diff_coef;
+    double dt;
+    int isub;
+    int subbox[3];
+    int boundary[6];
+    double dirichlet[6];
+
+    Functor(FixDiffusionReactionKokkos *ptr);
+    
+    KOKKOS_INLINE_FUNCTION
+    void operator()(FixDiffusionReactionInitialTag, int) const;
+    KOKKOS_INLINE_FUNCTION
+    void operator()(FixDiffusionReactionPreFinalTag, int) const;
+    KOKKOS_INLINE_FUNCTION
+    void operator()(FixDiffusionReactionFinalTag, int) const;
+    KOKKOS_INLINE_FUNCTION
+    void operator()(FixDiffusionReactionScalarTag, int, double &) const;
+  };
+  
  protected:
   double cell_size;
   int subbox[3];

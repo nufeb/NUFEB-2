@@ -67,7 +67,7 @@ void FixDiffusionReactionKokkos<DeviceType>::grow_arrays(int nmax)
 }
 
 /* ---------------------------------------------------------------------- */
-#include "comm.h"
+
 template <class DeviceType>
 double FixDiffusionReactionKokkos<DeviceType>::compute_scalar()
 {
@@ -78,11 +78,12 @@ double FixDiffusionReactionKokkos<DeviceType>::compute_scalar()
   gridKK->sync(execution_space, CONC_MASK);
 
   copymode = 1;
+  Functor f(this);
   double result = 0.0;
   Kokkos::parallel_reduce(
     Kokkos::RangePolicy<
     DeviceType,
-    FixDiffusionReactionScalarTag>(0, grid->ncells), *this, Kokkos::Max<double>(result));
+    FixDiffusionReactionScalarTag>(0, grid->ncells), f, Kokkos::Max<double>(result));
   DeviceType::fence();
   copymode = 0;
 
@@ -110,10 +111,11 @@ void FixDiffusionReactionKokkos<DeviceType>::compute_initial()
   gridKK->sync(execution_space, GMASK_MASK | CONC_MASK);
   
   copymode = 1;
+  Functor f(this);
   Kokkos::parallel_for(
     Kokkos::RangePolicy<
     DeviceType,
-    FixDiffusionReactionInitialTag>(0, grid->ncells), *this);
+    FixDiffusionReactionInitialTag>(0, grid->ncells), f);
   copymode = 0;
   
   gridKK->modified(execution_space, CONC_MASK | REAC_MASK);
@@ -138,14 +140,15 @@ void FixDiffusionReactionKokkos<DeviceType>::compute_final()
   gridKK->sync(execution_space, REAC_MASK);
   
   copymode = 1;
+  Functor f(this);
   Kokkos::parallel_for(
     Kokkos::RangePolicy<
     DeviceType,
-    FixDiffusionReactionPreFinalTag>(0, grid->ncells), *this);
+    FixDiffusionReactionPreFinalTag>(0, grid->ncells), f);
   Kokkos::parallel_for(
     Kokkos::RangePolicy<
     DeviceType,
-    FixDiffusionReactionFinalTag>(0, grid->ncells), *this);
+    FixDiffusionReactionFinalTag>(0, grid->ncells), f);
   copymode = 0;
 
   gridKK->modified(execution_space, CONC_MASK);
@@ -154,8 +157,25 @@ void FixDiffusionReactionKokkos<DeviceType>::compute_final()
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
+FixDiffusionReactionKokkos<DeviceType>::Functor::Functor(FixDiffusionReactionKokkos<DeviceType> *ptr):
+  d_prev(ptr->d_prev), d_conc(ptr->d_conc),
+  d_reac(ptr->d_reac), d_mask(ptr->d_mask),
+  cell_size(ptr->cell_size), diff_coef(ptr->diff_coef), dt(ptr->dt),
+  isub(ptr->isub)
+{
+  for (int i = 0; i < 3; i++)
+    subbox[i] = ptr->subbox[i];
+  for (int i = 0; i < 6; i++) {
+    boundary[i] = ptr->boundary[i];
+    dirichlet[i] = ptr->dirichlet[i];
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+template <class DeviceType>
 KOKKOS_INLINE_FUNCTION
-void FixDiffusionReactionKokkos<DeviceType>::operator()(FixDiffusionReactionInitialTag, int i) const
+void FixDiffusionReactionKokkos<DeviceType>::Functor::operator()(FixDiffusionReactionInitialTag, int i) const
 {
   // Dirichlet boundary conditions
   if (d_mask(i) & X_NB_MASK && boundary[0] == DIRICHLET) {
@@ -178,7 +198,7 @@ void FixDiffusionReactionKokkos<DeviceType>::operator()(FixDiffusionReactionInit
 
 template <class DeviceType>
 KOKKOS_INLINE_FUNCTION
-void FixDiffusionReactionKokkos<DeviceType>::operator()(FixDiffusionReactionPreFinalTag, int i) const
+void FixDiffusionReactionKokkos<DeviceType>::Functor::operator()(FixDiffusionReactionPreFinalTag, int i) const
 {
   int nx = subbox[0];
   int nxy = subbox[0] * subbox[1];
@@ -207,7 +227,7 @@ void FixDiffusionReactionKokkos<DeviceType>::operator()(FixDiffusionReactionPreF
 
 template <class DeviceType>
 KOKKOS_INLINE_FUNCTION
-void FixDiffusionReactionKokkos<DeviceType>::operator()(FixDiffusionReactionFinalTag, int i) const
+void FixDiffusionReactionKokkos<DeviceType>::Functor::operator()(FixDiffusionReactionFinalTag, int i) const
 {
   int nxy = subbox[0] * subbox[1];
   if (!(d_mask(i) & GHOST_MASK)) {
@@ -235,7 +255,7 @@ void FixDiffusionReactionKokkos<DeviceType>::operator()(FixDiffusionReactionFina
 
 template <class DeviceType>
 KOKKOS_INLINE_FUNCTION
-void FixDiffusionReactionKokkos<DeviceType>::operator()(FixDiffusionReactionScalarTag, int i, double &max) const
+void FixDiffusionReactionKokkos<DeviceType>::Functor::operator()(FixDiffusionReactionScalarTag, int i, double &max) const
 {
   if (!(d_mask(i) & GHOST_MASK)) 
     max = fabs((d_conc(isub, i) - d_prev(i)) / d_prev(i));
