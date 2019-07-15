@@ -28,6 +28,9 @@ FixStyle(wall/gran/kk/host,FixWallGranKokkos<LMPHostType>)
 
 namespace LAMMPS_NS {
 
+template <int WallStyle>
+struct FixWallGranTag {};
+  
 template<class DeviceType>
 class FixWallGranKokkos : public FixWallGran, public KokkosBase {
  public:
@@ -49,37 +52,64 @@ class FixWallGranKokkos : public FixWallGran, public KokkosBase {
                               int nlocal,int dim,X_FLOAT lo,X_FLOAT hi,
                               ExecutionSpace space);
 
-  template <int WallStyle>
-  KOKKOS_INLINE_FUNCTION
-  void hooke_history_item(const int &i) const;
+  struct Functor
+  {
+    int groupbit;
+    int history_update;
+    int use_history;
+    int axis;
+    
+    X_FLOAT wlo;
+    X_FLOAT whi;
 
+    double kn;
+    double kt;
+    double gamman;
+    double gammat;
+    double xmu;
+    double dt;
+    double vshear;
+    double wshear;
+    double cylradius;
+    
+    typedef ArrayTypes<DeviceType> AT;
+    typename AT::t_x_array d_x;
+    typename AT::t_v_array d_v;
+    typename AT::t_v_array d_omega;
+    typename AT::t_f_array d_f;
+    typename AT::t_f_array d_torque;
+    typename AT::t_int_1d d_mask;
+    typename AT::t_float_1d d_rmass;
+    typename AT::t_float_1d d_radius;
+    typename AT::t_float_2d d_history_one;
+
+    V_FLOAT vwall[3];
+    
+    Functor(FixWallGranKokkos *ptr);
+
+    template <int WallStyle>
+    KOKKOS_INLINE_FUNCTION
+    void operator()(FixWallGranTag<WallStyle>, int) const;
+  };
+  
  protected:
   X_FLOAT wlo;
   X_FLOAT whi;
   V_FLOAT vwall[3];
 
   typedef ArrayTypes<DeviceType> AT;
-  typename AT::t_x_array x;
-  typename AT::t_v_array v;
-  typename AT::t_v_array omega_;
-  typename AT::t_f_array f;
-  typename AT::t_f_array torque;
-  typename AT::t_int_1d mask;
-  typename AT::t_float_1d rmass;
-  typename AT::t_float_1d radius_;
+  typename AT::t_x_array d_x;
+  typename AT::t_v_array d_v;
+  typename AT::t_v_array d_omega;
+  typename AT::t_f_array d_f;
+  typename AT::t_f_array d_torque;
+  typename AT::t_int_1d d_mask;
+  typename AT::t_float_1d d_rmass;
+  typename AT::t_float_1d d_radius;
   typename AT::tdual_float_2d k_history_one;
   typename AT::t_float_2d d_history_one;
 };
 
-template <class DeviceType, int WallStyle>
-struct FixWallGranKokkosHookeHistoryFunctor {
-  FixWallGranKokkos<DeviceType> c;
-  FixWallGranKokkosHookeHistoryFunctor(FixWallGranKokkos<DeviceType> *c_ptr): c(*c_ptr) {}
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const int &i) const {
-    c.template hooke_history_item<WallStyle>(i);
-  }
-};
 }
 
 #endif

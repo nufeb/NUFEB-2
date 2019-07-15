@@ -130,6 +130,9 @@ ComputePressure::ComputePressure(LAMMPS *lmp, int narg, char **arg) :
 
 ComputePressure::~ComputePressure()
 {
+  if (copymode)
+    return;
+
   delete [] id_temp;
   delete [] vector;
   delete [] vptr;

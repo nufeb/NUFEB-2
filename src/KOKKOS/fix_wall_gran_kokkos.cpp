@@ -91,31 +91,28 @@ void FixWallGranKokkos<DeviceType>::post_force(int /*vflag*/)
 
   copymode = 1;
 
-  x = atomKK->k_x.view<DeviceType>();
-  v = atomKK->k_v.view<DeviceType>();
-  omega_ = atomKK->k_omega.view<DeviceType>();
-  f = atomKK->k_f.view<DeviceType>();
-  torque = atomKK->k_torque.view<DeviceType>();
-  mask = atomKK->k_mask.view<DeviceType>();
-  rmass = atomKK->k_rmass.view<DeviceType>();
-  radius_ = atomKK->k_radius.view<DeviceType>();
+  d_x = atomKK->k_x.view<DeviceType>();
+  d_v = atomKK->k_v.view<DeviceType>();
+  d_omega = atomKK->k_omega.view<DeviceType>();
+  d_f = atomKK->k_f.view<DeviceType>();
+  d_torque = atomKK->k_torque.view<DeviceType>();
+  d_mask = atomKK->k_mask.view<DeviceType>();
+  d_rmass = atomKK->k_rmass.view<DeviceType>();
+  d_radius = atomKK->k_radius.view<DeviceType>();
   int nlocal = atom->nlocal;
 
   if (pairstyle == HOOKE)
     error->all(FLERR, "wall/gran/kk doesn't yet support hooke style.");
   else if (pairstyle == HOOKE_HISTORY) {
+    Functor f(this);
     if (wallstyle == XPLANE) {
-      FixWallGranKokkosHookeHistoryFunctor<DeviceType, XPLANE> f(this);
-      Kokkos::parallel_for(nlocal,f);
+      Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixWallGranTag<XPLANE> >(0, nlocal), f);
     } else if (wallstyle == YPLANE) {
-      FixWallGranKokkosHookeHistoryFunctor<DeviceType, YPLANE> f(this);
-      Kokkos::parallel_for(nlocal,f);
+      Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixWallGranTag<YPLANE> >(0, nlocal), f);
     } else if (wallstyle == ZPLANE) {
-      FixWallGranKokkosHookeHistoryFunctor<DeviceType, ZPLANE> f(this);
-      Kokkos::parallel_for(nlocal,f);
+      Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixWallGranTag<ZPLANE> >(0, nlocal), f);
     } else if (wallstyle == ZCYLINDER) {
-      FixWallGranKokkosHookeHistoryFunctor<DeviceType, ZCYLINDER> f(this);
-      Kokkos::parallel_for(nlocal,f);
+      Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixWallGranTag<ZCYLINDER> >(0, nlocal), f);
     }
   }
   else if (pairstyle == HERTZ_HISTORY)
@@ -127,47 +124,72 @@ void FixWallGranKokkos<DeviceType>::post_force(int /*vflag*/)
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
+FixWallGranKokkos<DeviceType>::Functor::Functor(FixWallGranKokkos<DeviceType> *ptr):
+  groupbit(ptr->groupbit),
+  history_update(ptr->history_update),
+  use_history(ptr->use_history),
+  axis(ptr->axis),
+  wlo(ptr->wlo), whi(ptr->whi),
+  kn(ptr->kn), kt(ptr->kt),
+  gamman(ptr->gamman), gammat(ptr->gammat),
+  xmu(ptr->xmu), dt(ptr->dt),
+  vshear(ptr->vshear), wshear(ptr->wshear),
+  cylradius(ptr->cylradius),
+  d_x(ptr->d_x), d_v(ptr->d_v),
+  d_omega(ptr->d_omega), d_f(ptr->d_f),
+  d_torque(ptr->d_torque), d_mask(ptr->d_mask),
+  d_rmass(ptr->d_rmass), d_radius(ptr->d_radius),
+  d_history_one(ptr->d_history_one)
+{
+  for (int i = 0; i < 3; i++) {
+    vwall[i] = ptr->vwall[i];
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+template <class DeviceType>
 template <int WallStyle>
-void FixWallGranKokkos<DeviceType>::hooke_history_item(const int &i) const
+void FixWallGranKokkos<DeviceType>::Functor::operator()(FixWallGranTag<WallStyle>, int i) const
 {
   double vwall_[3];
   vwall_[0] = vwall[0];
   vwall_[1] = vwall[1];
   vwall_[2] = vwall[2];
   
-  if (mask[i] & groupbit) {
-    X_FLOAT radius = radius_(i);
+  if (d_mask[i] & groupbit) {
+    X_FLOAT radius = d_radius(i);
 
     double dx = 0.0;
     double dy = 0.0;
     double dz = 0.0;
     
     if (WallStyle == XPLANE) {
-      X_FLOAT del1 = x(i,0) - wlo;
-      double del2 = whi - x(i,0);
+      X_FLOAT del1 = d_x(i,0) - wlo;
+      double del2 = whi - d_x(i,0);
       if (del1 < del2) dx = del1;
       else dx = -del2;
     } else if (WallStyle == YPLANE) {
-      double del1 = x(i,1) - wlo;
-      double del2 = whi - x(i,1);
+      double del1 = d_x(i,1) - wlo;
+      double del2 = whi - d_x(i,1);
       if (del1 < del2) dy = del1;
       else dy = -del2;
     } else if (WallStyle == ZPLANE) {
-      double del1 = x(i,2) - wlo;
-      double del2 = whi - x(i,2);
+      double del1 = d_x(i,2) - wlo;
+      double del2 = whi - d_x(i,2);
       if (del1 < del2) dz = del1;
       else dz = -del2;
     } else if (WallStyle == ZCYLINDER) {
-      double delxy = sqrt(x(i,0)*x(i,0) + x(i,1)*x(i,1));
+      double delxy = sqrt(d_x(i,0)*d_x(i,0) + d_x(i,1)*d_x(i,1));
       double delr = cylradius - delxy;
       if (delr > radius) {
     	dz = cylradius;
       } else {
-    	dx = -delr/delxy * x(i,0);
-    	dy = -delr/delxy * x(i,1);
+    	dx = -delr/delxy * d_x(i,0);
+    	dy = -delr/delxy * d_x(i,1);
      	if (wshear && axis != 2) {
-    	  vwall_[0] += vshear * x(i,1)/delxy;
-    	  vwall_[1] += -vshear * x(i,0)/delxy;
+    	  vwall_[0] += vshear * d_x(i,1)/delxy;
+    	  vwall_[1] += -vshear * d_x(i,0)/delxy;
     	  vwall_[2] = 0.0;
     	}
       }
@@ -181,16 +203,16 @@ void FixWallGranKokkos<DeviceType>::hooke_history_item(const int &i) const
     	  d_history_one(i,j) = 0.0;
     } else {
       // meff = effective mass of sphere
-      double meff = rmass(i);
+      double meff = d_rmass(i);
       double r = sqrt(rsq);
       double rinv = 1.0/r;
       double rsqinv = 1.0/rsq;
 
       // relative translational velocity
 
-      double vr1 = v(i,0) - vwall_[0];
-      double vr2 = v(i,1) - vwall_[1];
-      double vr3 = v(i,2) - vwall_[2];
+      double vr1 = d_v(i,0) - vwall_[0];
+      double vr2 = d_v(i,1) - vwall_[1];
+      double vr3 = d_v(i,2) - vwall_[2];
 
       // normal component
 
@@ -207,9 +229,9 @@ void FixWallGranKokkos<DeviceType>::hooke_history_item(const int &i) const
 
       // relative rotational velocity
 
-      double wr1 = radius*omega_(i,0) * rinv;
-      double wr2 = radius*omega_(i,1) * rinv;
-      double wr3 = radius*omega_(i,2) * rinv;
+      double wr1 = radius*d_omega(i,0) * rinv;
+      double wr2 = radius*d_omega(i,1) * rinv;
+      double wr3 = radius*d_omega(i,2) * rinv;
 
       // normal forces = Hookian contact + normal velocity damping
 
@@ -273,16 +295,16 @@ void FixWallGranKokkos<DeviceType>::hooke_history_item(const int &i) const
       double fx = dx*ccel + fs1;
       double fy = dy*ccel + fs2;
       double fz = dz*ccel + fs3;
-      f(i,0) += fx;
-      f(i,1) += fy;
-      f(i,2) += fz;
+      d_f(i,0) += fx;
+      d_f(i,1) += fy;
+      d_f(i,2) += fz;
 
       double tor1 = rinv * (dy*fs3 - dz*fs2);
       double tor2 = rinv * (dz*fs1 - dx*fs3);
       double tor3 = rinv * (dx*fs2 - dy*fs1);
-      torque(i,0) -= radius*tor1;
-      torque(i,1) -= radius*tor2;
-      torque(i,2) -= radius*tor3;
+      d_torque(i,0) -= radius*tor1;
+      d_torque(i,1) -= radius*tor2;
+      d_torque(i,2) -= radius*tor3;
     }
   }
 }

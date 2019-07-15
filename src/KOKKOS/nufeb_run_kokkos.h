@@ -31,6 +31,7 @@ class NufebRunKokkos : public NufebRun {
  public:
   NufebRunKokkos(class LAMMPS *, int, char **);
   ~NufebRunKokkos() {}
+  void init();
   void setup(int);
   void setup_minimal(int);
   void run(int);
@@ -42,13 +43,13 @@ class NufebRunKokkos : public NufebRun {
     f(i,2) += f_merge_copy(i,2);
   }
 
-
  protected:
   DAT::t_f_array f_merge_copy,f;
 
   void force_clear();
   void growth();
   int diffusion();
+  void disable_sync(class Fix *fix);
 };
 
 }

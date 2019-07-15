@@ -37,9 +37,31 @@ class FixEPSAdhesionKokkos : public FixEPSAdhesion {
   ~FixEPSAdhesionKokkos() {}
   virtual void post_force(int);
 
-  template <int NEIGHFLAG, int NEWTON_PAIR, int DISP>
-  KOKKOS_INLINE_FUNCTION
-  void operator()(FixEPSAdhesionTag<NEIGHFLAG, NEWTON_PAIR, DISP>, int) const;
+  struct Functor
+  {
+    int groupbit;
+    int epsmask;
+    int nlocal;
+    double ke;
+
+    typedef ArrayTypes<DeviceType> AT;
+    typename AT::t_neighbors_2d d_neighbors;
+    typename AT::t_int_1d_randomread d_ilist;
+    typename AT::t_int_1d_randomread d_numneigh;
+    typename AT::t_x_array d_x;
+    typename AT::t_f_array d_f;
+    typename AT::t_int_1d d_mask;
+    typename AT::t_float_1d d_rmass;
+    typename AT::t_float_1d d_radius;
+    typename AT::t_float_1d d_outer_mass;
+    typename AT::t_float_1d d_outer_radius;
+
+    Functor(FixEPSAdhesionKokkos *ptr);
+
+    template <int NEIGHFLAG, int NEWTON_PAIR, int DISP>
+    KOKKOS_INLINE_FUNCTION
+    void operator()(FixEPSAdhesionTag<NEIGHFLAG, NEWTON_PAIR, DISP>, int) const;
+  };
 
  private:
   int epsmask;

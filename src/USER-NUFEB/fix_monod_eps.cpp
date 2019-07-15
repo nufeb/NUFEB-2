@@ -75,7 +75,6 @@ void FixMonodEPS::compute()
 template <int Reaction, int Growth>
 void FixMonodEPS::update_cells()
 {
-  double **conc = grid->conc;
   double **reac = grid->reac;
   double **dens = grid->dens;
 

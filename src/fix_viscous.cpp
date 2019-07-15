@@ -61,6 +61,7 @@ FixViscous::FixViscous(LAMMPS *lmp, int narg, char **arg) :
 
 FixViscous::~FixViscous()
 {
+  if (copymode) return;
   delete [] gamma;
 }
 

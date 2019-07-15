@@ -17,6 +17,7 @@
 #include "error.h"
 #include "force.h"
 #include "group.h"
+#include "atom_masks.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -80,7 +81,6 @@ void FixDeath::post_integrate()
 
 void FixDeath::compute()
 {
-  int *type = atom->type;
   int *mask = atom->mask;
   double *radius = atom->radius;
 
