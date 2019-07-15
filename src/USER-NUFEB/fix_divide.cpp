@@ -25,6 +25,7 @@
 #include "update.h"
 #include "modify.h"
 #include "domain.h"
+#include "atom_masks.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -45,7 +46,7 @@ FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) :
   diameter = force->numeric(FLERR, arg[3]);
   eps_density = force->numeric(FLERR, arg[4]);
   seed = force->inumeric(FLERR, arg[5]);
-
+  
   // Random number generator, same for all procs
   random = new RanPark(lmp, seed);
 

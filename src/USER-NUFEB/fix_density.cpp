@@ -20,6 +20,7 @@
 #include "grid.h"
 #include "domain.h"
 #include "group.h"
+#include "atom_masks.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;

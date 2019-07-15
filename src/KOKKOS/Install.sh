@@ -89,8 +89,12 @@ action comm_grid_kokkos.cpp
 action comm_grid_kokkos.h
 action comm_tiled_kokkos.cpp
 action comm_tiled_kokkos.h
+action compute_ke_kokkos.cpp
+action compute_ke_kokkos.h
 action compute_temp_kokkos.cpp
 action compute_temp_kokkos.h
+action compute_volume_kokkos.cpp compute_volume.cpp
+action compute_volume_kokkos.h compute_volume.h
 action dihedral_charmm_kokkos.cpp dihedral_charmm.cpp
 action dihedral_charmm_kokkos.h dihedral_charmm.h
 action dihedral_class2_kokkos.cpp dihedral_class2.cpp 
@@ -129,6 +133,8 @@ action fix_npt_kokkos.cpp
 action fix_npt_kokkos.h
 action fix_nve_kokkos.cpp
 action fix_nve_kokkos.h
+action fix_nve_limit_kokkos.cpp
+action fix_nve_limit_kokkos.h
 action fix_nve_sphere_kokkos.cpp
 action fix_nve_sphere_kokkos.h
 action fix_nvt_kokkos.cpp
@@ -147,6 +153,8 @@ action fix_shardlow_kokkos.cpp fix_shardlow.cpp
 action fix_shardlow_kokkos.h fix_shardlow.h
 action fix_momentum_kokkos.cpp
 action fix_momentum_kokkos.h
+action fix_viscous_kokkos.cpp
+action fix_viscous_kokkos.h
 action fix_wall_lj93_kokkos.cpp
 action fix_wall_lj93_kokkos.h
 action fix_wall_reflect_kokkos.cpp

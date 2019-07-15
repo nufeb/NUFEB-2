@@ -23,6 +23,7 @@
 #include "group.h"
 #include "lammps.h"
 #include "kokkos.h"
+#include "atom_masks.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -39,6 +40,9 @@ FixEPSAdhesionKokkos<DeviceType>::FixEPSAdhesionKokkos(LAMMPS *lmp, int narg, ch
   execution_space = ExecutionSpaceFromDevice<DeviceType>::space;
 
   virial_flag = 0;
+
+  datamask_read = X_MASK | F_MASK | MASK_MASK | RMASS_MASK | RADIUS_MASK | OUTER_MASS_MASK | OUTER_RADIUS_MASK;
+  datamask_modify = F_MASK;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -62,34 +66,38 @@ void FixEPSAdhesionKokkos<DeviceType>::post_force(int)
 
   epsmask = group->bitmask[ieps];
   nlocal = atom->nlocal;
-  
+
+  atomKK->sync(execution_space,datamask_read);
+  atomKK->modified(execution_space,datamask_modify);
+
   copymode = 1;
+  Functor f(this);
   if (lmp->kokkos->neighflag == HALF) {
     if (force->newton_pair) {
       if (disp == DEFAULT) {
-	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<HALF, 0, 0> >(0, inum), *this);
+	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<HALF, 0, 0> >(0, inum), f);
       } else if (disp == SQUARE) {
-	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<HALF, 0, 1> >(0, inum), *this);
+	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<HALF, 0, 1> >(0, inum), f);
       }
     } else {
       if (disp == DEFAULT) {
-	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<HALF, 1, 0> >(0, inum), *this);
+	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<HALF, 1, 0> >(0, inum), f);
       } else if (disp == SQUARE) {
-	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<HALF, 1, 1> >(0, inum), *this);
+	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<HALF, 1, 1> >(0, inum), f);
       }
     }
   } else { // HALFTHREAD
     if (force->newton_pair) {
       if (disp == DEFAULT) {
-	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<HALFTHREAD, 0, 0> >(0, inum), *this);
+	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<HALFTHREAD, 0, 0> >(0, inum), f);
       } else if (disp == SQUARE) {
-	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<HALFTHREAD, 0, 1> >(0, inum), *this);
+	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<HALFTHREAD, 0, 1> >(0, inum), f);
       }
     } else {
       if (disp == DEFAULT) {
-	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<HALFTHREAD, 1, 0> >(0, inum), *this);
+	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<HALFTHREAD, 1, 0> >(0, inum), f);
       } else if (disp == SQUARE) {
-	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<HALFTHREAD, 1, 1> >(0, inum), *this);
+	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<HALFTHREAD, 1, 1> >(0, inum), f);
       }
     }
   }
@@ -99,9 +107,19 @@ void FixEPSAdhesionKokkos<DeviceType>::post_force(int)
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
+FixEPSAdhesionKokkos<DeviceType>::Functor::Functor(FixEPSAdhesionKokkos<DeviceType> *ptr):
+  groupbit(ptr->groupbit), epsmask(ptr->epsmask), nlocal(ptr->nlocal), ke(ptr->ke),
+  d_neighbors(ptr->d_neighbors), d_ilist(ptr->d_ilist), d_numneigh(ptr->d_numneigh),
+  d_x(ptr->d_x), d_f(ptr->d_f), d_mask(ptr->d_mask), d_rmass(ptr->d_rmass),
+  d_radius(ptr->d_radius), d_outer_mass(ptr->d_outer_mass),
+  d_outer_radius(ptr->d_outer_radius) {}
+
+/* ---------------------------------------------------------------------- */
+
+template <class DeviceType>
 template <int NEIGHFLAG, int NEWTON_PAIR, int DISP>
 KOKKOS_INLINE_FUNCTION
-void FixEPSAdhesionKokkos<DeviceType>::operator()(FixEPSAdhesionTag<NEIGHFLAG, NEWTON_PAIR, DISP>, int ii) const
+void FixEPSAdhesionKokkos<DeviceType>::Functor::operator()(FixEPSAdhesionTag<NEIGHFLAG, NEWTON_PAIR, DISP>, int ii) const
 {
   // The f array is atomic for Half/Thread neighbor style
   Kokkos::View<F_FLOAT*[3], typename DAT::t_f_array::array_layout,DeviceType,Kokkos::MemoryTraits<AtomicF<NEIGHFLAG>::value> > a_f = d_f;

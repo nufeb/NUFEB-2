@@ -17,8 +17,8 @@
 #include "neighbor.h"
 #include "domain.h"
 #include "comm.h"
-#include "atom.h"
 #include "atom_kokkos.h"
+#include "atom_vec_kokkos.h"
 #include "atom_masks.h"
 #include "force.h"
 #include "pair.h"
@@ -85,6 +85,113 @@ struct Zero {
 
 NufebRunKokkos::NufebRunKokkos(LAMMPS *lmp, int narg, char **arg) :
   NufebRun(lmp, narg, arg) {}
+
+/* ----------------------------------------------------------------------
+   initialization before run
+------------------------------------------------------------------------- */
+
+void NufebRunKokkos::init()
+{
+  // this is required because many places check for verlet style
+  delete [] update->integrate_style;
+  update->integrate_style = new char[7];
+  strcpy(update->integrate_style, "verlet/nufeb\0");
+
+  // create fix nufeb/density
+  char **fixarg = new char*[3];
+  fixarg[0] = (char *)"nufeb_density";
+  fixarg[1] = (char *)"all";
+  fixarg[2] = (char *)"nufeb/density";
+  modify->add_fix(3, fixarg, 1);
+  delete [] fixarg;
+  fix_density = (FixDensity *)modify->fix[modify->nfix-1];
+
+  // allocate space for storing fixes
+  fix_monod = new FixMonod*[modify->nfix];
+  fix_diffusion = new FixDiffusionReaction*[modify->nfix];
+  fix_eps_extract = new FixEPSExtract*[modify->nfix];
+  fix_divide = new FixDivide*[modify->nfix];
+  fix_death = new FixDeath*[modify->nfix];
+
+  // find fixes
+  for (int i = 0; i < modify->nfix; i++) {
+    if (strstr(modify->fix[i]->style, "nufeb/monod")) {
+      fix_monod[nfix_monod++] = (FixMonod *)modify->fix[i];
+    } else if (strstr(modify->fix[i]->style, "nufeb/diffusion_reaction")) {
+      fix_diffusion[nfix_diffusion++] = (FixDiffusionReaction *)modify->fix[i];
+    } else if (strstr(modify->fix[i]->style, "nufeb/eps_extract")) {
+      fix_eps_extract[nfix_eps_extract++] = (FixEPSExtract *)modify->fix[i];
+    } else if (strstr(modify->fix[i]->style, "nufeb/divide")) {
+      fix_divide[nfix_divide++] = (FixDivide *)modify->fix[i];
+    } else if (strstr(modify->fix[i]->style, "nufeb/death")) {
+      fix_death[nfix_death++] = (FixDeath *)modify->fix[i];
+    }
+  }
+
+  // create compute volume
+  char **volarg = new char*[3];
+  volarg[0] = (char *)"nufeb_volume";
+  volarg[1] = (char *)"all";
+  volarg[2] = (char *)"nufeb/volume/kk";
+  modify->add_compute(3, volarg, 1);
+  delete [] volarg;
+  comp_volume = (ComputeVolume *)modify->compute[modify->ncompute-1];
+
+  // create compute pressure
+  char **pressarg = new char*[6];
+  pressarg[0] = (char *)"nufeb_pressure";
+  pressarg[1] = (char *)"all";
+  pressarg[2] = (char *)"pressure";
+  pressarg[3] = (char *)"NULL";
+  pressarg[4] = (char *)"pair";
+  pressarg[5] = (char *)"fix";
+  modify->add_compute(6, pressarg, 1);
+  delete [] pressarg;
+  comp_pressure = (ComputePressure *)modify->compute[modify->ncompute-1];
+
+  // create compute ke
+  char **kearg = new char*[3];
+  kearg[0] = (char *)"nufeb_ke";
+  kearg[1] = (char *)"all";
+  kearg[2] = (char *)"ke/kk";
+  modify->add_compute(3, kearg, 1);
+  delete [] kearg;
+  comp_ke = (ComputeKE *)modify->compute[modify->ncompute-1];
+
+  Integrate::init();
+
+  // warn if no fixes
+
+  if (modify->nfix == 0 && comm->me == 0)
+    error->warning(FLERR,"No fixes defined, atoms won't move");
+
+  // virial_style:
+  // 1 if computed explicitly by pair->compute via sum over pair interactions
+  // 2 if computed implicitly by pair->virial_fdotr_compute via sum over ghosts
+
+  if (force->newton_pair) virial_style = 2;
+  else virial_style = 1;
+
+  // setup lists of computes for global and per-atom PE and pressure
+
+  ev_setup();
+
+  // detect if fix omp is present for clearing force arrays
+
+  int ifix = modify->find_fix("package_omp");
+  if (ifix >= 0) external_force_clear = 1;
+
+  // set flags for arrays to clear in force_clear()
+
+  torqueflag = extraflag = 0;
+  if (atom->torque_flag) torqueflag = 1;
+  if (atom->avec->forceclearflag) extraflag = 1;
+
+  // check if simulation box is orthogonal
+  if (domain->triclinic)
+    error->all(FLERR, "Triclinic simulation box not supported in nufeb run style");
+  triclinic = 0;
+}
 
 /* ----------------------------------------------------------------------
    setup before run
@@ -200,16 +307,25 @@ void NufebRunKokkos::setup(int flag)
   
   // disable all fixes that will be called directly
   fix_density->compute_flag = 0;
-  for (int i = 0; i < nfix_monod; i++)
+  disable_sync(fix_density);
+  for (int i = 0; i < nfix_monod; i++) {
     fix_monod[i]->compute_flag = 0;
-  for (int i = 0; i < nfix_diffusion; i++)
+  }
+  for (int i = 0; i < nfix_diffusion; i++) {
     fix_diffusion[i]->compute_flag = 0;
-  for (int i = 0; i < nfix_eps_extract; i++)
+  }
+  for (int i = 0; i < nfix_eps_extract; i++) {
     fix_eps_extract[i]->compute_flag = 0;
-  for (int i = 0; i < nfix_divide; i++)
+    disable_sync(fix_eps_extract[i]);
+  }
+  for (int i = 0; i < nfix_divide; i++) {
     fix_divide[i]->compute_flag = 0;
-  for (int i = 0; i < nfix_death; i++)
+    disable_sync(fix_divide[i]);
+  }
+  for (int i = 0; i < nfix_death; i++) {
     fix_death[i]->compute_flag = 0;
+    disable_sync(fix_death[i]);
+  }
 
   atomKK->sync(Host,ALL_MASK);
 
@@ -373,7 +489,8 @@ void NufebRunKokkos::run(int n)
     comp_pressure->addstep(ntimestep);
 
     ev_set(ntimestep);
-    
+
+    gridKK->sync(Host,ALL_MASK);
     atomKK->sync(Host,ALL_MASK);
     growth();
     atomKK->modified(Host,ALL_MASK);
@@ -630,13 +747,14 @@ void NufebRunKokkos::run(int n)
 
     // run diffusion until it reaches steady state
 
-    niter = diffusion();
-    if (comm->me == 0) fprintf(screen, "diffusion: %d steps\n", niter);
+    ndiff = diffusion();
+    if (comm->me == 0) fprintf(screen, "diffusion: %d steps\n", ndiff);
 
     // all output
 
     if (ntimestep == output->next) {
-       atomKK->sync(Host,ALL_MASK);
+      atomKK->sync(Host,ALL_MASK);
+      gridKK->sync(Host,ALL_MASK);
       timer->stamp();
       output->write(ntimestep);
       timer->stamp(Timer::OUTPUT);
@@ -787,4 +905,13 @@ int NufebRunKokkos::diffusion()
     
   } while (!flag);
   return niter;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void NufebRunKokkos::disable_sync(Fix *fix)
+{
+  fix->datamask_read = EMPTY_MASK;
+  fix->datamask_modify = EMPTY_MASK;
+  fix->kokkosable = 1;
 }

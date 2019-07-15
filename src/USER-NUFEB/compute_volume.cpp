@@ -13,6 +13,7 @@
 
 #include "compute_volume.h"
 #include "atom.h"
+#include "update.h"
 #include "error.h"
 
 using namespace LAMMPS_NS;
@@ -33,6 +34,8 @@ ComputeVolume::ComputeVolume(LAMMPS *lmp, int narg, char **arg) :
 
 double ComputeVolume::compute_scalar()
 {
+  invoked_scalar = update->ntimestep;
+
   scalar = 0.0;
   for (int i = 0; i < atom->nlocal; i++) {
     double r = atom->radius[i];
