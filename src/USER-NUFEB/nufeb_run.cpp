@@ -57,6 +57,9 @@ using namespace LAMMPS_NS;
 NufebRun::NufebRun(LAMMPS *lmp, int narg, char **arg) :
   Integrate(lmp, narg, arg)
 {
+  ndiff = 0;
+  npair = 0;
+
   biodt = 1.0;
   diffdt = 1.0;
   difftol = 1.0;
@@ -127,7 +130,7 @@ void NufebRun::init()
   // this is required because many places check for verlet style
   delete [] update->integrate_style;
   update->integrate_style = new char[7];
-  strcpy(update->integrate_style, "verlet\0");
+  strcpy(update->integrate_style, "verlet/nufeb\0");
 
   // create fix nufeb/density
   char **fixarg = new char*[3];
@@ -430,7 +433,7 @@ void NufebRun::run(int n)
     reset_dt();
     
     double vol = comp_volume->compute_scalar();
-    int niter = 0;
+    npair = 0;
     double press = 0.0;
     do {
       // initial time integration
@@ -530,13 +533,13 @@ void NufebRun::run(int n)
       if (n_end_of_step) modify->end_of_step();
       timer->stamp(Timer::MODIFY);
 
-      ++niter;
+      ++npair;
 
       press = comp_pressure->compute_scalar() * domain->xprd * domain->yprd * domain->zprd;
       press += comp_ke->compute_scalar();
       press /= 3.0 * vol;
-    } while(fabs(press) > pairtol && ((pairmax > 0) ? niter < pairmax : true));
-    if (comm->me == 0) fprintf(screen, "pair interaction: %d steps (pressure %e N/m2)\n", niter, press);
+    } while(fabs(press) > pairtol && ((pairmax > 0) ? npair < pairmax : true));
+    if (comm->me == 0) fprintf(screen, "pair interaction: %d steps (pressure %e N/m2)\n", npair, press);
 
     // update densities
 
@@ -544,8 +547,8 @@ void NufebRun::run(int n)
 
     // run diffusion until it reaches steady state
 
-    niter = diffusion();
-    if (comm->me == 0) fprintf(screen, "diffusion: %d steps\n", niter);
+    ndiff = diffusion();
+    if (comm->me == 0) fprintf(screen, "diffusion: %d steps\n", ndiff);
     
     // all output
 
