@@ -26,6 +26,9 @@ namespace LAMMPS_NS {
 
 class NufebRun : public Integrate {
  public:
+  int ndiff;
+  int npair;
+
   NufebRun(class LAMMPS *, int, char **);
   virtual ~NufebRun();
   virtual void init();

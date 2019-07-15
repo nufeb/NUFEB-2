@@ -50,6 +50,10 @@
 
 #include "math_const.h"
 
+// NUFEB specific
+
+#include "nufeb_run.h"
+
 using namespace LAMMPS_NS;
 using namespace MathConst;
 
@@ -996,6 +1000,10 @@ void Thermo::parse_fields(char *str)
 
       delete [] id;
 
+    } else if (strcmp(word,"ndiff") == 0) {
+      addfield("NDiff",&Thermo::compute_ndiff,BIGINT);
+    } else if (strcmp(word,"npair") == 0) {
+      addfield("NPair",&Thermo::compute_npair,BIGINT);
     } else error->all(FLERR,"Unknown keyword in thermo_style custom command");
 
     word = strtok(NULL," \0");
@@ -2205,3 +2213,24 @@ void Thermo::compute_cellgamma()
   }
 }
 
+/* ---------------------------------------------------------------------- */
+
+void Thermo::compute_ndiff()
+{
+  if (!strstr(update->integrate_style, "nufeb"))
+    error->all(FLERR, "ndiff custom thermo keyword only works with nufeb run style");
+
+  NufebRun *run = (NufebRun *)update->integrate;
+  bivalue = run->ndiff;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void Thermo::compute_npair()
+{
+  if (!strstr(update->integrate_style, "nufeb"))
+    error->all(FLERR, "npair custom thermo keyword only works with nufeb run style");
+
+  NufebRun *run = (NufebRun *)update->integrate;
+  bivalue = run->npair;
+}

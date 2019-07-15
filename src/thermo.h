@@ -204,6 +204,11 @@ class Thermo : protected Pointers {
   void compute_cellalpha();
   void compute_cellbeta();
   void compute_cellgamma();
+
+  // NUFEB specific
+
+  void compute_ndiff();
+  void compute_npair();
 };
 
 }
