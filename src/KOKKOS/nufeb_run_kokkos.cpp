@@ -473,8 +473,6 @@ void NufebRunKokkos::run(int n)
   f_merge_copy = DAT::t_f_array("nufeb:f_merge_copy",atomKK->k_f.extent(0));
 
   atomKK->sync(Device,ALL_MASK);
-  //static double time = 0.0;
-  //Kokkos::Impl::Timer ktimer;
 
   timer->init_timeout();
   for (int i = 0; i < n; i++) {
@@ -490,15 +488,19 @@ void NufebRunKokkos::run(int n)
 
     ev_set(ntimestep);
 
+    double t = get_time();
     gridKK->sync(Host,ALL_MASK);
     atomKK->sync(Host,ALL_MASK);
     growth();
     atomKK->modified(Host,ALL_MASK);
     atomKK->sync(Device,ALL_MASK);
+    if (profile)
+      fprintf(profile, "%d %e ", update->ntimestep, get_time()-t);
     
     update->dt = pairdt;
     reset_dt();
     
+    t = get_time();
     double vol = comp_volume->compute_scalar();
     npair = 0;
     double press = 0.0;
@@ -737,17 +739,26 @@ void NufebRunKokkos::run(int n)
       press += comp_ke->compute_scalar();
       press /= 3.0 * vol;
     } while(fabs(press) > pairtol && ((pairmax > 0) ? npair < pairmax : true));
+    if (profile)
+      fprintf(profile, "%d %e ", npair, get_time()-t);
     if (comm->me == 0) fprintf(screen, "pair interaction: %d steps (pressure %e N/m2)\n", npair, press);
 
     // update densities
 
+    t = get_time();
     atomKK->sync(Host,ALL_MASK);
     fix_density->compute();
     gridKK->modified(Host,DENS_MASK);
+    if (profile)
+      fprintf(profile, "%e ", get_time()-t);
+
 
     // run diffusion until it reaches steady state
 
+    t = get_time();
     ndiff = diffusion();
+    if (profile)
+      fprintf(profile, "%d %e\n", ndiff, get_time()-t);
     if (comm->me == 0) fprintf(screen, "diffusion: %d steps\n", ndiff);
 
     // all output

@@ -11,6 +11,14 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
+#ifdef _WIN32
+#include <windows.h>
+#include <stdint.h> // <cstdint> requires C++-11
+#else
+#include <sys/time.h>
+#include <sys/resource.h>
+#endif
+
 #include <cstring>
 #include "nufeb_run.h"
 #include "neighbor.h"
@@ -83,6 +91,8 @@ NufebRun::NufebRun(LAMMPS *lmp, int narg, char **arg) :
   fix_eps_extract = NULL;
   fix_divide = NULL;
   fix_death = NULL;
+
+  profile = NULL;
   
   int iarg = 0;
   while (iarg < narg) {
@@ -104,6 +114,11 @@ NufebRun::NufebRun(LAMMPS *lmp, int narg, char **arg) :
     } else if (strcmp(arg[iarg], "pairmax") == 0) {
       pairmax = force->inumeric(FLERR, arg[iarg+1]);
       iarg += 2;
+    } else if (strcmp(arg[iarg], "profile") == 0) {
+      char filename[80];
+      sprintf(filename, "%s_%d.log", arg[iarg+1], comm->me);
+      profile = fopen(filename,"w");
+      iarg += 2;
     } else {
       error->all(FLERR, "Illegal run_style nufeb command");
     }
@@ -114,6 +129,9 @@ NufebRun::NufebRun(LAMMPS *lmp, int narg, char **arg) :
 
 NufebRun::~NufebRun()
 {
+  if (profile)
+    fclose(profile);
+  
   delete [] fix_monod;
   delete [] fix_diffusion;
   delete [] fix_eps_extract;
@@ -415,6 +433,8 @@ void NufebRun::run(int n)
   else sortflag = 0;
 
   for (int i = 0; i < n; i++) {
+    double step_start = get_time();
+    
     if (timer->check_timeout(i)) {
       update->nsteps = i;
       break;
@@ -426,13 +446,20 @@ void NufebRun::run(int n)
     comp_pressure->addstep(ntimestep);
 
     ev_set(ntimestep);
-    
+
+    timer->stamp();
+    double t = get_time();
     growth();
+    if (profile)
+      fprintf(profile, "%d %e ", update->ntimestep, get_time()-t);
     
     update->dt = pairdt;
     reset_dt();
     
     double vol = comp_volume->compute_scalar();
+    timer->stamp(Timer::MODIFY);
+
+    t = get_time();
     npair = 0;
     double press = 0.0;
     do {
@@ -538,16 +565,29 @@ void NufebRun::run(int n)
       press = comp_pressure->compute_scalar() * domain->xprd * domain->yprd * domain->zprd;
       press += comp_ke->compute_scalar();
       press /= 3.0 * vol;
+
+      timer->stamp(Timer::MODIFY);
+
     } while(fabs(press) > pairtol && ((pairmax > 0) ? npair < pairmax : true));
+    if (profile)
+      fprintf(profile, "%d %e ", npair, get_time()-t);
     if (comm->me == 0) fprintf(screen, "pair interaction: %d steps (pressure %e N/m2)\n", npair, press);
 
     // update densities
 
+    timer->stamp();
+    t = get_time();
     fix_density->compute();
+    if (profile)
+      fprintf(profile, "%e ", get_time()-t);
+    timer->stamp(Timer::MODIFY);
 
     // run diffusion until it reaches steady state
 
+    t = get_time();
     ndiff = diffusion();
+    if (profile)
+      fprintf(profile, "%d %e\n", ndiff, get_time()-t);
     if (comm->me == 0) fprintf(screen, "diffusion: %d steps\n", ndiff);
     
     // all output
@@ -629,6 +669,8 @@ void NufebRun::force_clear()
   }
 }
 
+/* ---------------------------------------------------------------------- */
+
 void NufebRun::growth()
 {
   // set biological dt
@@ -661,6 +703,8 @@ void NufebRun::growth()
     fix_death[i]->compute();
   }
 }
+
+/* ---------------------------------------------------------------------- */
 
 int NufebRun::diffusion()
 {
@@ -703,4 +747,33 @@ int NufebRun::diffusion()
     
   } while (!flag);
   return niter;
+}
+
+/* ---------------------------------------------------------------------- */
+
+double NufebRun::get_time()
+{
+  double rv = 0.0;
+
+#ifdef _WIN32
+
+  // from MSD docs.
+  FILETIME ct,et,kt,ut;
+  union { FILETIME ft; uint64_t ui; } cpu;
+  if (GetProcessTimes(GetCurrentProcess(),&ct,&et,&kt,&ut)) {
+    cpu.ft = ut;
+    rv = cpu.ui * 0.0000001;
+  }
+
+#else /* ! _WIN32 */
+
+  struct rusage ru;
+  if (getrusage(RUSAGE_SELF, &ru) == 0) {
+    rv = (double) ru.ru_utime.tv_sec;
+    rv += (double) ru.ru_utime.tv_usec * 0.000001;
+  }
+
+#endif /* ! _WIN32 */
+
+  return rv;
 }
