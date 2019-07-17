@@ -67,9 +67,12 @@ class NufebRun : public Integrate {
   class FixEPSExtract **fix_eps_extract;
   class FixDivide **fix_divide;
   class FixDeath **fix_death;
+
+  FILE *profile;
   
   virtual void growth();
   virtual int diffusion();
+  double get_time();
 };
 
 }
