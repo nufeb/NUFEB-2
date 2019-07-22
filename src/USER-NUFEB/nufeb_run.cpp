@@ -147,7 +147,7 @@ void NufebRun::init()
 {
   // this is required because many places check for verlet style
   delete [] update->integrate_style;
-  update->integrate_style = new char[7];
+  update->integrate_style = new char[13];
   strcpy(update->integrate_style, "verlet/nufeb\0");
 
   // create fix nufeb/density
@@ -744,7 +744,7 @@ int NufebRun::diffusion()
 
     if (diffmax > 0 && niter >= diffmax)
       flag = true;
-    
+
   } while (!flag);
   return niter;
 }
