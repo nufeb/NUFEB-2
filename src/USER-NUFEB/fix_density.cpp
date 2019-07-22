@@ -83,18 +83,15 @@ void FixDensity::compute()
       grid->dens[igroup][i] = 0.0;
   }
 
-  double lo[3];
-  double hi[3];
-  for (int i = 0; i < 3; i++) {
-    lo[i] = (grid->sublo[i] + 1) * grid->cell_size + domain->boxlo[i];
-    hi[i] = (grid->subhi[i] - 1) * grid->cell_size + domain->boxlo[i];
-  }
-
   double vol = grid->cell_size * grid->cell_size * grid->cell_size;
+  // including ghost atoms because there can be atoms that moved inside the
+  //   sub-domain and were not yet exchanged
+  // forward communication garantees that we have the latest ghost positions
+  //   which were updated during initial integrate
   for (int i = 0; i < atom->nlocal + atom->nghost; i++) {
-    if (atom->x[i][0] >= lo[0] && atom->x[i][0] < hi[0] &&
-	atom->x[i][1] >= lo[1] && atom->x[i][1] < hi[1] &&
-	atom->x[i][2] >= lo[2] && atom->x[i][2] < hi[2]) {
+    if (atom->x[i][0] >= domain->sublo[0] && atom->x[i][0] < domain->subhi[0] &&
+	atom->x[i][1] >= domain->sublo[1] && atom->x[i][1] < domain->subhi[1] &&
+	atom->x[i][2] >= domain->sublo[2] && atom->x[i][2] < domain->subhi[2]) {
       int cell = grid->cell(atom->x[i]);
       double d = atom->rmass[i] / vol;
       grid->dens[0][cell] += d;

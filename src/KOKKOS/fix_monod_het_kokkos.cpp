@@ -139,25 +139,23 @@ template <int Reaction, int Growth>
 KOKKOS_INLINE_FUNCTION
 void FixMonodHETKokkos<DeviceType>::Functor::operator()(FixMonodHETCellsTag<Reaction, Growth>, int i) const
 {
-  if (!(d_mask(i) & BOUNDARY_MASK || d_mask(i) & CORNER_MASK)) {
-    double tmp1 = growth * d_conc(isub, i) / (sub_affinity + d_conc(isub, i)) * d_conc(io2, i) / (o2_affinity + d_conc(io2, i));
-    double tmp2 = anoxic * growth * d_conc(isub, i) / (sub_affinity + d_conc(isub, i)) * d_conc(ino3, i) / (no3_affinity + d_conc(ino3, i)) * o2_affinity / (o2_affinity + d_conc(io2, i));
-    double tmp3 = anoxic * growth * d_conc(isub, i) / (sub_affinity + d_conc(isub, i)) * d_conc(ino2, i) / (no2_affinity + d_conc(ino2, i)) * o2_affinity / (o2_affinity + d_conc(io2, i));
-    double tmp4 = maintain * d_conc(io2, i) / (o2_affinity + d_conc(io2, i));
-    double tmp5 = 1 / 2.86 * maintain * anoxic * d_conc(ino3, i) / (no3_affinity + d_conc(ino3, i)) * o2_affinity / (o2_affinity + d_conc(io2, i));
-    double tmp6 = 1 / 1.17 * maintain * anoxic * d_conc(ino2, i) / (no2_affinity + d_conc(ino2, i)) * o2_affinity / (o2_affinity + d_conc(io2, i));
+  double tmp1 = growth * d_conc(isub, i) / (sub_affinity + d_conc(isub, i)) * d_conc(io2, i) / (o2_affinity + d_conc(io2, i));
+  double tmp2 = anoxic * growth * d_conc(isub, i) / (sub_affinity + d_conc(isub, i)) * d_conc(ino3, i) / (no3_affinity + d_conc(ino3, i)) * o2_affinity / (o2_affinity + d_conc(io2, i));
+  double tmp3 = anoxic * growth * d_conc(isub, i) / (sub_affinity + d_conc(isub, i)) * d_conc(ino2, i) / (no2_affinity + d_conc(ino2, i)) * o2_affinity / (o2_affinity + d_conc(io2, i));
+  double tmp4 = maintain * d_conc(io2, i) / (o2_affinity + d_conc(io2, i));
+  double tmp5 = 1 / 2.86 * maintain * anoxic * d_conc(ino3, i) / (no3_affinity + d_conc(ino3, i)) * o2_affinity / (o2_affinity + d_conc(io2, i));
+  double tmp6 = 1 / 1.17 * maintain * anoxic * d_conc(ino2, i) / (no2_affinity + d_conc(ino2, i)) * o2_affinity / (o2_affinity + d_conc(io2, i));
 
-    if (Reaction) {
-      d_reac(isub, i) -= 1 / yield * (tmp1 + tmp2 + tmp3) * d_dens(igroup, i);
-      d_reac(io2, i) -= (1 - yield - eps_yield) / yield * tmp1 * d_dens(igroup, i) + tmp4 * d_dens(igroup, i);
-      d_reac(ino2, i) -= (1 - yield - eps_yield) / (1.17 * yield) * tmp3 * d_dens(igroup, i) + tmp6 * d_dens(igroup, i);
-      d_reac(ino3, i) -= (1 - yield - eps_yield) / (2.86 * yield) * tmp2 * d_dens(igroup, i) + tmp5 * d_dens(igroup, i);
-    }
+  if (Reaction && !(d_mask(i) & GHOST_MASK)) {
+    d_reac(isub, i) -= 1 / yield * (tmp1 + tmp2 + tmp3) * d_dens(igroup, i);
+    d_reac(io2, i) -= (1 - yield - eps_yield) / yield * tmp1 * d_dens(igroup, i) + tmp4 * d_dens(igroup, i);
+    d_reac(ino2, i) -= (1 - yield - eps_yield) / (1.17 * yield) * tmp3 * d_dens(igroup, i) + tmp6 * d_dens(igroup, i);
+    d_reac(ino3, i) -= (1 - yield - eps_yield) / (2.86 * yield) * tmp2 * d_dens(igroup, i) + tmp5 * d_dens(igroup, i);
+  }
   
-    if (Growth) {
-      d_growth(igroup, i, 0) = tmp1 + tmp2 + tmp3 - tmp4 - tmp5 - tmp6 - decay;
-      d_growth(igroup, i, 1) = (eps_yield / yield) * (tmp1 + tmp2 + tmp3);
-    }
+  if (Growth) {
+    d_growth(igroup, i, 0) = tmp1 + tmp2 + tmp3 - tmp4 - tmp5 - tmp6 - decay;
+    d_growth(igroup, i, 1) = (eps_yield / yield) * (tmp1 + tmp2 + tmp3);
   }
 }
 

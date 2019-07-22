@@ -22,6 +22,7 @@
 #include "group.h"
 #include "grid_masks.h"
 #include "math_const.h"
+#include "comm.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -129,26 +130,24 @@ void FixMonodHET::update_cells()
   double **dens = grid->dens;
 
   for (int i = 0; i < grid->ncells; i++) {
-    if (!(grid->mask[i] & BOUNDARY_MASK || grid->mask[i] & CORNER_MASK)) {
-      double tmp1 = growth * conc[isub][i] / (sub_affinity + conc[isub][i]) * conc[io2][i] / (o2_affinity + conc[io2][i]);
-      double tmp2 = anoxic * growth * conc[isub][i] / (sub_affinity + conc[isub][i]) * conc[ino3][i] / (no3_affinity + conc[ino3][i]) * o2_affinity / (o2_affinity + conc[io2][i]);
-      double tmp3 = anoxic * growth * conc[isub][i] / (sub_affinity + conc[isub][i]) * conc[ino2][i] / (no2_affinity + conc[ino2][i]) * o2_affinity / (o2_affinity + conc[io2][i]);
-      double tmp4 = maintain * conc[io2][i] / (o2_affinity + conc[io2][i]);
-      double tmp5 = 1 / 2.86 * maintain * anoxic * conc[ino3][i] / (no3_affinity + conc[ino3][i]) * o2_affinity / (o2_affinity + conc[io2][i]);
-      double tmp6 = 1 / 1.17 * maintain * anoxic * conc[ino2][i] / (no2_affinity + conc[ino2][i]) * o2_affinity / (o2_affinity + conc[io2][i]);
+    double tmp1 = growth * conc[isub][i] / (sub_affinity + conc[isub][i]) * conc[io2][i] / (o2_affinity + conc[io2][i]);
+    double tmp2 = anoxic * growth * conc[isub][i] / (sub_affinity + conc[isub][i]) * conc[ino3][i] / (no3_affinity + conc[ino3][i]) * o2_affinity / (o2_affinity + conc[io2][i]);
+    double tmp3 = anoxic * growth * conc[isub][i] / (sub_affinity + conc[isub][i]) * conc[ino2][i] / (no2_affinity + conc[ino2][i]) * o2_affinity / (o2_affinity + conc[io2][i]);
+    double tmp4 = maintain * conc[io2][i] / (o2_affinity + conc[io2][i]);
+    double tmp5 = 1 / 2.86 * maintain * anoxic * conc[ino3][i] / (no3_affinity + conc[ino3][i]) * o2_affinity / (o2_affinity + conc[io2][i]);
+    double tmp6 = 1 / 1.17 * maintain * anoxic * conc[ino2][i] / (no2_affinity + conc[ino2][i]) * o2_affinity / (o2_affinity + conc[io2][i]);
 
-      if (Reaction) {
-	reac[isub][i] -= 1 / yield * (tmp1 + tmp2 + tmp3) * dens[igroup][i];
-	reac[io2][i] -= (1 - yield - eps_yield) / yield * tmp1 * dens[igroup][i] + tmp4 * dens[igroup][i];
-	reac[ino2][i] -= (1 - yield - eps_yield) / (1.17 * yield) * tmp3 * dens[igroup][i] + tmp6 * dens[igroup][i];
-	reac[ino3][i] -= (1 - yield - eps_yield) / (2.86 * yield) * tmp2 * dens[igroup][i] + tmp5 * dens[igroup][i];
-      }
+    if (Reaction && !(grid->mask[i] & GHOST_MASK)) {
+      reac[isub][i] -= 1 / yield * (tmp1 + tmp2 + tmp3) * dens[igroup][i];
+      reac[io2][i] -= (1 - yield - eps_yield) / yield * tmp1 * dens[igroup][i] + tmp4 * dens[igroup][i];
+      reac[ino2][i] -= (1 - yield - eps_yield) / (1.17 * yield) * tmp3 * dens[igroup][i] + tmp6 * dens[igroup][i];
+      reac[ino3][i] -= (1 - yield - eps_yield) / (2.86 * yield) * tmp2 * dens[igroup][i] + tmp5 * dens[igroup][i];
+    }
   
-      if (Growth) {
-	double ***grow = grid->growth;
-	grow[igroup][i][0] = tmp1 + tmp2 + tmp3 - tmp4 - tmp5 - tmp6 - decay;
-	grow[igroup][i][1] = (eps_yield / yield) * (tmp1 + tmp2 + tmp3);
-      }
+    if (Growth) {
+      double ***grow = grid->growth;
+      grow[igroup][i][0] = tmp1 + tmp2 + tmp3 - tmp4 - tmp5 - tmp6 - decay;
+      grow[igroup][i][1] = (eps_yield / yield) * (tmp1 + tmp2 + tmp3);
     }
   }
 }

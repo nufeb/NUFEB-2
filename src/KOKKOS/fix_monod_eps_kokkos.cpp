@@ -126,14 +126,12 @@ template <int Reaction, int Growth>
 KOKKOS_INLINE_FUNCTION
 void FixMonodEPSKokkos<DeviceType>::Functor::operator()(FixMonodEPSCellsTag<Reaction, Growth>, int i) const
 {
-  if (!(d_mask(i) & BOUNDARY_MASK || d_mask(i) & CORNER_MASK)) {
-    if (Reaction) {
-      d_reac(isub, i) += decay * d_dens(igroup ,i);
-    }
+  if (Reaction && !(d_mask(i) & GHOST_MASK)) {
+    d_reac(isub, i) += decay * d_dens(igroup ,i);
+  }
     
-    if (Growth) {
-      d_growth(igroup, i, 0) = -decay;
-    }
+  if (Growth) {
+    d_growth(igroup, i, 0) = -decay;
   }
 }
 
