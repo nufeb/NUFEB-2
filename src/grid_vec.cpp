@@ -115,6 +115,21 @@ void GridVec::init()
   // extend global grid size
   for (int i = 0; i < 3; i++)
     grid->extbox[i] = grid->box[i] + 2;
+
+  // Fitting initial domain decomposition to the grid
+  for (int i = 0; i < comm->procgrid[0]; i++) {
+    int n = grid->box[0] * i * 1.0 / comm->procgrid[0];
+    comm->xsplit[i] = (double) n / grid->box[0];
+  }
+  for (int i = 0; i < comm->procgrid[1]; i++) {
+    int n = grid->box[1] * i * 1.0 / comm->procgrid[1];
+    comm->ysplit[i] = (double) n / grid->box[1];
+  }
+  for (int i = 0; i < comm->procgrid[2]; i++) {
+    int n = grid->box[2] * i * 1.0 / comm->procgrid[2];
+    comm->zsplit[i] = (double) n / grid->box[2];
+  }
+  domain->set_local_box();
 }
 
 /* ---------------------------------------------------------------------- */
