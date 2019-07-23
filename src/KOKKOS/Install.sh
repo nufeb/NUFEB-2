@@ -119,10 +119,14 @@ action fix_gravity_kokkos.cpp
 action fix_gravity_kokkos.h
 action fix_langevin_kokkos.cpp
 action fix_langevin_kokkos.h
+action fix_monod_aob_kokkos.cpp fix_monod_aob.cpp
+action fix_monod_aob_kokkos.h fix_monod_aob.h
 action fix_monod_eps_kokkos.cpp fix_monod_eps.cpp
 action fix_monod_eps_kokkos.h fix_monod_eps.h
 action fix_monod_het_kokkos.cpp fix_monod_het.cpp
 action fix_monod_het_kokkos.h fix_monod_het.h
+action fix_monod_nob_kokkos.cpp fix_monod_nob.cpp
+action fix_monod_nob_kokkos.h fix_monod_nob.h
 action fix_neigh_history_kokkos.cpp
 action fix_neigh_history_kokkos.h
 action fix_nh_kokkos.cpp
