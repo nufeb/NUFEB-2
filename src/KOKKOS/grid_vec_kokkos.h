@@ -22,6 +22,7 @@ class GridVecKokkos : public GridVec {
  public:
   GridVecKokkos(class LAMMPS *);
   virtual ~GridVecKokkos() {}
+  virtual void setup();
   virtual void sync(ExecutionSpace, unsigned int) = 0;
   virtual void modified(ExecutionSpace, unsigned int) = 0;
   virtual void sync_overlapping_device(ExecutionSpace, unsigned int) = 0;

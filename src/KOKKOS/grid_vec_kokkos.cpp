@@ -12,6 +12,8 @@
 ------------------------------------------------------------------------- */
 
 #include "grid_vec_kokkos.h"
+#include "grid_kokkos.h"
+#include "grid_masks.h"
 
 using namespace LAMMPS_NS;
 
@@ -20,4 +22,11 @@ using namespace LAMMPS_NS;
 GridVecKokkos::GridVecKokkos(LAMMPS *lmp) : GridVec(lmp)
 {
   kokkosable = 1;
+}
+
+void GridVecKokkos::setup()
+{
+  GridVec::setup();
+  gridKK->modified(Host, GMASK_MASK);
+  gridKK->sync(Device, GMASK_MASK);
 }

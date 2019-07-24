@@ -113,15 +113,17 @@ void CommGridKokkos::forward_comm_device()
 	      (recv_end[p] - recv_begin[p]) * size_forward,
 	      MPI_DOUBLE, recvproc[p], 0, world, &requests[p]);
   }
+  fprintf(screen, "packing send\n");
   for (int p = 0; p < nsendproc; p++) {
     int n = gvec->pack_comm_kokkos(send_begin[p], send_end[p], k_send_cells, k_buf_send);
     DeviceType::fence();
-    MPI_Send(k_buf_send.view<DeviceType>().data(), n, MPI_DOUBLE, sendproc[p], 0, world);
+    MPI_Send(k_buf_send.view<DeviceType>().data() + send_begin[p] * size_forward, n, MPI_DOUBLE, sendproc[p], 0, world);
   }
   MPI_Waitall(nrecvproc, requests, MPI_STATUS_IGNORE);
   for (int p = 0; p < nrecvproc; p++) {
     gvec->unpack_comm_kokkos(recv_begin[p], recv_end[p], k_recv_cells, k_buf_recv);
   }
+  fprintf(screen, "packing self\n");
   gvec->pack_comm_kokkos(0, nsend_self, k_send_cells_self, k_buf_self);
   gvec->unpack_comm_kokkos(0, nrecv_self, k_recv_cells_self, k_buf_self);
 }
