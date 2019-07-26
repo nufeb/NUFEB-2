@@ -211,7 +211,6 @@ void NufebRunKokkos::setup(int flag)
   }
 
   update->setupflag = 1;
-  lmp->kokkos->auto_sync = 0;
 
   // setup domain, communication and neighboring
   // acquire ghosts
@@ -298,7 +297,7 @@ void NufebRunKokkos::setup(int flag)
 
   modify->setup(vflag);
   output->setup(flag);
-  // lmp->kokkos->auto_sync = 1;
+  lmp->kokkos->auto_sync = 0;
   update->setupflag = 0;
 
   // NUFEB specific
@@ -351,7 +350,6 @@ void NufebRunKokkos::setup(int flag)
 void NufebRunKokkos::setup_minimal(int flag)
 {
   update->setupflag = 1;
-  lmp->kokkos->auto_sync = 0;
 
   // setup domain, communication and neighboring
   // acquire ghosts
@@ -443,7 +441,7 @@ void NufebRunKokkos::setup_minimal(int flag)
   if (force->newton) comm->reverse_comm();
 
   modify->setup(vflag);
-  // lmp->kokkos->auto_sync = 1;
+  lmp->kokkos->auto_sync = 0;
   update->setupflag = 0;
 }
 
@@ -464,8 +462,6 @@ void NufebRunKokkos::run(int n)
   int n_pre_reverse = modify->n_pre_reverse;
   int n_post_force = modify->n_post_force;
   int n_end_of_step = modify->n_end_of_step;
-
-  lmp->kokkos->auto_sync = 0;
 
   if (atomKK->sortfreq > 0) sortflag = 1;
   else sortflag = 0;
@@ -773,7 +769,6 @@ void NufebRunKokkos::run(int n)
   }
 
   atomKK->sync(Host,ALL_MASK);
-  lmp->kokkos->auto_sync = 1;
 }
 
 /* ----------------------------------------------------------------------
