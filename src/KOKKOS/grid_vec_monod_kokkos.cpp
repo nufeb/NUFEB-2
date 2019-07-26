@@ -182,15 +182,15 @@ struct GridVecMonodKokkos_PackComm
 
 int GridVecMonodKokkos::pack_comm_kokkos(int first, int last, const DAT::tdual_int_1d &list, const DAT::tdual_xfloat_1d &buf)
 {
-  // if (lmp->kokkos->forward_comm_on_host) {
-  //   gridKK->sync(Host, CONC_MASK);
-  //   struct GridVecMonodKokkos_PackComm<LMPHostType> f(grid->nsubs, gridKK->k_conc, list, buf);
-  //   Kokkos::parallel_for(Kokkos::RangePolicy<LMPHostType>(first, last), f);
-  // } else {
+  if (lmp->kokkos->forward_comm_on_host) {
+    gridKK->sync(Host, CONC_MASK);
+    struct GridVecMonodKokkos_PackComm<LMPHostType> f(grid->nsubs, gridKK->k_conc, list, buf);
+    Kokkos::parallel_for(Kokkos::RangePolicy<LMPHostType>(first, last), f);
+  } else {
     gridKK->sync(Device, CONC_MASK);
     struct GridVecMonodKokkos_PackComm<LMPDeviceType> f(grid->nsubs, gridKK->k_conc, list, buf);
     Kokkos::parallel_for(Kokkos::RangePolicy<LMPDeviceType>(first, last), f);
-    //}
+  }
   return (last-first)*grid->nsubs;
 }
 
@@ -234,16 +234,16 @@ struct GridVecMonodKokkos_UnpackComm
 
 void GridVecMonodKokkos::unpack_comm_kokkos(int first, int last, const DAT::tdual_int_1d &list, const DAT::tdual_xfloat_1d &buf)
 {
-  // if (lmp->kokkos->forward_comm_on_host) {
-  //   struct GridVecMonodKokkos_UnpackComm<LMPHostType> f(grid->nsubs, gridKK->k_conc, list, buf);
-  //   Kokkos::parallel_for(n, f);
-  //   gridKK->modified(Host, CONC_MASK);
-  // } else {
+  if (lmp->kokkos->forward_comm_on_host) {
+    struct GridVecMonodKokkos_UnpackComm<LMPHostType> f(grid->nsubs, gridKK->k_conc, list, buf);
+    Kokkos::parallel_for(Kokkos::RangePolicy<LMPDeviceType>(first, last), f);
+    gridKK->modified(Host, CONC_MASK);
+  } else {
     gridKK->sync(Device, CONC_MASK);
     struct GridVecMonodKokkos_UnpackComm<LMPDeviceType> f(grid->nsubs, gridKK->k_conc, list, buf);
     Kokkos::parallel_for(Kokkos::RangePolicy<LMPDeviceType>(first, last), f);
     gridKK->modified(Device, CONC_MASK);
-    //}
+  }
 }
 
 /* ---------------------------------------------------------------------- */
