@@ -392,7 +392,7 @@ struct FixWallGranKokkos_PackExchangeFunctor
   KOKKOS_INLINE_FUNCTION
   void operator()(const int &mysend) const {
     const int i = _sendlist(mysend);
-    int m = i*_dnum;
+    int m = mysend*_dnum;
     for (int v = 0; v < _dnum; v++) {
       _buf(m++) = _history_one(i,v);
     }
@@ -454,7 +454,7 @@ struct FixWallGranKokkos_UnpackExchangeFunctor
     if (index > 0) {
       int m = i*_dnum;
       for (int v = 0; v < _dnum; v++) {
-	_history_one(i,v) = _buf(m++);
+	_history_one(index,v) = _buf(m++);
       }
     }
   }
