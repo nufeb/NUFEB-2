@@ -94,8 +94,8 @@ class PairGranHookeHistoryKokkos : public PairGranHookeHistory {
   typename Kokkos::View<int**> d_firsttouch;
   typename Kokkos::View<LMP_FLOAT**> d_firstshear;
 
-  typename AT::t_neighbors_2d d_neighbors_touch;
-  typename AT::t_int_1d d_numneigh_touch;
+  // typename AT::t_neighbors_2d d_neighbors_touch;
+  // typename AT::t_int_1d d_numneigh_touch;
 
   int newton_pair;
   double special_lj[4];
