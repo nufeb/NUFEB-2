@@ -359,7 +359,7 @@ void PairGranHookeHistoryKokkos<DeviceType>::operator()(TagPairGranHookeHistoryC
     } else {
       const LMP_FLOAT r = sqrt(rsq);
       const LMP_FLOAT rinv = 1.0/r;
-      const LMP_FLOAT rsqinv = 1/rsq;
+      const LMP_FLOAT rsqinv = 1.0/rsq;
 
       // relative translational velocity
 
@@ -486,14 +486,13 @@ void PairGranHookeHistoryKokkos<DeviceType>::operator()(TagPairGranHookeHistoryC
       if (EVFLAG == 1)
 	ev_tally_xyz<NEWTON_PAIR>(ev, i, j, fx_i, fy_i, fz_i, delx, dely, delz);
     }
-
-    a_f(i,0) += fx_i;
-    a_f(i,1) += fy_i;
-    a_f(i,2) += fz_i;
-    a_torque(i,0) += torquex_i;
-    a_torque(i,1) += torquey_i;
-    a_torque(i,2) += torquez_i;
   }
+  a_f(i,0) += fx_i;
+  a_f(i,1) += fy_i;
+  a_f(i,2) += fz_i;
+  a_torque(i,0) += torquex_i;
+  a_torque(i,1) += torquey_i;
+  a_torque(i,2) += torquez_i;
 }
 
 
