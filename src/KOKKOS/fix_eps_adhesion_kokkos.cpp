@@ -86,7 +86,7 @@ void FixEPSAdhesionKokkos<DeviceType>::post_force(int)
 	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<HALF, 1, 1> >(0, inum), f);
       }
     }
-  } else { // HALFTHREAD
+  } else if (lmp->kokkos->neighflag == HALFTHREAD) {
     if (force->newton_pair) {
       if (disp == DEFAULT) {
 	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<HALFTHREAD, 0, 0> >(0, inum), f);
@@ -98,6 +98,20 @@ void FixEPSAdhesionKokkos<DeviceType>::post_force(int)
 	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<HALFTHREAD, 1, 0> >(0, inum), f);
       } else if (disp == SQUARE) {
 	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<HALFTHREAD, 1, 1> >(0, inum), f);
+      }
+    }
+  } else { // lmp->kokkos->neighflag == FULL
+    if (force->newton_pair) {
+      if (disp == DEFAULT) {
+	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<FULL, 0, 0> >(0, inum), f);
+      } else if (disp == SQUARE) {
+	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<FULL, 0, 1> >(0, inum), f);
+      }
+    } else {
+      if (disp == DEFAULT) {
+	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<FULL, 1, 0> >(0, inum), f);
+      } else if (disp == SQUARE) {
+	Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, FixEPSAdhesionTag<FULL, 1, 1> >(0, inum), f);
       }
     }
   }
@@ -141,6 +155,9 @@ void FixEPSAdhesionKokkos<DeviceType>::Functor::operator()(FixEPSAdhesionTag<NEI
     else
       epsi = d_outer_mass[i];
 
+    double fx = 0.0; 
+    double fy = 0.0; 
+    double fz = 0.0; 
     for (int jj = 0; jj < jnum; jj++) {
       int j = d_neighbors(i,jj);
       j &= NEIGHMASK;
@@ -179,16 +196,20 @@ void FixEPSAdhesionKokkos<DeviceType>::Functor::operator()(FixEPSAdhesionTag<NEI
       double ccely = dely * ccel * rinv;
       double ccelz = delz * ccel * rinv;
 
-      a_f(i,0) += ccelx;
-      a_f(i,1) += ccely;
-      a_f(i,2) += ccelz;
+      fx += ccelx;
+      fy += ccely;
+      fz += ccelz;
 
-      if (NEWTON_PAIR || j < nlocal) {
+      if ((NEIGHFLAG==HALF || NEIGHFLAG==HALFTHREAD) && (NEWTON_PAIR || j < nlocal)) {
 	a_f(j,0) -= ccelx;
 	a_f(j,1) -= ccely;
 	a_f(j,2) -= ccelz;
       }
     }
+    
+    a_f(i,0) += fx;
+    a_f(i,1) += fy;
+    a_f(i,2) += fz;
   }
 }
 
