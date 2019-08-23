@@ -159,16 +159,8 @@ void PairGranHookeHistoryKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
   d_neighbors = k_list->d_neighbors;
   d_ilist = k_list->d_ilist;
 
-  // if (d_numneigh.extent(0) != d_numneigh_touch.extent(0))
-  //   d_numneigh_touch = typename AT::t_int_1d("pair:numneigh_touch",d_numneigh.extent(0));
-  // if (d_neighbors.extent(0) != d_neighbors_touch.extent(0) ||
-  //     d_neighbors.extent(1) != d_neighbors_touch.extent(1))
-  //   d_neighbors_touch = typename AT::t_neighbors_2d("pair:neighbors_touch",d_neighbors.extent(0),d_neighbors.extent(1));
-
   d_firsttouch = fix_historyKK->d_firstflag;
   d_firstshear = fix_historyKK->d_firstvalue;
-
-  // Kokkos::parallel_for(Kokkos::RangePolicy<DeviceType, TagPairGranHookeHistoryReduce>(0,inum),*this);
 
   EV_FLOAT ev;
 
@@ -319,44 +311,6 @@ void PairGranHookeHistoryKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
   copymode = 0;
 }
 
-// template<class DeviceType>
-// KOKKOS_INLINE_FUNCTION
-// void PairGranHookeHistoryKokkos<DeviceType>::operator()(TagPairGranHookeHistoryReduce, const int ii) const {
-//   const int i = d_ilist[ii];
-//   const X_FLOAT xtmp = x(i,0);
-//   const X_FLOAT ytmp = x(i,1);
-//   const X_FLOAT ztmp = x(i,2);
-//   const LMP_FLOAT imass = rmass[i];
-//   const LMP_FLOAT irad = radius[i];
-//   const int jnum = d_numneigh[i];
-//   int count = 0;
-
-//   for (int jj = 0; jj < jnum; jj++) {
-//     const int j = d_neighbors(i,jj) & NEIGHMASK;
-
-//     const X_FLOAT delx = xtmp - x(j,0);
-//     const X_FLOAT dely = ytmp - x(j,1);
-//     const X_FLOAT delz = ztmp - x(j,2);
-//     const X_FLOAT rsq = delx*delx + dely*dely + delz*delz;
-//     const LMP_FLOAT jmass = rmass[j];
-//     const LMP_FLOAT jrad = radius[j];
-//     const LMP_FLOAT radsum = irad + jrad;
-
-//     // check for touching neighbors
-
-//     if (rsq >= radsum * radsum) {
-//       d_firsttouch(i,jj) = 0;
-//       d_firstshear(i,3*jj) = 0;
-//       d_firstshear(i,3*jj+1) = 0;
-//       d_firstshear(i,3*jj+2) = 0;
-//     } else {
-//       d_firsttouch(i,jj) = 1;
-//       d_neighbors_touch(i,count++) = jj;
-//     }
-//   }
-//   d_numneigh_touch[i] = count;
-// }
-
 template<class DeviceType>
 template<int NEIGHFLAG, int NEWTON_PAIR, int EVFLAG, int SHEARUPDATE>
 KOKKOS_INLINE_FUNCTION
@@ -372,6 +326,12 @@ void PairGranHookeHistoryKokkos<DeviceType>::operator()(TagPairGranHookeHistoryC
   const X_FLOAT ztmp = x(i,2);
   const LMP_FLOAT imass = rmass[i];
   const LMP_FLOAT irad = radius[i];
+  const V_FLOAT vx = v(i,0);
+  const V_FLOAT vy = v(i,1);
+  const V_FLOAT vz = v(i,2);
+  const V_FLOAT omegax = omega(i,0);
+  const V_FLOAT omegay = omega(i,1);
+  const V_FLOAT omegaz = omega(i,2);
   const int jnum = d_numneigh[i];
 
   F_FLOAT fx_i = 0.0;
@@ -406,9 +366,9 @@ void PairGranHookeHistoryKokkos<DeviceType>::operator()(TagPairGranHookeHistoryC
 
       // relative translational velocity
 
-      V_FLOAT vr1 = v(i,0) - v(j,0);
-      V_FLOAT vr2 = v(i,1) - v(j,1);
-      V_FLOAT vr3 = v(i,2) - v(j,2);
+      V_FLOAT vr1 = vx - v(j,0);
+      V_FLOAT vr2 = vy - v(j,1);
+      V_FLOAT vr3 = vz - v(j,2);
 
       // normal component
 
@@ -425,9 +385,9 @@ void PairGranHookeHistoryKokkos<DeviceType>::operator()(TagPairGranHookeHistoryC
 
       // relative rotational velocity
 
-      V_FLOAT wr1 = (irad*omega(i,0) + jrad*omega(j,0)) * rinv;
-      V_FLOAT wr2 = (irad*omega(i,1) + jrad*omega(j,1)) * rinv;
-      V_FLOAT wr3 = (irad*omega(i,2) + jrad*omega(j,2)) * rinv;
+      V_FLOAT wr1 = (irad*omegax + jrad*omega(j,0)) * rinv;
+      V_FLOAT wr2 = (irad*omegay + jrad*omega(j,1)) * rinv;
+      V_FLOAT wr3 = (irad*omegaz + jrad*omega(j,2)) * rinv;
 
       LMP_FLOAT meff = imass*jmass / (imass+jmass);
       if (mask[i] & freeze_group_bit) meff = jmass;
