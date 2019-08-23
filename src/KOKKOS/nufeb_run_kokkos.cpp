@@ -334,9 +334,14 @@ void NufebRunKokkos::setup(int flag)
   gridKK->modified(Host,ALL_MASK);
   
   // run diffusion until it reaches steady state
-  int niter = diffusion();
-  if (comm->me == 0)
-    fprintf(screen, "Initial diffusion reaction converged in %d steps\n", niter);
+  if (init_diff_flag) {
+    int niter = diffusion();
+    if (comm->me == 0)
+      fprintf(screen, "Initial diffusion reaction converged in %d steps\n", niter);
+  } else {
+    if (comm->me == 0)
+      fprintf(screen, "Initial diffusion reaction convergence disabled\n");
+  }
 
   atomKK->modified(Host,ALL_MASK);
 }

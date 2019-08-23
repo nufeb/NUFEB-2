@@ -39,6 +39,7 @@ class NufebRun : public Integrate {
   virtual void cleanup();
 
  protected:
+  bool init_diff_flag;
   int triclinic;                    // 0 if domain is orthog, 1 if triclinic
   int torqueflag,extraflag;
 
