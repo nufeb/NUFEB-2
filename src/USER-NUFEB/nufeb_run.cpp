@@ -65,6 +65,7 @@ using namespace LAMMPS_NS;
 NufebRun::NufebRun(LAMMPS *lmp, int narg, char **arg) :
   Integrate(lmp, narg, arg)
 {
+  init_diff_flag = true;
   ndiff = 0;
   npair = 0;
 
@@ -118,6 +119,13 @@ NufebRun::NufebRun(LAMMPS *lmp, int narg, char **arg) :
       char filename[80];
       sprintf(filename, "%s_%d.log", arg[iarg+1], comm->me);
       profile = fopen(filename,"w");
+      iarg += 2;
+    } else if (strcmp(arg[iarg], "initdiff") == 0) {
+      if (strcmp(arg[iarg+1], "yes") == 0) init_diff_flag = true;
+      else if (strcmp(arg[iarg+1], "no") == 0) init_diff_flag = false;
+      else {
+	error->all(FLERR, "Illegal run_style nufeb command");
+      }
       iarg += 2;
     } else {
       error->all(FLERR, "Illegal run_style nufeb command");
@@ -345,9 +353,14 @@ void NufebRun::setup(int flag)
   fix_density->compute();
   
   // run diffusion until it reaches steady state
-  int niter = diffusion();
-  if (comm->me == 0)
-    fprintf(screen, "Initial diffusion reaction converged in %d steps\n", niter);
+  if (init_diff_flag) {
+    int niter = diffusion();
+    if (comm->me == 0)
+      fprintf(screen, "Initial diffusion reaction converged in %d steps\n", niter);
+  } else {
+    if (comm->me == 0)
+      fprintf(screen, "Initial diffusion reaction convergence disabled\n");
+  }
 }
 
 /* ----------------------------------------------------------------------
