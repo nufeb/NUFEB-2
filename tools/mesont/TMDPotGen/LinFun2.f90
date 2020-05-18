@@ -1,21 +1,6 @@
-! ------------ ----------------------------------------------------------
-!   LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
-!   http://lammps.sandia.gov, Sandia National Laboratories
-!   Steve Plimpton, sjplimp@sandia.gov
-!
-!   Copyright (2003) Sandia Corporation.  Under the terms of Contract
-!   DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-!   certain rights in this software.  This software is distributed under
-!   the GNU General Public License.
-!
-!   See the README file in the top-level LAMMPS directory.
-!   
-!   Contributing author: Alexey N. Volkov, UA, avolkov1@ua.edu
-!------------------------------------------------------------------------- 
-
 module LinFun2 !************************************************************************************
 !
-! TMD Library: Bi-linear functions and their derivatives
+! Bi-linear functions and their derivatives.
 !
 !---------------------------------------------------------------------------------------------------
 !
@@ -24,18 +9,18 @@ module LinFun2 !****************************************************************
 ! Alexey N. Volkov, University of Alabama, avolkov1@ua.edu, Version 09.01, 2017
 !
 !***************************************************************************************************
-use iso_c_binding, only : c_int, c_double, c_char
+
 implicit none
         
 contains !******************************************************************************************
 
-        real(c_double) function CalcLinFun1_0 ( i, X, N, P, F ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        integer(c_int), intent(in)                           :: i, N
-        real(c_double), intent(in)                              :: X
-        real(c_double), dimension(0:N-1), intent(in)            :: P
-        real(c_double), dimension(0:N-1), intent(inout)         :: F
-        integer(c_int)                                       :: i1
-        real(c_double)                                          :: A, A0
+        real*8 function CalcLinFun1_0 ( i, X, N, P, F ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        integer*4, intent(in)                           :: i, N
+        real*8, intent(in)                              :: X
+        real*8, dimension(0:N-1), intent(in)            :: P
+        real*8, dimension(0:N-1), intent(inout)         :: F
+        integer*4                                       :: i1
+        real*8                                          :: A, A0
         !-------------------------------------------------------------------------------------------
                 i1 = i - 1
                 A0 = ( P(i) - X ) / ( P(i) - P(i1) )
@@ -44,13 +29,13 @@ contains !**********************************************************************
         end function CalcLinFun1_0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
         subroutine CalcLinFun1_1 ( S, Sx1, i, X, N, P, F, Fx ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double), intent(out)                             :: S, Sx1
-        integer(c_int), intent(in)                           :: i, N
-        real(c_double), intent(in)                              :: X
-        real(c_double), dimension(0:N-1), intent(in)            :: P
-        real(c_double), dimension(0:N-1), intent(inout)         :: F, Fx
-        integer(c_int)                                       :: i1
-        real(c_double)                                          :: A, A0
+        real*8, intent(out)                             :: S, Sx1
+        integer*4, intent(in)                           :: i, N
+        real*8, intent(in)                              :: X
+        real*8, dimension(0:N-1), intent(in)            :: P
+        real*8, dimension(0:N-1), intent(inout)         :: F, Fx
+        integer*4                                       :: i1
+        real*8                                          :: A, A0
         !-------------------------------------------------------------------------------------------
                 i1 = i - 1
                 A0 = ( P(i) - X ) / ( P(i) - P(i1) )
@@ -59,14 +44,14 @@ contains !**********************************************************************
                 Sx1 = A0 * Fx(i1) + A * Fx(i)
         end subroutine CalcLinFun1_1 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        real(c_double) function CalcLinFun2_0 ( i, j, X, Y, N1, N2, P1, P2, F ) !!
-        integer(c_int), intent(in)                           :: i, j, N1, N2
-        real(c_double), intent(in)                              :: X, Y
-        real(c_double), dimension(0:N1-1), intent(in)           :: P1
-        real(c_double), dimension(0:N2-1), intent(in)           :: P2
-        real(c_double), dimension(0:N1-1,0:N2-1), intent(inout) :: F
-        integer(c_int)                                       :: i1, j1
-        real(c_double)                                          :: A, A0, B, B0, G, G0
+        real*8 function CalcLinFun2_0 ( i, j, X, Y, N1, N2, P1, P2, F ) !!
+        integer*4, intent(in)                           :: i, j, N1, N2
+        real*8, intent(in)                              :: X, Y
+        real*8, dimension(0:N1-1), intent(in)           :: P1
+        real*8, dimension(0:N2-1), intent(in)           :: P2
+        real*8, dimension(0:N1-1,0:N2-1), intent(inout) :: F
+        integer*4                                       :: i1, j1
+        real*8                                          :: A, A0, B, B0, G, G0
         !-------------------------------------------------------------------------------------------
                 i1 = i - 1
                 j1 = j - 1
@@ -80,14 +65,14 @@ contains !**********************************************************************
         end function CalcLinFun2_0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
         subroutine CalcLinFun2_1 ( S, Sx1, Sy1, i, j, X, Y, N1, N2, P1, P2, F, Fx, Fy ) !!!!!!!!!!!!
-        real(c_double), intent(out)                             :: S, Sx1, Sy1
-        integer(c_int), intent(in)                           :: i, j, N1, N2
-        real(c_double), intent(in)                              :: X, Y
-        real(c_double), dimension(0:N1-1), intent(in)           :: P1
-        real(c_double), dimension(0:N2-1), intent(in)           :: P2
-        real(c_double), dimension(0:N1-1,0:N2-1), intent(inout) :: F, Fx, Fy
-        integer(c_int)                                       :: i1, j1
-        real(c_double)                                          :: A, A0, B, B0, G, G0
+        real*8, intent(out)                             :: S, Sx1, Sy1
+        integer*4, intent(in)                           :: i, j, N1, N2
+        real*8, intent(in)                              :: X, Y
+        real*8, dimension(0:N1-1), intent(in)           :: P1
+        real*8, dimension(0:N2-1), intent(in)           :: P2
+        real*8, dimension(0:N1-1,0:N2-1), intent(inout) :: F, Fx, Fy
+        integer*4                                       :: i1, j1
+        real*8                                          :: A, A0, B, B0, G, G0
         !-------------------------------------------------------------------------------------------
                 i1 = i - 1
                 j1 = j - 1

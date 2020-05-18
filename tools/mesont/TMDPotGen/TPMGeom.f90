@@ -1,66 +1,55 @@
-! ------------ ----------------------------------------------------------
-!   LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
-!   http://lammps.sandia.gov, Sandia National Laboratories
-!   Steve Plimpton, sjplimp@sandia.gov
-!
-!   Copyright (2003) Sandia Corporation.  Under the terms of Contract
-!   DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-!   certain rights in this software.  This software is distributed under
-!   the GNU General Public License.
-!
-!   See the README file in the top-level LAMMPS directory.
-!   
-!   Contributing author: Alexey N. Volkov, UA, avolkov1@ua.edu
-!------------------------------------------------------------------------- 
-
 module TPMGeom !************************************************************************************
 !
-! Geometry functions.
+! Geometry functions for TPM force field.
 !
 !---------------------------------------------------------------------------------------------------
 !
 ! Intel Fortran
 !
-! Alexey N. Volkov, University of Alabama, avolkov1@ua.edu, Version 09.01, 2017
+! Alexey N. Volkov, University of Alabama, avolkov1@ua.edu, Version 13.00, 2020
 !
 !***************************************************************************************************
 
 use TPMLib
-use iso_c_binding, only : c_int, c_double, c_char
+
 implicit none
 
 !---------------------------------------------------------------------------------------------------
 ! Constants
 !---------------------------------------------------------------------------------------------------
 
-        integer(c_int), parameter    :: MD_LINES_NONPAR      = 0
-        integer(c_int), parameter    :: MD_LINES_PAR         = 1
+        integer*4, parameter    :: MD_LINES_NONPAR      = 0
+        integer*4, parameter    :: MD_LINES_PAR         = 1
 
 !---------------------------------------------------------------------------------------------------
 ! Global variables
 !---------------------------------------------------------------------------------------------------
         
         ! Coordinates of the whole domain
-        real(c_double)                  :: DomXmin, DomXmax, DomYmin, DomYmax, DomZmin, DomZmax
-        real(c_double)                  :: DomLX, DomLY, DomLZ
-        real(c_double)                  :: DomLXhalf, DomLYhalf, DomLZhalf
+        real*8                  :: DomXmin, DomXmax, DomYmin, DomYmax, DomZmin, DomZmax
+        real*8                  :: DomLX, DomLY, DomLZ
+        real*8                  :: DomLXhalf, DomLYhalf, DomLZhalf
         
         ! Boundary conditions 
-        integer(c_int)               :: BC_X            = 0
-        integer(c_int)               :: BC_Y            = 0
-        integer(c_int)               :: BC_Z            = 0
+        integer*4               :: BC_X                 = 0
+        integer*4               :: BC_Y                 = 0
+        integer*4               :: BC_Z                 = 0
 
         ! Skin parameter in NBL and related algorithms
-        real(c_double)                  :: Rskin        = 1.0d+00
+        real*8                  :: Rskin                = 1.0d+00
         
 contains !******************************************************************************************
 
         subroutine ApplyPeriodicBC ( R ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        ! This subroutine changes coordinates of the point according to the periodic boundary conditions
-        ! it order to make sure that the point is inside the computational cell,
+        ! This subroutine changes coordinates of the point according to periodic boundary conditions
+        ! it order to make sure that the point is inside the computational cell
         !-------------------------------------------------------------------------------------------
-        real(c_double), dimension(0:2), intent(inout)   :: R
+        real*8, dimension(0:2), intent(inout)   :: R
         !-------------------------------------------------------------------------------------------
+                ! These commented lines implement the more general, but less efficient algorithm
+                !if ( BC_X == 1 ) R(0) = R(0) - DomLX * roundint ( R(0) / DomLX )
+                !if ( BC_Y == 1 ) R(1) = R(1) - DomLY * roundint ( R(1) / DomLY )
+                !if ( BC_Z == 1 ) R(2) = R(2) - DomLZ * roundint ( R(2) / DomLZ )
                 if ( BC_X == 1 ) then
                         if ( R(0) .GT. DomLXHalf ) then
                                 R(0) = R(0) - DomLX
@@ -85,12 +74,12 @@ contains !**********************************************************************
         end subroutine ApplyPeriodicBC !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         subroutine LinePoint ( Displacement, Q, R1, L1, R0 ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        ! This function calculates the point Q of projection of point R0 onto line (R1,L1).
-        ! Q = R1 + Displacement * L1.
+        ! This function calculates the point Q of projection of point R0 on line (R1,L1)
+        ! Q = R1 + Disaplacement * L1
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(inout)                   :: Displacement
-        real(c_double), dimension(0:2), intent(inout)   :: Q
-        real(c_double), dimension(0:2), intent(in)      :: R1, L1, R0
+        real*8, intent(inout)                   :: Displacement
+        real*8, dimension(0:2), intent(inout)   :: Q
+        real*8, dimension(0:2), intent(in)      :: R1, L1, R0
         !--------------------------------------------------------------------------------------------
                 Q = R0 - R1
                 ! Here we take into account periodic boundaries
@@ -99,26 +88,26 @@ contains !**********************************************************************
                 Q = R1 + Displacement * L1
         end subroutine LinePoint !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        integer(c_int) function LineLine ( H, cosA, D1, D2, L12, R1, L1, R2, L2, Prec ) !!!!!!!!!!!!
-        ! This function determines the smallest distance H between two lines (R1,L1) and (R2,L2).
+        integer*4 function LineLine ( H, cosA, D1, D2, L12, R1, L1, R2, L2, Prec ) !!!!!!!!!!!!!!!!!
+        ! This function determines the nearest distance H between two lines (R1,L1) and (R2,L2)
         !-------------------------------------------------------------------------------------------
         ! Input values:
-        !      R1, L1, point and direction of line 1.
-        !      R2, L2, point and direction of line 2.
-        !      Prec, precision for the case L1 * L2 = 0 (parallel lines).
+        !      R1, L1, point and direction of line 1
+        !      R2, L2, point and direction of line 2
+        !      Prec, precision for the case L1 * L2 = 0 (parallel lines)
         ! Return values:
-        !      H, minimum distance between lines.
-        !      cosA, cosine of the angle between lines.
-        !      D1, D2, displacements.
-        !      L12, unit vector directed along the closest distance.
+        !      H, minimal distance between lines
+        !      cosA, cosine of angle between lines
+        !      D1, D2, displacements
+        !      L12, unit vector directed along the closes distance
         !-------------------------------------------------------------------------------------------      
-        real(c_double), intent(inout)                   :: H, cosA, D1, D2
-        real(c_double), dimension(0:2), intent(out)     :: L12
-        real(c_double), dimension(0:2), intent(in)      :: R1, L1, R2, L2
+        real*8, intent(inout)                   :: H, cosA, D1, D2
+        real*8, dimension(0:2), intent(out)     :: L12
+        real*8, dimension(0:2), intent(in)      :: R1, L1, R2, L2
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(in)                      :: Prec 
-        real(c_double), dimension(0:2)                  :: Q1, Q2, R
-        real(c_double)                                  :: C, DD1, DD2, C1, C2
+        real*8, intent(in)                      :: Prec 
+        real*8, dimension(0:2)                  :: Q1, Q2, R
+        real*8                                  :: C, DD1, DD2, C1, C2
         !-------------------------------------------------------------------------------------------
                 cosA = S_V3xV3 ( L1, L2 )
                 C     = 1.0 - sqr ( cosA )
@@ -128,7 +117,7 @@ contains !**********************************************************************
                 end if
                 LineLine = MD_LINES_NONPAR
                 R = R2 - R1
-                ! Here we take into account periodic boundary conditions
+                ! Here we take into account periodic boundaries
                 call ApplyPeriodicBC ( R )
                 DD1 = S_V3xV3 ( R, L1 )
                 DD2 = S_V3xV3 ( R, L2 )
@@ -137,7 +126,7 @@ contains !**********************************************************************
                 Q1 = R1 - D1 * L1
                 Q2 = R2 - D2 * L2
                 L12 = Q2 - Q1
-                ! Here we take into account periodic boundary conditions
+                ! Here we take into account periodic boundaries
                 call ApplyPeriodicBC ( L12 )
                 H = S_V3norm3 ( L12 )
                 if ( H < Prec ) then ! Lines intersect each other

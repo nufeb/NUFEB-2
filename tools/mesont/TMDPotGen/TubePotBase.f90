@@ -1,28 +1,12 @@
-! ------------ ----------------------------------------------------------
-!   LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
-!   http://lammps.sandia.gov, Sandia National Laboratories
-!   Steve Plimpton, sjplimp@sandia.gov
-!
-!   Copyright (2003) Sandia Corporation.  Under the terms of Contract
-!   DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-!   certain rights in this software.  This software is distributed under
-!   the GNU General Public License.
-!
-!   See the README file in the top-level LAMMPS directory.
-!   
-!   Contributing author: Alexey N. Volkov, UA, avolkov1@ua.edu
-!------------------------------------------------------------------------- 
-
 module TubePotBase !********************************************************************************
 !
-! TMD Library: Non-Bonded pair interaction potential and transfer functions for atoms composing 
-! nanotubes.
+! Non-Bonded pair interaction potential and transfer functions for atoms composing nanotubes.
 !
 !---------------------------------------------------------------------------------------------------
 !
 ! Intel Fortran
 !
-! Alexey N. Volkov, University of Alabama, avolkov1@ua.edu, Version 09.01, 2017
+! Alexey N. Volkov, University of Alabama, avolkov1@ua.edu, Version 13.00, 2020
 !
 !---------------------------------------------------------------------------------------------------
 !
@@ -30,15 +14,15 @@ module TubePotBase !************************************************************
 ! potentials.
 ! 
 ! It includes definitions of 
-!   -- TPBU, Lennard-Jones (12-6) potential
-!   -- TPBQ, Transfer function
+!   -- TPBU, Lennard-Jones (12-6) potential;
+!   -- TPBQ, Transfer function,
 !
-! All default values are adjusted for non-bonded carbob-carbon interaction in carbon nanotubes.
+! All default values are adjusted for non-bonded carbon-carbon interaction in carbon nanotubes.
 !
 !***************************************************************************************************
 
 use TPMLib
-use iso_c_binding, only : c_int, c_double, c_char
+
 implicit none
 
 !---------------------------------------------------------------------------------------------------
@@ -46,87 +30,83 @@ implicit none
 !---------------------------------------------------------------------------------------------------
         
         ! Types of the potential with respect to the breathing mode
-        integer(c_int), parameter            :: TP_POT_MONO_R        = 0
-        integer(c_int), parameter            :: TP_POT_POLY_R        = 1
+        integer*4, parameter    :: TP_POT_MONO_R        = 0
+        integer*4, parameter    :: TP_POT_POLY_R        = 1
 
-        ! Maximal number of elements in corresponding tables
-        integer(c_int), parameter            :: TPBNMAX              = 2001
+        ! Maximum number of elements in corresponding tables
+        integer*4, parameter    :: TPBNMAX              = 2001
 
         ! Numerical constants
-        real(c_double), parameter               :: TPbConstD            = 5.196152422706632d+00 ! = 3.0**1.5
+        real*8, parameter       :: TPbConstD            = 5.196152422706632d+00 ! = 3.0**1.5
 
         ! Mass of C atom
-        real(c_double), parameter               :: TPBMc                = 12.0107d+00            ! (Da)
+        real*8, parameter       :: TPBMc                = 12.0107d+00            ! (Da)
         
-        ! Parameters of the Van der Waals inteaction between carbon atoms in graphene sheets, see
+        ! Parameters of the Van der Waals interaction between carbon atoms in graphene sheets, see
         ! Stuart S.J., Tutein A.B., Harrison J.A., J. Chem. Phys. 112(14), 2000
-        real(c_double), parameter               :: TPBEcc               = 0.00284d+00           ! (eV)
-        real(c_double), parameter               :: TPBScc               = 3.4d+00               ! (A)
+        real*8, parameter       :: TPBEcc               = 0.00284d+00           ! (eV)
+        real*8, parameter       :: TPBScc               = 3.4d+00               ! (A)
 
-        ! Lattice parameter and numerical density of atoms for a graphene sheet, see
+        ! Lattice parameter and surface number density of atoms for a graphene sheet, see
         ! Dresselhaus et al, Carbon 33(7), 1995
-        real(c_double), parameter               :: TPBAcc               = 1.421d+00             ! (A)
-        real(c_double), parameter               :: TPBDcc               = 4.0d+00 / ( TPBConstD * TPBAcc * TPBAcc ) ! (1/A^2)
+        real*8, parameter       :: TPBAcc               = 1.421d+00             ! (A)
+        real*8, parameter       :: TPBDcc               = 4.0d+00 / ( TPBConstD * TPBAcc * TPBAcc ) ! (1/A^2)
         
         ! Specific heat of carbon nanotubes
-        real(c_double), parameter               :: TPBSHcc              = 600.0d+00 / K_MDCU    ! (eV/(Da*K))
+        real*8, parameter       :: TPBSHcc              = 600.0d+00 / K_MDCU    ! (eV/(Da*K))
         
-        ! Cutoff distances for interactomic potential and transfer function
+        ! Cutoff distances for interactomic potential and transfer function.
         ! Changes in these parameters can result in necessity to change some numerical parameters too.
-        real(c_double), parameter               :: TPBRmincc            = 0.001d+00 * TPBScc    ! (A)
-        real(c_double), parameter               :: TPBRcutoffcc         = 3.0d+00 * TPBScc      ! (A)
-        real(c_double), parameter               :: TPBRcutoff1cc        = 2.16d+00 * TPBScc     ! (A)
+        real*8, parameter       :: TPBRmincc            = 0.001d+00 * TPBScc    ! (A)
+        real*8, parameter       :: TPBRcutoffcc         = 3.0d+00 * TPBScc      ! (A)
+        real*8, parameter       :: TPBRcutoff1cc        = 2.16d+00 * TPBScc     ! (A)
         
         ! Parameters of the transfer function for non-bonded interaction between carbon atoms
-        !real(c_double), parameter               :: TPBQScc             = TPBScc                ! (A)
-        !real(c_double), parameter               :: TPBQRcutoff1cc      = 2.16d+00 * TPBScc     ! (A)
-        real(c_double), parameter               :: TPBQScc              = 7.0d+00               ! (A)
-        real(c_double), parameter               :: TPBQRcutoff1cc       = 8.0d+00               ! (A)
+        real*8, parameter       :: TPBQScc              = 7.0d+00               ! (A)
+        real*8, parameter       :: TPBQRcutoff1cc       = 8.0d+00               ! (A)
         
 !---------------------------------------------------------------------------------------------------
 ! Global variables
 !---------------------------------------------------------------------------------------------------
         
-        logical                         :: TPErrCheck           = .true.                ! Set to .true. to generate diagnostic and warning messages
-        character*512                   :: TPErrMsg             = ''                    ! Typically, this variable is set up in F_tt ()
+        logical         :: TPErrCheck   = .true.                ! Set to .true. to generate diagnostic and warning messages
+        character*512   :: TPErrMsg     = ''                    
         
-        real(c_double)                          :: TPGeomPrec           = 1.0d-06               ! Geometric precision, see TPInt
-        integer(c_int)                       :: TPPotType            = TP_POT_MONO_R         ! Type of the potential with respect to the breathing mode
+        real*8          :: TPGeomPrec   = 1.0d-06               ! Geometric precision, see TPInt
+        integer*4       :: TPPotType    = TP_POT_MONO_R         ! Type of the potential with respect to the breathing mode
         
-        ! Physical parameters of the interatomic potential and atoms distribution at the surface
-        ! of the tube
+        ! Parameters of the interatomic potential and atoms distribution at the nanotube surface 
         
-        real(c_double)                          :: TPBM                 = TPBMc                 ! Mass of an atom, Da
-        real(c_double)                          :: TPBE                 = TPBEcc                ! Depth of the energy well in LJ (12-6) interatomic potential (eV)
-        real(c_double)                          :: TPBS                 = TPBScc                ! Sigma parameter of LJ (12-6) interatomic potential (A)
-        real(c_double)                          :: TPBD                 = TPBDcc                ! Numerical density of atoms at the tube surface (1/A^2)
-        real(c_double)                          :: TPBSH                = TPBSHcc               ! Specific heat (eV/(Da*K))
+        real*8          :: TPBM         = TPBMc                 ! Mass of an atom (Da)
+        real*8          :: TPBE         = TPBEcc                ! Depth of the energy well in (12-6) LJ interatomic potential (eV)
+        real*8          :: TPBS         = TPBScc                ! Sigma parameter of (12-6) LJ interatomic potential (A)
+        real*8          :: TPBD         = TPBDcc                ! Numerical density of atoms at the tube surface (1/A^2)
+        real*8          :: TPBSH        = TPBSHcc               ! Specific heat (eV/(Da*K))
         
-        real(c_double)                          :: TPBRmin              = TPBRmincc             ! (A)
-        real(c_double)                          :: TPBRcutoff           = TPBRcutoffcc          ! (A)
-        real(c_double)                          :: TPBRcutoff1          = TPBRcutoff1cc         ! (A)
+        real*8          :: TPBRmin      = TPBRmincc             ! (A)
+        real*8          :: TPBRcutoff   = TPBRcutoffcc          ! (A)
+        real*8          :: TPBRcutoff1  = TPBRcutoff1cc         ! (A)
 
         ! Physical parameters of the transfer function
         
-        real(c_double)                          :: TPBQS                = TPBQScc               ! Sigma parameter of the transfer function (A)
-        real(c_double)                          :: TPBQRcutoff1         = TPBQRcutoff1cc        ! (A)
+        real*8          :: TPBQS        = TPBQScc               ! Sigma parameter of the transfer function (A)
+        real*8          :: TPBQRcutoff1 = TPBQRcutoff1cc        ! (A)
         
-        ! Auxilary variables
+        ! Auxiliary variables
                 
-        real(c_double)                          :: TPBE4, TPBE24, TPBDRcutoff, TPBQDRcutoff
-        real(c_double)                          :: TPBQR0                                       ! Constant-value distance for the transfer function (A)
+        real*8          :: TPBE4, TPBE24, TPBDRcutoff, TPBQDRcutoff
+        real*8          :: TPBQR0                               ! Constant-value distance for the transfer function (A)
         
         ! Table of inter-particle potential, force, and transfer function
         
-        integer(c_int)                       :: TPBN                 = TPBNMAX
-        real(c_double)                          :: TPBDR
-        real(c_double), dimension(0:TPBNMAX-1)  :: TPBQ
-        real(c_double), dimension(0:TPBNMAX-1)  :: TPBU, TPBdUdR
+        integer*4                       :: TPBN                 = TPBNMAX
+        real*8                          :: TPBDR
+        real*8, dimension(0:TPBNMAX-1)  :: TPBQ
+        real*8, dimension(0:TPBNMAX-1)  :: TPBU, TPBdUdR
         
 contains !******************************************************************************************
 
-        integer(c_int) function TPBsizeof () !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                !TPBsizeof = sizeof ( TPBU ) + sizeof ( TPBdUdR )
+        integer*4 function TPBsizeof () !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 TPBsizeof = 8 * ( size ( TPBQ ) + size ( TPBU ) + size ( TPBdUdR ) )
         end function TPBsizeof !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
@@ -134,11 +114,11 @@ contains !**********************************************************************
 ! Interpolation
 !---------------------------------------------------------------------------------------------------
 
-        real(c_double) function TPBQInt0 ( R ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double), intent(in)      :: R 
+        real*8 function TPBQInt0 ( R ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        real*8, intent(in)      :: R 
         !-------------------------------------------------------------------------------------------
-        real(c_double)                  :: Z, RR
-        integer(c_int)               :: i
+        real*8                  :: Z, RR
+        integer*4               :: i
         !-------------------------------------------------------------------------------------------
                 if ( R < TPBRmin ) then
                         !call PrintStdLogMsg ( TPErrMsg )
@@ -155,11 +135,11 @@ contains !**********************************************************************
                 TPBQInt0 = TPBQ(i) * Z + TPBQ(i+1) * RR    
         end function TPBQInt0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        real(c_double) function TPBUInt0 ( R ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double), intent(in)      :: R 
+        real*8 function TPBUInt0 ( R ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        real*8, intent(in)      :: R 
         !-------------------------------------------------------------------------------------------
-        real(c_double)                  :: Z, RR
-        integer(c_int)               :: i
+        real*8                  :: Z, RR
+        integer*4               :: i
         !-------------------------------------------------------------------------------------------
                 if ( R < TPBRmin ) then
                         !call PrintStdLogMsg ( TPErrMsg )
@@ -177,11 +157,11 @@ contains !**********************************************************************
         end function TPBUInt0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
         subroutine TPBUInt1 ( U, dUdR, R ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double), intent(out)     :: U, dUdR
-        real(c_double), intent(in)      :: R 
+        real*8, intent(out)     :: U, dUdR
+        real*8, intent(in)      :: R 
         !-------------------------------------------------------------------------------------------
-        real(c_double)                  :: Z, RR
-        integer(c_int)               :: i
+        real*8                  :: Z, RR
+        integer*4               :: i
         !-------------------------------------------------------------------------------------------
                 if ( R < TPBRmin ) then
                         !call PrintStdLogMsg ( TPErrMsg )
@@ -204,10 +184,10 @@ contains !**********************************************************************
 ! Calculation
 !---------------------------------------------------------------------------------------------------
         
-        real(c_double) function TPBQCalc0 ( R ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double), intent(in)      :: R
+        real*8 function TPBQCalc0 ( R ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        real*8, intent(in)      :: R
         !-------------------------------------------------------------------------------------------
-        real(c_double)                  :: Z, t, S
+        real*8                  :: Z, t, S
         !-------------------------------------------------------------------------------------------
                 if ( R > TPBRcutoff ) then
                         TPBQCalc0 = 0.0d+00
@@ -226,10 +206,10 @@ contains !**********************************************************************
                 endif
         end function TPBQCalc0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
-        real(c_double) function TPBUCalc0 ( R ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double), intent(in)      :: R
+        real*8 function TPBUCalc0 ( R ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        real*8, intent(in)      :: R
         !-------------------------------------------------------------------------------------------
-        real(c_double)                  :: Z, t, S
+        real*8                  :: Z, t, S
         !-------------------------------------------------------------------------------------------
                 if ( R > TPBRcutoff ) then
                         TPBUCalc0 = 0.0d+00
@@ -247,9 +227,9 @@ contains !**********************************************************************
         end function TPBUCalc0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         subroutine TPBUCalc1 ( U, dUdR, R ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double), intent(out)     :: U, dUdR
-        real(c_double), intent(in)      :: R
-        real(c_double)                  :: Z, t, S, dSdR
+        real*8, intent(out)     :: U, dUdR
+        real*8, intent(in)      :: R
+        real*8                  :: Z, t, S, dSdR
         !-------------------------------------------------------------------------------------------
                 if ( R > TPBRcutoff ) then
                         U    = 0.0d+00
@@ -271,11 +251,11 @@ contains !**********************************************************************
         end subroutine TPBUCalc1 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
         subroutine TPBSegmentForces ( F1, F2, F, M, Laxis, L ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double), dimension(0:2), intent(out)     :: F1, F2
-        real(c_double), dimension(0:2), intent(in)      :: F, M, Laxis
-        real(c_double), intent(in)                      :: L
+        real*8, dimension(0:2), intent(out)     :: F1, F2
+        real*8, dimension(0:2), intent(in)      :: F, M, Laxis
+        real*8, intent(in)                      :: L
         !-------------------------------------------------------------------------------------------
-        real(c_double), dimension(0:2)                  :: FF, MM, FFF
+        real*8, dimension(0:2)                  :: FF, MM, FFF
         !-------------------------------------------------------------------------------------------
                 FF = 0.5d+00 * F
                 MM = M / L
@@ -285,35 +265,12 @@ contains !**********************************************************************
         end subroutine TPBSegmentForces !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !---------------------------------------------------------------------------------------------------
-! Printing
-!---------------------------------------------------------------------------------------------------
-
-!        subroutine TPBPrint ( FileName ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!        character(c_char)*(*), intent(in)       :: FileName
-!        !-------------------------------------------------------------------------------------------
-!       integer(c_int)                       :: Fuid
-!        integer(c_int)                       :: i
-!        real(c_double)                          :: R
-!        !-------------------------------------------------------------------------------------------
-!                Fuid = OpenFile ( FileName, "wt", outputpath )
-!                write ( Fuid, '(a)' ) 'TITLE="TPB Potentials"'
-!                write ( Fuid, '(a)' ) 'VARIABLES="R" "Q" "U" "dUdR"'
-!                write ( Fuid, '(a)' ) 'ZONE'
-!                R = TPBRmin
-!                do i = 0, TPBN - 1
-!                        write ( Fuid, '(4e22.12)' ) R, TPBQ(i), TPBU(i), TPBDUDR(i)
-!                        R = R + TPBDR
-!                end do
-!                call CloseFile ( Fuid )
-!        end subroutine TPBPrint !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!---------------------------------------------------------------------------------------------------
 ! Initialization
 !---------------------------------------------------------------------------------------------------
         
         subroutine TPBInit () !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double)          :: R
-        integer(c_int)       :: i
+        real*8          :: R
+        integer*4       :: i
         !-------------------------------------------------------------------------------------------
                 TPBE4 = 4.0d+00 * TPBE
                 TPBE24 = - 24.0d+00 * TPBE

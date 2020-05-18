@@ -1,27 +1,6 @@
-! ------------ ----------------------------------------------------------
-!   LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
-!   http://lammps.sandia.gov, Sandia National Laboratories
-!   Steve Plimpton, sjplimp@sandia.gov
-!
-!   Copyright (2003) Sandia Corporation.  Under the terms of Contract
-!   DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-!   certain rights in this software.  This software is distributed under
-!   the GNU General Public License.
-!
-!   See the README file in the top-level LAMMPS directory.
-!   
-!   Contributing author: Alexey N. Volkov, UA, avolkov1@ua.edu
-!------------------------------------------------------------------------- 
-
 module TubePotTrue !********************************************************************************
 !
-! TMD Library: True tubular potential and transfer function
-!
-!---------------------------------------------------------------------------------------------------
-!
-! Intel Fortran
-!
-! Alexey N. Volkov, University of Alabama, avolkov1@ua.edu, Version 09.01, 2017
+! True tubular potential and transfer function
 !
 !---------------------------------------------------------------------------------------------------
 !
@@ -29,33 +8,39 @@ module TubePotTrue !************************************************************
 ! between two cylinder segments of nanotubes by direct integration over the surfaces of both 
 ! segments.
 !
+!---------------------------------------------------------------------------------------------------
+!
+! Intel Fortran
+!
+! Alexey N. Volkov, University of Alabama, avolkov1@ua.edu, Version 13.00, 2020
+!
 !***************************************************************************************************
 
 use TPMGeom
 use TubePotBase
-use iso_c_binding, only : c_int, c_double, c_char
+
 implicit none
 
 !---------------------------------------------------------------------------------------------------
 ! Constants
 !---------------------------------------------------------------------------------------------------
 
-        integer(c_int), parameter    :: TPTNXMAX     = 257
-        integer(c_int), parameter    :: TPTNEMAX     = 128
+        integer*4, parameter    :: TPTNXMAX     = 257
+        integer*4, parameter    :: TPTNEMAX     = 128
 
 !---------------------------------------------------------------------------------------------------
 ! Types
 !---------------------------------------------------------------------------------------------------
 
         type TPTSEG !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double)                  :: X, Y, Z
-        real(c_double)                  :: Psi, Theta, Phi              ! Euler's angles
-        real(c_double)                  :: R                            ! Segment radius
-        real(c_double)                  :: L                            ! Segment length
-        integer(c_int)               :: NX, NE                       ! Number of nodes for numerical integration
-        real(c_double)                  :: DX, DE                       ! Spacings
-        real(c_double), dimension(0:2,0:2) :: M                         ! Transformation matrix
-        real(c_double), dimension(0:TPTNXMAX-1,0:TPTNXMAX-1,0:2) :: Rtab! Node coordinates        
+        real*8                  :: X, Y, Z
+        real*8                  :: Psi, Theta, Phi              ! Euler's angles
+        real*8                  :: R                            ! Segment radius
+        real*8                  :: L                            ! Segment length
+        integer*4               :: NX, NE                       ! Number of nodes for numerical integration
+        real*8                  :: DX, DE                       ! Spacings
+        real*8, dimension(0:2,0:2) :: M                         ! Transformation matrix
+        real*8, dimension(0:TPTNXMAX-1,0:TPTNXMAX-1,0:2) :: Rtab! Node coordinates        
         end type TPTSEG !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !---------------------------------------------------------------------------------------------------
@@ -68,17 +53,17 @@ contains !**********************************************************************
 
         subroutine TPTSegAxisVector ( S, Laxis ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         type(TPTSEG), intent(in)                :: S
-        real(c_double), dimension(0:2), intent(out)     :: Laxis
+        real*8, dimension(0:2), intent(out)     :: Laxis
         !-------------------------------------------------------------------------------------------
                 Laxis(0:2) = S%M(2,0:2)
         end subroutine TPTSegAxisVector !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         subroutine TPTSegRadVector ( S, Lrad, Eps ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         type(TPTSEG), intent(in)                :: S
-        real(c_double), dimension(0:2), intent(out)     :: Lrad
-        real(c_double), intent(in)                      :: Eps
+        real*8, dimension(0:2), intent(out)     :: Lrad
+        real*8, intent(in)                      :: Eps
         !-------------------------------------------------------------------------------------------
-        real(c_double)                                  :: Ce, Se
+        real*8                                  :: Ce, Se
         !-------------------------------------------------------------------------------------------
                 Ce = cos ( Eps )
                 Se = sin ( Eps )
@@ -89,10 +74,10 @@ contains !**********************************************************************
 
         subroutine TPTRadiusVector ( S, R, X, Eps ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         type(TPTSEG), intent(in)                :: S
-        real(c_double), dimension(0:2), intent(out)     :: R
-        real(c_double), intent(in)                      :: X, Eps
+        real*8, dimension(0:2), intent(out)     :: R
+        real*8, intent(in)                      :: X, Eps
         !-------------------------------------------------------------------------------------------
-        real(c_double), dimension(0:2)                  :: Laxis, Lrad
+        real*8, dimension(0:2)                  :: Laxis, Lrad
         !-------------------------------------------------------------------------------------------
                 call TPTSegAxisVector ( S, Laxis )
                 call TPTSegRadVector ( S, Lrad, Eps )
@@ -104,8 +89,8 @@ contains !**********************************************************************
         subroutine TPTCalcSegNodeTable ( S ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         type(TPTSEG), intent(inout)     :: S
         !-------------------------------------------------------------------------------------------
-        real(c_double)                          :: X, Eps
-        integer(c_int)                       :: i, j
+        real*8                          :: X, Eps
+        integer*4                       :: i, j
         !-------------------------------------------------------------------------------------------
                 X = - S%L / 2.0
                 call RotationMatrix3 ( S%M, S%Psi, S%Theta, S%Phi )
@@ -121,8 +106,8 @@ contains !**********************************************************************
 
         subroutine TPTSetSegPosition1 ( S, Rcenter, Laxis, L ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         type(TPTSEG), intent(inout)             :: S
-        real(c_double), dimension(0:2), intent(in)      :: Rcenter, Laxis
-        real(c_double), intent(in)                      :: L
+        real*8, dimension(0:2), intent(in)      :: Rcenter, Laxis
+        real*8, intent(in)                      :: L
         !-------------------------------------------------------------------------------------------
                 S%L  = L
                 S%DX = L / ( S%NX - 1 )
@@ -136,10 +121,10 @@ contains !**********************************************************************
         
         subroutine TPTSetSegPosition2 ( S, R1, R2 ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         type(TPTSEG), intent(inout)             :: S
-        real(c_double), dimension(0:2), intent(in)      :: R1, R2
+        real*8, dimension(0:2), intent(in)      :: R1, R2
         !-------------------------------------------------------------------------------------------
-        real(c_double), dimension(0:2)                  :: R, Laxis 
-        real(c_double)                                  :: L
+        real*8, dimension(0:2)                  :: R, Laxis 
+        real*8                                  :: L
         !-------------------------------------------------------------------------------------------
                 R = 0.5 * ( R1 + R2 )
                 Laxis = R2 - R1
@@ -148,12 +133,12 @@ contains !**********************************************************************
                 call TPTSetSegPosition1 ( S, R, Laxis, L )
         end subroutine TPTSetSegPosition2 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
-        integer(c_int) function TPTCheckIntersection ( S1, S2 ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        integer*4 function TPTCheckIntersection ( S1, S2 ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         type(TPTSEG), intent(in)        :: S1, S2
         !-------------------------------------------------------------------------------------------
-        integer(c_int)                       :: i, j
-        real(c_double)                          :: L1, L2, Displacement, D
-        real(c_double), dimension(0:2)          :: Laxis, Q, R
+        integer*4                       :: i, j
+        real*8                          :: L1, L2, Displacement, D
+        real*8, dimension(0:2)          :: Laxis, Q, R
         !-------------------------------------------------------------------------------------------
                 L2 = S1%L / 2.0
                 L1 = - L2
@@ -164,7 +149,8 @@ contains !**********************************************************************
                 do i = 0, S2%NX - 1
                         do j = 0, S2%NE - 1
                                 call LinePoint ( Displacement, Q, R, Laxis, S2%Rtab(i,j,0:2) )
-                                D = sqrt ( sqr ( Q(0) - S2%Rtab(i,j,0) ) + sqr ( Q(1) - S2%Rtab(i,j,1) ) + sqr ( Q(2) - S2%Rtab(i,j,2) )  )
+                                D = sqrt ( sqr ( Q(0) - S2%Rtab(i,j,0) ) + sqr ( Q(1) - S2%Rtab(i,j,1) ) &
+                                        + sqr ( Q(2) - S2%Rtab(i,j,2) )  )
                                 if ( Displacement > L1 .and. Displacement < L2 .and. D < S1%R ) then
                                         TPTCheckIntersection = 1
                                         return
@@ -174,13 +160,13 @@ contains !**********************************************************************
                 TPTCheckIntersection = 0
         end function TPTCheckIntersection !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        integer(c_int) function TPTCalcPointRange ( S, Xmin, Xmax, Re ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        integer*4 function TPTCalcPointRange ( S, Xmin, Xmax, Re ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         type(TPTSEG), intent(in)                :: S
-        real(c_double), intent(out)                     :: Xmin, Xmax
-        real(c_double), dimension(0:2), intent(in)      :: Re
+        real*8, intent(out)                     :: Xmin, Xmax
+        real*8, dimension(0:2), intent(in)      :: Re
         !-------------------------------------------------------------------------------------------
-        real(c_double)                                  :: Displacement, Distance
-        real(c_double), dimension(0:2)                  :: Laxis, Q, R
+        real*8                                  :: Displacement, Distance
+        real*8, dimension(0:2)                  :: Laxis, Q, R
         !-------------------------------------------------------------------------------------------
                 call TPTSegAxisVector ( S, Laxis )
                 R(0) = S%X
@@ -201,8 +187,8 @@ contains !**********************************************************************
         end function TPTCalcPointRange !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         subroutine TPTGetEnds ( R1_1, R1_2, R2_1, R2_2, X1_1, X1_2, X2_1, X2_2, H, A ) !!!!!!!!!!!!!
-        real(c_double), dimension(0:2), intent(out)     :: R1_1, R1_2, R2_1, R2_2
-        real(c_double), intent(in)                      :: X1_1, X1_2, X2_1, X2_2, H, A
+        real*8, dimension(0:2), intent(out)     :: R1_1, R1_2, R2_1, R2_2
+        real*8, intent(in)                      :: X1_1, X1_2, X2_1, X2_2, H, A
         !-------------------------------------------------------------------------------------------
                 R1_1(0) = 0.0d+00
                 R1_1(1) = 0.0d+00
@@ -222,19 +208,19 @@ contains !**********************************************************************
 ! Tubular potential
 !---------------------------------------------------------------------------------------------------
         
-        integer(c_int) function TPTPointPotential ( Q, U, F, R, S ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        integer*4 function TPTPointPotential ( Q, U, F, R, S ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         ! This function returns the potential U and force F applied to the atom  in position R and 
         ! produced by the segment S.
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(out)                     :: Q, U
-        real(c_double), dimension(0:2), intent(out)     :: F
-        real(c_double), dimension(0:2), intent(in)      :: R
+        real*8, intent(out)                     :: Q, U
+        real*8, dimension(0:2), intent(out)     :: F
+        real*8, dimension(0:2), intent(in)      :: R
         type(TPTSEG), intent(in)                :: S
         !-------------------------------------------------------------------------------------------
-        integer(c_int)                               :: i, j
-        real(c_double), dimension(0:2)                  :: RR, FF
-        real(c_double)                                  :: QQ, UU, UUU, FFF, Rabs
-        real(c_double)                                  :: Coeff, Xmin, Xmax, X
+        integer*4                               :: i, j
+        real*8, dimension(0:2)                  :: RR, FF
+        real*8                                  :: QQ, UU, UUU, FFF, Rabs
+        real*8                                  :: Coeff, Xmin, Xmax, X
         !-------------------------------------------------------------------------------------------
                 TPTPointPotential = 0
                 Q = 0.0d+00
@@ -277,19 +263,19 @@ contains !**********************************************************************
                 F = F * Coeff
         end function TPTPointPotential !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        integer(c_int) function TPTSectionPotential ( Q, U, F, M, S, i, Ssource ) !!!!!!!!!!!!!!!!!!!!!!!
-        ! This funcion returns the potential U, force F and torque M produced by the segment Ssource 
+        integer*4 function TPTSectionPotential ( Q, U, F, M, S, i, Ssource ) !!!!!!!!!!!!!!!!!!!!!!!
+        ! This function returns the potential U, force F and torque M produced by the segment Ssource 
         ! and applied to the i-th circular cross-section of the segment S.
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(out)                     :: Q, U
-        real(c_double), dimension(0:2), intent(out)     :: F, M
+        real*8, intent(out)                     :: Q, U
+        real*8, dimension(0:2), intent(out)     :: F, M
         type(TPTSEG), intent(in)                :: S, Ssource
-        integer(c_int), intent(in)                   :: i
+        integer*4, intent(in)                   :: i
         !-------------------------------------------------------------------------------------------
-        integer(c_int)                               :: j
-        real(c_double), dimension(0:2)                  :: R, Fp, Mp, Lrad
-        real(c_double)                                  :: Qp, Up, Eps
-        real(c_double)                                  :: Coeff 
+        integer*4                               :: j
+        real*8, dimension(0:2)                  :: R, Fp, Mp, Lrad
+        real*8                                  :: Qp, Up, Eps
+        real*8                                  :: Coeff 
         !-------------------------------------------------------------------------------------------
                 TPTSectionPotential = 0
                 Q = 0.0d+00
@@ -319,16 +305,16 @@ contains !**********************************************************************
                 M     = M * Coeff
         end function TPTSectionPotential !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        integer(c_int) function TPTSegmentPotential ( Q, U, F, M, S, Ssource ) !!!!!!!!!!!!!!!!!!!!!!!!!!
+        integer*4 function TPTSegmentPotential ( Q, U, F, M, S, Ssource ) !!!!!!!!!!!!!!!!!!!!!!!!!!
         ! This function returns the potential U, force F and torque M produced by the segment 
         ! Ssource and applied to the segment S.
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(out)                     :: Q, U
-        real(c_double), dimension(0:2), intent(out)     :: F, M
+        real*8, intent(out)                     :: Q, U
+        real*8, dimension(0:2), intent(out)     :: F, M
         type(TPTSEG), intent(in)                :: S, Ssource
-        integer(c_int)                               :: i
-        real(c_double), dimension(0:2)                  :: Fc, Mc
-        real(c_double)                                  :: Qc, Uc
+        integer*4                               :: i
+        real*8, dimension(0:2)                  :: Fc, Mc
+        real*8                                  :: Qc, Uc
         !-------------------------------------------------------------------------------------------
                 TPTSegmentPotential = 0
                 Q = 0.0d+00
@@ -366,11 +352,11 @@ contains !**********************************************************************
 !---------------------------------------------------------------------------------------------------
         
         subroutine TPTSegmentForces ( F1, F2, F, M, Laxis, L ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double), dimension(0:2), intent(out)     :: F1, F2
-        real(c_double), dimension(0:2), intent(in)      :: F, M, Laxis
-        real(c_double), intent(in)                      :: L
+        real*8, dimension(0:2), intent(out)     :: F1, F2
+        real*8, dimension(0:2), intent(in)      :: F, M, Laxis
+        real*8, intent(in)                      :: L
         !-------------------------------------------------------------------------------------------
-        real(c_double), dimension(0:2)                  :: MM, FF, FFF
+        real*8, dimension(0:2)                  :: MM, FF, FFF
         !-------------------------------------------------------------------------------------------
                 FF = 0.5d+00 * F
                 MM = M / L
@@ -379,15 +365,15 @@ contains !**********************************************************************
                 F2 = FF + FFF 
         end subroutine TPTSegmentForces !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
-        integer(c_int) function TPTInteractionF ( Q, U, F1_1, F1_2, F2_1, F2_2, R1_1, R1_2, R2_1, R2_2 )
-        ! This function returns the potential and forces appliend to the ends of segments.
+        integer*4 function TPTInteractionF ( Q, U, F1_1, F1_2, F2_1, F2_2, R1_1, R1_2, R2_1, R2_2 )
+        ! This function returns the potential and forces applied to the ends of segments.
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(out)                     :: Q, U
-        real(c_double), dimension(0:2), intent(out)     :: F1_1, F1_2, F2_1, F2_2
-        real(c_double), dimension(0:2), intent(in)      :: R1_1, R1_2, R2_1, R2_2
+        real*8, intent(out)                     :: Q, U
+        real*8, dimension(0:2), intent(out)     :: F1_1, F1_2, F2_1, F2_2
+        real*8, dimension(0:2), intent(in)      :: R1_1, R1_2, R2_1, R2_2
         !-------------------------------------------------------------------------------------------
-        real(c_double), dimension(0:2)                  :: R1, R2, Laxis1, Laxis2, DR, F1, M1, F2, M2
-        real(c_double)                                  :: L1, L2
+        real*8, dimension(0:2)                  :: R1, R2, Laxis1, Laxis2, DR, F1, M1, F2, M2
+        real*8                                  :: L1, L2
         !-------------------------------------------------------------------------------------------
                 R1 = 0.5 * ( R1_1 + R1_2 )
                 R2 = 0.5 * ( R2_1 + R2_2 )
@@ -414,8 +400,8 @@ contains !**********************************************************************
 !---------------------------------------------------------------------------------------------------
         
         subroutine TPTInit ( R1, R2, NX, NE ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double), intent(in)      :: R1, R2
-        integer(c_int), intent(in)   :: NX, NE
+        real*8, intent(in)      :: R1, R2
+        integer*4, intent(in)   :: NX, NE
         !-------------------------------------------------------------------------------------------
                 TPTSeg1%X     = 0.0d+00
                 TPTSeg1%Y     = 0.0d+00

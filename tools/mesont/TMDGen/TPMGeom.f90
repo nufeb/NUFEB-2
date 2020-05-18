@@ -1,57 +1,42 @@
-! ------------ ----------------------------------------------------------
-!   LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
-!   http://lammps.sandia.gov, Sandia National Laboratories
-!   Steve Plimpton, sjplimp@sandia.gov
-!
-!   Copyright (2003) Sandia Corporation.  Under the terms of Contract
-!   DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-!   certain rights in this software.  This software is distributed under
-!   the GNU General Public License.
-!
-!   See the README file in the top-level LAMMPS directory.
-!   
-!   Contributing author: Alexey N. Volkov, UA, avolkov1@ua.edu
-!------------------------------------------------------------------------- 
-
 module TPMGeom !************************************************************************************
 !
-! TMD Library: Geometry functions
+! Geometry functions for TPM force field
 !
 !---------------------------------------------------------------------------------------------------
 !
 ! Intel Fortran
 !
-! Alexey N. Volkov, University of Alabama, avolkov1@ua.edu, Version 09.01, 2017
+! Alexey N. Volkov, University of Alabama, avolkov1@ua.edu, 2020, Version 13.00
 !
 !***************************************************************************************************
 
 use TPMLib
-use iso_c_binding, only : c_int, c_double, c_char
+
 implicit none
 
 !---------------------------------------------------------------------------------------------------
 ! Constants
 !---------------------------------------------------------------------------------------------------
 
-        integer(c_int), parameter    :: MD_LINES_NONPAR      = 0
-        integer(c_int), parameter    :: MD_LINES_PAR         = 1
+        integer*4, parameter    :: MD_LINES_NONPAR      = 0
+        integer*4, parameter    :: MD_LINES_PAR         = 1
 
 !---------------------------------------------------------------------------------------------------
 ! Global variables
 !---------------------------------------------------------------------------------------------------
         
         ! Coordinates of the whole domain
-        real(c_double)                  :: DomXmin, DomXmax, DomYmin, DomYmax, DomZmin, DomZmax
-        real(c_double)                  :: DomLX, DomLY, DomLZ
-        real(c_double)                  :: DomLXhalf, DomLYhalf, DomLZhalf
+        real*8                  :: DomXmin, DomXmax, DomYmin, DomYmax, DomZmin, DomZmax
+        real*8                  :: DomLX, DomLY, DomLZ
+        real*8                  :: DomLXhalf, DomLYhalf, DomLZhalf
         
         ! Boundary conditions 
-        integer(c_int)               :: BC_X                 = 0
-        integer(c_int)               :: BC_Y                 = 0
-        integer(c_int)               :: BC_Z                 = 0
+        integer*4               :: BC_X                 = 0
+        integer*4               :: BC_Y                 = 0
+        integer*4               :: BC_Z                 = 0
 
         ! Skin parameter in NBL and related algorithms
-        real(c_double)                  :: Rskin                = 1.0d+00
+        real*8                  :: Rskin                = 1.0d+00
         
 contains !******************************************************************************************
 
@@ -59,7 +44,7 @@ contains !**********************************************************************
         ! This subroutine changes coortinates of the point accorning to periodic boundary conditions
         ! it order to makesure that the point is inside the computational cell
         !-------------------------------------------------------------------------------------------
-        real(c_double), dimension(0:2), intent(inout)   :: R
+        real*8, dimension(0:2), intent(inout)   :: R
         !-------------------------------------------------------------------------------------------
                 ! These commented lines implemment the more general, but less efficient algorithm
                 !if ( BC_X == 1 ) R(0) = R(0) - DomLX * roundint ( R(0) / DomLX )
@@ -92,9 +77,9 @@ contains !**********************************************************************
         ! This function calculates the point Q of projection of point R0 on line (R1,L1)
         ! Q = R1 + Disaplacement * L1
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(inout)                   :: Displacement
-        real(c_double), dimension(0:2), intent(inout)   :: Q
-        real(c_double), dimension(0:2), intent(in)      :: R1, L1, R0
+        real*8, intent(inout)                   :: Displacement
+        real*8, dimension(0:2), intent(inout)   :: Q
+        real*8, dimension(0:2), intent(in)      :: R1, L1, R0
         !--------------------------------------------------------------------------------------------
                 Q = R0 - R1
                 ! Here we take into account periodic boundaries
@@ -103,7 +88,7 @@ contains !**********************************************************************
                 Q = R1 + Displacement * L1
         end subroutine LinePoint !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        integer(c_int) function LineLine ( H, cosA, D1, D2, L12, R1, L1, R2, L2, Prec ) !!!!!!!!!!!!!!!!!
+        integer*4 function LineLine ( H, cosA, D1, D2, L12, R1, L1, R2, L2, Prec ) !!!!!!!!!!!!!!!!!
         ! This function determines the neares distance H between two lines (R1,L1) and (R2,L2)
         !-------------------------------------------------------------------------------------------
         ! Input values:
@@ -116,13 +101,13 @@ contains !**********************************************************************
         !      D1, D2, displacemets
         !      L12, unit vector directed along the closes distance
         !-------------------------------------------------------------------------------------------      
-        real(c_double), intent(inout)                   :: H, cosA, D1, D2
-        real(c_double), dimension(0:2), intent(out)     :: L12
-        real(c_double), dimension(0:2), intent(in)      :: R1, L1, R2, L2
+        real*8, intent(inout)                   :: H, cosA, D1, D2
+        real*8, dimension(0:2), intent(out)     :: L12
+        real*8, dimension(0:2), intent(in)      :: R1, L1, R2, L2
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(in)                      :: Prec 
-        real(c_double), dimension(0:2)                  :: Q1, Q2, R
-        real(c_double)                                  :: C, DD1, DD2, C1, C2
+        real*8, intent(in)                      :: Prec 
+        real*8, dimension(0:2)                  :: Q1, Q2, R
+        real*8                                  :: C, DD1, DD2, C1, C2
         !-------------------------------------------------------------------------------------------
                 cosA = S_V3xV3 ( L1, L2 )
                 C     = 1.0 - sqr ( cosA )

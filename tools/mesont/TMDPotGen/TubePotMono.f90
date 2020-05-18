@@ -1,49 +1,34 @@
-! ------------ ----------------------------------------------------------
-!   LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
-!   http://lammps.sandia.gov, Sandia National Laboratories
-!   Steve Plimpton, sjplimp@sandia.gov
-!
-!   Copyright (2003) Sandia Corporation.  Under the terms of Contract
-!   DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-!   certain rights in this software.  This software is distributed under
-!   the GNU General Public License.
-!
-!   See the README file in the top-level LAMMPS directory.
-!   
-!   Contributing author: Alexey N. Volkov, UA, avolkov1@ua.edu
-!------------------------------------------------------------------------- 
-
 module TubePotMono !********************************************************************************
 !
-! TMD Library: Approximate tubular potentials and transfer functions for mono-radius tubes
+! Approximate tubular potentials and transfer functions for mono-radius tubes
 !
 !---------------------------------------------------------------------------------------------------
 !
 ! Intel Fortran
 !
-! Alexey N. Volkov, University of Alabama, avolkov1@ua.edu, 2020, Version 13.00
+! Alexey N. Volkov, University of Alabama, avolkov1@ua.edu, Version 13.00, 2020
 !
 !---------------------------------------------------------------------------------------------------
 !
-! Four potentials and transfer functions are calculated in this module:
+! Four potentials and transfer functions are determined in this module:
 !
-! 1. SSTP (segment - semi-infinite tube parallel). It gives a linear density of the potential along 
-!    the segment axis which produced by a parallel semi-infinite tube. 2D tables for this potential 
+! 1. SSTP (segment - semi-infinite tube parallel): Linear density of the potential along 
+!    the segment axis which is produced by a parallel semi-infinite tube. 2D tables for this potential 
 !    are generated at initialization or can be loaded from a file
 !
-! 2. STP (segment - tube parallel). It gives a linear density of the potential along the segment axis 
-!    which produced by a parallel infinite tubes. This is only a particular case of the SSTP potential, 
-!    but it is considered separately for computational effiency. 1D tables of this potential are taken 
-!    from 2D tables of SSTP potential.
+! 2. STP (segment - tube parallel): Linear density of the potential along the segment axis 
+!    which is produced by a parallel infinite tube. This is only a particular case of the SSTP potential, 
+!    but it is considered separately for computational efficiency. 1D tables of this potential are taken 
+!    from 2D tables of the SSTP potential.
 !
-! 3. SST (segment - semi-infinite tube). It gives a potential for a segment produced by a arbitrary-
-!    oriented semi-infinite tube. Data of this potential can not be kept in 2D tabels, therefore all 
+! 3. SST (segment - semi-infinite tube): Potential for a segment produced by an arbitrary-
+!    oriented semi-infinite tube. Data of this potential can not be kept in 2D tables, therefore all 
 !    data are calculated 'on fly' with the help of SSTP potential and numerical integration along the 
-!    segment axis
+!    segment axis.
 !
-! 4. ST (segment - tube). It gives a potential for a segment produced by a arbitrary-oriented 
+! 4. ST (segment - tube): A potential for a segment produced by a arbitrary-oriented 
 !    infinitely long tube. 2D tables for this potential are generated at initialization or can be 
-!    loaded from a file
+!    loaded from a file.
 !
 !***************************************************************************************************
 
@@ -53,123 +38,128 @@ use TubePotBase
 use TubePotTrue
 use LinFun2
 use Spline2
-use iso_c_binding, only : c_int, c_double, c_char
+
 implicit none
 
 !---------------------------------------------------------------------------------------------------
 ! Constants
 !---------------------------------------------------------------------------------------------------
 
-        integer(c_int), parameter                    :: TPMNZMAX     = 129
-        integer(c_int), parameter                    :: TPMNEMAX     = 128
+        integer*4, parameter                    :: TPMNZMAX     = 129
+        integer*4, parameter                    :: TPMNEMAX     = 128
         
-        integer(c_int), parameter                    :: TPMNHMAX     = 1001  
-        integer(c_int), parameter                    :: TPMNXMAX     = 1001 
-        integer(c_int), parameter                    :: TPMNMAX      = 1001 
+        integer*4, parameter                    :: TPMNHMAX     = 1001  
+        integer*4, parameter                    :: TPMNXMAX     = 1001 
+        integer*4, parameter                    :: TPMNMAX      = 1001 
         
 !---------------------------------------------------------------------------------------------------
 ! Global variables
 !---------------------------------------------------------------------------------------------------
         
-        integer(c_int)                               :: TPMStartMode = 1
-        character*512                           :: TPMSSTPFile  = 'TPMSSTP.xrs'
-        character*512                           :: TPMAFile     = 'TPMA.xrs'
+        integer*4                               :: TPMStartMode = 1
+
+        character*512                           :: TPMFile      = 'MESONT-TABTP.xrs'
+        integer*4                               :: TPMUnitID    ! Unit for the tabulated potential file
+
         
-        integer(c_int)                               :: TPMNZ        = TPMNZMAX
-        integer(c_int)                               :: TPMNZ1       = TPMNZMAX - 1
-        integer(c_int)                               :: TPMNE        = TPMNEMAX
-        integer(c_int)                               :: TPMNE1       = TPMNEMAX - 1
+        integer*4                               :: TPMNZ        = TPMNZMAX
+        integer*4                               :: TPMNZ1       = TPMNZMAX - 1
+        integer*4                               :: TPMNE        = TPMNEMAX
+        integer*4                               :: TPMNE1       = TPMNEMAX - 1
         
-        integer(c_int)                               :: TPMNH        = TPMNHMAX
-        integer(c_int)                               :: TPMNH1       = TPMNHMAX - 1
-        integer(c_int)                               :: TPMNX        = TPMNXMAX
-        integer(c_int)                               :: TPMNX1       = TPMNXMAX - 1
+        integer*4                               :: TPMNH        = TPMNHMAX
+        integer*4                               :: TPMNH1       = TPMNHMAX - 1
+        integer*4                               :: TPMNX        = TPMNXMAX
+        integer*4                               :: TPMNX1       = TPMNXMAX - 1
         
         integer                                 :: TPMChiIndM   ! Chirality index M 
         integer                                 :: TPMChiIndN   ! Chirality index N
-        real(c_double)                                  :: TPMR1
-        real(c_double)                                  :: TPMR2
+        real*8                                  :: TPMR1
+        real*8                                  :: TPMR2
         
-        real(c_double)                                  :: TPMHmax
-        real(c_double)                                  :: TPMDH
+        real*8                                  :: TPMHmax
+        real*8                                  :: TPMDH
         
         ! Parameters of empirical correction functions
         
-        integer(c_int)                               :: TPMAN        = 20
-        real(c_double)                                  :: TPMAHmin
-        real(c_double)                                  :: TPMAHmax
-        real(c_double)                                  :: TPMADH
-        real(c_double), dimension(0:TPMNHMAX-1)         :: TPMAH, TPMAF, TPMAFxx
+        integer*4                               :: TPMAN        = 20
+        real*8                                  :: TPMAHmin
+        real*8                                  :: TPMAHmax
+        real*8                                  :: TPMADH
+        real*8, dimension(0:TPMNHMAX-1)         :: TPMAH, TPMAF, TPMAFxx
         
         ! Fitting parameters that depend on the SWCNT chirality
 
-        real(c_double)                                  :: TPMCaA       = 0.22d+00 ! 0.22 for (10,10) CNTs
-        real(c_double)                                  :: TPMCeA       = 0.35d+00 ! 0.35 for (10,10) CNTs
-        real(c_double)                                  :: TPMAHmin0    = 10.0d+00 ! 10.0 A for (10,10) CNTs             
+        real*8                                  :: TPMCaA       = 0.22d+00 ! 0.22 for (10,10) CNTs
+        real*8                                  :: TPMCeA       = 0.35d+00 ! 0.35 for (10,10) CNTs
+        real*8                                  :: TPMAHmin0    = 10.0d+00 ! 10.0 A for (10,10) CNTs             
         
         ! Parameters of SSTP integrator
         
-        real(c_double)                                  :: TPMDE
-        real(c_double), dimension(0:TPMNEMAX-1)         :: TPMCE, TPMSE
+        real*8                                  :: TPMDE
+        real*8, dimension(0:TPMNEMAX-1)         :: TPMCE, TPMSE
         
         ! Additional parameters for SSTP potential
 
-        real(c_double)                                  :: TPMSSTPDelta = 0.25d+00
-        integer(c_int)                               :: TPMSSTPNH
-        integer(c_int)                               :: TPMSSTPNX
+        real*8                                  :: TPMSSTPDelta = 0.25d+00
+        integer*4                               :: TPMSSTPNH
+        integer*4                               :: TPMSSTPNX
         
-        real(c_double)                                  :: TPMSSTPX1
-        real(c_double)                                  :: TPMSSTPXmax
-        real(c_double)                                  :: TPMSSTPDX
+        real*8                                  :: TPMSSTPX1
+        real*8                                  :: TPMSSTPXmax
+        real*8                                  :: TPMSSTPDX
         
-        real(c_double), dimension(0:TPMNHMAX-1,0:TPMNXMAX-1) :: TPMSSTPG
-        real(c_double), dimension(0:TPMNHMAX-1,0:TPMNXMAX-1) :: TPMSSTPF, TPMSSTPFxx, TPMSSTPFyy, TPMSSTPFxxyy
-        real(c_double), dimension(0:TPMNHMAX-1)         :: TPMSSTPH
-        real(c_double), dimension(0:TPMNXMAX-1)         :: TPMSSTPX
+        real*8, dimension(0:TPMNHMAX-1,0:TPMNXMAX-1) :: TPMSSTPG
+        real*8, dimension(0:TPMNHMAX-1,0:TPMNXMAX-1) :: TPMSSTPF, TPMSSTPFxx, TPMSSTPFyy, TPMSSTPFxxyy
+        real*8, dimension(0:TPMNHMAX-1)         :: TPMSSTPH
+        real*8, dimension(0:TPMNXMAX-1)         :: TPMSSTPX
         
         ! Additional parameters for STP potential
         
-        ! In calcuation of this potential also some parameters of SSTP potential are used
+        ! In calculation of this potential some parameters of SSTP potential are also used.
         ! In particular, STP potential has no its own integrator. All data comes from SSTP integrator.
         ! It does not result in any computational inefficiency unless the STP potential is used without SSTP one.
         
-        integer(c_int)                               :: TPMNN        = 10
-        real(c_double), dimension(0:TPMNHMAX-1)         :: TPMSTPG
-        real(c_double), dimension(0:TPMNHMAX-1)         :: TPMSTPF, TPMSTPFxx
+        integer*4                               :: TPMNN        = 10
+        real*8, dimension(0:TPMNHMAX-1)         :: TPMSTPG
+        real*8, dimension(0:TPMNHMAX-1)         :: TPMSTPF, TPMSTPFxx
 
         ! Parameters for ST potential
 
-        real(c_double)                                  :: TPMSTDelta   = 1.0d+00       ! Minimal gap dh for ST-potential
-        integer(c_int)                               :: TPMSTNXS     = 10            ! Number of subdivisions for every grid step in ST-integrator
-        real(c_double)                                  :: TPMSTXmax
-        real(c_double)                                  :: TPMSTH1
-        real(c_double)                                  :: TPMSTH2
-        real(c_double)                                  :: TPMSTDH12
+        ! Minimal gap dh for ST-potential
+        real*8                                  :: TPMSTDelta   = 1.0d+00      
+        ! Number of subdivisions for every grid step in ST-integrator
+        integer*4                               :: TPMSTNXS     = 10            
+        real*8                                  :: TPMSTXmax
+        real*8                                  :: TPMSTH1
+        real*8                                  :: TPMSTH2
+        real*8                                  :: TPMSTDH12
         
-        real(c_double), dimension(0:TPMNHMAX-1,0:TPMNXMAX-1) :: TPMSTG
-        real(c_double), dimension(0:TPMNHMAX-1,0:TPMNXMAX-1) :: TPMSTF, TPMSTFxx, TPMSTFyy, TPMSTFxxyy
-        real(c_double), dimension(0:TPMNHMAX-1) :: TPMSTH
-        real(c_double), dimension(0:TPMNXMAX-1) :: TPMSTX
+        real*8, dimension(0:TPMNHMAX-1,0:TPMNXMAX-1) :: TPMSTG
+        real*8, dimension(0:TPMNHMAX-1,0:TPMNXMAX-1) :: TPMSTF, TPMSTFxx, TPMSTFyy, TPMSTFxxyy
+        real*8, dimension(0:TPMNHMAX-1) :: TPMSTH
+        real*8, dimension(0:TPMNXMAX-1) :: TPMSTX
         
         ! Switching parameters
         
         ! Height switch (at H=0 in SST-potential)
-        integer(c_int)                               :: TPMHSwitch   = 0             ! 1, use h-switch; 0, do not use the switch
-        real(c_double)                                  :: TPMHS        = 3.0d+00       ! Switch height, Angstrom
+        integer*4                               :: TPMHSwitch   = 0             ! 1, use h-switch; 0, do not use the switch
+        real*8                                  :: TPMHS        = 3.0d+00       ! Switch height, Angstrom
         
         ! Angle switch
-        integer(c_int)                               :: TPMASwitch   = 0             ! 1, use a-switch; 0, do not use the switch
-        real(c_double)                                  :: TPMAS        = 3.0d+00       ! Switch angle, degree
-        real(c_double)                                  :: TPMASMin
-        real(c_double)                                  :: TPMASMax
-        real(c_double)                                  :: TPMASDelta
+        integer*4                               :: TPMASwitch   = 0             ! 1, use a-switch; 0, do not use the switch
+        real*8                                  :: TPMAS        = 3.0d+00       ! Switch angle, degree
+        real*8                                  :: TPMASMin
+        real*8                                  :: TPMASMax
+        real*8                                  :: TPMASDelta
 
         ! These variables are used to print error message if intertube force filed fails
-        integer(c_int)                               :: Err_CNT1 = 0, Err_CNT1_Node = 0, Err_CNT2 = 0, Err_CNT2_Node1 = 0, Err_CNT2_Node2 = 0, Err_EType = 0
+        integer*4                               :: Err_CNT1 = 0, Err_CNT1_Node = 0, Err_CNT2 = 0
+        integer*4                               :: Err_CNT2_Node1 = 0, Err_CNT2_Node2 = 0, Err_EType = 0
 
 contains !******************************************************************************************
 
-        integer(c_int) function TPMsizeof () !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        integer*4 function TPMsizeof () !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 TPMsizeof = 8 * ( size ( TPMAH ) + size ( TPMAF ) + size ( TPMAFxx ) &
                         + size ( TPMCE ) + size ( TPMSE ) + size ( TPMSSTPG ) + size ( TPMSSTPF ) &
                         + size ( TPMSSTPFxx ) + size ( TPMSSTPFyy ) + size ( TPMSSTPFxxyy ) &
@@ -183,23 +173,24 @@ contains !**********************************************************************
 !---------------------------------------------------------------------------------------------------
 
         subroutine PrintTPErrMsg () !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                !write ( TPErrMsg, fmt = '(a,i8,a,i8,a,i8,a,i8,a,i8,a,i1)' ) 'CNT ', Err_CNT1, ' [', Err_CNT1_Node,'] with CNT ', Err_CNT2, ' [', Err_CNT2_Node1, ', ', Err_CNT2_Node2, '] E=', Err_EType
+                !write ( TPErrMsg, fmt = '(a,i8,a,i8,a,i8,a,i8,a,i8,a,i1)' ) 'CNT ', Err_CNT1, ' [', Err_CNT1_Node,'] with CNT ', &
+                !       & Err_CNT2, ' [', Err_CNT2_Node1, ', ', Err_CNT2_Node2, '] E=', Err_EType
                 !call PrintStdLogMsg ( TPErrMsg )
         end subroutine PrintTPErrMsg !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !---------------------------------------------------------------------------------------------------
-! SSTP: Linear potential density for the tube interacting with parallel semi-infinte tube
+! SSTP: Linear potential density for the tube interacting with parallel semi-infinite tube
 !---------------------------------------------------------------------------------------------------
 
         subroutine TPMSSTPIntegrator ( Q, U, H, D ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         ! This function calculates the transfer function Q and potential U between an infinitely long
-        ! tube and a cross-section of another parallel tube for given height H and displacemnet D.
+        ! tube and a cross-section of another parallel tube for given height H and displacement D.
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(out)     :: Q, U
-        real(c_double), intent(in)      :: H, D
+        real*8, intent(out)     :: Q, U
+        real*8, intent(in)      :: H, D
         !-------------------------------------------------------------------------------------------
-        integer(c_int)               :: i, j, k
-        real(c_double)                  :: C, Zmin, Zmax, DZ, R1X, R1Y, R2X, R2Y, R2Z, R, Rcutoff2
+        integer*4               :: i, j, k
+        real*8                  :: C, Zmin, Zmax, DZ, R1X, R1Y, R2X, R2Y, R2Z, R, Rcutoff2
         !-------------------------------------------------------------------------------------------
                 Q = 0.0d+00
                 U = 0.0d+00
@@ -236,15 +227,15 @@ contains !**********************************************************************
                 U = U * sqr ( TPBD ) * C
         end subroutine TPMSSTPIntegrator !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
-        integer(c_int) function TPMSSTPInt0 ( Q, U, H, X ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        integer*4 function TPMSSTPInt0 ( Q, U, H, X ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         ! This function returns the transfer function Q and potential U for the SSTP potential
-        ! calculated with interpolation in the table without switch
+        ! calculated by interpolation in the table without switch.
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(out)     :: Q, U
-        real(c_double), intent(in)      :: H, X
+        real*8, intent(out)     :: Q, U
+        real*8, intent(in)      :: H, X
         !-------------------------------------------------------------------------------------------
-        integer(c_int)               :: i, j
-        real(c_double)                  :: XX
+        integer*4               :: i, j
+        real*8                  :: XX
         !-------------------------------------------------------------------------------------------
                 i = 1 + int ( H / TPMDH )
                 j = 1 + int ( ( X + TPMSSTPXMax ) / TPMSSTPDX )
@@ -270,19 +261,20 @@ contains !**********************************************************************
                         XX = X
                 end if
                 Q = CalcLinFun2_0 ( i, j, H, XX, TPMNH, TPMNX, TPMSSTPH, TPMSSTPX, TPMSSTPG ) 
-                U = CalcSpline2_0 ( i, j, H, XX, TPMNH, TPMNX, TPMSSTPH, TPMSSTPX, TPMSSTPF, TPMSSTPFxx, TPMSSTPFyy, TPMSSTPFxxyy ) 
+                U = CalcSpline2_0 ( i, j, H, XX, TPMNH, TPMNX, TPMSSTPH, TPMSSTPX, TPMSSTPF, TPMSSTPFxx, &
+                        TPMSSTPFyy, TPMSSTPFxxyy ) 
                 TPMSSTPInt0 = 1
         end function TPMSSTPInt0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        integer(c_int) function TPMSSTPInt0S ( Q, U, H, X ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        integer*4 function TPMSSTPInt0S ( Q, U, H, X ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         ! This function returns the transfer function Q and potential U for the SSTP potential
-        ! calculated with interpolation in the table and switch to the case of zero H
+        ! calculated by interpolation in the table and switch to the case of zero H.
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(out)     :: Q, U
-        real(c_double), intent(in)      :: H, X
+        real*8, intent(out)     :: Q, U
+        real*8, intent(in)      :: H, X
         !-------------------------------------------------------------------------------------------
-        integer(c_int)               :: IntSign
-        real(c_double)                  :: t, W, Qa, Ua
+        integer*4               :: IntSign
+        real*8                  :: t, W, Qa, Ua
         !-------------------------------------------------------------------------------------------
                 if ( TPMHSwitch == 0 ) then
                         TPMSSTPInt0S = TPMSSTPInt0 ( Q, U, H, X )
@@ -300,15 +292,15 @@ contains !**********************************************************************
                 end if
         end function TPMSSTPInt0S !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
-        integer(c_int) function TPMSSTPInt1 ( Q, U, Uh, Ux, H, X ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        ! This function returns the transfer function Q, potential U, and derivarives Uh=dU/dH and
-        ! Ux=dU/dX for the SSTP potential calculated with interpolation in the table without switch
+        integer*4 function TPMSSTPInt1 ( Q, U, Uh, Ux, H, X ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        ! This function returns the transfer function Q, potential U, and derivatives Uh=dU/dH and
+        ! Ux=dU/dX for the SSTP potential calculated by interpolation in the table without switch.
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(out)     :: Q, U, Uh, Ux
-        real(c_double), intent(in)      :: H, X
+        real*8, intent(out)     :: Q, U, Uh, Ux
+        real*8, intent(in)      :: H, X
         !-------------------------------------------------------------------------------------------
-        integer(c_int)               :: i, j
-        real(c_double)                  :: XX
+        integer*4               :: i, j
+        real*8                  :: XX
         !-------------------------------------------------------------------------------------------
                 i = 1 + int ( H / TPMDH )
                 j = 1 + int ( ( X + TPMSSTPXMax ) / TPMSSTPDX )
@@ -336,20 +328,21 @@ contains !**********************************************************************
                         XX = X
                 end if
                 Q = CalcLinFun2_0 ( i, j, H, XX, TPMNH, TPMNX, TPMSSTPH, TPMSSTPX, TPMSSTPG ) 
-                call CalcSpline2_1 ( U, Uh, Ux, i, j, H, XX, TPMNH, TPMNX, TPMSSTPH, TPMSSTPX, TPMSSTPF, TPMSSTPFxx, TPMSSTPFyy, TPMSSTPFxxyy ) 
+                call CalcSpline2_1 ( U, Uh, Ux, i, j, H, XX, TPMNH, TPMNX, TPMSSTPH, TPMSSTPX, TPMSSTPF, &
+                        TPMSSTPFxx, TPMSSTPFyy, TPMSSTPFxxyy ) 
                 TPMSSTPInt1 = 1
         end function TPMSSTPInt1 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
-        integer(c_int) function TPMSSTPInt1S ( Q, U, Uh, Ux, H, X ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        ! This function returns the transfer function Q, potential U, and derivarives Uh=dU/dH and
-        ! Ux=dU/dX for the SSTP potential calculated with interpolation in the table and switch to 
+        integer*4 function TPMSSTPInt1S ( Q, U, Uh, Ux, H, X ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        ! This function returns the transfer function Q, potential U, and derivatives Uh=dU/dH and
+        ! Ux=dU/dX for the SSTP potential calculated by interpolation in the table and switch to 
         ! the case of zero H.
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(out)     :: Q, U, Uh, Ux
-        real(c_double), intent(in)      :: H, X
+        real*8, intent(out)     :: Q, U, Uh, Ux
+        real*8, intent(in)      :: H, X
         !-------------------------------------------------------------------------------------------
-        integer(c_int)               :: IntSign
-        real(c_double)                  :: t, W, W1, dWdH, Qa, Ua, Uha, Uxa
+        integer*4               :: IntSign
+        real*8                  :: t, W, W1, dWdH, Qa, Ua, Uha, Uxa
         !-------------------------------------------------------------------------------------------
                 if ( TPMHSwitch == 0 ) then
                         TPMSSTPInt1S = TPMSSTPInt1 ( Q, U, Uh, Ux, H, X )
@@ -372,28 +365,25 @@ contains !**********************************************************************
         end function TPMSSTPInt1S !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
         subroutine TPMSSTPWrite () !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        ! This function writes the table of the SSTP potential to the disk file
+        ! This function writes the table of the SSTP potential to a disk file.
         !-------------------------------------------------------------------------------------------
-        integer(c_int) :: Fuid, i, j
+        integer*4 :: i, j
         !-------------------------------------------------------------------------------------------
-                Fuid = OpenFile ( TPMSSTPFile, 'wt', '' )
-                write ( unit = Fuid, fmt = '(4i8)' ) TPMChiIndM, TPMChiIndN, TPMNH1, TPMNX1
+                write ( unit = TPMUnitID, fmt = '(4i8)' ) TPMChiIndM, TPMChiIndN, TPMNH1, TPMNX1
                 do i = 0, TPMNH1
                         do j = 0, TPMNX1
-                                if ( ( i .ge. TPMSSTPNH ) .or. ( j .le. TPMSSTPNX ) ) write ( unit = Fuid, fmt = '(2e26.17)' ) TPMSSTPG(i,j), TPMSSTPF(i,j)
+                                if ( ( i .ge. TPMSSTPNH ) .or. ( j .le. TPMSSTPNX ) ) write ( unit = TPMUnitID, fmt = '(2e26.17)' ) TPMSSTPG(i,j), TPMSSTPF(i,j)
                         end do
                 end do
-                call CloseFile ( Fuid )
         end subroutine TPMSSTPWrite !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         subroutine TPMSSTPRead () !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        ! This function reads the table of the SSTP potential from the disk file
+        ! This function reads the table of the SSTP potential from a disk file.
         !-------------------------------------------------------------------------------------------
-        integer(c_int)       :: Fuid, i, j
-        integer(c_int)       :: iTPMChiIndM, iTPMChiIndN, iTPMNH1, iTPMNX1
+        integer*4       :: i, j
+        integer*4       :: iTPMChiIndM, iTPMChiIndN, iTPMNH1, iTPMNX1
         !-------------------------------------------------------------------------------------------
-                Fuid = OpenFile ( TPMSSTPFile, 'rt', '' )
-                read ( unit = Fuid, fmt = '(4i8)' ) iTPMChiIndM, iTPMChiIndN, iTPMNH1, iTPMNX1
+                read (  unit = TPMUnitID, fmt = '(4i8)' ) iTPMChiIndM, iTPMChiIndN, iTPMNH1, iTPMNX1
                 if ( iTPMChiIndM .NE. TPMChiIndM .OR. iTPMChiIndN .NE. TPMChiIndN ) then
                         print *, 'ERROR in [TPMSSTPRead]: iTPMChiIndM .NE. TPMChiIndM .OR. iTPMChiIndN .NE. TPMChiIndN'
                         stop
@@ -404,19 +394,18 @@ contains !**********************************************************************
                 end if
                 do i = 0, TPMNH1
                         do j = 0, TPMNX1
-                                if ( ( i .ge. TPMSSTPNH ) .or. ( j .le. TPMSSTPNX ) ) read ( unit = Fuid, fmt = '(2e26.17)' ) TPMSSTPG(i,j), TPMSSTPF(i,j)
+                                if ( ( i .ge. TPMSSTPNH ) .or. ( j .le. TPMSSTPNX ) ) read (  unit = TPMUnitID, fmt = '(2e26.17)' ) TPMSSTPG(i,j), TPMSSTPF(i,j)
                         end do
                 end do
-                call CloseFile ( Fuid )
         end subroutine TPMSSTPRead !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
         subroutine TPMSSTPInit () !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        ! This function calculates the table of the SSTP potential
+        ! This function calculates the table of the SSTP potential.
         !-------------------------------------------------------------------------------------------
-        integer(c_int)       :: i, j
-        real(c_double)          :: E
-        character(c_char)   :: Msg
-        real(c_double), dimension(0:TPMNMAX-1) :: FF, DD, MM, K0, K1, K2
+        integer*4       :: i, j
+        real*8          :: E
+        character*512   :: Msg
+        real*8, dimension(0:TPMNMAX-1) :: FF, DD, MM, K0, K1, K2
         !-------------------------------------------------------------------------------------------
                 TPMDE = M_2PI / TPMNE
                 E = 0.0d+00
@@ -441,7 +430,8 @@ contains !**********************************************************************
                                 do j = 0, TPMNX1
                                         if ( ( i .ge. TPMSSTPNH ) .or. ( j .le. TPMSSTPNX ) ) then
                                                 call TPMSSTPIntegrator ( TPMSSTPG(i,j), TPMSSTPF(i,j), TPMSSTPH(i), TPMSSTPX(j) )
-                                                print '(2i5,a,e20.10,a,e20.10,a,e20.10,a,e20.10)', i, j, ' H=', TPMSSTPH(i), ', X=', TPMSSTPX(j), ', Q=', TPMSSTPG(i,j), ', U=', TPMSSTPF(i,j)
+                                                print '(2i5,a,e20.10,a,e20.10,a,e20.10,a,e20.10)', i, j, ' H=', TPMSSTPH(i), &
+                                                        ', X=', TPMSSTPX(j), ', Q=', TPMSSTPG(i,j), ', U=', TPMSSTPF(i,j)
                                         end if
                                 end do
                         end do
@@ -449,22 +439,23 @@ contains !**********************************************************************
                 else
                         call TPMSSTPRead ()
                 end if
-                call CreateSpline2Ext ( 3, 3, 3, 3, TPMNH, TPMSSTPNH, TPMNX, TPMSSTPNX, TPMNMAX, TPMSSTPH, TPMSSTPX, TPMSSTPF, TPMSSTPFxx, TPMSSTPFyy, TPMSSTPFxxyy, FF, MM, DD, K0, K1, K2 )                
+                call CreateSpline2Ext ( 3, 3, 3, 3, TPMNH, TPMSSTPNH, TPMNX, TPMSSTPNX, TPMNMAX, TPMSSTPH, &
+                        TPMSSTPX, TPMSSTPF, TPMSSTPFxx, TPMSSTPFyy, TPMSSTPFxxyy, FF, MM, DD, K0, K1, K2 )                
         end subroutine TPMSSTPInit !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !---------------------------------------------------------------------------------------------------
-! STP Potential for an infinite tube interacting with a parallel segment. No actual initialization 
-! is necessary for this potential, since the data are taken from the table for SSTP potenrials.
+! STP potential for an infinite tube interacting with a parallel segment. No actual initialization 
+! is necessary for this potential, since the data are taken from the table for SSTP potentials.
 !---------------------------------------------------------------------------------------------------
 
-        integer(c_int) function TPMSTPInt0 ( Q, U, H ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        integer*4 function TPMSTPInt0 ( Q, U, H ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         ! This function returns the transfer function Q and potential U for the STP potential
-        ! calculated with interpolation in the table
+        ! calculated with interpolation in the table.
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(out)     :: Q, U
-        real(c_double), intent(in)      :: H
+        real*8, intent(out)     :: Q, U
+        real*8, intent(in)      :: H
         !-------------------------------------------------------------------------------------------
-        integer(c_int)               :: i
+        integer*4               :: i
         !-------------------------------------------------------------------------------------------
                 i = 1 + int ( H / TPMDH )
                 if ( i < TPMSSTPNH ) then
@@ -485,13 +476,13 @@ contains !**********************************************************************
                 TPMSTPInt0 = 1
         end function TPMSTPInt0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        integer(c_int) function TPMSTPInt1 ( Q, U, dUdH, H ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        integer*4 function TPMSTPInt1 ( Q, U, dUdH, H ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         ! This function returns the transfer function Q, potential U, and derivative dUdH for 
-        ! the STP potential calculated with interpolation in the table
+        ! the STP potential calculated by interpolation in the table.
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(out)     :: Q, U, dUdH
-        real(c_double), intent(in)      :: H
-        integer(c_int)               :: i
+        real*8, intent(out)     :: Q, U, dUdH
+        real*8, intent(in)      :: H
+        integer*4               :: i
         !-------------------------------------------------------------------------------------------
                 i = 1 + int ( H / TPMDH )
                 if ( i < TPMSSTPNH ) then
@@ -513,7 +504,7 @@ contains !**********************************************************************
         end function TPMSTPInt1 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
         subroutine TPMSTPInit () !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        ! This function initializes the table of the STP potential
+        ! This function initializes the table of the STP potential.
         !-------------------------------------------------------------------------------------------
                 TPMSTPG(0:TPMNH1)   = TPMSSTPG(0:TPMNH1,TPMNX1)
                 TPMSTPF(0:TPMNH1)   = TPMSSTPF(0:TPMNH1,TPMNX1)
@@ -522,25 +513,24 @@ contains !**********************************************************************
         
 !---------------------------------------------------------------------------------------------------
 ! Fitting functions for SST and ST potential.
-! This correction functions are choosen empirically to improve accuracy of SST and ST potentials.
+! This correction functions are chosen empirically to improve accuracy of SST and ST potentials.
 !---------------------------------------------------------------------------------------------------
 
         subroutine TPMAInit ( X1_1, X1_2, X2_1, X2_2 ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double), intent(in)              :: X1_1, X1_2, X2_1, X2_2
+        real*8, intent(in)              :: X1_1, X1_2, X2_1, X2_2
         !-------------------------------------------------------------------------------------------
-        real(c_double), dimension(0:2)          :: R1_1, R1_2, R2_1, R2_2
-        real(c_double), dimension(0:2)          :: Fa, Ma
-        real(c_double)                          :: Qa, Ua, Qb, Ub, X, H, HH, Ucoeff, Uamin, Ubmin
-        integer(c_int)                       :: i, j, IntSign, Fuid
-        real(c_double), dimension(0:TPMNHMAX-1) :: D, K0, K1, K2
-        integer(c_int)                       :: iTPMChiIndM, iTPMChiIndN, iTPMAN
+        real*8, dimension(0:2)          :: R1_1, R1_2, R2_1, R2_2
+        real*8, dimension(0:2)          :: Fa, Ma
+        real*8                          :: Qa, Ua, Qb, Ub, X, H, HH, Ucoeff, Uamin, Ubmin
+        integer*4                       :: i, j, IntSign
+        real*8, dimension(0:TPMNHMAX-1) :: D, K0, K1, K2
+        integer*4                       :: iTPMChiIndM, iTPMChiIndN, iTPMAN
         !-------------------------------------------------------------------------------------------
                 TPMAHmin = TPMR1 + TPMR2 + TPMSTDelta
                 TPMAHmax = TPMR1 + TPMR2 + 0.95d+00 * TPBRcutoff
                 TPMADH = ( TPMAHmax - TPMAHmin ) / ( TPMAN - 1 )
                 if ( TPMStartMode == 1 ) then
-                        Fuid = OpenFile ( TPMAFile, 'rt', '' )
-                        read ( unit = Fuid, fmt = '(4i8)' ) iTPMChiIndM, iTPMChiIndN, iTPMAN
+                        read ( unit = TPMUnitID, fmt = '(4i8)' ) iTPMChiIndM, iTPMChiIndN, iTPMAN
                         if ( iTPMChiIndM .NE. TPMChiIndM .OR. iTPMChiIndN .NE. TPMChiIndN ) then
                                 print *, 'ERROR in [TPMAInit]: iTPMChiIndM .NE. TPMChiIndM .OR. iTPMChiIndN .NE. TPMChiIndN'
                                 stop
@@ -551,9 +541,8 @@ contains !**********************************************************************
                         end if
                         do i = 0, TPMAN - 1
                                 TPMAH(i) = TPMAHmin + i * TPMADH
-                                read ( unit = Fuid, fmt = * ) TPMAF(i)
+                                read ( unit = TPMUnitID, fmt = * ) TPMAF(i)
                         end do
-                        call CloseFile ( Fuid )
                         call CreateSpline1 ( 3, 3, TPMAN, TPMAH, TPMAF, TPMAFxx, D, K0, K1, K2 )
                         return
                 end if
@@ -583,20 +572,18 @@ contains !**********************************************************************
                         end do
                         TPMAF(i) = Uamin / Ubmin
                 end do
-                Fuid = OpenFile ( TPMAFile, 'wt', '' )
-                write ( unit = Fuid, fmt = '(4i8)' ) TPMChiIndM, TPMChiIndN, TPMAN
+                write ( unit = TPMUnitID, fmt = '(4i8)' ) TPMChiIndM, TPMChiIndN, TPMAN
                 do i = 0, TPMAN - 1
-                        write ( unit = Fuid, fmt = * ) TPMAF(i)
+                        write ( unit = TPMUnitID, fmt = * ) TPMAF(i)
                 end do
-                call CloseFile ( Fuid )
                 call CreateSpline1 ( 3, 3, TPMAN, TPMAH, TPMAF, TPMAFxx, D, K0, K1, K2 )
         end subroutine TPMAInit !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        real(c_double) function TPMA0 ( H ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double), intent(in)      :: H
+        real*8 function TPMA0 ( H ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        real*8, intent(in)      :: H
         !-------------------------------------------------------------------------------------------
-        integer(c_int)               :: i
-        real(c_double)                  :: A0, t, S
+        integer*4               :: i
+        real*8                  :: A0, t, S
         !-------------------------------------------------------------------------------------------
                 if ( H > TPMAHmax ) then
                         TPMA0 = 1.0d+00
@@ -617,11 +604,11 @@ contains !**********************************************************************
         end function TPMA0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         subroutine TPMA1 ( A, Ah, H ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double), intent(out)     :: A, Ah
-        real(c_double), intent(in)      :: H
+        real*8, intent(out)     :: A, Ah
+        real*8, intent(in)      :: H
         !-------------------------------------------------------------------------------------------
-        integer(c_int)               :: i
-        real(c_double)                  :: A0, t, S, dSdH
+        integer*4               :: i
+        real*8                  :: A0, t, S, dSdH
         !-------------------------------------------------------------------------------------------
                 if ( H > TPMAHmax ) then
                         A = 1.0d+00
@@ -646,21 +633,21 @@ contains !**********************************************************************
                 call CalcSpline1_1 ( A, Ah, i, H, TPMAN, TPMAH, TPMAF, TPMAFxx )
         end subroutine TPMA1 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
-        real(c_double) function TPMCu0 ( H, cosA, sinA ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        real*8 function TPMCu0 ( H, cosA, sinA ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         ! This function returns the correction function for the magnitude of the potential. 
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(in)      :: H, cosA, sinA
+        real*8, intent(in)      :: H, cosA, sinA
         !-------------------------------------------------------------------------------------------
                 TPMCu0 = 1.0d+00 + ( TPMA0 ( H ) - 1.0d+00 ) * sqr ( sinA )
         end function TPMCu0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         subroutine TPMCu1 ( Cu, CuH, CuA, H, cosA, sinA ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        ! Thi subroutine calculates the correction function Cu for magnitude of the potential and 
-        ! its derivatives CuH, CuA.
+        ! The subroutine calculates the correction function Cu for magnitude of the potential and 
+        ! its derivatives CuH and CuA.
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(ouT)     :: Cu, CuH, CuA
-        real(c_double), intent(in)      :: H, cosA, sinA
-        real(c_double)                  :: AA, AAh, D
+        real*8, intent(ouT)     :: Cu, CuH, CuA
+        real*8, intent(in)      :: H, cosA, sinA
+        real*8                  :: AA, AAh, D
         !-------------------------------------------------------------------------------------------
                 call TPMA1 ( AA, AAh, H )
                 D = sqr ( sinA ) 
@@ -670,22 +657,22 @@ contains !**********************************************************************
                 CuA = AA * 2.0d+0 * cosA * sinA
         end subroutine TPMCu1 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        real(c_double) function TPMCa0 ( cosA, sinA ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        real*8 function TPMCa0 ( cosA, sinA ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         ! This function returns the correction function for the argument of the potential. 
-        ! If correction is not necessary, it should return sinA.
+        ! If correction is not necessary, it returns sinA.
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(in)      :: cosA, sinA
+        real*8, intent(in)      :: cosA, sinA
         !-------------------------------------------------------------------------------------------
                 TPMCa0 = sinA / ( 1.0d+00 - TPMCaA * sqr ( sinA ) )
         end function TPMCa0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         subroutine TPMCa1 ( Ca, CaA, Ka, KaA, cosA, sinA ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         ! This subroutine calculates the correction function Cu for the depth of the potential well 
-        ! and its derivatives CuH, CuA. If correction is not necessary, it should return Ca = sinA 
+        ! and its derivatives CuH and CuA. If correction is not necessary, it returns Ca = sinA 
         ! and CaA = cosA.
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(out)     :: Ca, CaA, Ka, KaA
-        real(c_double), intent(in)      :: cosA, sinA
+        real*8, intent(out)     :: Ca, CaA, Ka, KaA
+        real*8, intent(in)      :: cosA, sinA
         !-------------------------------------------------------------------------------------------
                 Ka  = 1.0d+00 / ( 1.0d+00 - TPMCaA * sqr ( sinA ) )
                 Ca = sinA * Ka 
@@ -693,20 +680,20 @@ contains !**********************************************************************
                 CaA = cosA * Ka + sinA * KaA
         end subroutine TPMCa1 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        real(c_double) function TPMCe0 ( sinA ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        real*8 function TPMCe0 ( sinA ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         ! This function returns the correction function for the argument of the potential. 
-        ! If correction is not necessary, it should return sinA.
+        ! If correction is not necessary, it returns sinA.
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(in)      :: sinA
+        real*8, intent(in)      :: sinA
         !-------------------------------------------------------------------------------------------
                 TPMCe0 = 1.0d+00 - TPMCeA * sinA * sinA
         end function TPMCe0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         subroutine TPMCe1 ( Ce, CeA, Ke, cosA, sinA ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        ! If correction is not necessary, it should return Ce = 1 and CeA = 0.
+        ! If correction is not necessary, it returns Ce = 1 and CeA = 0.
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(out)     :: Ce, CeA, Ke
-        real(c_double), intent(in)      :: cosA, sinA
+        real*8, intent(out)     :: Ce, CeA, Ke
+        real*8, intent(in)      :: cosA, sinA
         !-------------------------------------------------------------------------------------------
                 Ce = 1.0d+00 - TPMCeA * sinA * sinA
                 CeA = - 2.0d+00 * TPMCeA * sinA * cosA
@@ -715,23 +702,23 @@ contains !**********************************************************************
         
 !---------------------------------------------------------------------------------------------------
 ! SST Potential for the semi-infinite tube interacting with segment. 
-! This potential does not need any initialization. All necessry data is taken from tables of the 
+! This potential does not need any initialization. All necessary data is taken from tables of the 
 ! SSTP potential.
 !---------------------------------------------------------------------------------------------------
 
-        integer(c_int) function TPMSSTPotential ( Q, U, X1, X2, H, cosA, D, N ) !!!!!!!!!!!!!!!!!!!!!!!!!
-        ! This function calculates the transfer function Q and potenial U applyed to a segment 
-        ! from asemi-infinte tube based on numerical integration (trapesond rule) along the segment 
-        ! axis for non-parallel objects. 
+        integer*4 function TPMSSTPotential ( Q, U, X1, X2, H, cosA, D, N ) !!!!!!!!!!!!!!!!!!!!!!!!!
+        ! This function calculates the transfer function Q and potential U applied to a segment 
+        ! from a semi-infinite tube based on the numerical integration (trapezoid rule) along 
+        ! the segment axis for non-parallel objects. 
         ! Relative position of the nanotube and segment are given by axial positions of the segment
         ! ends X1 and X2, height H, cosA= cos(A), where A is the cross-axis angle, and displacement 
         ! D of the nanotube end.
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(out)     :: Q, U
-        real(c_double), intent(in)      :: X1, X2, H, cosA, D
-        integer(c_int), intent(in)   :: N ! Number of nodes for numerical integration
-        real(c_double)                  :: sinA, Qs, Us, DX, X, XX, HH, Cu, Ca, Ce
-        integer(c_int)               :: i
+        real*8, intent(out)     :: Q, U
+        real*8, intent(in)      :: X1, X2, H, cosA, D
+        integer*4, intent(in)   :: N ! Number of nodes for numerical integration
+        real*8                  :: sinA, Qs, Us, DX, X, XX, HH, Cu, Ca, Ce
+        integer*4               :: i
         !-------------------------------------------------------------------------------------------
                 Q = 0.0d+00
                 U = 0.0d+00
@@ -759,18 +746,18 @@ contains !**********************************************************************
                 U = Cu * U * DX
         end function TPMSSTPotential !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        integer(c_int) function TPMSSTPotentialPar ( Q, U, R1_1, Laxis1, R2_1, Laxis2, L1, N ) !!!!!!!!!! 
-        ! Potential applyed to the segment from the semi-infinte tube is calculated by numerical 
-        ! integration (trapesond rule) along the segment axis for parallel objects.
+        integer*4 function TPMSSTPotentialPar ( Q, U, R1_1, Laxis1, R2_1, Laxis2, L1, N ) !!!!!!!!!! 
+        ! Potential applied to a segment from a semi-infinite tube is calculated by the numerical 
+        ! integration (trapezoid rule) along the segment axis for parallel objects.
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(out)                     :: Q, U
-        real(c_double), dimension(0:2), intent(in)      :: R1_1, Laxis1, R2_1, Laxis2
-        real(c_double), intent(in)                      :: L1
-        integer(c_int), intent(in)                   :: N ! Number of nodes for numerical integration
+        real*8, intent(out)                     :: Q, U
+        real*8, dimension(0:2), intent(in)      :: R1_1, Laxis1, R2_1, Laxis2
+        real*8, intent(in)                      :: L1
+        integer*4, intent(in)                   :: N ! Number of nodes for numerical integration
         !-------------------------------------------------------------------------------------------
-        real(c_double)                                  :: Qs, Us, DX, X, S, H
-        real(c_double), dimension(0:2)                  :: R1, L12
-        integer(c_int)                               :: i
+        real*8                                  :: Qs, Us, DX, X, S, H
+        real*8, dimension(0:2)                  :: R1, L12
+        integer*4                               :: i
         !-------------------------------------------------------------------------------------------
                 DX = L1 / ( N - 1 )
                 X = 0.0d+00
@@ -799,21 +786,21 @@ contains !**********************************************************************
                 U = U * DX
         end function TPMSSTPotentialPar !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
-        integer(c_int) function TPMSSTForces ( Q, U, F1, F2, Fd, X1, X2, H, cosA, D, N ) !!!!!!!!!!!!!!!!
-        ! Potential and forces applyed to the segment from the semi-infinte  tube are calculated 
-        ! by numerical integration (trapesond rule) along the segment axis.
+        integer*4 function TPMSSTForces ( Q, U, F1, F2, Fd, X1, X2, H, cosA, D, N ) !!!!!!!!!!!!!!!!
+        ! Potential and forces applied to a segment from a semi-infinite  tube are calculated 
+        ! by the numerical integration (trapezoid rule) along the segment axis.
         ! Non-parallel case.
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(out)                     :: Q, U, Fd
-        real(c_double), dimension(0:2), intent(out)     :: F1, F2
-        real(c_double), intent(in)                      :: X1, X2, H, cosA, D
-        integer(c_int), intent(in)                   :: N ! Number of nodes for numerical integration
+        real*8, intent(out)                     :: Q, U, Fd
+        real*8, dimension(0:2), intent(out)     :: F1, F2
+        real*8, intent(in)                      :: X1, X2, H, cosA, D
+        integer*4, intent(in)                   :: N ! Number of nodes for numerical integration
         !-------------------------------------------------------------------------------------------
-        real(c_double)                                  :: DX, sinA
-        real(c_double)                                  :: Qs, Us, Ush, Usx, Fx, Fy, Fz
-        real(c_double)                                  :: C, C1, C2, I0, Ih, Ih1, Ih2, Ix, Ix1, X, XX, HH
-        real(c_double)                                  :: Ca, CaA, Ka, KaA, Cu, CuH, CuA, Ce, CeA, Ke, Uh, Ua
-        integer(c_int)                               :: IntSign, i
+        real*8                                  :: DX, sinA
+        real*8                                  :: Qs, Us, Ush, Usx, Fx, Fy, Fz
+        real*8                                  :: C, C1, C2, I0, Ih, Ih1, Ih2, Ix, Ix1, X, XX, HH
+        real*8                                  :: Ca, CaA, Ka, KaA, Cu, CuH, CuA, Ce, CeA, Ke, Uh, Ua
+        integer*4                               :: IntSign, i
         !-------------------------------------------------------------------------------------------
                 I0   = 0.0d+00
                 Ih   = 0.0d+00
@@ -891,20 +878,20 @@ contains !**********************************************************************
                 Fd = Ce * Ix
         end function TPMSSTForces !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        integer(c_int) function TPMSSTForcesPar ( Q, U, F1, F2, Fd, R1_1, Laxis1, R2_1, Laxis2, L1, N ) !
-        ! Potential and forces applyed to the segment from the semi-infinte tube are calculated by 
-        ! numerical integration (trapesond rule) along the segment axis.
-        ! Non-parallel case
+        integer*4 function TPMSSTForcesPar ( Q, U, F1, F2, Fd, R1_1, Laxis1, R2_1, Laxis2, L1, N ) !
+        ! Potential and forces applied to a segment from a semi-infinite tube are calculated by 
+        ! numerical integration (trapezoid rule) along the segment axis.
+        ! Parallel case.
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(out)                     :: Q, U, Fd
-        real(c_double), dimension(0:2), intent(out)     :: F1, F2
-        real(c_double), dimension(0:2), intent(in)      :: R1_1, Laxis1, R2_1, Laxis2
-        real(c_double), intent(in)                      :: L1
-        integer(c_int), intent(in)                   :: N ! Number of nodes for numerical integration
+        real*8, intent(out)                     :: Q, U, Fd
+        real*8, dimension(0:2), intent(out)     :: F1, F2
+        real*8, dimension(0:2), intent(in)      :: R1_1, Laxis1, R2_1, Laxis2
+        real*8, intent(in)                      :: L1
+        integer*4, intent(in)                   :: N ! Number of nodes for numerical integration
         !-------------------------------------------------------------------------------------------
-        real(c_double)                                  :: Qs, Us, Ush, Usx, DX, X, S, H, Beta, Gamma
-        real(c_double), dimension(0:2)                  :: R1, L12, Fs
-        integer(c_int)                               :: i, N1
+        real*8                                  :: Qs, Us, Ush, Usx, DX, X, S, H, Beta, Gamma
+        real*8, dimension(0:2)                  :: R1, L12, Fs
+        integer*4                               :: i, N1
         !-------------------------------------------------------------------------------------------
                 Q  = 0.0d+00
                 U  = 0.0d+00
@@ -955,17 +942,17 @@ contains !**********************************************************************
         end function TPMSSTForcesPar !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
 !---------------------------------------------------------------------------------------------------
-! ST: Potential for the infinite tube interacting with segment
+! ST: Potential for an infinite tube interacting with a segment
 !--------------------------------------------------------------------------------------------------
         
         !
-        ! These functions are used to smooth boundaries in (H,X) domain for ST potential
+        ! These functions are used to smooth the boundaries in (H,X) domain for ST potential
         !
         
-        real(c_double) function TPMSTXMin0 ( H ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double), intent(in)      :: H
+        real*8 function TPMSTXMin0 ( H ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        real*8, intent(in)      :: H
         !-------------------------------------------------------------------------------------------
-        real(c_double)                  :: X
+        real*8                  :: X
         !-------------------------------------------------------------------------------------------
                 if ( H < TPMSTH1 ) then
                         TPMSTXMin0 = sqrt ( TPMSTH2 * TPMSTH2 - H * H )
@@ -975,20 +962,21 @@ contains !**********************************************************************
                         return
                 end if
                 X = ( H - TPMSTH1 ) / TPMSTDH12
-                TPMSTXMin0 = sqrt ( TPMSTH2 * TPMSTH2 - H * H ) * ( 1.0d+00 - X * X * X * ( 3.0d+00 * X * ( 2.0d+00 * X - 5.0d+00 ) + 10.0d+00 ) )
+                TPMSTXMin0 = sqrt ( TPMSTH2 * TPMSTH2 - H * H ) &
+                        * ( 1.0d+00 - X * X * X * ( 3.0d+00 * X * ( 2.0d+00 * X - 5.0d+00 ) + 10.0d+00 ) )
         end function TPMSTXMin0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
-        real(c_double) function TPMSTXMax0 ( H ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double), intent(in)      :: H
+        real*8 function TPMSTXMax0 ( H ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        real*8, intent(in)      :: H
         !-------------------------------------------------------------------------------------------
                 TPMSTXMax0 = sqrt ( TPMSTXMax * TPMSTXMax - H * H )
         end function TPMSTXMax0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         subroutine TPMSTXMin1 ( XMin, dXMindH, H ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double), intent(out)     :: XMin, dXMindH
-        real(c_double), intent(in)      :: H
+        real*8, intent(out)     :: XMin, dXMindH
+        real*8, intent(in)      :: H
         !-------------------------------------------------------------------------------------------
-        real(c_double)                  :: X, F, dFdX
+        real*8                  :: X, F, dFdX
         !-------------------------------------------------------------------------------------------
                 if ( H < TPMSTH1 ) then
                         XMin = sqrt ( TPMSTH2 * TPMSTH2 - H * H )
@@ -1009,8 +997,8 @@ contains !**********************************************************************
         end subroutine TPMSTXMin1 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
         subroutine TPMSTXMax1 ( XMax, dXMaxdH, H ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double), intent(out)     :: XMax, dXMaxdH
-        real(c_double), intent(in)      :: H
+        real*8, intent(out)     :: XMax, dXMaxdH
+        real*8, intent(in)      :: H
         !-------------------------------------------------------------------------------------------
                 XMax    = sqrt ( TPMSTXMax * TPMSTXMax - H * H )
                 dXMaxdH = - H / XMax
@@ -1021,11 +1009,11 @@ contains !**********************************************************************
         !
         
         subroutine TPMSTIntegrator ( G, F, Q, U, H, X, DX ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double), intent(inout)   :: G, F, Q, U
-        real(c_double), intent(in)      :: H, X, DX
+        real*8, intent(inout)   :: G, F, Q, U
+        real*8, intent(in)      :: H, X, DX
         !-------------------------------------------------------------------------------------------
-        real(c_double)                  :: FFx, HH, DDX
-        integer(c_int)               :: IntSign
+        real*8                  :: FFx, HH, DDX
+        integer*4               :: IntSign
         !-------------------------------------------------------------------------------------------
                 DDX = 0.5 * DX
                 G = G + Q * DDX
@@ -1041,12 +1029,12 @@ contains !**********************************************************************
                 end if
         end subroutine TPMSTIntegrator !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        integer(c_int) function TPMSTInt0 ( G, F, H, X ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double), intent(out)     :: G, F
-        real(c_double), intent(in)      :: H, X
+        integer*4 function TPMSTInt0 ( G, F, H, X ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        real*8, intent(out)     :: G, F
+        real*8, intent(in)      :: H, X
         !-------------------------------------------------------------------------------------------
-        integer(c_int)               :: i, j
-        real(c_double)                  :: S, XA, XXX, XXXX, XMin, XMax
+        integer*4               :: i, j
+        real*8                  :: S, XA, XXX, XXXX, XMin, XMax
         !-------------------------------------------------------------------------------------------
                 if ( H > TPMHmax ) then
                         G = 0.0d+00
@@ -1083,16 +1071,16 @@ contains !**********************************************************************
                         j = 1 + int ( XXXX * TPMNX1 )
                 end if
                 G = S * CalcLinFun2_0 ( i, j, H, XXXX, TPMNH, TPMNX, TPMSTH, TPMSTX, TPMSTG ) 
-                F = S * CalcSpline2_0 ( i, j, H, XXXX, TPMNH, TPMNX, TPMSTH, TPMSTX, TPMSTF, TPMSTFxx, TPMSTFyy, TPMSTFxxyy ) 
+                F = S * CalcSpline2_0 ( i, j, H, XXXX, TPMNH, TPMNX, TPMSTH, TPMSTX, TPMSTF, TPMSTFxx, TPMSTFyy, TPMSTFxxyy )
                 TPMSTInt0 = 1
         end function TPMSTInt0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        integer(c_int) function TPMSTInt1 ( G, F, Fh, Fx, H, X ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double), intent(inout)   :: G, F, Fh, Fx
-        real(c_double), intent(in)      :: H, X
+        integer*4 function TPMSTInt1 ( G, F, Fh, Fx, H, X ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        real*8, intent(inout)   :: G, F, Fh, Fx
+        real*8, intent(in)      :: H, X
         !-------------------------------------------------------------------------------------------
-        integer(c_int)               :: i, j
-        real(c_double)                  :: S, XA, DX, XXX, XXXX, XMin, XMax, dXMindH, dXMaxdH
+        integer*4               :: i, j
+        real*8                  :: S, XA, DX, XXX, XXXX, XMin, XMax, dXMindH, dXMaxdH
         !-------------------------------------------------------------------------------------------
                 if ( H > TPMHmax ) then
                         G  = 0.0d+00
@@ -1136,7 +1124,8 @@ contains !**********************************************************************
                         j = 1 + int ( XXXX * TPMNX1 )
                 end if
                 G = S * CalcLinFun2_0 ( i, j, H, XXXX, TPMNH, TPMNX, TPMSTH, TPMSTX, TPMSTG ) 
-                call CalcSpline2_1 ( F, Fh, Fx, i, j, H, XXXX, TPMNH, TPMNX, TPMSTH, TPMSTX, TPMSTF, TPMSTFxx, TPMSTFyy, TPMSTFxxyy ) 
+                call CalcSpline2_1 ( F, Fh, Fx, i, j, H, XXXX, TPMNH, TPMNX, TPMSTH, TPMSTX, &
+                        TPMSTF, TPMSTFxx, TPMSTFyy, TPMSTFxxyy ) 
                 Fx = Fx / DX
                 Fh = Fh - Fx * ( dXMaxdH * XXX + dXMindH * ( 1.0d+00 - XXX ) )
                 F = F * S
@@ -1144,12 +1133,12 @@ contains !**********************************************************************
                 TPMSTInt1 = 1
         end function TPMSTInt1 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
-        integer(c_int) function TPMSTPotential ( Q, U, X1, X2, H, cosA, CaseID ) !!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double), intent(out)     :: Q, U
-        real(c_double), intent(in)      :: X1, X2, H, cosA
-        integer(c_int), intent(in)   :: CaseID
+        integer*4 function TPMSTPotential ( Q, U, X1, X2, H, cosA, CaseID ) !!!!!!!!!!!!!!!!!!!!!!!!
+        real*8, intent(out)     :: Q, U
+        real*8, intent(in)      :: X1, X2, H, cosA
+        integer*4, intent(in)   :: CaseID
         !-------------------------------------------------------------------------------------------
-        real(c_double)                  :: sinA, GG1, GG2, FF1, FF2, Ca, Cu
+        real*8                  :: sinA, GG1, GG2, FF1, FF2, Ca, Cu
         !-------------------------------------------------------------------------------------------
                 if ( CaseID == MD_LINES_PAR ) then
                         TPMSTPotential = TPMSTPInt0 ( Q, U, H )
@@ -1166,17 +1155,17 @@ contains !**********************************************************************
                 U = Cu * ( FF2 - FF1 ) / Ca
         end function TPMSTPotential !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        integer(c_int) function TPMSTForces ( Q, U, F1, F2, X1, X2, H, cosA, CaseID ) !!!!!!!!!!!!!!!!!!!
-        real(c_double), intent(out)                     :: Q, U
-        real(c_double), dimension(0:2), intent(out)     :: F1, F2
-        real(c_double), intent(in)                      :: X1, X2, H, cosA
-        integer(c_int), intent(in)                   :: CaseID
+        integer*4 function TPMSTForces ( Q, U, F1, F2, X1, X2, H, cosA, CaseID ) !!!!!!!!!!!!!!!!!!!
+        real*8, intent(out)                     :: Q, U
+        real*8, dimension(0:2), intent(out)     :: F1, F2
+        real*8, intent(in)                      :: X1, X2, H, cosA
+        integer*4, intent(in)                   :: CaseID
         !-------------------------------------------------------------------------------------------
-        real(c_double)                                  :: DX, sinA
-        real(c_double)                                  :: GG1, GG2, FF1, FF2, Fh1, Fh2, Fx1, Fx2
-        real(c_double)                                  :: B, C, D
-        real(c_double)                                  :: Ca, CaA, Ka, KaA, Cu, CuH, CuA
-        integer(c_int)                               :: IntSign1, IntSign2
+        real*8                                  :: DX, sinA
+        real*8                                  :: GG1, GG2, FF1, FF2, Fh1, Fh2, Fx1, Fx2
+        real*8                                  :: B, C, D
+        real*8                                  :: Ca, CaA, Ka, KaA, Cu, CuH, CuA
+        integer*4                               :: IntSign1, IntSign2
         !-------------------------------------------------------------------------------------------
                 DX = X2 - X1
                 if ( CaseID == MD_LINES_PAR ) then
@@ -1227,16 +1216,16 @@ contains !**********************************************************************
                 TPMSTForces = 1
         end function TPMSTForces !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        integer(c_int) function TPMSTForceTorque( Qi, Ui, Fi, Ti, Q, U, F, T, Psi, PsiA, Cap, L, H, cosA, CaseID ) 
-        real(c_double), intent(out)                     :: Qi, Ui, Fi, Ti, Q, U, F, T, Psi, PsiA, Cap
-        real(c_double), intent(in)                      :: L, H, cosA
-        integer(c_int), intent(in)                   :: CaseID
+        integer*4 function TPMSTForceTorque( Qi, Ui, Fi, Ti, Q, U, F, T, Psi, PsiA, Cap, L, H, cosA, CaseID ) 
+        real*8, intent(out)                     :: Qi, Ui, Fi, Ti, Q, U, F, T, Psi, PsiA, Cap
+        real*8, intent(in)                      :: L, H, cosA
+        integer*4, intent(in)                   :: CaseID
         !-------------------------------------------------------------------------------------------
-        real(c_double)                                  :: L2, sinA
-        real(c_double)                                  :: GG, FF, Fh, Fx, GGi, FFi, Fhi, Fxi
-        real(c_double)                                  :: B, C, D
-        real(c_double)                                  :: Ca, CaA, Ka, KaA, Cu, CuH, CuA
-        integer(c_int)                               :: IntSign
+        real*8                                  :: L2, sinA
+        real*8                                  :: GG, FF, Fh, Fx, GGi, FFi, Fhi, Fxi
+        real*8                                  :: B, C, D
+        real*8                                  :: Ca, CaA, Ka, KaA, Cu, CuH, CuA
+        integer*4                               :: IntSign
         !-------------------------------------------------------------------------------------------
                 if ( CaseID == MD_LINES_PAR ) then
                         TPMSTForceTorque = TPMSTPInt1 ( Q, U, F, H )
@@ -1295,9 +1284,9 @@ contains !**********************************************************************
         end function TPMSTForceTorque !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
         subroutine TPMSTInit () !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        real(c_double)                          :: X, Q, U, DX, DDX, XMin, XMax
-        integer(c_int)                       :: i, j, k
-        real(c_double), dimension(0:TPMNMAX-1)  :: FF, DD, MM, K0, K1, K2
+        real*8                          :: X, Q, U, DX, DDX, XMin, XMax
+        integer*4                       :: i, j, k
+        real*8, dimension(0:TPMNMAX-1)  :: FF, DD, MM, K0, K1, K2
         !-------------------------------------------------------------------------------------------
                 TPMSTH1   = TPMR1 + TPMR2
                 TPMSTH2   = TPMSTH1 + TPMSTDelta
@@ -1330,20 +1319,21 @@ contains !**********************************************************************
                                 if ( j < TPMNX1 ) DX  = ( XMax - XMin ) * ( TPMSTX(j+1) - TPMSTX(j) ) / TPMSTNXS
                         end do
                 end do
-                call CreateSpline2 ( 3, 3, 3, 3, TPMNH, TPMNX, TPMNMAX, TPMSTH, TPMSTX, TPMSTF, TPMSTFxx, TPMSTFyy, TPMSTFxxyy, FF, MM, DD, K0, K1, K2 )                
+                call CreateSpline2 ( 3, 3, 3, 3, TPMNH, TPMNX, TPMNMAX, TPMSTH, TPMSTX, TPMSTF, TPMSTFxx, &
+                        TPMSTFyy, TPMSTFxxyy, FF, MM, DD, K0, K1, K2 )          
         end subroutine TPMSTInit !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !---------------------------------------------------------------------------------------------------
-! Interaction functions: They can be used for calculation of the potential and forces between a 
-! segment and infinte or semi-infinite nanotube.
+! Interaction functions: They can be used for calculations of the potential and forces between a 
+! segment and an infinite or semi-infinite nanotube.
 !---------------------------------------------------------------------------------------------------
 
         subroutine TPMSegmentForces ( F2_1, F2_2, F1_1, F1_2, R1_1, R1_2, R2, Laxis2, L2 ) !!!!!!!!!
-        real(c_double), dimension(0:2), intent(out)     :: F2_1, F2_2
-        real(c_double), dimension(0:2), intent(in)      :: F1_1, F1_2, R1_1, R1_2, R2, Laxis2
-        real(c_double), intent(in)                      :: L2 
+        real*8, dimension(0:2), intent(out)     :: F2_1, F2_2
+        real*8, dimension(0:2), intent(in)      :: F1_1, F1_2, R1_1, R1_2, R2, Laxis2
+        real*8, intent(in)                      :: L2 
         !-------------------------------------------------------------------------------------------
-        real(c_double), dimension(0:2)                  :: F, M, RR
+        real*8, dimension(0:2)                  :: F, M, RR
         !-------------------------------------------------------------------------------------------
                 RR = R1_1 - R2
                 ! Taking into account periodic boundaries
@@ -1359,23 +1349,23 @@ contains !**********************************************************************
         end subroutine TPMSegmentForces !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         !
-        ! Interaction of a segment with semi-infinite or infinite tube
+        ! Interaction of a segment with a semi-infinite or infinite tube
         !
 
-        integer(c_int) function TPMInteractionF ( Q, U, F1_1, F1_2, F2_1, F2_2, Fd, R1_1, R1_2, R2_1, R2_2, SType2 )
+        integer*4 function TPMInteractionF ( Q, U, F1_1, F1_2, F2_1, F2_2, Fd, R1_1, R1_2, R2_1, R2_2, SType2 )
         ! SType2 in the type of the second segment:
         !   SType2 == 0, internal segment
         !   Stype2 == 1, point R2_1 is the end of the tube
         !   Stype2 == 2, point R2_2 in the end of the tube
         !-------------------------------------------------------------------------------------------
-        real(c_double), intent(inout)                   :: Q, U, Fd
-        real(c_double), dimension(0:2), intent(inout)   :: F1_1, F1_2, F2_1, F2_2
-        real(c_double), dimension(0:2), intent(in)      :: R1_1, R1_2, R2_1, R2_2
+        real*8, intent(inout)                   :: Q, U, Fd
+        real*8, dimension(0:2), intent(inout)   :: F1_1, F1_2, F2_1, F2_2
+        real*8, dimension(0:2), intent(in)      :: R1_1, R1_2, R2_1, R2_2
         !-------------------------------------------------------------------------------------------
-        integer(c_int)                               :: SType2
-        real(c_double), dimension(0:2)                  :: R1, R2, Laxis1, Laxis2, F1, F2, L12, Ly, DR, F1_1a, F1_2a, F1_1b, F1_2b
-        real(c_double)                                  :: H, cosA, D1, D2, L1, L2, cosA2, t, W, W1, dWdt, Qa, Ua, Qb, Ub, Fda, Fdb, FF
-        integer(c_int)                               :: GeomID, SwitchID, S, IntSigna, IntSignb
+        integer*4                               :: SType2
+        real*8, dimension(0:2)                  :: R1, R2, Laxis1, Laxis2, F1, F2, L12, Ly, DR, F1_1a, F1_2a, F1_1b, F1_2b
+        real*8                                  :: H, cosA, D1, D2, L1, L2, cosA2, t, W, W1, dWdt, Qa, Ua, Qb, Ub, Fda, Fdb, FF
+        integer*4                               :: GeomID, SwitchID, S, IntSigna, IntSignb
         !-------------------------------------------------------------------------------------------
                 R1 = 0.5d+00 * ( R1_1 + R1_2 )
                 R2 = 0.5d+00 * ( R2_1 + R2_2 )
@@ -1486,12 +1476,12 @@ contains !**********************************************************************
                         if ( IntSigna > 0 .or. IntSignb > 0 ) TPMInteractionF = 1
                 end if      
 
-                ! Calculation of forces for the comlimentary tube
+                ! Calculation of forces for the complimentary tube
                 if ( SType2 == 2 ) Laxis2 = - Laxis2
                 call TPMSegmentForces ( F2_1, F2_2, F1_1, F1_2, R1_1, R1_2, R2, Laxis2, 2.0d+00 * L2 )
-                ! After the previous subroutine F2_1*Laxis2 = F2_2*Laxis2, but this is not true for the semi-infinite tube.
-                ! The force along the tube sould be applied to the end of the tube, while for the
-                ! another point corresponding force is equal to zero.
+                ! After the previous subroutine call, F2_1*Laxis2 = F2_2*Laxis2, but this is not true for the semi-infinite tube.
+                ! The force along the tube should be applied to the end of the tube, while for the
+                ! another point the corresponding force is equal to zero.
                 if ( SType2 == 1 ) then
                         FF = S_V3xV3 ( F2_1, Laxis2 )
                         DR = ( Fd - FF ) * Laxis2
@@ -1505,14 +1495,14 @@ contains !**********************************************************************
                 end if
         end function TPMInteractionF !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
-        integer(c_int) function TPMInteractionU ( Q, U, R1_1, R1_2, R2_1, R2_2, SType2 ) !!!!!!!!!!!!!!!!
-        real(c_double), intent(inout)                   :: Q, U
-        real(c_double), dimension(0:2), intent(in)      :: R1_1, R1_2, R2_1, R2_2
-        integer(c_int), intent(in)                   :: SType2
+        integer*4 function TPMInteractionU ( Q, U, R1_1, R1_2, R2_1, R2_2, SType2 ) !!!!!!!!!!!!!!!!
+        real*8, intent(inout)                   :: Q, U
+        real*8, dimension(0:2), intent(in)      :: R1_1, R1_2, R2_1, R2_2
+        integer*4, intent(in)                   :: SType2
         !-------------------------------------------------------------------------------------------
-        real(c_double), dimension(0:2)                  :: R1, R2, Laxis1, Laxis2, F1, F2, L12, DR
-        real(c_double)                                  :: H, cosA, D1, D2, L1, L2, cosA2, t, W, Qa, Ua, Qb, Ub
-        integer(c_int)                               :: GeomID, SwitchID, IntSigna, IntSignb
+        real*8, dimension(0:2)                  :: R1, R2, Laxis1, Laxis2, F1, F2, L12, DR
+        real*8                                  :: H, cosA, D1, D2, L1, L2, cosA2, t, W, Qa, Ua, Qb, Ub
+        integer*4                               :: GeomID, SwitchID, IntSigna, IntSignb
         !-------------------------------------------------------------------------------------------
                 R1 = 0.5d+00 * ( R1_1 + R1_2 )
                 R2 = 0.5d+00 * ( R2_1 + R2_2 )
@@ -1584,17 +1574,17 @@ contains !**********************************************************************
                 end if
         end function TPMInteractionU !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        integer(c_int) function TPMInteractionFNum ( Q, U, F1_1, F1_2, F2_1, F2_2, R1_1, R1_2, R2_1, R2_2, Stype2, Delta )
-        real(c_double), intent(inout)                   :: Q, U
-        real(c_double), dimension(0:2), intent(inout)   :: F1_1, F1_2, F2_1, F2_2
-        real(c_double), dimension(0:2), intent(in)      :: R1_1, R1_2, R2_1, R2_2
-        integer(c_int), intent(in)                   :: SType2
-        real(c_double), intent(in)                      :: Delta
+        integer*4 function TPMInteractionFNum ( Q, U, F1_1, F1_2, F2_1, F2_2, R1_1, R1_2, R2_1, R2_2, Stype2, Delta )
+        real*8, intent(inout)                   :: Q, U
+        real*8, dimension(0:2), intent(inout)   :: F1_1, F1_2, F2_1, F2_2
+        real*8, dimension(0:2), intent(in)      :: R1_1, R1_2, R2_1, R2_2
+        integer*4, intent(in)                   :: SType2
+        real*8, intent(in)                      :: Delta
         !-------------------------------------------------------------------------------------------
-        integer(c_int)                               :: i, j, IntSign
-        real(c_double)                                  :: QQ, DD, D2
-        real(c_double), dimension(0:1,0:2)              :: U1_1, U1_2, U2_1, U2_2
-        real(c_double), dimension(0:2)                  :: RR
+        integer*4                               :: i, j, IntSign
+        real*8                                  :: QQ, DD, D2
+        real*8, dimension(0:1,0:2)              :: U1_1, U1_2, U2_1, U2_2
+        real*8, dimension(0:2)                  :: RR
         !-------------------------------------------------------------------------------------------
                 U = 0.0d+00
                 F1_1 = 0.0d+00
@@ -1635,14 +1625,15 @@ contains !**********************************************************************
 !---------------------------------------------------------------------------------------------------
 
         subroutine TPMInit ( ChiIndM, ChiIndN ) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        integer(c_int), intent(in)   :: ChiIndM, ChiIndN
-        real(c_double)                  :: RT, DX
+        integer*4, intent(in)   :: ChiIndM, ChiIndN
+        real*8                  :: RT, DX
+        character*512           :: PDate
         !-------------------------------------------------------------------------------------------
                 TPPotType = TP_POT_MONO_R
         
                 ! Here we calculate the radius of nanotubes
                 RT = TPBAcc * sqrt ( 3.0d+00 * ( ChiIndM * ChiIndM + ChiIndN * ChiIndN + ChiIndM * ChiIndN ) ) / M_2PI;
-                !print *, '(a,i3,a,i3,a,e18.10,a)', 'TPM is iniatized for (', ChiIndM, ',', ChiIndN, ') CNTs, RT = ', RT, ' A'
+                print *, '(a,i3,a,i3,a,e18.10,a)', 'TPM is iniatized for (', ChiIndM, ',', ChiIndN, ') CNTs, RT = ', RT, ' A'
 
                 TPMChiIndM = ChiIndM
                 TPMChiIndN = ChiIndN
@@ -1661,6 +1652,19 @@ contains !**********************************************************************
                 TPMASMax = 1.0d+00 - TPGeomPrec
                 TPMASDelta = TPMASMax - TPMASMin
                 
+                if ( TPMStartMode == 1 ) then
+                        TPMUnitID = OpenFile ( TPMFile, 'rt', '' )
+                        read ( unit = TPMUnitID, fmt = '()' ) 
+                        read ( unit = TPMUnitID, fmt = '()' ) 
+                        read ( unit = TPMUnitID, fmt = '()' ) 
+                else
+                        TPMUnitID = OpenFile ( TPMFile, 'wt', '' )
+                        call fdate( PDate )
+                        write ( unit = TPMUnitID, fmt = '(a,a)' ) 'DATE ', PDate 
+                        write ( unit = TPMUnitID, fmt = '(a,i3,a,i3,a)' ) 'Tabulated data of the tubular potential for (', ChiIndM, ',', ChiIndN, ') CNTs'
+                        write ( unit = TPMUnitID, fmt = '(a)' ) 'A. N. Volkov, L. V. Zhigilei, J. Phys. Chem. C 114, 5513-5531, 2010. doi: 10.1021/jp906142h'
+                end if
+
                 call TPMSSTPInit ()
                 
                 call TPMSTPInit ()
@@ -1669,6 +1673,8 @@ contains !**********************************************************************
                 call TPMAInit ( - DX, DX, - DX, DX )                
                 
                 call TPMSTInit ()
+
+                call CloseFile ( TPMUnitID )
                 
         end subroutine TPMInit !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
