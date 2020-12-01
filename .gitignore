@@ -1,30 +1,45 @@
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
 *~
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
+*.o
 *.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
+*.lo
+*.cu_o
+*.ptx
+*_ptx.h
 *.a
-*.lib
-
-# Executables
+*.d
+*.x
 *.exe
-*.out
-*.app
+*.dll
+*.pyc
+__pycache__
+
+Obj_*
+log.lammps
+log.cite
+*.bz2
+*.gz
+*.tar
+.*.swp
+*.orig
+*.rej
+vgcore.*
+.vagrant
+\#*#
+.#*
+
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.clang-format
+
+#cmake
+/build*
+/CMakeCache.txt
+/CMakeFiles/
+/Makefile
+/cmake_install.cmake
+/lmp
