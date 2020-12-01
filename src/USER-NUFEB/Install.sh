@@ -26,6 +26,43 @@ action () {
   fi
 }
 
+for file in *.cpp *.h; do
+  action $file
+done
+
+# edit 2 Makefile.package files to include/exclude package info
+
+if (test $1 = 1) then
+
+  if (test -e ../Makefile.package) then
+    sed -i -e 's/[^ \t]*nufeb[^ \t]* //g' ../Makefile.package
+    sed -i -e 's|^PKG_PATH =[ \t]*|&-L..\/..\/lib\/nufeb |' ../Makefile.package
+    sed -i -e 's|^PKG_SYSINC =[ \t]*|&$(nufeb_SYSINC) |' ../Makefile.package
+    sed -i -e 's|^PKG_SYSLIB =[ \t]*|&$(nufeb_SYSLIB) |' ../Makefile.package
+    sed -i -e 's|^PKG_SYSPATH =[ \t]*|&$(nufeb_SYSPATH) |' ../Makefile.package
+  fi
+
+  if (test -e ../Makefile.package.settings) then
+    sed -i -e '/^include.*nufeb.*$/d' ../Makefile.package.settings
+    # multiline form needed for BSD sed on Macs
+    sed -i -e '4 i \
+include ..\/..\/lib\/nufeb\/Makefile.lammps
+' ../Makefile.package.settings
+
+  fi
+
+elif (test $1 = 0) then
+
+  if (test -e ../Makefile.package) then
+    sed -i -e 's/[^ \t]*nufeb[^ \t]* //g' ../Makefile.package
+  fi
+
+  if (test -e ../Makefile.package.settings) then
+    sed -i -e '/^include.*nufeb.*$/d' ../Makefile.package.settings
+  fi
+
+fi
+
 # all package files with dependencies
 
 action atom_vec_nufeb.cpp

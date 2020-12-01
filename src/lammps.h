@@ -69,6 +69,7 @@ class LAMMPS {
   class CommGrid *comm_grid;
 
   class GridKokkos *gridKK;
+  class CommGridKokkos *comm_gridKK;
   
   const char *match_style(const char *style, const char *name);
   static const char * installed_packages[];

@@ -33,7 +33,7 @@
 
 using namespace LAMMPS_NS;
 
-enum{DOMAIN=0,CONSTANT,VARIABLE};
+enum{BOX=0,CONSTANT,VARIABLE};
 
 /* ---------------------------------------------------------------------- */
 
@@ -51,7 +51,7 @@ ComputePressure::ComputePressure(LAMMPS *lmp, int narg, char **arg) :
   pressflag = 1;
   timeflag = 1;
 
-  vol_style = DOMAIN;
+  vol_style = BOX;
   vol = 1.0;
   vol_str = NULL;
   vol_index = -1;
@@ -228,7 +228,7 @@ double ComputePressure::compute_scalar()
   }
   
   if (dimension == 3) {
-    if (vol_style == DOMAIN)
+    if (vol_style == BOX)
       inv_volume = 1.0 / (domain->xprd * domain->yprd * domain->zprd);
     virial_compute(3,3);
     if (keflag)
@@ -237,7 +237,7 @@ double ComputePressure::compute_scalar()
     else
       scalar = (virial[0] + virial[1] + virial[2]) / 3.0 * inv_volume * nktv2p;
   } else {
-    if (vol_style == DOMAIN)
+    if (vol_style == BOX)
       inv_volume = 1.0 / (domain->xprd * domain->yprd);
     virial_compute(2,2);
     if (keflag)
@@ -281,7 +281,7 @@ void ComputePressure::compute_vector()
   }
 
   if (dimension == 3) {
-    if (vol_style == DOMAIN)
+    if (vol_style == BOX)
       inv_volume = 1.0 / (domain->xprd * domain->yprd * domain->zprd);
     virial_compute(6,3);
     if (keflag) {
@@ -291,7 +291,7 @@ void ComputePressure::compute_vector()
       for (int i = 0; i < 6; i++)
         vector[i] = virial[i] * inv_volume * nktv2p;
   } else {
-    if (vol_style == DOMAIN)
+    if (vol_style == BOX)
       inv_volume = 1.0 / (domain->xprd * domain->yprd);
     virial_compute(4,2);
     if (keflag) {
