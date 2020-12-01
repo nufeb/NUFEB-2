@@ -780,9 +780,8 @@ void LAMMPS::create()
   if (kokkos) grid = new GridKokkos(this);
   else grid = new Grid(this);
 
-//  if (kokkos) comm_grid = new CommGridKokkos(this);
- // else
-  comm_grid = new CommGrid(this);
+  if (kokkos) comm_grid = new CommGridKokkos(this);
+  else comm_grid = new CommGrid(this);
 }
 
 /* ----------------------------------------------------------------------
