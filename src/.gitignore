@@ -392,8 +392,6 @@
 /dihedral_table.h
 /dihedral_table_cut.cpp
 /dihedral_table_cut.h
-/dihedral_hybrid.cpp
-/dihedral_bybrid.h
 /dump_atom_adios.cpp
 /dump_atom_adios.h
 /dump_atom_gz.cpp
