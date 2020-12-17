@@ -19,7 +19,7 @@ comm_modify     cutoff 2e-6                # guarantee that enough atoms are
 					   # grid values
 
 # define a simulation region
-region          sim block 0 1e-4 0 1e-4 0 1e-4
+region          sim block 0 1e-4 0 5e-5 0 8e-5
 # create simulation box with 2 atom types using region 1
 create_box      2 sim
 
@@ -52,7 +52,7 @@ neigh_modify    check yes               # rebuild neighbour list if any atom
 					#   distance
 
 # select grid style
-grid_style      nufeb/monod 4 sub o2 no2 no3 5e-5 pp pp nd
+grid_style      nufeb/monod 4 sub o2 no2 no3 2e-6 pp pp nd
 
 # test grid comm
 #run_style       test/comm_grid

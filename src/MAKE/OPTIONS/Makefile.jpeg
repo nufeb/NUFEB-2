@@ -61,8 +61,8 @@ FFT_LIB =
 # PATH = path(s) for JPEG library and/or PNG library
 # LIB = name(s) of JPEG library and/or PNG library
 
-JPG_INC =       -I/usr/include
-JPG_PATH = 	-L/usr/lib
+JPG_INC =       -I/opt/libjpeg-turbo/include
+JPG_PATH = 	-L/opt/libjpeg-turbo/lib64
 JPG_LIB =	-ljpeg
 
 # ---------------------------------------------------------------------
