@@ -93,6 +93,8 @@ action fix_monod_nob.cpp
 action fix_monod_nob.h
 action fix_monod_cyano.cpp
 action fix_monod_cyano.h
+action fix_monod_ecoliw.cpp
+action fix_monod_ecoliw.h
 action fix_wall_adhesion.cpp
 action fix_wall_adhesion.h
 action grid_vec_monod.cpp
