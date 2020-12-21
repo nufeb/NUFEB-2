@@ -113,8 +113,8 @@ class Atom : protected Pointers {
 
   // USER-NUFEB package
 
-  int outer_radius_flag, outer_mass_flag;
-  double *outer_radius, *outer_mass;
+  int biomass_flag, outer_radius_flag, outer_mass_flag;
+  double *biomass, *outer_radius, *outer_mass;
   
   // molecular info
 

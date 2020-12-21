@@ -65,8 +65,8 @@ fi
 
 # all package files with dependencies
 
-action atom_vec_nufeb.cpp
-action atom_vec_nufeb.h
+action atom_vec_cocci.cpp
+action atom_vec_cocci.h
 action compute_volume.cpp
 action compute_volume.h
 action fix_death.cpp
@@ -97,3 +97,5 @@ action grid_vec_monod.cpp
 action grid_vec_monod.h
 action nufeb_run.cpp
 action nufeb_run.h
+
+

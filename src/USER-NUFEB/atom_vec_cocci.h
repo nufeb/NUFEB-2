@@ -13,21 +13,21 @@
 
 #ifdef ATOM_CLASS
 
-AtomStyle(nufeb,AtomVecNufeb)
+AtomStyle(nufeb,AtomVecCocci)
 
 #else
 
-#ifndef LMP_ATOM_VEC_NUFEB_H
-#define LMP_ATOM_VEC_NUFEB_H
+#ifndef LMP_ATOM_VEC_COCCI_H
+#define LMP_ATOM_VEC_COCCI_H
 
 #include "atom_vec.h"
 
 namespace LAMMPS_NS {
 
-class AtomVecNufeb : public AtomVec {
+class AtomVecCocci : public AtomVec {
  public:
-  AtomVecNufeb(class LAMMPS *);
-  ~AtomVecNufeb() {}
+  AtomVecCocci(class LAMMPS *);
+  ~AtomVecCocci() {}
   void init();
   void grow(int);
   void grow_reset();
@@ -74,7 +74,7 @@ class AtomVecNufeb : public AtomVec {
   imageint *image;
   double **x,**v,**f;
   double *radius,*rmass;
-  double *outer_radius, *outer_mass;
+  double *biomass, *outer_radius, *outer_mass;
   double **omega,**torque;
   int radvary;
 };

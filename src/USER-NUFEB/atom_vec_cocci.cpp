@@ -14,7 +14,6 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include "atom_vec_nufeb.h"
 #include "atom.h"
 #include "comm.h"
 #include "domain.h"
@@ -25,6 +24,8 @@
 #include "math_const.h"
 #include "memory.h"
 #include "error.h"
+
+#include "atom_vec_cocci.h"
 #include "group.h"
 
 using namespace LAMMPS_NS;
@@ -32,29 +33,30 @@ using namespace MathConst;
 
 /* ---------------------------------------------------------------------- */
 
-AtomVecNufeb::AtomVecNufeb(LAMMPS *lmp) : AtomVec(lmp)
+AtomVecCocci::AtomVecCocci(LAMMPS *lmp) : AtomVec(lmp)
 {
   molecular = 0;
   radvary = 1;
 
-  comm_x_only = 0;
+  comm_x_only = 1;
   comm_f_only = 0;
-  size_forward = 7;
+  size_forward = 8;
   size_reverse = 6;
-  size_border = 10;
+  size_border = 11;
   size_velocity = 6;
-  size_data_atom = 5;
+  size_data_atom = 10;
   size_data_vel = 7;
   xcol_data = 5;
 
   atom->sphere_flag = 1;
   atom->radius_flag = atom->rmass_flag = atom->omega_flag =
-    atom->torque_flag = atom->outer_radius_flag = atom->outer_mass_flag = 1;
+    atom->torque_flag = atom->outer_radius_flag = atom->biomass_flag =
+	atom->outer_mass_flag = 1;
 }
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecNufeb::init()
+void AtomVecCocci::init()
 {
   AtomVec::init();
 }
@@ -65,7 +67,7 @@ void AtomVecNufeb::init()
    n > 0 allocates arrays to size n
 ------------------------------------------------------------------------- */
 
-void AtomVecNufeb::grow(int n)
+void AtomVecCocci::grow(int n)
 {
   if (n == 0) grow_nmax();
   else nmax = n;
@@ -83,6 +85,7 @@ void AtomVecNufeb::grow(int n)
 
   radius = memory->grow(atom->radius,nmax,"atom:radius");
   rmass = memory->grow(atom->rmass,nmax,"atom:rmass");
+  rmass = memory->grow(atom->biomass,nmax,"atom:biomass");
   outer_radius = memory->grow(atom->outer_radius,nmax,"atom:outer_radius");
   outer_mass = memory->grow(atom->outer_mass,nmax,"atom:outer_mass");
   omega = memory->grow(atom->omega,nmax,3,"atom:omega");
@@ -97,12 +100,13 @@ void AtomVecNufeb::grow(int n)
    reset local array ptrs
 ------------------------------------------------------------------------- */
 
-void AtomVecNufeb::grow_reset()
+void AtomVecCocci::grow_reset()
 {
   tag = atom->tag; type = atom->type;
   mask = atom->mask; image = atom->image;
   x = atom->x; v = atom->v; f = atom->f;
   radius = atom->radius; rmass = atom->rmass;
+  biomass = atom->biomass;
   outer_radius = atom->outer_radius; outer_mass = atom->outer_mass;
   omega = atom->omega; torque = atom->torque;
 }
@@ -111,7 +115,7 @@ void AtomVecNufeb::grow_reset()
    copy atom I info to atom J
 ------------------------------------------------------------------------- */
 
-void AtomVecNufeb::copy(int i, int j, int delflag)
+void AtomVecCocci::copy(int i, int j, int delflag)
 {
   tag[j] = tag[i];
   type[j] = type[i];
@@ -126,6 +130,7 @@ void AtomVecNufeb::copy(int i, int j, int delflag)
 
   radius[j] = radius[i];
   rmass[j] = rmass[i];
+  biomass[j] = biomass[i];
   outer_radius[j] = outer_radius[i];
   outer_mass[j] = outer_mass[i];
   omega[j][0] = omega[i][0];
@@ -139,7 +144,7 @@ void AtomVecNufeb::copy(int i, int j, int delflag)
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecNufeb::pack_comm(int n, int *list, double *buf,
+int AtomVecCocci::pack_comm(int n, int *list, double *buf,
 			  int pbc_flag, int *pbc)
 {
   int i,j,m;
@@ -154,6 +159,7 @@ int AtomVecNufeb::pack_comm(int n, int *list, double *buf,
       buf[m++] = x[j][2];
       buf[m++] = radius[j];
       buf[m++] = rmass[j];
+      buf[m++] = biomass[j];
       buf[m++] = outer_radius[j];
       buf[m++] = outer_mass[j];
     }
@@ -174,6 +180,7 @@ int AtomVecNufeb::pack_comm(int n, int *list, double *buf,
       buf[m++] = x[j][2] + dz;
       buf[m++] = radius[j];
       buf[m++] = rmass[j];
+      buf[m++] = biomass[j];
       buf[m++] = outer_radius[j];
       buf[m++] = outer_mass[j];
     }
@@ -184,7 +191,7 @@ int AtomVecNufeb::pack_comm(int n, int *list, double *buf,
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecNufeb::pack_comm_vel(int n, int *list, double *buf,
+int AtomVecCocci::pack_comm_vel(int n, int *list, double *buf,
 			      int pbc_flag, int *pbc)
 {
   int i,j,m;
@@ -199,6 +206,7 @@ int AtomVecNufeb::pack_comm_vel(int n, int *list, double *buf,
       buf[m++] = x[j][2];
       buf[m++] = radius[j];
       buf[m++] = rmass[j];
+      buf[m++] = biomass[j];
       buf[m++] = outer_radius[j];
       buf[m++] = outer_mass[j];
       buf[m++] = v[j][0];
@@ -226,6 +234,7 @@ int AtomVecNufeb::pack_comm_vel(int n, int *list, double *buf,
 	buf[m++] = x[j][2] + dz;
 	buf[m++] = radius[j];
 	buf[m++] = rmass[j];
+	buf[m++] = biomass[j];
 	buf[m++] = outer_radius[j];
 	buf[m++] = outer_mass[j];
 	buf[m++] = v[j][0];
@@ -246,6 +255,7 @@ int AtomVecNufeb::pack_comm_vel(int n, int *list, double *buf,
 	buf[m++] = x[j][2] + dz;
 	buf[m++] = radius[j];
 	buf[m++] = rmass[j];
+	buf[m++] = biomass[j];
 	buf[m++] = outer_radius[j];
 	buf[m++] = outer_mass[j];
 	if (mask[i] & deform_groupbit) {
@@ -269,7 +279,7 @@ int AtomVecNufeb::pack_comm_vel(int n, int *list, double *buf,
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecNufeb::pack_comm_hybrid(int n, int *list, double *buf)
+int AtomVecCocci::pack_comm_hybrid(int n, int *list, double *buf)
 {
   int i,j,m;
 
@@ -278,6 +288,7 @@ int AtomVecNufeb::pack_comm_hybrid(int n, int *list, double *buf)
     j = list[i];
     buf[m++] = radius[j];
     buf[m++] = rmass[j];
+    buf[m++] = biomass[j];
     buf[m++] = outer_radius[j];
     buf[m++] = outer_mass[j];
   }
@@ -286,7 +297,7 @@ int AtomVecNufeb::pack_comm_hybrid(int n, int *list, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecNufeb::unpack_comm(int n, int first, double *buf)
+void AtomVecCocci::unpack_comm(int n, int first, double *buf)
 {
   int i,m,last;
 
@@ -298,6 +309,7 @@ void AtomVecNufeb::unpack_comm(int n, int first, double *buf)
     x[i][2] = buf[m++];
     radius[i] = buf[m++];
     rmass[i] = buf[m++];
+    biomass[i] = buf[m++];
     outer_radius[i] = buf[m++];
     outer_mass[i] = buf[m++];
   }
@@ -305,7 +317,7 @@ void AtomVecNufeb::unpack_comm(int n, int first, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecNufeb::unpack_comm_vel(int n, int first, double *buf)
+void AtomVecCocci::unpack_comm_vel(int n, int first, double *buf)
 {
   int i,m,last;
 
@@ -317,6 +329,7 @@ void AtomVecNufeb::unpack_comm_vel(int n, int first, double *buf)
     x[i][2] = buf[m++];
     radius[i] = buf[m++];
     rmass[i] = buf[m++];
+    biomass[i] = buf[m++];
     outer_radius[i] = buf[m++];
     outer_mass[i] = buf[m++];
     v[i][0] = buf[m++];
@@ -330,7 +343,7 @@ void AtomVecNufeb::unpack_comm_vel(int n, int first, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecNufeb::unpack_comm_hybrid(int n, int first, double *buf)
+int AtomVecCocci::unpack_comm_hybrid(int n, int first, double *buf)
 {
   int i,m,last;
 
@@ -339,6 +352,7 @@ int AtomVecNufeb::unpack_comm_hybrid(int n, int first, double *buf)
   for (i = first; i < last; i++) {
     radius[i] = buf[m++];
     rmass[i] = buf[m++];
+    biomass[i] = buf[m++];
     outer_radius[i] = buf[m++];
     outer_mass[i] = buf[m++];
   }
@@ -347,7 +361,7 @@ int AtomVecNufeb::unpack_comm_hybrid(int n, int first, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecNufeb::pack_reverse(int n, int first, double *buf)
+int AtomVecCocci::pack_reverse(int n, int first, double *buf)
 {
   int i,m,last;
 
@@ -366,7 +380,7 @@ int AtomVecNufeb::pack_reverse(int n, int first, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecNufeb::pack_reverse_hybrid(int n, int first, double *buf)
+int AtomVecCocci::pack_reverse_hybrid(int n, int first, double *buf)
 {
   int i,m,last;
 
@@ -382,7 +396,7 @@ int AtomVecNufeb::pack_reverse_hybrid(int n, int first, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecNufeb::unpack_reverse(int n, int *list, double *buf)
+void AtomVecCocci::unpack_reverse(int n, int *list, double *buf)
 {
   int i,j,m;
 
@@ -400,7 +414,7 @@ void AtomVecNufeb::unpack_reverse(int n, int *list, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecNufeb::unpack_reverse_hybrid(int n, int *list, double *buf)
+int AtomVecCocci::unpack_reverse_hybrid(int n, int *list, double *buf)
 {
   int i,j,m;
 
@@ -416,7 +430,7 @@ int AtomVecNufeb::unpack_reverse_hybrid(int n, int *list, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecNufeb::pack_border(int n, int *list, double *buf,
+int AtomVecCocci::pack_border(int n, int *list, double *buf,
 			    int pbc_flag, int *pbc)
 {
   int i,j,m;
@@ -434,6 +448,7 @@ int AtomVecNufeb::pack_border(int n, int *list, double *buf,
       buf[m++] = ubuf(mask[j]).d;
       buf[m++] = radius[j];
       buf[m++] = rmass[j];
+      buf[m++] = biomass[j];
       buf[m++] = outer_radius[j];
       buf[m++] = outer_mass[j];
     }
@@ -457,6 +472,7 @@ int AtomVecNufeb::pack_border(int n, int *list, double *buf,
       buf[m++] = ubuf(mask[j]).d;
       buf[m++] = radius[j];
       buf[m++] = rmass[j];
+      buf[m++] = biomass[j];
       buf[m++] = outer_radius[j];
       buf[m++] = outer_mass[j];
     }
@@ -471,7 +487,7 @@ int AtomVecNufeb::pack_border(int n, int *list, double *buf,
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecNufeb::pack_border_vel(int n, int *list, double *buf,
+int AtomVecCocci::pack_border_vel(int n, int *list, double *buf,
 				int pbc_flag, int *pbc)
 {
   int i,j,m;
@@ -489,6 +505,7 @@ int AtomVecNufeb::pack_border_vel(int n, int *list, double *buf,
       buf[m++] = ubuf(mask[j]).d;
       buf[m++] = radius[j];
       buf[m++] = rmass[j];
+      buf[m++] = biomass[j];
       buf[m++] = outer_radius[j];
       buf[m++] = outer_mass[j];
       buf[m++] = v[j][0];
@@ -519,6 +536,7 @@ int AtomVecNufeb::pack_border_vel(int n, int *list, double *buf,
         buf[m++] = ubuf(mask[j]).d;
         buf[m++] = radius[j];
         buf[m++] = rmass[j];
+        buf[m++] = biomass[j];
 	buf[m++] = outer_radius[j];
 	buf[m++] = outer_mass[j];
         buf[m++] = v[j][0];
@@ -542,6 +560,7 @@ int AtomVecNufeb::pack_border_vel(int n, int *list, double *buf,
         buf[m++] = ubuf(mask[j]).d;
         buf[m++] = radius[j];
         buf[m++] = rmass[j];
+        buf[m++] = biomass[j];
 	buf[m++] = outer_radius[j];
 	buf[m++] = outer_mass[j];
         if (mask[i] & deform_groupbit) {
@@ -569,7 +588,7 @@ int AtomVecNufeb::pack_border_vel(int n, int *list, double *buf,
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecNufeb::pack_border_hybrid(int n, int *list, double *buf)
+int AtomVecCocci::pack_border_hybrid(int n, int *list, double *buf)
 {
   int i,j,m;
 
@@ -578,6 +597,7 @@ int AtomVecNufeb::pack_border_hybrid(int n, int *list, double *buf)
     j = list[i];
     buf[m++] = radius[j];
     buf[m++] = rmass[j];
+    buf[m++] = biomass[j];
     buf[m++] = outer_radius[j];
     buf[m++] = outer_mass[j];
   }
@@ -586,7 +606,7 @@ int AtomVecNufeb::pack_border_hybrid(int n, int *list, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecNufeb::unpack_border(int n, int first, double *buf)
+void AtomVecCocci::unpack_border(int n, int first, double *buf)
 {
   int i,m,last;
 
@@ -602,6 +622,7 @@ void AtomVecNufeb::unpack_border(int n, int first, double *buf)
     mask[i] = (int) ubuf(buf[m++]).i;
     radius[i] = buf[m++];
     rmass[i] = buf[m++];
+    biomass[i] = buf[m++];
     outer_radius[i] = buf[m++];
     outer_mass[i] = buf[m++];
   }
@@ -615,7 +636,7 @@ void AtomVecNufeb::unpack_border(int n, int first, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecNufeb::unpack_border_vel(int n, int first, double *buf)
+void AtomVecCocci::unpack_border_vel(int n, int first, double *buf)
 {
   int i,m,last;
 
@@ -631,6 +652,7 @@ void AtomVecNufeb::unpack_border_vel(int n, int first, double *buf)
     mask[i] = (int) ubuf(buf[m++]).i;
     radius[i] = buf[m++];
     rmass[i] = buf[m++];
+    biomass[i] = buf[m++];
     outer_radius[i] = buf[m++];
     outer_mass[i] = buf[m++];
     v[i][0] = buf[m++];
@@ -649,7 +671,7 @@ void AtomVecNufeb::unpack_border_vel(int n, int first, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecNufeb::unpack_border_hybrid(int n, int first, double *buf)
+int AtomVecCocci::unpack_border_hybrid(int n, int first, double *buf)
 {
   int i,m,last;
 
@@ -658,6 +680,7 @@ int AtomVecNufeb::unpack_border_hybrid(int n, int first, double *buf)
   for (i = first; i < last; i++) {
     radius[i] = buf[m++];
     rmass[i] = buf[m++];
+    biomass[i] = buf[m++];
     outer_radius[i] = buf[m++];
     outer_mass[i] = buf[m++];
   }
@@ -669,7 +692,7 @@ int AtomVecNufeb::unpack_border_hybrid(int n, int first, double *buf)
    xyz must be 1st 3 values, so comm::exchange() can test on them
 ------------------------------------------------------------------------- */
 
-int AtomVecNufeb::pack_exchange(int i, double *buf)
+int AtomVecCocci::pack_exchange(int i, double *buf)
 {
   int m = 1;
   buf[m++] = x[i][0];
@@ -685,6 +708,7 @@ int AtomVecNufeb::pack_exchange(int i, double *buf)
 
   buf[m++] = radius[i];
   buf[m++] = rmass[i];
+  buf[m++] = biomass[i];
   buf[m++] = outer_radius[i];
   buf[m++] = outer_mass[i];
   buf[m++] = omega[i][0];
@@ -701,7 +725,7 @@ int AtomVecNufeb::pack_exchange(int i, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecNufeb::unpack_exchange(double *buf)
+int AtomVecCocci::unpack_exchange(double *buf)
 {
   int nlocal = atom->nlocal;
   if (nlocal == nmax) grow(0);
@@ -720,6 +744,7 @@ int AtomVecNufeb::unpack_exchange(double *buf)
 
   radius[nlocal] = buf[m++];
   rmass[nlocal] = buf[m++];
+  biomass[nlocal] = buf[m++];
   outer_radius[nlocal] = buf[m++];
   outer_mass[nlocal] = buf[m++];
   omega[nlocal][0] = buf[m++];
@@ -740,7 +765,7 @@ int AtomVecNufeb::unpack_exchange(double *buf)
    include extra data stored by fixes
 ------------------------------------------------------------------------- */
 
-int AtomVecNufeb::size_restart()
+int AtomVecCocci::size_restart()
 {
   int i;
 
@@ -761,7 +786,7 @@ int AtomVecNufeb::size_restart()
    molecular types may be negative, but write as positive
 ------------------------------------------------------------------------- */
 
-int AtomVecNufeb::pack_restart(int i, double *buf)
+int AtomVecCocci::pack_restart(int i, double *buf)
 {
   int m = 1;
   buf[m++] = x[i][0];
@@ -777,6 +802,7 @@ int AtomVecNufeb::pack_restart(int i, double *buf)
 
   buf[m++] = radius[i];
   buf[m++] = rmass[i];
+  buf[m++] = biomass[i];
   buf[m++] = outer_radius[i];
   buf[m++] = outer_mass[i];
   buf[m++] = omega[i][0];
@@ -795,7 +821,7 @@ int AtomVecNufeb::pack_restart(int i, double *buf)
    unpack data for one atom from restart file including extra quantities
 ------------------------------------------------------------------------- */
 
-int AtomVecNufeb::unpack_restart(double *buf)
+int AtomVecCocci::unpack_restart(double *buf)
 {
   int nlocal = atom->nlocal;
   if (nlocal == nmax) {
@@ -818,6 +844,7 @@ int AtomVecNufeb::unpack_restart(double *buf)
 
   radius[nlocal] = buf[m++];
   rmass[nlocal] = buf[m++];
+  biomass[nlocal] = buf[m++];
   outer_radius[nlocal] = buf[m++];
   outer_mass[nlocal] = buf[m++];
   omega[nlocal][0] = buf[m++];
@@ -839,7 +866,7 @@ int AtomVecNufeb::unpack_restart(double *buf)
    set other values to defaults
 ------------------------------------------------------------------------- */
 
-void AtomVecNufeb::create_atom(int itype, double *coord)
+void AtomVecCocci::create_atom(int itype, double *coord)
 {
   int nlocal = atom->nlocal;
   if (nlocal == nmax) grow(0);
@@ -858,6 +885,7 @@ void AtomVecNufeb::create_atom(int itype, double *coord)
 
   radius[nlocal] = 0.5;
   rmass[nlocal] = 4.0*MY_PI/3.0 * radius[nlocal]*radius[nlocal]*radius[nlocal];
+  biomass[nlocal] = 0.0;
   omega[nlocal][0] = 0.0;
   omega[nlocal][1] = 0.0;
   omega[nlocal][2] = 0.0;
@@ -873,7 +901,7 @@ void AtomVecNufeb::create_atom(int itype, double *coord)
    initialize other atom quantities
 ------------------------------------------------------------------------- */
 
-void AtomVecNufeb::data_atom(double *coord, imageint imagetmp, char **values)
+void AtomVecCocci::data_atom(double *coord, imageint imagetmp, char **values)
 {
   int nlocal = atom->nlocal;
   if (nlocal == nmax) grow(0);
@@ -918,6 +946,10 @@ void AtomVecNufeb::data_atom(double *coord, imageint imagetmp, char **values)
     ((outer_radius[nlocal]*outer_radius[nlocal]*outer_radius[nlocal])
      -(radius[nlocal]*radius[nlocal]*radius[nlocal])) * 30;
 
+  biomass[nlocal] = atof(values[9]);
+  if (biomass[nlocal] < 0) {
+    error->one(FLERR,"Biomass must be greater than or equal to zero");
+  }
   atom->nlocal++;
 }
 
@@ -926,7 +958,7 @@ void AtomVecNufeb::data_atom(double *coord, imageint imagetmp, char **values)
    initialize other atom quantities for this sub-style
 ------------------------------------------------------------------------- */
 
-int AtomVecNufeb::data_atom_hybrid(int nlocal, char **values)
+int AtomVecCocci::data_atom_hybrid(int nlocal, char **values)
 {
   radius[nlocal] = 0.5 * atof(values[0]);
   if (radius[nlocal] < 0.0)
@@ -948,7 +980,7 @@ int AtomVecNufeb::data_atom_hybrid(int nlocal, char **values)
    unpack one line from Velocities section of data file
 ------------------------------------------------------------------------- */
 
-void AtomVecNufeb::data_vel(int m, char **values)
+void AtomVecCocci::data_vel(int m, char **values)
 {
   v[m][0] = atof(values[0]);
   v[m][1] = atof(values[1]);
@@ -962,7 +994,7 @@ void AtomVecNufeb::data_vel(int m, char **values)
    unpack hybrid quantities from one line in Velocities section of data file
 ------------------------------------------------------------------------- */
 
-int AtomVecNufeb::data_vel_hybrid(int m, char **values)
+int AtomVecCocci::data_vel_hybrid(int m, char **values)
 {
   omega[m][0] = atof(values[0]);
   omega[m][1] = atof(values[1]);
@@ -974,7 +1006,7 @@ int AtomVecNufeb::data_vel_hybrid(int m, char **values)
    pack atom info for data file including 3 image flags
 ------------------------------------------------------------------------- */
 
-void AtomVecNufeb::pack_data(double **buf)
+void AtomVecCocci::pack_data(double **buf)
 {
   int nlocal = atom->nlocal;
   for (int i = 0; i < nlocal; i++) {
@@ -997,7 +1029,7 @@ void AtomVecNufeb::pack_data(double **buf)
    pack hybrid atom info for data file
 ------------------------------------------------------------------------- */
 
-int AtomVecNufeb::pack_data_hybrid(int i, double *buf)
+int AtomVecCocci::pack_data_hybrid(int i, double *buf)
 {
   buf[0] = 2.0*radius[i];
   if (radius[i] == 0.0) buf[1] = rmass[i];
@@ -1009,7 +1041,7 @@ int AtomVecNufeb::pack_data_hybrid(int i, double *buf)
    write atom info to data file including 3 image flags
 ------------------------------------------------------------------------- */
 
-void AtomVecNufeb::write_data(FILE *fp, int n, double **buf)
+void AtomVecCocci::write_data(FILE *fp, int n, double **buf)
 {
   for (int i = 0; i < n; i++)
     fprintf(fp,TAGINT_FORMAT
@@ -1025,7 +1057,7 @@ void AtomVecNufeb::write_data(FILE *fp, int n, double **buf)
    write hybrid atom info to data file
 ------------------------------------------------------------------------- */
 
-int AtomVecNufeb::write_data_hybrid(FILE *fp, double *buf)
+int AtomVecCocci::write_data_hybrid(FILE *fp, double *buf)
 {
   fprintf(fp," %-1.16e %-1.16e",buf[0],buf[1]);
   return 2;
@@ -1035,7 +1067,7 @@ int AtomVecNufeb::write_data_hybrid(FILE *fp, double *buf)
    pack velocity info for data file
 ------------------------------------------------------------------------- */
 
-void AtomVecNufeb::pack_vel(double **buf)
+void AtomVecCocci::pack_vel(double **buf)
 {
   int nlocal = atom->nlocal;
   for (int i = 0; i < nlocal; i++) {
@@ -1053,7 +1085,7 @@ void AtomVecNufeb::pack_vel(double **buf)
    pack hybrid velocity info for data file
 ------------------------------------------------------------------------- */
 
-int AtomVecNufeb::pack_vel_hybrid(int i, double *buf)
+int AtomVecCocci::pack_vel_hybrid(int i, double *buf)
 {
   buf[0] = omega[i][0];
   buf[1] = omega[i][1];
@@ -1065,7 +1097,7 @@ int AtomVecNufeb::pack_vel_hybrid(int i, double *buf)
    write velocity info to data file
 ------------------------------------------------------------------------- */
 
-void AtomVecNufeb::write_vel(FILE *fp, int n, double **buf)
+void AtomVecCocci::write_vel(FILE *fp, int n, double **buf)
 {
   for (int i = 0; i < n; i++)
     fprintf(fp,TAGINT_FORMAT
@@ -1078,7 +1110,7 @@ void AtomVecNufeb::write_vel(FILE *fp, int n, double **buf)
    write hybrid velocity info to data file
 ------------------------------------------------------------------------- */
 
-int AtomVecNufeb::write_vel_hybrid(FILE *fp, double *buf)
+int AtomVecCocci::write_vel_hybrid(FILE *fp, double *buf)
 {
   fprintf(fp," %-1.16e %-1.16e %-1.16e",buf[0],buf[1],buf[2]);
   return 3;
@@ -1088,7 +1120,7 @@ int AtomVecNufeb::write_vel_hybrid(FILE *fp, double *buf)
    return # of bytes of allocated memory
 ------------------------------------------------------------------------- */
 
-bigint AtomVecNufeb::memory_usage()
+bigint AtomVecCocci::memory_usage()
 {
   bigint bytes = 0;
 
@@ -1102,6 +1134,7 @@ bigint AtomVecNufeb::memory_usage()
 
   if (atom->memcheck("radius")) bytes += memory->usage(radius,nmax);
   if (atom->memcheck("rmass")) bytes += memory->usage(rmass,nmax);
+  if (atom->memcheck("biomass")) bytes += memory->usage(biomass,nmax);
   if (atom->memcheck("outer_mass")) bytes += memory->usage(outer_mass,nmax);
   if (atom->memcheck("outer_radius")) bytes += memory->usage(outer_radius,nmax);
   if (atom->memcheck("omega")) bytes += memory->usage(omega,nmax,3);
