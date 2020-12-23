@@ -80,8 +80,8 @@ variable press equal "(c_ke + c_press) / (3.0 * c_vol)"
 variable mass equal "mass(all)"
 
 # file output
-#dump 1 all vtk 10 dump*.vtu id type radius
-#dump 2 all grid/vtk 10 dump_%_*.vti con rea den gro
+dump 1 all vtk 10 dump*.vtu id type radius
+dump 2 all grid/vtk 10 dump_%_*.vti con rea den gro
 
 # thermo output
 thermo_style custom step atoms v_press v_mass
