@@ -1,0 +1,82 @@
+# NUFEB simulation with Cyanobacteria and E.Coli-Wild
+
+units si                                   # using si units
+atom_style      nufeb                      # using nufeb atom style
+atom_modify     map array sort 1000 5.0e-6 # map array: find atoms using indices
+		                           # sort 1000 5.0e-6: sort every 1000
+					   #   steps with 5.0e-6 binsize
+boundary        pp pp ff                   # periodic boundaries in x and y
+                                           #   fixed boundary in z
+newton          off                        # forces between local and ghost
+                                           #   atoms are computed in each
+					   #   processor without communication
+#processors      1 1 1                      # processor grid
+
+comm_modify     vel yes                    # communicate velocities for ghost
+                                           # atoms
+comm_modify     cutoff 2e-6                # guarantee that enough atoms are
+                                           # communicated to correctly compute
+					   # grid values
+
+read_data atom.in
+
+
+group           cyano type 1            # defining cyano group
+group           ecw   type 2            # defining ecw group
+group           alive type 1 2
+group           dead  type 3
+
+neighbor        1e-6 bin                # setting neighbour skin distance and
+                                        #   style
+neigh_modify    check yes               # rebuild neighbour list if any atom
+                                        #   had moved more than half the skin
+					#   distance
+
+# select grid style
+grid_style      nufeb/monod 5 sub o2 suc co2 gco2 2e-6 pp pp nd
+
+# set substrates initial concentration
+#                       | domain |                 boundary                |
+#                       |        |  -x  |  +x  |  -y  |  +y  |  -z  |  +z  |
+grid_modify     set sub    0.1     0.1    0.1    0.1    0.1    0.1    0.1
+grid_modify     set o2     9e-3    9e-3   9e-3   9e-3   9e-3   9e-3   9e-3
+grid_modify     set suc    0.0     0.0    0.0    0.0    0.0    0.0    0.0
+grid_modify     set co2    0.1     0.1    0.1    0.1    0.1    0.1    0.1
+grid_modify     set gco2   0.0     0.0    0.0    0.0    0.0    0.0    0.0
+
+# define pair style
+pair_style  gran/hooke/history 1e-4 NULL 1e-5 NULL 0.0 1
+pair_coeff  * *
+
+# NVE integration with maximum distance limit
+fix nve all nve/limit 1e-7
+
+# monod reaction fixes
+# should consider using read_data's fix keyword
+fix monod_cyano cyano nufeb/monod/cyano sub 3.5e-04 co2 2e-4 o2 suc gco2 growth 2.25e-05 yield 0.6 suc_exp 0.1 
+fix monod_aob ecw nufeb/monod/ecoli/wild suc 3.5e-04 o2 3.5e-04 co2 growth 2.7e-04 yield 0.43 
+
+# diffusion reaction fixes
+fix diff_o2  all nufeb/diffusion_reaction o2  2.3e-09   9e-3
+fix diff_suc all nufeb/diffusion_reaction suc 5.2e-10   0.1
+
+# biological model fixes
+fix div all nufeb/divide 1.96e-6 30 1234
+
+# mechanical model fixes
+fix wall all wall/gran hooke/history 1e-4 NULL 1e-5 NULL 0 0 zplane 0.0 4e-5
+fix_modify wall virial yes
+fix vis all viscous 1.14e-8
+
+# file output
+#dump 1 all vtk 10 dump*.vtu id type radius #vx vy vz fx fy fz
+#dump 2 all grid/vtk 10 dump_%_*.vti con rea den gro
+
+# thermo output
+thermo_style custom step atoms f_diff_o2 f_diff_suc
+thermo 1
+
+# issue run command
+run_style nufeb diffdt 1e-4 difftol 1e-6 pairdt 1e-2 pairtol 10
+timestep 1000
+run 10000
