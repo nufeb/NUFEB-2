@@ -13,39 +13,35 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/monod/cyano,FixMonodCyano)
+FixStyle(nufeb/monod/ecoli/wild,FixMonodEcoliWild)
 
 #else
 
-#ifndef LMP_FIX_MONOD_CYANO_H
-#define LMP_FIX_MONOD_CYANO_H
+#ifndef LMP_FIX_MONOD_ECOLI_WILD_H
+#define LMP_FIX_MONOD_ECOLI_WILD_H
 
 #include "fix_monod.h"
 
 namespace LAMMPS_NS {
 
-class FixMonodCyano: public FixMonod {
+class FixMonodEcoliWild: public FixMonod {
  public:
-  FixMonodCyano(class LAMMPS *, int, char **);
-  virtual ~FixMonodCyano() {}
+  FixMonodEcoliWild(class LAMMPS *, int, char **);
+  virtual ~FixMonodEcoliWild() {}
   virtual void compute();
 
  protected:
-  int isub;   // light
-  int ico2;   // dissolved co2
-  int igco2;  // co2
   int isuc;   // sucrose
   int io2;
+  int ico2;
 
-  double sub_affinity;
-  double co2_affinity;
+  double suc_affinity;
+  double o2_affinity;
 
   double growth;
   double yield;
   double maintain;
   double decay;
-  double suc_exp;
-  double gco2_flag;
   
   template <int, int> void update_cells();
   void update_atoms();

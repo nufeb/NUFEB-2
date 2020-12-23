@@ -14,10 +14,11 @@
 #include <cstdio>
 #include <cstring>
 #include <cmath>
-#include "fix_monod_cyano.h"
 #include "atom.h"
 #include "force.h"
 #include "error.h"
+
+#include "fix_monod_ecoli_wild.h"
 #include "grid.h"
 #include "group.h"
 #include "grid_masks.h"
@@ -29,58 +30,45 @@ using namespace MathConst;
 
 /* ---------------------------------------------------------------------- */
 
-FixMonodCyano::FixMonodCyano(LAMMPS *lmp, int narg, char **arg) :
+FixMonodEcoliWild::FixMonodEcoliWild(LAMMPS *lmp, int narg, char **arg) :
   FixMonod(lmp, narg, arg)
 {
-  if (narg < 10)
-    error->all(FLERR, "Illegal fix nufeb/monod/cyano command");
+  if (narg < 8)
+    error->all(FLERR, "Illegal fix nufeb/monod/ecoliw command");
 
   dynamic_group_allow = 1;
 
-  isub = -1;
-  ico2 = -1;
-  igco2 = -1;
   isuc = -1;
   io2 = -1;
+  ico2 = -1;
 
-  sub_affinity = 0.0;
-  co2_affinity = 0.0;
+  suc_affinity = 0.0;
+  o2_affinity = 0.0;
 
   growth = 0.0;
   yield = 1.0;
   maintain = 0.0;
   decay = 0.0;
-  suc_exp = 0.0;
 
-  gco2_flag = 0;
-
-  isub = grid->find(arg[3]);
-  if (isub < 0)
-    error->all(FLERR, "Can't find substrate(light) name");
-  sub_affinity = force->numeric(FLERR, arg[4]);
-  if (sub_affinity <= 0)
-    error->all(FLERR, "light affinity must be greater than zero");
-
-  ico2 = grid->find(arg[5]);
-  if (ico2 < 0)
-    error->all(FLERR, "Can't find substrate(co2) name");
-  co2_affinity = force->numeric(FLERR, arg[6]);
-  if (co2_affinity <= 0)
-    error->all(FLERR, "co2 affinity must be greater than zero");
-
-  io2 = grid->find(arg[7]);
-  if (io2 < 0)
-    error->all(FLERR, "Can't find substrate(o2) name");
-
-  igco2 = grid->find(arg[8]);
-  if (igco2 < 0)
-    error->all(FLERR, "Can't find substrate(gco2) name");
-
-  isuc = grid->find(arg[9]);
+  isuc = grid->find(arg[3]);
   if (isuc < 0)
     error->all(FLERR, "Can't find substrate(sucrose) name");
+  suc_affinity = force->numeric(FLERR, arg[4]);
+  if (suc_affinity <= 0)
+    error->all(FLERR, "Sucrose affinity must be greater than zero");
 
-  int iarg = 10;
+  io2 = grid->find(arg[5]);
+  if (io2 < 0)
+    error->all(FLERR, "Can't find substrate(co2) name");
+  o2_affinity = force->numeric(FLERR, arg[6]);
+  if (o2_affinity <= 0)
+    error->all(FLERR, "O2 affinity must be greater than zero");
+
+  ico2 = grid->find(arg[7]);
+  if (ico2 < 0)
+    error->all(FLERR, "Can't find substrate(co2) name");
+
+  int iarg = 8;
   while (iarg < narg) {
     if (strcmp(arg[iarg], "growth") == 0) {
       growth = force->numeric(FLERR, arg[iarg+1]);
@@ -94,21 +82,15 @@ FixMonodCyano::FixMonodCyano(LAMMPS *lmp, int narg, char **arg) :
     } else if (strcmp(arg[iarg], "decay") == 0) {
       decay = force->numeric(FLERR, arg[iarg+1]);
       iarg += 2;
-    } else if (strcmp(arg[iarg], "suc_exp") == 0) {
-      suc_exp = force->numeric(FLERR, arg[iarg+1]);
-      iarg += 2;
-    } else if (strcmp(arg[iarg], "gco2_flag") == 0) {
-      suc_exp = force->inumeric(FLERR, arg[iarg+1]);
-      iarg += 2;
     } else {
-      error->all(FLERR, "Illegal fix nufeb/monod/cyano command");
+      error->all(FLERR, "Illegal fix nufeb/monod/ecoliw command");
     }
   }
 }
 
 /* ---------------------------------------------------------------------- */
 
-void FixMonodCyano::compute()
+void FixMonodEcoliWild::compute()
 {
   if (reaction_flag && growth_flag) {
     update_cells<1, 1>();
@@ -124,7 +106,7 @@ void FixMonodCyano::compute()
 /* ---------------------------------------------------------------------- */
 
 template <int Reaction, int Growth>
-void FixMonodCyano::update_cells()
+void FixMonodEcoliWild::update_cells()
 {
   double **conc = grid->conc;
   double **reac = grid->reac;
@@ -132,36 +114,26 @@ void FixMonodCyano::update_cells()
 
   for (int i = 0; i < grid->ncells; i++) {
     // cyanobacterial growth rate based on light(sub) and co2
-    double tmp1 = growth * conc[isub][i] / (sub_affinity + conc[isub][i]) * conc[ico2][i] / (co2_affinity + conc[ico2][i]);
+    double tmp1 = growth * conc[isuc][i] / (suc_affinity + conc[isuc][i]) * conc[io2][i] / (o2_affinity + conc[io2][i]);
     // sucrose export-induced growth reduction
-    double tmp2 = 0.2 * tmp1 * suc_exp;
-    double tmp3 = 4 * tmp1 * suc_exp;
+    double tmp2 = maintain * conc[io2][i] / (o2_affinity + conc[io2][i]);
 
     if (Reaction && !(grid->mask[i] & GHOST_MASK)) {
       // nutrient utilization
-      reac[isub][i] -= 1 / yield * (tmp1 + tmp3) * dens[igroup][i];
-      reac[ico2][i] -= 1 / yield * (tmp1 + tmp3) * dens[igroup][i];
-      reac[io2][i] -= 0.1 * maintain * dens[igroup][i];
-      // oxygen evolution
-      reac[io2][i] +=  (0.727 / yield) * (tmp1 + tmp3) * dens[igroup][i];
-      // sucrose export
-      reac[isuc][i] += 0.65 / yield * tmp3 * dens[igroup][i];
-    }
-
-    // co2 dissolution
-    if (gco2_flag == 1) {
-      reac[ico2][i] += (4.4e-6 * conc[igco2][i]) - (4.4e-6 * conc[ico2][i]);
+      reac[isuc][i] -= 1 / yield * tmp1 * dens[igroup][i];
+      reac[io2][i] -= 0.399 * (tmp1 + tmp2) * dens[igroup][i];
+      reac[ico2][i] += 0.2 * (tmp1 + tmp2) * dens[igroup][i];
     }
 
     if (Growth) {
-      grid->growth[igroup][i][0] = tmp1 - tmp2 - tmp3 - decay - maintain;
+      grid->growth[igroup][i][0] = tmp1 - tmp2 - decay;
     }
   }
 }
 
 /* ---------------------------------------------------------------------- */
 
-void FixMonodCyano::update_atoms()
+void FixMonodEcoliWild::update_atoms()
 {
   double **x = atom->x;
   double *radius = atom->radius;

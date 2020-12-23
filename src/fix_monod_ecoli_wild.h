@@ -13,21 +13,21 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/monod/ecoliw,FixMonodEcoliW)
+FixStyle(nufeb/monod/ecoli/wild,FixMonodEcoliWild)
 
 #else
 
-#ifndef LMP_FIX_MONOD_ECOLIW_H
-#define LMP_FIX_MONOD_ECOLIW_H
+#ifndef LMP_FIX_MONOD_ECOLI_WILD_H
+#define LMP_FIX_MONOD_ECOLI_WILD_H
 
 #include "fix_monod.h"
 
 namespace LAMMPS_NS {
 
-class FixMonodEcoliW: public FixMonod {
+class FixMonodEcoliWild: public FixMonod {
  public:
-  FixMonodEcoliW(class LAMMPS *, int, char **);
-  virtual ~FixMonodEcoliW() {}
+  FixMonodEcoliWild(class LAMMPS *, int, char **);
+  virtual ~FixMonodEcoliWild() {}
   virtual void compute();
 
  protected:
