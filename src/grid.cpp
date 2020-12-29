@@ -50,13 +50,9 @@ Grid::Grid(LAMMPS *lmp) : Pointers(lmp)
   cell_size = 1.0;
   box[0] = box[1] = box[2] = 0;
   ncells = 0;
-  boundary[0] = boundary[1] = boundary[2] = boundary[3] =
-    boundary[4] = boundary[5] = -1;
   periodic[0] = periodic[1] = periodic[2] = 0;
-  ndirichlet = 0;
   
   mask = NULL;
-
   conc = NULL;
   reac = NULL;
   dens = NULL;
@@ -72,9 +68,10 @@ Grid::~Grid()
   delete gvec_map;
 
   memory->destroy(mask);
-
+  memory->destroy(dens);
   memory->destroy(conc);
   memory->destroy(reac);
+  memory->destroy(growth);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -82,13 +79,10 @@ Grid::~Grid()
 void Grid::modify_params(int narg, char **arg)
 {
   if (strcmp(arg[0], "set") == 0) {
-    if (narg < 9) error->all(FLERR, "Invalid grid_modify command");
+    if (narg < 3) error->all(FLERR, "Invalid grid_modify command");
     lmp->init();
     grid->setup();
-    gvec->set(find(arg[1]), force->numeric(FLERR, arg[2]),
-	      force->numeric(FLERR, arg[3]), force->numeric(FLERR, arg[4]),
-	      force->numeric(FLERR, arg[5]), force->numeric(FLERR, arg[6]),
-	      force->numeric(FLERR, arg[7]), force->numeric(FLERR, arg[8]));
+    gvec->set(find(arg[1]), force->numeric(FLERR, arg[2]));
   }
 }
 

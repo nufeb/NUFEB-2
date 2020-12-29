@@ -63,33 +63,6 @@ void GridVec::process_args(int narg, char **arg)
   if (narg < grid->nsubs + 2)
     error->all(FLERR,"Missing cell size in grid_style command");
   grid->cell_size = force->numeric(FLERR,arg[grid->nsubs+1]);
-
-  int iarg = grid->nsubs + 2;
-  for (int i = 0; i < 3; i++) {
-    if (strcmp(arg[iarg], "dd") == 0) {
-      grid->boundary[2*i] = DIRICHLET;
-      grid->boundary[2*i+1] = DIRICHLET;
-      grid->ndirichlet += 2;
-    } else if (strcmp(arg[iarg], "dn") == 0) {
-      grid->boundary[2*i] = DIRICHLET;
-      grid->boundary[2*i+1] = NEUMANN;
-      grid->ndirichlet += 1;
-    } else if (strcmp(arg[iarg], "nd") == 0) {
-      grid->boundary[2*i] = NEUMANN;
-      grid->boundary[2*i+1] = DIRICHLET;
-      grid->ndirichlet += 1;
-    } else if (strcmp(arg[iarg], "nn") == 0) {
-      grid->boundary[2*i] = NEUMANN;
-      grid->boundary[2*i+1] = NEUMANN;
-    } else if (strcmp(arg[iarg], "pp") == 0) {
-      grid->boundary[2*i] = PERIODIC;
-      grid->boundary[2*i+1] = PERIODIC;
-      grid->periodic[i] = 1;
-    } else {
-      error->all(FLERR, "Illegal boundary condition in grid_style");
-    }
-    iarg++;
-  }
 }
 
 /* ---------------------------------------------------------------------- */
