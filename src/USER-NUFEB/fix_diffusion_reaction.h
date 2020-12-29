@@ -47,6 +47,9 @@ class FixDiffusionReaction : public Fix {
   double *prev;
   double dt;
   double dirichlet[6];
+  int boundary[6];             // boundary conditions (-x, +x, -y, +y, -z, +z)
+  int ndirichlet;
+
 };
 
 }
