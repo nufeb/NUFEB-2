@@ -759,6 +759,11 @@ int NufebRun::diffusion()
       flag = true;
 
   } while (!flag);
+
+  for (int i = 0; i < nfix_diffusion; i++) {
+    fix_diffusion[i]->update_closed_system(biodt);
+  }
+
   return niter;
 }
 

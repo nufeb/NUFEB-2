@@ -41,11 +41,13 @@ FixDiffusionReaction::FixDiffusionReaction(LAMMPS *lmp, int narg, char **arg) :
   compute_flag = 1;
   dynamic_group_allow = 1;
   scalar_flag = 1;
-  
+
+  closed_system = 0;
   ndirichlet = 0;
 
   ncells = 0;
   prev = NULL;
+  penult = NULL;
   dt = 1.0;
   
   boundary[0] = boundary[1] = boundary[2] = boundary[3] =
@@ -82,6 +84,14 @@ FixDiffusionReaction::FixDiffusionReaction(LAMMPS *lmp, int narg, char **arg) :
     }
   }
 
+  if (!ndirichlet) {
+    closed_system = 1;
+    if (comm->me == 0 && logfile)
+      fprintf(logfile, "Model is defined as a closed system. \n");
+    if (comm->me == 0 && screen)
+      fprintf(screen, "Model is defined as a closed system. \n");
+  }
+
   if (narg < ndirichlet + 7)
     error->all(FLERR, "Not enough values for dirichlet boundaries");
   int iarg = 8;
@@ -101,6 +111,7 @@ FixDiffusionReaction::~FixDiffusionReaction()
 
   if (copymode) return;
   memory->destroy(prev);
+  if (closed_system) memory->destroy(penult);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -141,6 +152,11 @@ void FixDiffusionReaction::init()
   prev = memory->create(prev, ncells, "nufeb/diffusion_reaction:prev");
   for (int i = 0; i < ncells; i++)
     prev[i] = 0.0;
+  if (closed_system) {
+    penult = memory->create(penult, ncells, "nufeb/diffusion_reaction:penult");
+    for (int i = 0; i < ncells; i++)
+      penult[i] = 0.0;
+  }
   dt = update->dt;
 }
 
@@ -167,7 +183,12 @@ double FixDiffusionReaction::compute_scalar()
   double result = 0.0;
   for (int i = 0; i < grid->ncells; i++) {
     if (!(grid->mask[i] & GHOST_MASK)) {
-      result = MAX(result, fabs((grid->conc[isub][i] - prev[i]) / prev[i]));
+      double res = fabs((grid->conc[isub][i] - prev[i]) / prev[i]);
+      if (closed_system) {
+        double res2 = fabs((prev[i] - penult[i]) / penult[i]);
+        res = fabs(res - res2);
+      }
+      result = MAX(result, res);
     }
   }
   MPI_Allreduce(MPI_IN_PLACE, &result, 1, MPI_DOUBLE, MPI_MAX, world);
@@ -188,6 +209,7 @@ void FixDiffusionReaction::compute_initial()
   if (ncells != grid->ncells) {
     ncells = grid->ncells;
     prev = memory->grow(prev, ncells, "nufeb/diffusion_reaction:prev");
+    if (closed_system) penult = memory->grow(penult, ncells, "nufeb/diffusion_reaction:penult");
   }
 
   for (int i = 0; i < grid->ncells; i++) {
@@ -234,6 +256,7 @@ void FixDiffusionReaction::compute_final()
       int pz = i - nxy;
       grid->conc[isub][i] = grid->conc[isub][pz];
     }
+    if (closed_system) penult[i] = prev[i];
     prev[i] = grid->conc[isub][i];
   }
 
@@ -257,5 +280,19 @@ void FixDiffusionReaction::compute_final()
       // prevent negative concentrations
       grid->conc[isub][i] = MAX(0, prev[i] + dt * (ddx + ddy + ddz + grid->reac[isub][i]));
     }
+  }
+}
+
+/* ----------------------------------------------------------------------
+ Update nutrient concentrations in closed system based on residual value and
+ biological timestep
+ ------------------------------------------------------------------------- */
+void FixDiffusionReaction::update_closed_system(double biodt)
+{
+  if (!closed_system) return;
+  for (int i = 0; i < grid->ncells; i++) {
+    double res = grid->conc[isub][i] - prev[i];
+    grid->conc[isub][i] += res / dt * biodt;
+    grid->conc[isub][i] = MAX(0, grid->conc[isub][i]);
   }
 }
