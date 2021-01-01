@@ -39,13 +39,14 @@ class FixDiffusionReaction : public Fix {
   virtual void reset_dt();
   virtual void compute_initial();
   virtual void compute_final();
-  virtual void update_closed_system(double);
+  virtual void closed_system_init();
+  virtual void closed_system_scaleup(double);
   
  protected:
   int isub;
   double diff_coef;
   int ncells;
-  double *prev;		       // substrate concentration in n-1 step
+  double *prev;		       // substrate concentration at n-1 step
   double dt;
   double dirichlet[6];
   int boundary[6];             // boundary conditions (-x, +x, -y, +y, -z, +z)

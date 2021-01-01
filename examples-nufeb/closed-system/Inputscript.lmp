@@ -92,7 +92,7 @@ variable mass equal "mass(all)"
 
 # file output
 dump 1 all vtk 1 dump*.vtu id type radius
-dump 2 all grid/vtk 1 dump_%_*.vti con rea den gro
+dump 2 all grid/vtk 1 dump_%_*.vti con 
 
 # thermo output
 thermo_style custom step atoms v_press v_mass

@@ -231,6 +231,8 @@ void FixDiffusionReaction::compute_initial()
   }
 }
 
+
+
 /* ---------------------------------------------------------------------- */
 
 void FixDiffusionReaction::compute_final()
@@ -284,10 +286,29 @@ void FixDiffusionReaction::compute_final()
 }
 
 /* ----------------------------------------------------------------------
- Update nutrient concentrations in closed system based on residual value and
+ Average substrate distribution before solving diffusion in closed system.
+ ------------------------------------------------------------------------- */
+void FixDiffusionReaction::closed_system_init()
+{
+  if (!closed_system) return;
+  double sum = 0;
+  for (int i = 0; i < grid->ncells; i++) {
+    if (!(grid->mask[i] & GHOST_MASK)) {
+      sum += grid->conc[isub][i];
+    }
+  }
+  MPI_Allreduce(MPI_IN_PLACE, &sum, 1, MPI_DOUBLE, MPI_SUM, world);
+  sum /= (grid->box[0] * grid->box[1] * grid->box[2]);
+  for (int i = 0; i < grid->ncells; i++) {
+    grid->conc[isub][i] = sum;
+  }
+}
+
+/* ----------------------------------------------------------------------
+ Scaleup substrate concentrations in closed system based on residual value and
  biological timestep
  ------------------------------------------------------------------------- */
-void FixDiffusionReaction::update_closed_system(double biodt)
+void FixDiffusionReaction::closed_system_scaleup(double biodt)
 {
   if (!closed_system) return;
   for (int i = 0; i < grid->ncells; i++) {
