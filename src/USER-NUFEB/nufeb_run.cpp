@@ -722,19 +722,22 @@ void NufebRun::growth()
 int NufebRun::diffusion()
 {
   // setup monod growth fixes for diffusion
-
   for (int i = 0; i < nfix_monod; i++) {
     fix_monod[i]->reaction_flag = 1;
     fix_monod[i]->growth_flag = 0;
   }
 
   // set diffusion dt
-
   update->dt = diffdt;
   reset_dt();
   
+  for (int i = 0; i < nfix_diffusion; i++) {
+    fix_diffusion[i]->closed_system_init();
+  }
+
   int niter = 0;
   bool flag;
+  bool converge[nfix_diffusion] = {};
   do {
     timer->stamp();
     comm_grid->forward_comm();
@@ -742,15 +745,19 @@ int NufebRun::diffusion()
 
     flag = true;
     for (int i = 0; i < nfix_diffusion; i++) {
-      fix_diffusion[i]->compute_initial();
+      if (!converge[i])
+	fix_diffusion[i]->compute_initial();
     }
     for (int i = 0; i < nfix_monod; i++) {
       fix_monod[i]->compute();
     }
     for (int i = 0; i < nfix_diffusion; i++) {
-      fix_diffusion[i]->compute_final();
-      double res = fix_diffusion[i]->compute_scalar();
-      flag &= res < difftol;
+      if (!converge[i]) {
+	fix_diffusion[i]->compute_final();
+	double res = fix_diffusion[i]->compute_scalar();
+	if (res < difftol) converge[i] = true;
+	if (!converge[i]) flag = false;
+      }
     }
     timer->stamp(Timer::MODIFY);
     ++niter;
@@ -761,7 +768,7 @@ int NufebRun::diffusion()
   } while (!flag);
 
   for (int i = 0; i < nfix_diffusion; i++) {
-    fix_diffusion[i]->update_closed_system(biodt);
+    fix_diffusion[i]->closed_system_scaleup(biodt);
   }
 
   return niter;
