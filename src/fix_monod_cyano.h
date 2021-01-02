@@ -11,42 +11,50 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#ifdef GRID_CLASS
+#ifdef FIX_CLASS
 
-GridStyle(nufeb/monod,GridVecMonod)
+FixStyle(nufeb/monod/cyano,FixMonodCyano)
 
 #else
 
-#ifndef LMP_GRID_VEC_MONOD_H
-#define LMP_GRID_VEC_MONOD_H
+#ifndef LMP_FIX_MONOD_CYANO_H
+#define LMP_FIX_MONOD_CYANO_H
 
-#include "grid_vec.h"
+#include "fix_monod.h"
 
 namespace LAMMPS_NS {
 
-class GridVecMonod : public GridVec {
+class FixMonodCyano: public FixMonod {
  public:
-  GridVecMonod(class LAMMPS *);
-  ~GridVecMonod() {}
-  void init();
-  void grow(int);
+  FixMonodCyano(class LAMMPS *, int, char **);
+  virtual ~FixMonodCyano() {}
+  virtual void compute();
 
-  int pack_comm(int, int *, double *);
-  void unpack_comm(int, int *, double *);
-  int pack_exchange(int, int *, double *);
-  void unpack_exchange(int, int *, double *);
+ protected:
+  int isub;   // light
+  int ico2;   // dissolved co2
+  int igco2;  // co2
+  int isuc;   // sucrose
+  int io2;
 
-  virtual void set(int, double);
+  double sub_affinity;
+  double co2_affinity;
 
- private:
-  int *mask;
-  double **conc;    // concentration
-  double **reac;    // reaction rate
-  double **dens;    // density
-  double ***growth; // growth rate
+  double growth;
+  double yield;
+  double maintain;
+  double decay;
+  double suc_exp;
+  double gco2_flag;
+  
+  template <int, int> void update_cells();
+  void update_atoms();
 };
 
 }
 
 #endif
 #endif
+
+/* ERROR/WARNING messages:
+*/

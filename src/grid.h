@@ -38,9 +38,8 @@ class Grid : protected Pointers {
   int sublo[3], subhi[3];     // sub-box bounds in grid coordinates
   int subbox[3];              // # of cells on this proc in each dimension
   int ncells;                 // total # of cells
-  int boundary[6];            // boundary conditions (-x, +x, -y, +y, -z, +z)
   int periodic[3];            // flag if x, y and z boundaries are periodic
-  int ndirichlet;
+
   
   Grid(class LAMMPS *);
   virtual ~Grid();

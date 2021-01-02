@@ -35,28 +35,68 @@ enum{DIRICHLET,NEUMANN,PERIODIC};
 FixDiffusionReaction::FixDiffusionReaction(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
-  if (narg < 5)
+  if (narg < 7)
     error->all(FLERR,"Illegal fix nufeb/diffusion_reaction command");
 
   compute_flag = 1;
   dynamic_group_allow = 1;
   scalar_flag = 1;
-  
+
+  closed_system = 0;
+  ndirichlet = 0;
+
   ncells = 0;
   prev = NULL;
+  penult = NULL;
   dt = 1.0;
   
+  boundary[0] = boundary[1] = boundary[2] = boundary[3] =
+  boundary[4] = boundary[5] = -1;
+
   isub = grid->find(arg[3]);
   if (isub < 0)
     error->all(FLERR, "Can't find substrate for nufeb/diffusion_reaction");
 
   diff_coef = force->numeric(FLERR, arg[4]);
 
-  if (narg < grid->ndirichlet + 5)
+  for (int i = 0; i < 3; i++) {
+    if (strcmp(arg[5+i], "dd") == 0) {
+      boundary[2*i] = DIRICHLET;
+      boundary[2*i+1] = DIRICHLET;
+      ndirichlet += 2;
+    } else if (strcmp(arg[5+i], "dn") == 0) {
+      boundary[2*i] = DIRICHLET;
+      boundary[2*i+1] = NEUMANN;
+      ndirichlet += 1;
+    } else if (strcmp(arg[5+i], "nd") == 0) {
+      boundary[2*i] = NEUMANN;
+      boundary[2*i+1] = DIRICHLET;
+      ndirichlet += 1;
+    } else if (strcmp(arg[5+i], "nn") == 0) {
+      boundary[2*i] = NEUMANN;
+      boundary[2*i+1] = NEUMANN;
+    } else if (strcmp(arg[5+i], "pp") == 0) {
+      boundary[2*i] = PERIODIC;
+      boundary[2*i+1] = PERIODIC;
+      grid->periodic[i] = 1;
+    } else {
+      error->all(FLERR, "Illegal boundary condition");
+    }
+  }
+
+  if (!ndirichlet) {
+    closed_system = 1;
+    if (comm->me == 0 && logfile)
+      fprintf(logfile, "Model is defined as a closed system. \n");
+    if (comm->me == 0 && screen)
+      fprintf(screen, "Model is defined as a closed system. \n");
+  }
+
+  if (narg < ndirichlet + 7)
     error->all(FLERR, "Not enough values for dirichlet boundaries");
-  int iarg = 5;
+  int iarg = 8;
   for (int i = 0; i < 6; i++) {
-    if (grid->boundary[i] == DIRICHLET) {
+    if (boundary[i] == DIRICHLET) {
       dirichlet[i] = force->numeric(FLERR, arg[iarg++]);
     } else {
       dirichlet[i] = 0.0;
@@ -68,8 +108,10 @@ FixDiffusionReaction::FixDiffusionReaction(LAMMPS *lmp, int narg, char **arg) :
 
 FixDiffusionReaction::~FixDiffusionReaction()
 {
+
   if (copymode) return;
   memory->destroy(prev);
+  if (closed_system) memory->destroy(penult);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -110,6 +152,11 @@ void FixDiffusionReaction::init()
   prev = memory->create(prev, ncells, "nufeb/diffusion_reaction:prev");
   for (int i = 0; i < ncells; i++)
     prev[i] = 0.0;
+  if (closed_system) {
+    penult = memory->create(penult, ncells, "nufeb/diffusion_reaction:penult");
+    for (int i = 0; i < ncells; i++)
+      penult[i] = 0.0;
+  }
   dt = update->dt;
 }
 
@@ -136,7 +183,12 @@ double FixDiffusionReaction::compute_scalar()
   double result = 0.0;
   for (int i = 0; i < grid->ncells; i++) {
     if (!(grid->mask[i] & GHOST_MASK)) {
-      result = MAX(result, fabs((grid->conc[isub][i] - prev[i]) / prev[i]));
+      double res = fabs((grid->conc[isub][i] - prev[i]) / prev[i]);
+      if (closed_system) {
+        double res2 = fabs((prev[i] - penult[i]) / penult[i]);
+        res = fabs(res - res2);
+      }
+      result = MAX(result, res);
     }
   }
   MPI_Allreduce(MPI_IN_PLACE, &result, 1, MPI_DOUBLE, MPI_MAX, world);
@@ -157,26 +209,29 @@ void FixDiffusionReaction::compute_initial()
   if (ncells != grid->ncells) {
     ncells = grid->ncells;
     prev = memory->grow(prev, ncells, "nufeb/diffusion_reaction:prev");
+    if (closed_system) penult = memory->grow(penult, ncells, "nufeb/diffusion_reaction:penult");
   }
 
   for (int i = 0; i < grid->ncells; i++) {
     // Dirichlet boundary conditions
-    if (grid->mask[i] & X_NB_MASK && grid->boundary[0] == DIRICHLET) {
+    if (grid->mask[i] & X_NB_MASK && boundary[0] == DIRICHLET) {
       grid->conc[isub][i] = dirichlet[0];
-    } else if (grid->mask[i] & X_PB_MASK && grid->boundary[1] == DIRICHLET) {
+    } else if (grid->mask[i] & X_PB_MASK && boundary[1] == DIRICHLET) {
       grid->conc[isub][i] = dirichlet[1];
-    } else if (grid->mask[i] & Y_NB_MASK && grid->boundary[2] == DIRICHLET) {
+    } else if (grid->mask[i] & Y_NB_MASK && boundary[2] == DIRICHLET) {
       grid->conc[isub][i] = dirichlet[2];
-    } else if (grid->mask[i] & Y_PB_MASK && grid->boundary[3] == DIRICHLET) {
+    } else if (grid->mask[i] & Y_PB_MASK && boundary[3] == DIRICHLET) {
       grid->conc[isub][i] = dirichlet[3];
-    } else if (grid->mask[i] & Z_NB_MASK && grid->boundary[4] == DIRICHLET) {
+    } else if (grid->mask[i] & Z_NB_MASK && boundary[4] == DIRICHLET) {
       grid->conc[isub][i] = dirichlet[4];
-    } else if (grid->mask[i] & Z_PB_MASK && grid->boundary[5] == DIRICHLET) {
+    } else if (grid->mask[i] & Z_PB_MASK && boundary[5] == DIRICHLET) {
       grid->conc[isub][i] = dirichlet[5];
     }
     grid->reac[isub][i] = 0.0;
   }
 }
+
+
 
 /* ---------------------------------------------------------------------- */
 
@@ -186,23 +241,24 @@ void FixDiffusionReaction::compute_final()
   int nxy = grid->subbox[0] * grid->subbox[1];
   for (int i = 0; i < grid->ncells; i++) {
     // Neumann boundary conditions
-    if (grid->mask[i] & X_NB_MASK && grid->boundary[0] == NEUMANN) {
+    if (grid->mask[i] & X_NB_MASK && boundary[0] == NEUMANN) {
       grid->conc[isub][i] = grid->conc[isub][i+1];
-    } else if (grid->mask[i] & X_PB_MASK && grid->boundary[1] == NEUMANN) {
+    } else if (grid->mask[i] & X_PB_MASK && boundary[1] == NEUMANN) {
       grid->conc[isub][i] = grid->conc[isub][i-1];
-    } else if (grid->mask[i] & Y_NB_MASK && grid->boundary[2] == NEUMANN) {
+    } else if (grid->mask[i] & Y_NB_MASK && boundary[2] == NEUMANN) {
       int py = i + nx;
       grid->conc[isub][i] = grid->conc[isub][py];
-    } else if (grid->mask[i] & Y_PB_MASK && grid->boundary[3] == NEUMANN) {
+    } else if (grid->mask[i] & Y_PB_MASK && boundary[3] == NEUMANN) {
       int py = i - nx;
       grid->conc[isub][i] = grid->conc[isub][py];
-    } else if (grid->mask[i] & Z_NB_MASK && grid->boundary[4] == NEUMANN) {
+    } else if (grid->mask[i] & Z_NB_MASK && boundary[4] == NEUMANN) {
       int pz = i + nxy;
       grid->conc[isub][i] = grid->conc[isub][pz];
-    } else if (grid->mask[i] & Z_PB_MASK && grid->boundary[5] == NEUMANN) {
+    } else if (grid->mask[i] & Z_PB_MASK && boundary[5] == NEUMANN) {
       int pz = i - nxy;
       grid->conc[isub][i] = grid->conc[isub][pz];
     }
+    if (closed_system) penult[i] = prev[i];
     prev[i] = grid->conc[isub][i];
   }
 
@@ -226,5 +282,38 @@ void FixDiffusionReaction::compute_final()
       // prevent negative concentrations
       grid->conc[isub][i] = MAX(0, prev[i] + dt * (ddx + ddy + ddz + grid->reac[isub][i]));
     }
+  }
+}
+
+/* ----------------------------------------------------------------------
+ Average substrate distribution before solving diffusion in closed system.
+ ------------------------------------------------------------------------- */
+void FixDiffusionReaction::closed_system_init()
+{
+  if (!closed_system) return;
+  double sum = 0;
+  for (int i = 0; i < grid->ncells; i++) {
+    if (!(grid->mask[i] & GHOST_MASK)) {
+      sum += grid->conc[isub][i];
+    }
+  }
+  MPI_Allreduce(MPI_IN_PLACE, &sum, 1, MPI_DOUBLE, MPI_SUM, world);
+  sum /= (grid->box[0] * grid->box[1] * grid->box[2]);
+  for (int i = 0; i < grid->ncells; i++) {
+    grid->conc[isub][i] = sum;
+  }
+}
+
+/* ----------------------------------------------------------------------
+ Scaleup substrate concentrations in closed system based on residual value and
+ biological timestep
+ ------------------------------------------------------------------------- */
+void FixDiffusionReaction::closed_system_scaleup(double biodt)
+{
+  if (!closed_system) return;
+  for (int i = 0; i < grid->ncells; i++) {
+    double res = grid->conc[isub][i] - prev[i];
+    grid->conc[isub][i] += res / dt * biodt;
+    grid->conc[isub][i] = MAX(0, grid->conc[isub][i]);
   }
 }
