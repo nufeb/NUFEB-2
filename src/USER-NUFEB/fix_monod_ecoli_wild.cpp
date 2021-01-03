@@ -152,9 +152,10 @@ void FixMonodEcoliWild::update_atoms()
       const double density = rmass[i] /
 	(four_thirds_pi * radius[i] * radius[i] * radius[i]);
       double growth = grid->growth[igroup][cell][0];
+      double ratio = rmass[i] / biomass[i];
       // forward Eular to update biomass and rmass
       biomass[i] = biomass[i] * (1 + growth * dt);
-      rmass[i] = rmass[i] * (1 + growth * dt);
+      rmass[i] = rmass[i] * (1 + growth * dt * ratio);
       radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
       outer_mass[i] = rmass[i];
       outer_radius[i] = radius[i];

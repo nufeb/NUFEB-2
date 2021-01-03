@@ -44,7 +44,7 @@ class FixMonodNOB: public FixMonod {
   double decay;
   
   template <int, int> void update_cells();
-  void update_atoms();
+  void update_atom();
 };
 
 }
