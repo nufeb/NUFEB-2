@@ -1008,12 +1008,13 @@ void Set::set(int keyword)
 
     else if (keyword == OUTER_DIAMETER) {
       if (dvalue <= 0.0) error->one(FLERR,"Invalid outer diameter in set command");
-      atom->outer_radius[i] = 0.5*dvalue;
+      atom->outer_radius[i] = 0.5 * dvalue;
     }
 
     else if (keyword == BIOMASS) {
-      if (dvalue <= 0.0) error->one(FLERR,"Invalid biomass in set command");
-      atom->biomass[i] = dvalue;
+      if (dvalue < 0 | dvalue > 0) error->one(FLERR,"Invalid biomass in set command");
+      if (atom->rmass_flag)
+	atom->biomass[i] = atom->rmass[i] * dvalue;
     }
 
     else if (keyword == OUTER_DENSITY) {

@@ -124,6 +124,9 @@ void FixDivide::compute()
         double parent_mass = atom->rmass[i] * split;
         double child_mass = atom->rmass[i] - parent_mass;
 
+        double parent_biomass = atom->biomass[i] * split;
+        double child_biomass = atom->biomass[i] - parent_biomass;
+
         double parent_outer_mass = atom->outer_mass[i] * split;
         double child_outer_mass = atom->outer_mass[i] - parent_outer_mass;
 
@@ -136,6 +139,7 @@ void FixDivide::compute()
 
         // update parent
         atom->rmass[i] = parent_mass;
+        atom->biomass[i] = parent_biomass;
         atom->outer_mass[i] = parent_outer_mass;
         atom->radius[i] = pow(((6 * atom->rmass[i]) / (density * MY_PI)), (1.0 / 3.0)) * 0.5;
         atom->outer_radius[i] = pow((3.0 / (4.0 * MY_PI)) * ((atom->rmass[i] / density) + (parent_outer_mass / eps_density)), (1.0 / 3.0));
@@ -205,6 +209,7 @@ void FixDivide::compute()
 	atom->torque[n][1] = atom->torque[i][1];
 	atom->torque[n][2] = atom->torque[i][2];
         atom->rmass[n] = child_mass;
+        atom->biomass[n] = child_biomass;
         atom->radius[n] = child_radius;
         atom->outer_mass[n] = child_outer_mass;
         atom->outer_radius[n] = child_outer_radius;
