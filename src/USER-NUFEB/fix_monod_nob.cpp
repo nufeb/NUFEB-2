@@ -89,12 +89,12 @@ void FixMonodNOB::compute()
 {
   if (reaction_flag && growth_flag) {
     update_cells<1, 1>();
-    update_atoms();
+    update_atom();
   } else if (reaction_flag && !growth_flag) {
     update_cells<1, 0>();
   } else if (!reaction_flag && growth_flag) {
     update_cells<0, 1>();
-    update_atoms();
+    update_atom();
   }
 }
 
@@ -125,7 +125,7 @@ void FixMonodNOB::update_cells()
 
 /* ---------------------------------------------------------------------- */
 
-void FixMonodNOB::update_atoms()
+void FixMonodNOB::update_atom()
 {
   double **x = atom->x;
   double *radius = atom->radius;
@@ -144,9 +144,10 @@ void FixMonodNOB::update_atoms()
       const double density = rmass[i] /
 	(four_thirds_pi * radius[i] * radius[i] * radius[i]);
       double growth = grid->growth[igroup][cell][0];
+      double ratio = rmass[i] / biomass[i];
       // forward Eular to update biomass and rmass
       biomass[i] = biomass[i] * (1 + growth * dt);
-      rmass[i] = rmass[i] * (1 + growth * dt);
+      rmass[i] = rmass[i] * (1 + growth * dt * ratio);
       radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
       outer_mass[i] = rmass[i];
       outer_radius[i] = radius[i];
