@@ -51,7 +51,7 @@ fix nve all nve/limit 1e-8
 
 # monod reaction fixes
 #   should consider using read_data's fix keyword
-fix monod_het het nufeb/monod/het sub 3.5e-5 o2 0 no2 0 no3 0 growth 2.78e-4 yield 0.61 decay 3.6944e-6 epsyield 0.18 anoxic 0.6 epsdens 30
+fix monod_het het nufeb/monod/het sub 3.5e-5 o2 0 no2 0 no3 0 growth 0.00028 yield 0.61 decay 0.0 epsyield 0.18 anoxic 0.0 epsdens 30
 fix monod_eps eps nufeb/monod/eps sub decay 0
 
 # diffusion reaction fixes
@@ -78,7 +78,7 @@ variable press equal "(c_ke + c_press) / (3.0 * c_vol)"
 variable mass equal "mass(all)"
 
 # file output
-dump 1 all vtk 10 dump*.vtu id type radius
+dump 1 all vtk 10 dump*.vtu id type diameter
 dump 2 all grid/vtk 10 dump_%_*.vti con rea den gro
 
 # thermo output
