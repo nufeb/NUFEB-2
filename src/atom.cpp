@@ -124,9 +124,12 @@ Atom::Atom(LAMMPS *lmp) : Pointers(lmp)
 
   // USER-NUFEB
 
+  nbacilli = 0;
+  bacillus_flag = 0;
   outer_radius_flag = outer_mass_flag = 0;
   outer_radius = NULL;
   outer_mass = NULL;
+  bacillus = NULL
   
   // molecular info
 
@@ -331,6 +334,8 @@ Atom::~Atom()
 
   memory->destroy(outer_radius);
   memory->destroy(outer_mass);
+  memory->destroy(bacillus);
+  memory->destroy(biomass);
   
   memory->destroy(nspecial);
   memory->destroy(special);
@@ -441,6 +446,9 @@ void Atom::create_avec(const char *style, int narg, char **arg, int trysuffix)
   omega_flag = torque_flag = angmom_flag = 0;
   radius_flag = rmass_flag = 0;
   ellipsoid_flag = line_flag = tri_flag = body_flag = 0;
+
+  // USER-NUFEB
+  bacillus_flag = 0;
 
   // magnetic flags
 
@@ -752,13 +760,13 @@ int Atom::tag_consecutive()
 
 /* ----------------------------------------------------------------------
    check that bonus data settings are valid
-   error if number of atoms with ellipsoid/line/tri/body flags
+   error if number of atoms with ellipsoid/line/tri/body/bacillus flags
    are consistent with global setting.
 ------------------------------------------------------------------------- */
 
 void Atom::bonus_check()
 {
-  bigint local_ellipsoids = 0, local_lines = 0, local_tris = 0;
+  bigint local_ellipsoids = 0, local_lines = 0, local_tris = 0, local_bacilli = 0;
   bigint local_bodies = 0, num_global;
 
   for (int i = 0; i < nlocal; ++i) {
@@ -766,6 +774,7 @@ void Atom::bonus_check()
     if (line && (line[i] >=0)) ++local_lines;
     if (tri && (tri[i] >=0)) ++local_tris;
     if (body && (body[i] >=0)) ++local_bodies;
+    if (bacillus && (bacillus[i] >=0)) ++local_bacilli;
   }
 
   MPI_Allreduce(&local_ellipsoids,&num_global,1,MPI_LMP_BIGINT,MPI_SUM,world);
@@ -787,6 +796,11 @@ void Atom::bonus_check()
   if (nbodies != num_global)
     error->all(FLERR,"Inconsistent 'bodies' header value and number of "
                "atoms with enabled body flags");
+
+  MPI_Allreduce(&local_bacilli,&num_global,1,MPI_LMP_BIGINT,MPI_SUM,world);
+  if (nbacilli != num_global)
+    error->all(FLERR,"Inconsistent 'bacilli' header value and number of "
+               "atoms with enabled bacillus flags");
 }
 
 /* ----------------------------------------------------------------------
@@ -2254,6 +2268,10 @@ void *Atom::extract(char *name)
   if (strcmp(name,"torque") == 0) return (void *) torque;
   if (strcmp(name,"radius") == 0) return (void *) radius;
   if (strcmp(name,"rmass") == 0) return (void *) rmass;
+  if (strcmp(name,"biomass") == 0) return (void *) biomass;
+  if (strcmp(name,"outer_mass") == 0) return (void *) outer_mass;
+  if (strcmp(name,"outer_radius") == 0) return (void *) outer_radius;
+  if (strcmp(name,"bacillus") == 0) return (void *) bacillus;
   if (strcmp(name,"ellipsoid") == 0) return (void *) ellipsoid;
   if (strcmp(name,"line") == 0) return (void *) line;
   if (strcmp(name,"tri") == 0) return (void *) tri;

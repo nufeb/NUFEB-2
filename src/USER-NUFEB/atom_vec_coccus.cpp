@@ -11,6 +11,8 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
+#include "atom_vec_coccus.h"
+
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,7 +27,6 @@
 #include "memory.h"
 #include "error.h"
 
-#include "atom_vec_cocci.h"
 #include "group.h"
 
 using namespace LAMMPS_NS;
@@ -33,7 +34,7 @@ using namespace MathConst;
 
 /* ---------------------------------------------------------------------- */
 
-AtomVecCocci::AtomVecCocci(LAMMPS *lmp) : AtomVec(lmp)
+AtomVecCoccus::AtomVecCoccus(LAMMPS *lmp) : AtomVec(lmp)
 {
   molecular = 0;
   radvary = 1;
@@ -56,7 +57,7 @@ AtomVecCocci::AtomVecCocci(LAMMPS *lmp) : AtomVec(lmp)
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecCocci::init()
+void AtomVecCoccus::init()
 {
   AtomVec::init();
 }
@@ -67,7 +68,7 @@ void AtomVecCocci::init()
    n > 0 allocates arrays to size n
 ------------------------------------------------------------------------- */
 
-void AtomVecCocci::grow(int n)
+void AtomVecCoccus::grow(int n)
 {
   if (n == 0) grow_nmax();
   else nmax = n;
@@ -100,7 +101,7 @@ void AtomVecCocci::grow(int n)
    reset local array ptrs
 ------------------------------------------------------------------------- */
 
-void AtomVecCocci::grow_reset()
+void AtomVecCoccus::grow_reset()
 {
   tag = atom->tag; type = atom->type;
   mask = atom->mask; image = atom->image;
@@ -115,7 +116,7 @@ void AtomVecCocci::grow_reset()
    copy atom I info to atom J
 ------------------------------------------------------------------------- */
 
-void AtomVecCocci::copy(int i, int j, int delflag)
+void AtomVecCoccus::copy(int i, int j, int delflag)
 {
   tag[j] = tag[i];
   type[j] = type[i];
@@ -144,7 +145,7 @@ void AtomVecCocci::copy(int i, int j, int delflag)
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecCocci::pack_comm(int n, int *list, double *buf,
+int AtomVecCoccus::pack_comm(int n, int *list, double *buf,
 			  int pbc_flag, int *pbc)
 {
   int i,j,m;
@@ -191,7 +192,7 @@ int AtomVecCocci::pack_comm(int n, int *list, double *buf,
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecCocci::pack_comm_vel(int n, int *list, double *buf,
+int AtomVecCoccus::pack_comm_vel(int n, int *list, double *buf,
 			      int pbc_flag, int *pbc)
 {
   int i,j,m;
@@ -279,7 +280,7 @@ int AtomVecCocci::pack_comm_vel(int n, int *list, double *buf,
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecCocci::pack_comm_hybrid(int n, int *list, double *buf)
+int AtomVecCoccus::pack_comm_hybrid(int n, int *list, double *buf)
 {
   int i,j,m;
 
@@ -297,7 +298,7 @@ int AtomVecCocci::pack_comm_hybrid(int n, int *list, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecCocci::unpack_comm(int n, int first, double *buf)
+void AtomVecCoccus::unpack_comm(int n, int first, double *buf)
 {
   int i,m,last;
 
@@ -317,7 +318,7 @@ void AtomVecCocci::unpack_comm(int n, int first, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecCocci::unpack_comm_vel(int n, int first, double *buf)
+void AtomVecCoccus::unpack_comm_vel(int n, int first, double *buf)
 {
   int i,m,last;
 
@@ -343,7 +344,7 @@ void AtomVecCocci::unpack_comm_vel(int n, int first, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecCocci::unpack_comm_hybrid(int n, int first, double *buf)
+int AtomVecCoccus::unpack_comm_hybrid(int n, int first, double *buf)
 {
   int i,m,last;
 
@@ -361,7 +362,7 @@ int AtomVecCocci::unpack_comm_hybrid(int n, int first, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecCocci::pack_reverse(int n, int first, double *buf)
+int AtomVecCoccus::pack_reverse(int n, int first, double *buf)
 {
   int i,m,last;
 
@@ -380,7 +381,7 @@ int AtomVecCocci::pack_reverse(int n, int first, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecCocci::pack_reverse_hybrid(int n, int first, double *buf)
+int AtomVecCoccus::pack_reverse_hybrid(int n, int first, double *buf)
 {
   int i,m,last;
 
@@ -396,7 +397,7 @@ int AtomVecCocci::pack_reverse_hybrid(int n, int first, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecCocci::unpack_reverse(int n, int *list, double *buf)
+void AtomVecCoccus::unpack_reverse(int n, int *list, double *buf)
 {
   int i,j,m;
 
@@ -414,7 +415,7 @@ void AtomVecCocci::unpack_reverse(int n, int *list, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecCocci::unpack_reverse_hybrid(int n, int *list, double *buf)
+int AtomVecCoccus::unpack_reverse_hybrid(int n, int *list, double *buf)
 {
   int i,j,m;
 
@@ -430,7 +431,7 @@ int AtomVecCocci::unpack_reverse_hybrid(int n, int *list, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecCocci::pack_border(int n, int *list, double *buf,
+int AtomVecCoccus::pack_border(int n, int *list, double *buf,
 			    int pbc_flag, int *pbc)
 {
   int i,j,m;
@@ -487,7 +488,7 @@ int AtomVecCocci::pack_border(int n, int *list, double *buf,
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecCocci::pack_border_vel(int n, int *list, double *buf,
+int AtomVecCoccus::pack_border_vel(int n, int *list, double *buf,
 				int pbc_flag, int *pbc)
 {
   int i,j,m;
@@ -588,7 +589,7 @@ int AtomVecCocci::pack_border_vel(int n, int *list, double *buf,
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecCocci::pack_border_hybrid(int n, int *list, double *buf)
+int AtomVecCoccus::pack_border_hybrid(int n, int *list, double *buf)
 {
   int i,j,m;
 
@@ -606,7 +607,7 @@ int AtomVecCocci::pack_border_hybrid(int n, int *list, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecCocci::unpack_border(int n, int first, double *buf)
+void AtomVecCoccus::unpack_border(int n, int first, double *buf)
 {
   int i,m,last;
 
@@ -636,7 +637,7 @@ void AtomVecCocci::unpack_border(int n, int first, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecCocci::unpack_border_vel(int n, int first, double *buf)
+void AtomVecCoccus::unpack_border_vel(int n, int first, double *buf)
 {
   int i,m,last;
 
@@ -671,7 +672,7 @@ void AtomVecCocci::unpack_border_vel(int n, int first, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecCocci::unpack_border_hybrid(int n, int first, double *buf)
+int AtomVecCoccus::unpack_border_hybrid(int n, int first, double *buf)
 {
   int i,m,last;
 
@@ -692,7 +693,7 @@ int AtomVecCocci::unpack_border_hybrid(int n, int first, double *buf)
    xyz must be 1st 3 values, so comm::exchange() can test on them
 ------------------------------------------------------------------------- */
 
-int AtomVecCocci::pack_exchange(int i, double *buf)
+int AtomVecCoccus::pack_exchange(int i, double *buf)
 {
   int m = 1;
   buf[m++] = x[i][0];
@@ -725,7 +726,7 @@ int AtomVecCocci::pack_exchange(int i, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-int AtomVecCocci::unpack_exchange(double *buf)
+int AtomVecCoccus::unpack_exchange(double *buf)
 {
   int nlocal = atom->nlocal;
   if (nlocal == nmax) grow(0);
@@ -765,12 +766,12 @@ int AtomVecCocci::unpack_exchange(double *buf)
    include extra data stored by fixes
 ------------------------------------------------------------------------- */
 
-int AtomVecCocci::size_restart()
+int AtomVecCoccus::size_restart()
 {
   int i;
 
   int nlocal = atom->nlocal;
-  int n = 18 * nlocal;
+  int n = 19 * nlocal;
 
   if (atom->nextra_restart)
     for (int iextra = 0; iextra < atom->nextra_restart; iextra++)
@@ -786,7 +787,7 @@ int AtomVecCocci::size_restart()
    molecular types may be negative, but write as positive
 ------------------------------------------------------------------------- */
 
-int AtomVecCocci::pack_restart(int i, double *buf)
+int AtomVecCoccus::pack_restart(int i, double *buf)
 {
   int m = 1;
   buf[m++] = x[i][0];
@@ -821,7 +822,7 @@ int AtomVecCocci::pack_restart(int i, double *buf)
    unpack data for one atom from restart file including extra quantities
 ------------------------------------------------------------------------- */
 
-int AtomVecCocci::unpack_restart(double *buf)
+int AtomVecCoccus::unpack_restart(double *buf)
 {
   int nlocal = atom->nlocal;
   if (nlocal == nmax) {
@@ -866,7 +867,7 @@ int AtomVecCocci::unpack_restart(double *buf)
    set other values to defaults
 ------------------------------------------------------------------------- */
 
-void AtomVecCocci::create_atom(int itype, double *coord)
+void AtomVecCoccus::create_atom(int itype, double *coord)
 {
   int nlocal = atom->nlocal;
   if (nlocal == nmax) grow(0);
@@ -901,7 +902,7 @@ void AtomVecCocci::create_atom(int itype, double *coord)
    initialize other atom quantities
 ------------------------------------------------------------------------- */
 
-void AtomVecCocci::data_atom(double *coord, imageint imagetmp, char **values)
+void AtomVecCoccus::data_atom(double *coord, imageint imagetmp, char **values)
 {
   int nlocal = atom->nlocal;
   if (nlocal == nmax) grow(0);
@@ -913,7 +914,7 @@ void AtomVecCocci::data_atom(double *coord, imageint imagetmp, char **values)
 
   radius[nlocal] = 0.5 * atof(values[2]);
   if (radius[nlocal] < 0.0)
-    error->one(FLERR,"Invalid radius in Atoms section of data file");
+    error->one(FLERR,"Invalid diameter in Atoms section of data file");
 
   double density = atof(values[3]);
   if (density <= 0.0)
@@ -959,29 +960,44 @@ void AtomVecCocci::data_atom(double *coord, imageint imagetmp, char **values)
    initialize other atom quantities for this sub-style
 ------------------------------------------------------------------------- */
 
-int AtomVecCocci::data_atom_hybrid(int nlocal, char **values)
+int AtomVecCoccus::data_atom_hybrid(int nlocal, char **values)
 {
   radius[nlocal] = 0.5 * atof(values[0]);
   if (radius[nlocal] < 0.0)
-    error->one(FLERR,"Invalid radius in Atoms section of data file");
+    error->one(FLERR,"Invalid radius in Atoms section of data file: radius < 0");
 
   double density = atof(values[1]);
   if (density <= 0.0)
-    error->one(FLERR,"Invalid density in Atoms section of data file");
+    error->one(FLERR,"Invalid density in Atoms section of data file: density <= 0");
 
   if (radius[nlocal] == 0.0) rmass[nlocal] = density;
   else
     rmass[nlocal] = 4.0*MY_PI/3.0 *
       radius[nlocal]*radius[nlocal]*radius[nlocal] * density;
 
-  return 2;
+  outer_radius[nlocal] = 0.5 * atof(values[2]);
+  if (outer_radius[nlocal] < radius[nlocal]) {
+    error->one(FLERR,"Invalid outer radius in Atoms section of data file:"
+	"outer_radius < radius");
+  }
+  outer_mass[nlocal] = (4.0*MY_PI/3.0)*
+    ((outer_radius[nlocal]*outer_radius[nlocal]*outer_radius[nlocal])
+     -(radius[nlocal]*radius[nlocal]*radius[nlocal])) * 30;
+
+  double ratio = atof(values[3]);
+  if (ratio < 0 || ratio > 1)
+    error->one(FLERR,"Invalid biomass/Mass ratio in Atoms section of data file:"
+	"ratio < 0 or ratio > 1");
+  biomass[nlocal] = rmass[nlocal] * ratio;
+
+  return 4;
 }
 
 /* ----------------------------------------------------------------------
    unpack one line from Velocities section of data file
 ------------------------------------------------------------------------- */
 
-void AtomVecCocci::data_vel(int m, char **values)
+void AtomVecCoccus::data_vel(int m, char **values)
 {
   v[m][0] = atof(values[0]);
   v[m][1] = atof(values[1]);
@@ -995,7 +1011,7 @@ void AtomVecCocci::data_vel(int m, char **values)
    unpack hybrid quantities from one line in Velocities section of data file
 ------------------------------------------------------------------------- */
 
-int AtomVecCocci::data_vel_hybrid(int m, char **values)
+int AtomVecCoccus::data_vel_hybrid(int m, char **values)
 {
   omega[m][0] = atof(values[0]);
   omega[m][1] = atof(values[1]);
@@ -1007,7 +1023,7 @@ int AtomVecCocci::data_vel_hybrid(int m, char **values)
    pack atom info for data file including 3 image flags
 ------------------------------------------------------------------------- */
 
-void AtomVecCocci::pack_data(double **buf)
+void AtomVecCoccus::pack_data(double **buf)
 {
   int nlocal = atom->nlocal;
   for (int i = 0; i < nlocal; i++) {
@@ -1020,9 +1036,11 @@ void AtomVecCocci::pack_data(double **buf)
     buf[i][4] = x[i][0];
     buf[i][5] = x[i][1];
     buf[i][6] = x[i][2];
-    buf[i][7] = ubuf((image[i] & IMGMASK) - IMGMAX).d;
-    buf[i][8] = ubuf((image[i] >> IMGBITS & IMGMASK) - IMGMAX).d;
-    buf[i][9] = ubuf((image[i] >> IMG2BITS) - IMGMAX).d;
+    buf[i][7] = outer_radius[i];
+    buf[i][8] = biomass[i];
+    buf[i][9] = ubuf((image[i] & IMGMASK) - IMGMAX).d;
+    buf[i][10] = ubuf((image[i] >> IMGBITS & IMGMASK) - IMGMAX).d;
+    buf[i][11] = ubuf((image[i] >> IMG2BITS) - IMGMAX).d;
   }
 }
 
@@ -1030,45 +1048,47 @@ void AtomVecCocci::pack_data(double **buf)
    pack hybrid atom info for data file
 ------------------------------------------------------------------------- */
 
-int AtomVecCocci::pack_data_hybrid(int i, double *buf)
+int AtomVecCoccus::pack_data_hybrid(int i, double *buf)
 {
   buf[0] = 2.0*radius[i];
   if (radius[i] == 0.0) buf[1] = rmass[i];
   else buf[1] = rmass[i] / (4.0*MY_PI/3.0 * radius[i]*radius[i]*radius[i]);
-  return 2;
+  buf[2] = outer_radius[i];
+  buf[3] = biomass[i] / rmass[i];
+  return 4;
 }
 
 /* ----------------------------------------------------------------------
    write atom info to data file including 3 image flags
 ------------------------------------------------------------------------- */
 
-void AtomVecCocci::write_data(FILE *fp, int n, double **buf)
+void AtomVecCoccus::write_data(FILE *fp, int n, double **buf)
 {
   for (int i = 0; i < n; i++)
     fprintf(fp,TAGINT_FORMAT
-            " %d %-1.16e %-1.16e %-1.16e %-1.16e %-1.16e %d %d %d\n",
+            " %d %-1.16e %-1.16e %-1.16e %-1.16e %-1.16e %-1.16e %-1.16e %d %d %d\n",
             (tagint) ubuf(buf[i][0]).i,(int) ubuf(buf[i][1]).i,
             buf[i][2],buf[i][3],
-            buf[i][4],buf[i][5],buf[i][6],
-            (int) ubuf(buf[i][7]).i,(int) ubuf(buf[i][8]).i,
-            (int) ubuf(buf[i][9]).i);
+            buf[i][4],buf[i][5],buf[i][6],buf[i][7],buf[i][8],
+            (int) ubuf(buf[i][9]).i,(int) ubuf(buf[i][10]).i,
+            (int) ubuf(buf[i][11]).i);
 }
 
 /* ----------------------------------------------------------------------
    write hybrid atom info to data file
 ------------------------------------------------------------------------- */
 
-int AtomVecCocci::write_data_hybrid(FILE *fp, double *buf)
+int AtomVecCoccus::write_data_hybrid(FILE *fp, double *buf)
 {
-  fprintf(fp," %-1.16e %-1.16e",buf[0],buf[1]);
-  return 2;
+  fprintf(fp," %-1.16e %-1.16e %-1.16e %-1.16e",buf[0],buf[1],buf[2],buf[3]);
+  return 4;
 }
 
 /* ----------------------------------------------------------------------
    pack velocity info for data file
 ------------------------------------------------------------------------- */
 
-void AtomVecCocci::pack_vel(double **buf)
+void AtomVecCoccus::pack_vel(double **buf)
 {
   int nlocal = atom->nlocal;
   for (int i = 0; i < nlocal; i++) {
@@ -1086,7 +1106,7 @@ void AtomVecCocci::pack_vel(double **buf)
    pack hybrid velocity info for data file
 ------------------------------------------------------------------------- */
 
-int AtomVecCocci::pack_vel_hybrid(int i, double *buf)
+int AtomVecCoccus::pack_vel_hybrid(int i, double *buf)
 {
   buf[0] = omega[i][0];
   buf[1] = omega[i][1];
@@ -1098,7 +1118,7 @@ int AtomVecCocci::pack_vel_hybrid(int i, double *buf)
    write velocity info to data file
 ------------------------------------------------------------------------- */
 
-void AtomVecCocci::write_vel(FILE *fp, int n, double **buf)
+void AtomVecCoccus::write_vel(FILE *fp, int n, double **buf)
 {
   for (int i = 0; i < n; i++)
     fprintf(fp,TAGINT_FORMAT
@@ -1111,7 +1131,7 @@ void AtomVecCocci::write_vel(FILE *fp, int n, double **buf)
    write hybrid velocity info to data file
 ------------------------------------------------------------------------- */
 
-int AtomVecCocci::write_vel_hybrid(FILE *fp, double *buf)
+int AtomVecCoccus::write_vel_hybrid(FILE *fp, double *buf)
 {
   fprintf(fp," %-1.16e %-1.16e %-1.16e",buf[0],buf[1],buf[2]);
   return 3;
@@ -1121,7 +1141,7 @@ int AtomVecCocci::write_vel_hybrid(FILE *fp, double *buf)
    return # of bytes of allocated memory
 ------------------------------------------------------------------------- */
 
-bigint AtomVecCocci::memory_usage()
+bigint AtomVecCoccus::memory_usage()
 {
   bigint bytes = 0;
 

@@ -113,8 +113,11 @@ class Atom : protected Pointers {
 
   // USER-NUFEB package
 
+  bigint nbacilli;             // number of bacilli
   int biomass_flag, outer_radius_flag, outer_mass_flag;
   double *biomass, *outer_radius, *outer_mass;
+  int bacillus_flag;
+  int *bacillus;
   
   // molecular info
 
