@@ -13,7 +13,7 @@
 
 #ifdef ATOM_CLASS
 
-AtomStyle(cocci,AtomVecCoccus)
+AtomStyle(coccus,AtomVecCoccus)
 
 #else
 
