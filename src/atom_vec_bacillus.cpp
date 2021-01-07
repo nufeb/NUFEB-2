@@ -1389,7 +1389,6 @@ void AtomVecBacillus::data_atom_bonus(int m, char **values)
   // create initial quaternion
   MathExtra::exyz_to_q(ex_space,ey_space,ez_space,bonus->quat);
 
-  // coords of two poles are relative to bacillus center at (0,0,0)
   double *pole1 = bonus->pole1;
   double *pole2 = bonus->pole2;
   double px = atof(values[6]);
@@ -1413,7 +1412,7 @@ void AtomVecBacillus::data_atom_bonus(int m, char **values)
     error->one(FLERR, "Invalid diameter in Bacilli section of data file: diameter < 0");
   atom->radius[m] = bonus->diameter * 0.5;
 
-  // reset bacillus rmass and biomass
+  // reset ellipsoid mass
   // previously stored density in rmass
   rmass[m] *= (4.0*MY_PI/3.0*
       atom->radius[m]*atom->radius[m]*atom->radius[m] +
@@ -1422,6 +1421,12 @@ void AtomVecBacillus::data_atom_bonus(int m, char **values)
 
   bonus[nlocal_bonus].ilocal = m;
   bacillus[m] = nlocal_bonus++;
+
+  double d2 = sqrt(((pole1[0]-pole2[0])*(pole1[0]-pole2[0]) +
+      (pole1[1]-pole2[1])*(pole1[1]-pole2[1]) +
+      (pole1[2]-pole2[2])*(pole1[2]-pole2[2])));
+  printf("height = %e d2=%e \n, radius = %e, rmass[m]=%e, biomass=%e\n", bonus->height, d2, atom->radius[m],rmass[m],biomass[m] );
+
 }
 
 /* ----------------------------------------------------------------------

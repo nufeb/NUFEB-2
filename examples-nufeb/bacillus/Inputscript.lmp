@@ -1,0 +1,59 @@
+# NUFEB simulation with HETs and AOBs
+
+units si                                   # using si units
+atom_style      bacillus                     # using bacillus atom style
+atom_modify     map array sort 1000 1e-6   # map array: find atoms using indices
+		                           # sort 1000 5.0e-6: sort every 1000
+					   #   steps with 5.0e-6 binsize
+boundary        pp pp ff                   # periodic boundaries in x and y
+                                           #   fixed boundary in z
+newton          off                        # forces between local and ghost
+                                           #   atoms are computed in each
+					   #   processor without communication
+#processors      4 4 1                      # processor grid
+
+comm_modify     vel yes                    # communicate velocities for ghost
+                                           # atoms
+comm_modify     cutoff 2e-6                # guarantee that enough atoms are
+                                           # communicated to correctly compute
+
+read_data      atom.in					  
+
+group           het   type 1            # defining het group
+group           eps   type 2            # defining eps group
+group           dead  empty
+
+neighbor        7e-7 bin                # setting neighbour skin distance and
+                                        #   style
+neigh_modify    check yes               # rebuild neighbour list if any atom
+                                        #   had moved more than half the skin
+					#   distance
+
+# select grid style
+grid_style      nufeb/monod 4 sub o2 no2 no3 4e-6 pp pp nd
+
+# test grid comm
+#run_style       test/comm_grid
+#run             0
+
+# set substrates initial concentration
+grid_modify     set sub    1e-4   
+grid_modify     set o2     1e-4   
+grid_modify     set no2    1e-4    
+grid_modify     set no3    1e-4    
+
+# define pair style
+#pair_style  gran/hooke/history 1e-4 NULL 1e-5 NULL 0.0 1
+#pair_coeff  * *
+
+# NVE integration with maximum distance limit
+fix nve all nve/limit 1e-8
+
+# thermo output
+thermo_style custom step atoms 
+thermo 1
+
+# issue run command
+run_style nufeb diffdt 1e-4 difftol 1e-6 pairdt 1e-2 pairtol 1 pairmax 1000
+timestep 1000
+run 1
