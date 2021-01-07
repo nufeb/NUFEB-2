@@ -21,6 +21,7 @@
 #include "atom_vec_line.h"
 #include "atom_vec_tri.h"
 #include "atom_vec_body.h"
+#include "atom_vec_bacillus.h"
 #include "body.h"
 #include "molecule.h"
 #include "domain.h"
@@ -54,7 +55,7 @@ DumpImage::DumpImage(LAMMPS *lmp, int narg, char **arg) :
   zoomstr(NULL), perspstr(NULL), diamtype(NULL), diamelement(NULL),
   bdiamtype(NULL), colortype(NULL), colorelement(NULL), bcolortype(NULL),
   avec_line(NULL), avec_tri(NULL), avec_body(NULL), fixptr(NULL), image(NULL),
-  chooseghost(NULL), bufcopy(NULL)
+  chooseghost(NULL), bufcopy(NULL), avec_bacillus(NULL)
 {
   if (binary || multiproc) error->all(FLERR,"Invalid dump image filename");
 
@@ -115,7 +116,7 @@ DumpImage::DumpImage(LAMMPS *lmp, int narg, char **arg) :
   // set defaults for optional args
 
   atomflag = YES;
-  lineflag = triflag = bodyflag = fixflag = NO;
+  lineflag = triflag = bodyflag = bacillusflag = fixflag = NO;
   if (atom->nbondtypes == 0) bondflag = NO;
   else {
     bondflag = YES;
@@ -202,6 +203,13 @@ DumpImage::DumpImage(LAMMPS *lmp, int narg, char **arg) :
       bodyflag1 = force->numeric(FLERR,arg[iarg+2]);
       bodyflag2 = force->numeric(FLERR,arg[iarg+3]);
       iarg += 4;
+
+    } else if (strcmp(arg[iarg],"bacillus") == 0) {
+      if (iarg+2 > narg) error->all(FLERR,"Illegal dump image command");
+      bacillusflag = YES;
+      if (strcmp(arg[iarg+1],"type") == 0) bacilluscolor = TYPE;
+      else error->all(FLERR,"Illegal dump image command");
+      iarg += 2;
 
     } else if (strcmp(arg[iarg],"fix") == 0) {
       if (iarg+5 > narg) error->all(FLERR,"Illegal dump image command");
@@ -389,9 +397,14 @@ DumpImage::DumpImage(LAMMPS *lmp, int narg, char **arg) :
     if (!avec_body)
       error->all(FLERR,"Dump image body yes requires atom style body");
   }
+  if (bacillusflag) {
+    avec_bacillus = (AtomVecBacillus *) atom->style_match("bacillus");
+    if (!avec_bacillus)
+      error->all(FLERR,"Dump image body yes requires atom style bacillus");
+  }
 
   extraflag = 0;
-  if (lineflag || triflag || bodyflag) extraflag = 1;
+  if (lineflag || triflag || bodyflag || bacillusflag) extraflag = 1;
 
   if (fixflag) {
     int ifix = modify->find_fix(fixID);
@@ -741,6 +754,8 @@ void DumpImage::create_image()
   tagint tagprev;
   double diameter,delx,dely,delz;
   int *bodyvec,*fixvec;
+  int bacillusvec;
+  double *bacillusarray;
   double **bodyarray,**fixarray;
   double *color,*color1,*color2;
   double *p1,*p2,*p3;
@@ -754,6 +769,7 @@ void DumpImage::create_image()
     int *line = atom->line;
     int *tri = atom->tri;
     int *body = atom->body;
+    int *bacillus = atom->bacillus;
 
     m = 0;
     for (i = 0; i < nchoose; i++) {
@@ -788,6 +804,7 @@ void DumpImage::create_image()
         if (lineflag && line[j] >= 0) drawflag = 0;
         if (triflag && tri[j] >= 0) drawflag = 0;
         if (bodyflag && body[j] >= 0) drawflag = 0;
+        if (bacillusflag && bacillus[j] >= 0) drawflag = 0;
       }
 
       if (drawflag) image->draw_sphere(x[j],color,diameter);
@@ -829,6 +846,35 @@ void DumpImage::create_image()
       pt2[2] = 0.0;
 
       image->draw_cylinder(pt1,pt2,color,ldiamvalue,3);
+    }
+  }
+
+  // render atoms that are bacilli
+
+  if (bacillusflag) {
+    double *pole1, *pole2;
+    double height, diameter;
+    double **x = atom->x;
+    int *type = atom->type;
+    int *bacillus = atom->bacillus;
+
+    for (i = 0; i < nchoose; i++) {
+      j = clist[i];
+      if (bacillus[j] < 0) continue;
+
+      if (bacilluscolor == TYPE) {
+        color = colortype[type[j]];
+      }
+
+      pole1 = avec_bacillus->bonus[bacillus[j]].pole1;
+      pole2 = avec_bacillus->bonus[bacillus[j]].pole2;
+      height = avec_bacillus->bonus[bacillus[j]].height;
+      diameter = avec_bacillus->bonus[bacillus[j]].diameter;
+      if (pole1[0] == x[j][0] && pole1[1] == x[j][1] && pole1[2] == x[j][2]) { // spheres
+	image->draw_sphere(x[j],color,diameter);
+      } else {
+	image->draw_cylinder(pole1,pole2,color,diameter,3);
+      }
     }
   }
 
