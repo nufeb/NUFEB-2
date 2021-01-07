@@ -65,8 +65,10 @@ fi
 
 # all package files with dependencies
 
-action atom_vec_cocci.cpp
-action atom_vec_cocci.h
+action atom_vec_coccus.cpp
+action atom_vec_coccus.h
+action atom_vec_bacillus.cpp
+action atom_vec_bacillus.h
 action compute_volume.cpp
 action compute_volume.h
 action fix_death.cpp

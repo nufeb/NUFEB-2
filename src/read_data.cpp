@@ -1026,7 +1026,7 @@ void ReadData::header(int firstpass)
       if (addflag == NONE) atom->nellipsoids = nellipsoids;
       else if (firstpass) atom->nellipsoids += nellipsoids;
 
-    } else if (strstr(line,"Bacilli")) {
+    } else if (strstr(line,"bacilli")) {
       if (!avec_bacillus)
 	error->all(FLERR,"No bacilli allowed with this atom style");
       sscanf(line,BIGINT_FORMAT,&nbacilli);

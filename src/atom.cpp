@@ -129,7 +129,8 @@ Atom::Atom(LAMMPS *lmp) : Pointers(lmp)
   outer_radius_flag = outer_mass_flag = 0;
   outer_radius = NULL;
   outer_mass = NULL;
-  bacillus = NULL
+  biomass = NULL;
+  bacillus = NULL;
   
   // molecular info
 

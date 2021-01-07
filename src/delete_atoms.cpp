@@ -20,6 +20,7 @@
 #include "atom_vec_line.h"
 #include "atom_vec_tri.h"
 #include "atom_vec_body.h"
+#include "atom_vec_bacillus.h"
 #include "molecule.h"
 #include "comm.h"
 #include "domain.h"
@@ -136,6 +137,7 @@ void DeleteAtoms::command(int narg, char **arg)
   AtomVecLine *avec_line = (AtomVecLine *) atom->style_match("line");
   AtomVecTri *avec_tri = (AtomVecTri *) atom->style_match("tri");
   AtomVecBody *avec_body = (AtomVecBody *) atom->style_match("body");
+  AtomVecBacillus *avec_bacillus_ = (AtomVecBacillus *) atom->style_match("bacillus");
   bigint nlocal_bonus;
 
   if (atom->nellipsoids > 0) {
@@ -153,6 +155,10 @@ void DeleteAtoms::command(int narg, char **arg)
   if (atom->nbodies > 0) {
     nlocal_bonus = avec_body->nlocal_bonus;
     MPI_Allreduce(&nlocal_bonus,&atom->nbodies,1,MPI_LMP_BIGINT,MPI_SUM,world);
+  }
+  if (atom->nbacilli > 0) {
+    nlocal_bonus = avec_bacillus_->nlocal_bonus;
+    MPI_Allreduce(&nlocal_bonus,&atom->nbacilli,1,MPI_LMP_BIGINT,MPI_SUM,world);
   }
 
   // reset atom->map if it exists

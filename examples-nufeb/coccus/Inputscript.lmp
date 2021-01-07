@@ -1,7 +1,7 @@
 # NUFEB simulation with HETs and AOBs
 
 units si                                   # using si units
-atom_style      cocci                      # using nufeb atom style
+atom_style      coccus                     # using nufeb atom style
 atom_modify     map array sort 1000 1e-6   # map array: find atoms using indices
 		                           # sort 1000 5.0e-6: sort every 1000
 					   #   steps with 5.0e-6 binsize

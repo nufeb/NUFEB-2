@@ -157,7 +157,7 @@ void FixMonodEcoliWild::update_atoms()
       biomass[i] = biomass[i] * (1 + growth * dt);
       rmass[i] = rmass[i] * (1 + growth * dt * ratio);
       radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
-      outer_mass[i] = rmass[i];
+      outer_mass[i] = 0;
       outer_radius[i] = radius[i];
     }
   }

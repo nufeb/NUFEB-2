@@ -11,6 +11,8 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
+#include "atom_vec_coccus.h"
+
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,7 +27,6 @@
 #include "memory.h"
 #include "error.h"
 
-#include "atom_vec_cocci.h"
 #include "group.h"
 
 using namespace LAMMPS_NS;
@@ -770,7 +771,7 @@ int AtomVecCoccus::size_restart()
   int i;
 
   int nlocal = atom->nlocal;
-  int n = 18 * nlocal;
+  int n = 19 * nlocal;
 
   if (atom->nextra_restart)
     for (int iextra = 0; iextra < atom->nextra_restart; iextra++)
@@ -913,7 +914,7 @@ void AtomVecCoccus::data_atom(double *coord, imageint imagetmp, char **values)
 
   radius[nlocal] = 0.5 * atof(values[2]);
   if (radius[nlocal] < 0.0)
-    error->one(FLERR,"Invalid radius in Atoms section of data file");
+    error->one(FLERR,"Invalid diameter in Atoms section of data file");
 
   double density = atof(values[3]);
   if (density <= 0.0)
@@ -963,18 +964,33 @@ int AtomVecCoccus::data_atom_hybrid(int nlocal, char **values)
 {
   radius[nlocal] = 0.5 * atof(values[0]);
   if (radius[nlocal] < 0.0)
-    error->one(FLERR,"Invalid radius in Atoms section of data file");
+    error->one(FLERR,"Invalid radius in Atoms section of data file: radius < 0");
 
   double density = atof(values[1]);
   if (density <= 0.0)
-    error->one(FLERR,"Invalid density in Atoms section of data file");
+    error->one(FLERR,"Invalid density in Atoms section of data file: density <= 0");
 
   if (radius[nlocal] == 0.0) rmass[nlocal] = density;
   else
     rmass[nlocal] = 4.0*MY_PI/3.0 *
       radius[nlocal]*radius[nlocal]*radius[nlocal] * density;
 
-  return 2;
+  outer_radius[nlocal] = 0.5 * atof(values[2]);
+  if (outer_radius[nlocal] < radius[nlocal]) {
+    error->one(FLERR,"Invalid outer radius in Atoms section of data file:"
+	"outer_radius < radius");
+  }
+  outer_mass[nlocal] = (4.0*MY_PI/3.0)*
+    ((outer_radius[nlocal]*outer_radius[nlocal]*outer_radius[nlocal])
+     -(radius[nlocal]*radius[nlocal]*radius[nlocal])) * 30;
+
+  double ratio = atof(values[3]);
+  if (ratio < 0 || ratio > 1)
+    error->one(FLERR,"Invalid biomass/Mass ratio in Atoms section of data file:"
+	"ratio < 0 or ratio > 1");
+  biomass[nlocal] = rmass[nlocal] * ratio;
+
+  return 4;
 }
 
 /* ----------------------------------------------------------------------
@@ -1020,9 +1036,11 @@ void AtomVecCoccus::pack_data(double **buf)
     buf[i][4] = x[i][0];
     buf[i][5] = x[i][1];
     buf[i][6] = x[i][2];
-    buf[i][7] = ubuf((image[i] & IMGMASK) - IMGMAX).d;
-    buf[i][8] = ubuf((image[i] >> IMGBITS & IMGMASK) - IMGMAX).d;
-    buf[i][9] = ubuf((image[i] >> IMG2BITS) - IMGMAX).d;
+    buf[i][7] = outer_radius[i];
+    buf[i][8] = biomass[i];
+    buf[i][9] = ubuf((image[i] & IMGMASK) - IMGMAX).d;
+    buf[i][10] = ubuf((image[i] >> IMGBITS & IMGMASK) - IMGMAX).d;
+    buf[i][11] = ubuf((image[i] >> IMG2BITS) - IMGMAX).d;
   }
 }
 
@@ -1035,7 +1053,9 @@ int AtomVecCoccus::pack_data_hybrid(int i, double *buf)
   buf[0] = 2.0*radius[i];
   if (radius[i] == 0.0) buf[1] = rmass[i];
   else buf[1] = rmass[i] / (4.0*MY_PI/3.0 * radius[i]*radius[i]*radius[i]);
-  return 2;
+  buf[2] = outer_radius[i];
+  buf[3] = biomass[i] / rmass[i];
+  return 4;
 }
 
 /* ----------------------------------------------------------------------
@@ -1046,12 +1066,12 @@ void AtomVecCoccus::write_data(FILE *fp, int n, double **buf)
 {
   for (int i = 0; i < n; i++)
     fprintf(fp,TAGINT_FORMAT
-            " %d %-1.16e %-1.16e %-1.16e %-1.16e %-1.16e %d %d %d\n",
+            " %d %-1.16e %-1.16e %-1.16e %-1.16e %-1.16e %-1.16e %-1.16e %d %d %d\n",
             (tagint) ubuf(buf[i][0]).i,(int) ubuf(buf[i][1]).i,
             buf[i][2],buf[i][3],
-            buf[i][4],buf[i][5],buf[i][6],
-            (int) ubuf(buf[i][7]).i,(int) ubuf(buf[i][8]).i,
-            (int) ubuf(buf[i][9]).i);
+            buf[i][4],buf[i][5],buf[i][6],buf[i][7],buf[i][8],
+            (int) ubuf(buf[i][9]).i,(int) ubuf(buf[i][10]).i,
+            (int) ubuf(buf[i][11]).i);
 }
 
 /* ----------------------------------------------------------------------
@@ -1060,8 +1080,8 @@ void AtomVecCoccus::write_data(FILE *fp, int n, double **buf)
 
 int AtomVecCoccus::write_data_hybrid(FILE *fp, double *buf)
 {
-  fprintf(fp," %-1.16e %-1.16e",buf[0],buf[1]);
-  return 2;
+  fprintf(fp," %-1.16e %-1.16e %-1.16e %-1.16e",buf[0],buf[1],buf[2],buf[3]);
+  return 4;
 }
 
 /* ----------------------------------------------------------------------
