@@ -19,9 +19,7 @@ comm_modify     cutoff 2e-6                # guarantee that enough atoms are
 
 read_data      atom.in					  
 
-group           het   type 1            # defining het group
-group           eps   type 2            # defining eps group
-group           dead  empty
+group           ecoli   type 1            # defining het group
 
 neighbor        7e-7 bin                # setting neighbour skin distance and
                                         #   style
@@ -30,7 +28,7 @@ neigh_modify    check yes               # rebuild neighbour list if any atom
 					#   distance
 
 # select grid style
-grid_style      nufeb/monod 4 sub o2 no2 no3 4e-6 pp pp nd
+grid_style      nufeb/monod 4 sub o2 no2 no3 2e-6 pp pp nd
 
 # test grid comm
 #run_style       test/comm_grid
@@ -48,6 +46,9 @@ grid_modify     set no3    1e-4
 
 # NVE integration with maximum distance limit
 fix nve all nve/limit 1e-8
+
+dump du1 all image 1 image.*.jpg type diameter zoom 2.2 bacillus type size 1280 720
+dump_modify du1 acolor 1 green
 
 # thermo output
 thermo_style custom step atoms 

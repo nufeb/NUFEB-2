@@ -30,6 +30,8 @@ using namespace LAMMPS_NS;
 using namespace MathConst;
 
 #define EPSILON 1.0e-7
+
+enum{SPHERE,ROD};       // also in DumpImage
 /* ---------------------------------------------------------------------- */
 
 AtomVecBacillus::AtomVecBacillus(LAMMPS *lmp) : AtomVec(lmp)
@@ -722,6 +724,8 @@ int AtomVecBacillus::pack_border_vel(int n, int *list, double *buf,
           buf[m++] = ubuf(1).d;
           quat = bonus[bacillus[j]].quat;
           inertia = bonus[bacillus[j]].inertia;
+          pole1 = bonus[bacillus[j]].pole1;
+          pole2 = bonus[bacillus[j]].pole2;
           buf[m++] = quat[0];
           buf[m++] = quat[1];
           buf[m++] = quat[2];
@@ -779,6 +783,8 @@ int AtomVecBacillus::pack_border_hybrid(int n, int *list, double *buf)
       buf[m++] = ubuf(1).d;
       quat = bonus[bacillus[j]].quat;
       inertia = bonus[bacillus[j]].inertia;
+      pole1 = bonus[bacillus[j]].pole1;
+      pole2 = bonus[bacillus[j]].pole2;
       buf[m++] = quat[0];
       buf[m++] = quat[1];
       buf[m++] = quat[2];
@@ -826,6 +832,8 @@ void AtomVecBacillus::unpack_border(int n, int first, double *buf)
       if (j == nmax_bonus) grow_bonus();
       quat = bonus[j].quat;
       inertia = bonus[j].inertia;
+      pole1 = bonus[j].pole1;
+      pole2 = bonus[j].pole2;
       quat[0] = buf[m++];
       quat[1] = buf[m++];
       quat[2] = buf[m++];
@@ -880,6 +888,8 @@ void AtomVecBacillus::unpack_border_vel(int n, int first, double *buf)
       if (j == nmax_bonus) grow_bonus();
       quat = bonus[j].quat;
       inertia = bonus[j].inertia;
+      pole1 = bonus[j].pole1;
+      pole2 = bonus[j].pole2;
       quat[0] = buf[m++];
       quat[1] = buf[m++];
       quat[2] = buf[m++];
@@ -933,6 +943,8 @@ int AtomVecBacillus::unpack_border_hybrid(int n, int first, double *buf)
       if (j == nmax_bonus) grow_bonus();
       quat = bonus[j].quat;
       inertia = bonus[j].inertia;
+      pole1 = bonus[j].pole1;
+      pole2 = bonus[j].pole2;
       quat[0] = buf[m++];
       quat[1] = buf[m++];
       quat[2] = buf[m++];
@@ -1002,8 +1014,8 @@ int AtomVecBacillus::pack_exchange(int i, double *buf)
     buf[m++] = pole2[0];
     buf[m++] = pole2[1];
     buf[m++] = pole2[2];
-    buf[m++] = bonus[bacillus[j]].height;
-    buf[m++] = bonus[bacillus[j]].diameter;
+    buf[m++] = bonus[j].height;
+    buf[m++] = bonus[j].diameter;
   }
 
   if (atom->nextra_grow)
@@ -1131,8 +1143,8 @@ int AtomVecBacillus::pack_restart(int i, double *buf)
     int j = bacillus[i];
     double *quat = bonus[j].quat;
     double *inertia = bonus[j].inertia;
-    double *pole1= bonus[nlocal_bonus].pole1;
-    double *pole2= bonus[nlocal_bonus].pole2;
+    double *pole1= bonus[j].pole1;
+    double *pole2= bonus[j].pole2;
     buf[m++] = quat[0];
     buf[m++] = quat[1];
     buf[m++] = quat[2];
@@ -1146,8 +1158,8 @@ int AtomVecBacillus::pack_restart(int i, double *buf)
     buf[m++] = pole2[0];
     buf[m++] = pole2[1];
     buf[m++] = pole2[2];
-    buf[m++] = bonus[bacillus[j]].height;
-    buf[m++] = bonus[bacillus[j]].diameter;
+    buf[m++] = bonus[j].height;
+    buf[m++] = bonus[j].diameter;
   }
 
   if (atom->nextra_restart)
@@ -1352,7 +1364,7 @@ void AtomVecBacillus::data_atom_bonus(int m, char **values)
   tensor[0][2] = tensor[2][0] = atof(values[4]);
   tensor[1][2] = tensor[2][1] = atof(values[5]);
 
-  double *inertia = bonus->inertia;
+  double *inertia = bonus[nlocal_bonus].inertia;
   double evectors[3][3];
   int ierror = MathExtra::jacobi(tensor,inertia,evectors);
   if (ierror) error->one(FLERR,
@@ -1387,10 +1399,10 @@ void AtomVecBacillus::data_atom_bonus(int m, char **values)
   if (MathExtra::dot3(cross,ez_space) < 0.0) MathExtra::negate3(ez_space);
 
   // create initial quaternion
-  MathExtra::exyz_to_q(ex_space,ey_space,ez_space,bonus->quat);
+  MathExtra::exyz_to_q(ex_space,ey_space,ez_space,bonus[nlocal_bonus].quat);
 
-  double *pole1 = bonus->pole1;
-  double *pole2 = bonus->pole2;
+  double *pole1 = bonus[nlocal_bonus].pole1;
+  double *pole2 = bonus[nlocal_bonus].pole2;
   double px = atof(values[6]);
   double py = atof(values[7]);
   double pz = atof(values[8]);
@@ -1401,32 +1413,26 @@ void AtomVecBacillus::data_atom_bonus(int m, char **values)
 
   double d = sqrt(px*px + py*py + pz*pz);
 
-  bonus->height = d * 2;
+  bonus[nlocal_bonus].height = d * 2;
 
   pole2[0] = atom->x[m][0] - px;
   pole2[1] = atom->x[m][1] - py;
   pole2[2] = atom->x[m][2] - pz;
 
-  bonus->diameter = atof(values[9]);
-  if (bonus->diameter < 0)
+  bonus[nlocal_bonus].diameter = atof(values[9]);
+  if (bonus[nlocal_bonus].diameter < 0)
     error->one(FLERR, "Invalid diameter in Bacilli section of data file: diameter < 0");
-  atom->radius[m] = bonus->diameter * 0.5;
+  atom->radius[m] = bonus[nlocal_bonus].diameter * 0.5;
 
   // reset ellipsoid mass
   // previously stored density in rmass
   rmass[m] *= (4.0*MY_PI/3.0*
       atom->radius[m]*atom->radius[m]*atom->radius[m] +
-      MY_PI*atom->radius[m]*atom->radius[m]*bonus->height);
+      MY_PI*atom->radius[m]*atom->radius[m]*bonus[nlocal_bonus].height);
   biomass[m] = rmass[m] * biomass[m];
 
   bonus[nlocal_bonus].ilocal = m;
   bacillus[m] = nlocal_bonus++;
-
-  double d2 = sqrt(((pole1[0]-pole2[0])*(pole1[0]-pole2[0]) +
-      (pole1[1]-pole2[1])*(pole1[1]-pole2[1]) +
-      (pole1[2]-pole2[2])*(pole1[2]-pole2[2])));
-  printf("height = %e d2=%e \n, radius = %e, rmass[m]=%e, biomass=%e\n", bonus->height, d2, atom->radius[m],rmass[m],biomass[m] );
-
 }
 
 /* ----------------------------------------------------------------------
@@ -1474,7 +1480,7 @@ void AtomVecBacillus::pack_data(double **buf)
     buf[i][4] = x[i][0];
     buf[i][5] = x[i][1];
     buf[i][6] = x[i][2];
-    buf[i][7] = biomass[i];
+    buf[i][7] = biomass[i] / rmass[i];
     buf[i][8] = ubuf((image[i] & IMGMASK) - IMGMAX).d;
     buf[i][9] = ubuf((image[i] >> IMGBITS & IMGMASK) - IMGMAX).d;
     buf[i][10] = ubuf((image[i] >> IMG2BITS) - IMGMAX).d;
@@ -1585,7 +1591,7 @@ int AtomVecBacillus::write_vel_hybrid(FILE *fp, double *buf)
 
 void AtomVecBacillus::set_quat(int m, double *quat_external)
 {
-  if (bacillus[m] < 0) error->one(FLERR,"Assigning quat to non-body atom");
+  if (bacillus[m] < 0) error->one(FLERR,"Assigning quat to non-bacillus atom");
   double *quat = bonus[bacillus[m]].quat;
   quat[0] = quat_external[0]; quat[1] = quat_external[1];
   quat[2] = quat_external[2]; quat[3] = quat_external[3];
