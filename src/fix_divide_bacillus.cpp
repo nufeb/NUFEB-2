@@ -18,11 +18,11 @@
 #include <string.h>
 #include "atom.h"
 #include "atom_vec.h"
+#include "atom_vec_bacillus.h"
 #include "error.h"
 #include "force.h"
 #include "lmptype.h"
 #include "math_const.h"
-#include "random_park.h"
 #include "update.h"
 #include "modify.h"
 #include "domain.h"
@@ -37,76 +37,16 @@ using namespace MathConst;
 /* ---------------------------------------------------------------------- */
 
 FixDivideBacillus::FixDivideBacillus(LAMMPS *lmp, int narg, char **arg) :
-  Fix(lmp, narg, arg)
+  FixDivide(lmp, narg, arg)
 {
-  if (narg < 6)
-    error->all(FLERR, "Illegal fix nufeb/divide command");
+  avec = (AtomVecBacillus *) atom->style_match("bacillus");
+  if (!avec) error->all(FLERR,"Fix nufeb/monod/ecoli/wild requires "
+      "atom style bacillus");
 
-  compute_flag = 1;
+  if (narg < 4)
+    error->all(FLERR, "Illegal fix nufeb/divide/bacillus command");
   
-  diameter = force->numeric(FLERR, arg[3]);
-  eps_density = force->numeric(FLERR, arg[4]);
-  seed = force->inumeric(FLERR, arg[5]);
-  
-  // Random number generator, same for all procs
-  random = new RanPark(lmp, seed);
-
-  force_reneighbor = 1;
-}
-
-/* ---------------------------------------------------------------------- */
-
-FixDivideBacillus::~FixDivideBacillus()
-{
-  delete random;
-}
-
-/* ---------------------------------------------------------------------- */
-
-int FixDivideBacillus::setmask()
-{
-  int mask = 0;
-  mask |= POST_INTEGRATE;
-  mask |= POST_NEIGHBOR;
-  return mask;
-}
-
-/* ---------------------------------------------------------------------- */
-
-int FixDivideBacillus::modify_param(int narg, char **arg)
-{
-  int iarg = 0;
-  while (iarg < narg) {
-    if (strcmp(arg[iarg], "compute") == 0) {
-      if (strcmp(arg[iarg+1], "yes") == 0) {
-	compute_flag = 1;
-      } else if (strcmp(arg[iarg+1], "no") == 0) {
-	compute_flag = 0;
-      } else {
-	error->all(FLERR, "Illegal fix_modify command");
-      }
-      iarg += 2;
-    } else {
-      error->all(FLERR, "Illegal fix_modify command");
-    }
-  }
-  return iarg;
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixDivideBacillus::post_integrate()
-{
-  if (compute_flag)
-    compute();
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixDivideBacillus::post_neighbor()
-{
-  // reset reneighbour flag
-  next_reneighbor = 0;
+  maxlength = force->numeric(FLERR, arg[3]);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -117,83 +57,74 @@ void FixDivideBacillus::compute()
 
   for (int i = 0; i < nlocal; i++) {
     if (atom->mask[i] & groupbit) {
-      double density = atom->rmass[i] /
-	(4.0 * MY_PI / 3.0 * atom->radius[i] * atom->radius[i] * atom->radius[i]);
+      int ibonus = atom->bacillus[i];
+      AtomVecBacillus::Bonus *bonus = &avec->bonus[ibonus];
 
-      if (atom->radius[i] * 2 >= diameter) {
-        double split = 0.4 + (random->uniform() * 0.2);
-        double parent_mass = atom->rmass[i] * split;
-        double child_mass = atom->rmass[i] - parent_mass;
+      if (bonus->length >= maxlength) {
+	double *pole1 = bonus->pole1;
+	double *pole2 = bonus->pole2;
 
-        double parent_biomass = atom->biomass[i] * split;
-        double child_biomass = atom->biomass[i] - parent_biomass;
+	double parentx = atom->x[i][0];
+	double parenty = atom->x[i][1];
+	double parentz = atom->x[i][2];
+	double parentpx = pole2[0];
+	double parentpy = pole2[1];
+	double parentyz = pole2[2];
+	double shiftx = 2*(pole1[0] - parentx) / bonus->length * bonus->diameter;
+	double shifty = 2*(pole1[1] - parenty) / bonus->length * bonus->diameter;
+	double shiftz = 2*(pole1[2] - parentz) / bonus->length * bonus->diameter;
 
-        double parent_outer_mass = atom->outer_mass[i] * split;
-        double child_outer_mass = atom->outer_mass[i] - parent_outer_mass;
+        double newx = (parentx + pole1[0])/2 + shiftx;
+        double newy = (parenty + pole1[1])/2 + shifty;
+        double newz = (parentz + pole1[2])/2 + shiftz;
 
-        double theta = random->uniform() * 2 * MY_PI;
-        double phi = random->uniform() * (MY_PI);
-
-        double oldx = atom->x[i][0];
-        double oldy = atom->x[i][1];
-        double oldz = atom->x[i][2];
+        double new_rmass = atom->rmass[i]/2;
+        double new_biomass = atom->biomass[i]/2;
 
         // update parent
-        atom->rmass[i] = parent_mass;
-        atom->biomass[i] = parent_biomass;
-        atom->outer_mass[i] = parent_outer_mass;
-        atom->radius[i] = pow(((6 * atom->rmass[i]) / (density * MY_PI)), (1.0 / 3.0)) * 0.5;
-        atom->outer_radius[i] = pow((3.0 / (4.0 * MY_PI)) * ((atom->rmass[i] / density) + (parent_outer_mass / eps_density)), (1.0 / 3.0));
-        double newx = oldx + (atom->outer_radius[i] * cos(theta) * sin(phi) * DELTA);
-        double newy = oldy + (atom->outer_radius[i] * sin(theta) * sin(phi) * DELTA);
-        double newz = oldz + (atom->outer_radius[i] * cos(phi) * DELTA);
-        if (newx - atom->outer_radius[i] < domain->boxlo[0]) {
-          newx = domain->boxlo[0] + atom->outer_radius[i];
-        } else if (newx + atom->outer_radius[i] > domain->boxhi[0]) {
-          newx = domain->boxhi[0] - atom->outer_radius[i];
-        }
-        if (newy - atom->outer_radius[i] < domain->boxlo[1]) {
-          newy = domain->boxlo[1] + atom->outer_radius[i];
-        } else if (newy + atom->outer_radius[i] > domain->boxhi[1]) {
-          newy = domain->boxhi[1] - atom->outer_radius[i];
-        }
-        if (newz - atom->outer_radius[i] < domain->boxlo[2]) {
-          newz = domain->boxlo[2] + atom->outer_radius[i];
-        } else if (newz + atom->outer_radius[i] > domain->boxhi[2]) {
-          newz = domain->boxhi[2] - atom->outer_radius[i];
-        }
+        atom->rmass[i] = new_rmass;
+        atom->biomass[i] = new_biomass;
+        bonus->length /= 2;
+
+        pole1[0] += shiftx;
+        pole1[1] += shifty;
+        pole1[2] += shiftz;
+        pole2[0] = atom->x[i][0] + shiftx;
+        pole2[1] = atom->x[i][1] + shifty;
+        pole2[2] = atom->x[i][2] + shiftz;
+
         atom->x[i][0] = newx;
         atom->x[i][1] = newy;
         atom->x[i][2] = newz;
 
         // create child
-        double child_radius = pow(((6 * child_mass) / (density * MY_PI)), (1.0 / 3.0)) * 0.5;
-        double child_outer_radius = pow((3.0 / (4.0 * MY_PI)) * ((child_mass / density) + (child_outer_mass / eps_density)), (1.0 / 3.0));
         double *coord = new double[3];
-        newx = oldx - (child_outer_radius * cos(theta) * sin(phi) * DELTA);
-        newy = oldy - (child_outer_radius * sin(theta) * sin(phi) * DELTA);
-        newz = oldz - (child_outer_radius * cos(phi) * DELTA);
-        if (newx - child_outer_radius < domain->boxlo[0]) {
-          newx = domain->boxlo[0] + child_outer_radius;
-        } else if (newx + child_outer_radius > domain->boxhi[0]) {
-          newx = domain->boxhi[0] - child_outer_radius;
-        }
-        if (newy - child_outer_radius < domain->boxlo[1]) {
-          newy = domain->boxlo[1] + child_outer_radius;
-        } else if (newy + child_outer_radius > domain->boxhi[1]) {
-          newy = domain->boxhi[1] - child_outer_radius;
-        }
-        if (newz - child_outer_radius < domain->boxlo[2]) {
-          newz = domain->boxlo[2] + child_outer_radius;
-        } else if (newz + child_outer_radius > domain->boxhi[2]) {
-          newz = domain->boxhi[2] - child_outer_radius;
-        }
+        double *p1 = new double[3];
+        double *p2 = new double[3];
+
+        shiftx = (parentx - pole2[0]) / bonus->length * bonus->diameter / 2;
+	shifty = (parenty - pole2[1]) / bonus->length * bonus->diameter / 2;
+	shiftz = (parentz - pole2[2]) / bonus->length * bonus->diameter / 2;
+
+        newx = (parentx + parentpx)/2 - shiftx;
+        newy = (parenty + parentpy)/2 - shifty;
+        newz = (parentz + parentyz)/2 - shiftz;
+
         coord[0] = newx;
         coord[1] = newy;
         coord[2] = newz;
 
-        atom->avec->create_atom(atom->type[i], coord);
+        p1[0] = parentx - shiftx;
+        p1[1] = parenty - shifty;
+        p1[2] = parentz - shiftz;
+        p2[0] = 2*newx - p1[0];
+        p2[1] = 2*newy - p1[1];
+        p2[2] = 2*newz - p1[2];
+
+        avec->create_atom(atom->type[i], coord);
         int n = atom->nlocal - 1;
+        atom->bacillus[n] = 0;
+        avec->set_bonus(n, p1, p2, bonus);
 
         atom->tag[n] = 0;
         atom->mask[n] = atom->mask[i];
@@ -203,25 +134,24 @@ void FixDivideBacillus::compute()
 	atom->f[n][0] = atom->f[i][0];
 	atom->f[n][1] = atom->f[i][1];
 	atom->f[n][2] = atom->f[i][2];
-        atom->omega[n][0] = atom->omega[i][0];
-        atom->omega[n][1] = atom->omega[i][1];
-        atom->omega[n][2] = atom->omega[i][2];
 	atom->torque[n][0] = atom->torque[i][0];
 	atom->torque[n][1] = atom->torque[i][1];
 	atom->torque[n][2] = atom->torque[i][2];
-        atom->rmass[n] = child_mass;
-        atom->biomass[n] = child_biomass;
-        atom->radius[n] = child_radius;
-        atom->outer_mass[n] = child_outer_mass;
-        atom->outer_radius[n] = child_outer_radius;
+	atom->angmom[n][0] = atom->angmom[i][0];
+	atom->angmom[n][1] = atom->angmom[i][1];
+	atom->angmom[n][2] = atom->angmom[i][2];
+        atom->rmass[n] = new_rmass;
+        atom->biomass[n] = new_biomass;
+        atom->radius[n] = atom->radius[i];
 
         modify->create_attribute(n);
 
         delete[] coord;
+        delete[] p1;
+        delete[] p2;
       }
     }
   }
-
   bigint nblocal = atom->nlocal;
   MPI_Allreduce(&nblocal, &atom->natoms, 1, MPI_LMP_BIGINT, MPI_SUM, world);
   if (atom->natoms < 0 || atom->natoms >= MAXBIGINT)
@@ -236,7 +166,4 @@ void FixDivideBacillus::compute()
     atom->map_init();
     atom->map_set();
   }
-
-  // trigger immediate reneighboring
-  next_reneighbor = update->ntimestep;
 }

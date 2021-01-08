@@ -892,7 +892,7 @@ void AtomVecCoccus::create_atom(int itype, double *coord)
   omega[nlocal][2] = 0.0;
 
   outer_radius[nlocal] = radius[nlocal];
-  outer_mass[nlocal] = rmass[nlocal];
+  outer_mass[nlocal] = 0;
 
   atom->nlocal++;
 }

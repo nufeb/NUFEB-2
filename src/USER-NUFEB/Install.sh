@@ -79,6 +79,10 @@ action fix_diffusion_reaction.cpp
 action fix_diffusion_reaction.h
 action fix_divide.cpp
 action fix_divide.h
+action fix_divide_coccus.cpp
+action fix_divide_coccus.h
+action fix_divide_bacillus.cpp
+action fix_divide_bacillus.h
 action fix_eps_adhesion.cpp
 action fix_eps_adhesion.h
 action fix_eps_extract.cpp

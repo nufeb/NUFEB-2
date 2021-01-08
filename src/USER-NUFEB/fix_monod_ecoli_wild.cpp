@@ -154,27 +154,27 @@ void FixMonodEcoliWild::update_atoms()
 
       int ibonus = atom->bacillus[i];
       AtomVecBacillus::Bonus *bonus = &avec->bonus[ibonus];
-      double h = bonus->height;
+      double length = bonus->length;
 
       const int cell = grid->cell(x[i]);
-      const double density = rmass[i] /	(vsphere + acircle * bonus->height);
+      const double density = rmass[i] /	(vsphere + acircle * bonus->length);
       double growth = grid->growth[igroup][cell][0];
       double ratio = rmass[i] / biomass[i];
       // forward Eular to update biomass and rmass
       biomass[i] = biomass[i] * (1 + growth * dt);
       rmass[i] = rmass[i] * (1 + growth * dt * ratio);
-      bonus->height = (rmass[i] - density * vsphere) / (density * acircle);
+      bonus->length = (rmass[i] - density * vsphere) / (density * acircle);
       // update coordinates of two poles
-      double dh = (bonus->height - h) / 2;
+      double dl = (bonus->length - length) / 2;
       double *pole1 = bonus->pole1;
       double *pole2 = bonus->pole2;
 
-      pole1[0] += (pole1[0] - x[i][0]) / h * dh;
-      pole1[1] += (pole1[1] - x[i][1]) / h * dh;
-      pole1[2] += (pole1[2] - x[i][2]) / h * dh;
-      pole2[0] += (pole2[0] - x[i][0]) / h * dh;
-      pole2[1] += (pole2[1] - x[i][1]) / h * dh;
-      pole2[2] += (pole2[2] - x[i][2]) / h * dh;
+      pole1[0] += (pole1[0] - x[i][0]) / length * dl;
+      pole1[1] += (pole1[1] - x[i][1]) / length * dl;
+      pole1[2] += (pole1[2] - x[i][2]) / length * dl;
+      pole2[0] += (pole2[0] - x[i][0]) / length * dl;
+      pole2[1] += (pole2[1] - x[i][1]) / length * dl;
+      pole2[2] += (pole2[2] - x[i][2]) / length * dl;
     }
   }
 }
