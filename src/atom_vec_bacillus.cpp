@@ -542,7 +542,7 @@ int AtomVecBacillus::pack_border(int n, int *list, double *buf,
         buf[m++] = pole2[0];
         buf[m++] = pole2[1];
         buf[m++] = pole2[2];
-        buf[m++] = bonus[bacillus[j]].height;
+        buf[m++] = bonus[bacillus[j]].length;
         buf[m++] = bonus[bacillus[j]].diameter;
       }
     }
@@ -587,7 +587,7 @@ int AtomVecBacillus::pack_border(int n, int *list, double *buf,
         buf[m++] = pole2[0];
         buf[m++] = pole2[1];
         buf[m++] = pole2[2];
-        buf[m++] = bonus[bacillus[j]].height;
+        buf[m++] = bonus[bacillus[j]].length;
         buf[m++] = bonus[bacillus[j]].diameter;
       }
     }
@@ -642,7 +642,7 @@ int AtomVecBacillus::pack_border_vel(int n, int *list, double *buf,
         buf[m++] = pole2[0];
         buf[m++] = pole2[1];
         buf[m++] = pole2[2];
-        buf[m++] = bonus[bacillus[j]].height;
+        buf[m++] = bonus[bacillus[j]].length;
         buf[m++] = bonus[bacillus[j]].diameter;
       }
       buf[m++] = v[j][0];
@@ -694,7 +694,7 @@ int AtomVecBacillus::pack_border_vel(int n, int *list, double *buf,
           buf[m++] = pole2[0];
           buf[m++] = pole2[1];
           buf[m++] = pole2[2];
-          buf[m++] = bonus[bacillus[j]].height;
+          buf[m++] = bonus[bacillus[j]].length;
           buf[m++] = bonus[bacillus[j]].diameter;
         }
         buf[m++] = v[j][0];
@@ -739,7 +739,7 @@ int AtomVecBacillus::pack_border_vel(int n, int *list, double *buf,
           buf[m++] = pole2[0];
           buf[m++] = pole2[1];
           buf[m++] = pole2[2];
-          buf[m++] = bonus[bacillus[j]].height;
+          buf[m++] = bonus[bacillus[j]].length;
           buf[m++] = bonus[bacillus[j]].diameter;
         }
         if (mask[i] & deform_groupbit) {
@@ -798,7 +798,7 @@ int AtomVecBacillus::pack_border_hybrid(int n, int *list, double *buf)
       buf[m++] = pole2[0];
       buf[m++] = pole2[1];
       buf[m++] = pole2[2];
-      buf[m++] = bonus[bacillus[j]].height;
+      buf[m++] = bonus[bacillus[j]].length;
       buf[m++] = bonus[bacillus[j]].diameter;
     }
   }
@@ -847,7 +847,7 @@ void AtomVecBacillus::unpack_border(int n, int first, double *buf)
       pole2[0] = buf[m++];
       pole2[1] = buf[m++];
       pole2[2] = buf[m++];
-      bonus[j].height = buf[m++];
+      bonus[j].length = buf[m++];
       bonus[j].diameter = buf[m++];
       bonus[j].ilocal = i;
       bacillus[i] = j;
@@ -903,7 +903,7 @@ void AtomVecBacillus::unpack_border_vel(int n, int first, double *buf)
       pole2[0] = buf[m++];
       pole2[1] = buf[m++];
       pole2[2] = buf[m++];
-      bonus[j].height = buf[m++];
+      bonus[j].length = buf[m++];
       bonus[j].diameter = buf[m++];
       bonus[j].ilocal = i;
       bacillus[i] = j;
@@ -958,7 +958,7 @@ int AtomVecBacillus::unpack_border_hybrid(int n, int first, double *buf)
       pole2[0] = buf[m++];
       pole2[1] = buf[m++];
       pole2[2] = buf[m++];
-      bonus[j].height = buf[m++];
+      bonus[j].length = buf[m++];
       bonus[j].diameter = buf[m++];
       bonus[j].ilocal = i;
       bacillus[i] = j;
@@ -1014,7 +1014,7 @@ int AtomVecBacillus::pack_exchange(int i, double *buf)
     buf[m++] = pole2[0];
     buf[m++] = pole2[1];
     buf[m++] = pole2[2];
-    buf[m++] = bonus[j].height;
+    buf[m++] = bonus[j].length;
     buf[m++] = bonus[j].diameter;
   }
 
@@ -1072,7 +1072,7 @@ int AtomVecBacillus::unpack_exchange(double *buf)
     pole2[0] = buf[m++];
     pole2[1] = buf[m++];
     pole2[2] = buf[m++];
-    bonus[nlocal_bonus].height = buf[m++];
+    bonus[nlocal_bonus].length = buf[m++];
     bonus[nlocal_bonus].diameter = buf[m++];
     bonus[nlocal_bonus].ilocal = nlocal;
     bacillus[nlocal] = nlocal_bonus++;
@@ -1158,7 +1158,7 @@ int AtomVecBacillus::pack_restart(int i, double *buf)
     buf[m++] = pole2[0];
     buf[m++] = pole2[1];
     buf[m++] = pole2[2];
-    buf[m++] = bonus[j].height;
+    buf[m++] = bonus[j].length;
     buf[m++] = bonus[j].diameter;
   }
 
@@ -1223,7 +1223,7 @@ int AtomVecBacillus::unpack_restart(double *buf)
     pole2[0] = buf[m++];
     pole2[1] = buf[m++];
     pole2[2] = buf[m++];
-    bonus[nlocal_bonus].height = buf[m++];
+    bonus[nlocal_bonus].length = buf[m++];
     bonus[nlocal_bonus].diameter = buf[m++];
     bonus[nlocal_bonus].ilocal = nlocal;
     bacillus[nlocal] = nlocal_bonus++;
@@ -1261,7 +1261,7 @@ void AtomVecBacillus::create_atom(int itype, double *coord)
   v[nlocal][1] = 0.0;
   v[nlocal][2] = 0.0;
 
-  radius[nlocal] = 0.0;
+  radius[nlocal] = 0.5e-6;
   rmass[nlocal] = 1.0;
   biomass[nlocal] = 1.0;
   angmom[nlocal][0] = 0.0;
@@ -1413,7 +1413,7 @@ void AtomVecBacillus::data_atom_bonus(int m, char **values)
 
   double d = sqrt(px*px + py*py + pz*pz);
 
-  bonus[nlocal_bonus].height = d * 2;
+  bonus[nlocal_bonus].length = d * 2;
 
   pole2[0] = atom->x[m][0] - px;
   pole2[1] = atom->x[m][1] - py;
@@ -1428,7 +1428,7 @@ void AtomVecBacillus::data_atom_bonus(int m, char **values)
   // previously stored density in rmass
   rmass[m] *= (4.0*MY_PI/3.0*
       atom->radius[m]*atom->radius[m]*atom->radius[m] +
-      MY_PI*atom->radius[m]*atom->radius[m]*bonus[nlocal_bonus].height);
+      MY_PI*atom->radius[m]*atom->radius[m]*bonus[nlocal_bonus].length);
   biomass[m] = rmass[m] * biomass[m];
 
   bonus[nlocal_bonus].ilocal = m;
@@ -1476,7 +1476,7 @@ void AtomVecBacillus::pack_data(double **buf)
     if (bacillus[i] < 0) buf[i][3] = rmass[i];
     else buf[i][3] = rmass[i] / (4.0*MY_PI/3.0*
 	      atom->radius[i]*atom->radius[i]*atom->radius[i] +
-	      MY_PI*atom->radius[i]*atom->radius[i]*bonus[bacillus[i]].height);
+	      MY_PI*atom->radius[i]*atom->radius[i]*bonus[bacillus[i]].length);
     buf[i][4] = x[i][0];
     buf[i][5] = x[i][1];
     buf[i][6] = x[i][2];
@@ -1498,7 +1498,7 @@ int AtomVecBacillus::pack_data_hybrid(int i, double *buf)
   if (bacillus[i] < 0) buf[1] = rmass[i];
   else buf[1] = rmass[i] / (4.0*MY_PI/3.0*
       atom->radius[i]*atom->radius[i]*atom->radius[i] +
-      MY_PI*atom->radius[i]*atom->radius[i]*bonus[bacillus[i]].height);
+      MY_PI*atom->radius[i]*atom->radius[i]*bonus[bacillus[i]].length);
 
   buf[2] = biomass[i] / rmass[i];
 
@@ -1595,6 +1595,45 @@ void AtomVecBacillus::set_quat(int m, double *quat_external)
   double *quat = bonus[bacillus[m]].quat;
   quat[0] = quat_external[0]; quat[1] = quat_external[1];
   quat[2] = quat_external[2]; quat[3] = quat_external[3];
+}
+
+/* ----------------------------------------------------------------------
+   set values in bonus data for particle m
+   oriented aligned with xyz axes
+   this may create or delete entry in bonus data
+------------------------------------------------------------------------- */
+
+void AtomVecBacillus::set_bonus(int m, double *pole1, double *pole2, Bonus *&ibonus)
+{
+  if (bacillus[m])
+    error->one(FLERR,"Assigning bacillus parameters to non-bacillus atom");
+
+  if (nlocal_bonus == nmax_bonus) grow_bonus();
+
+  double *inertia = bonus[nlocal_bonus].inertia;
+  double *quat = bonus[nlocal_bonus].quat;
+
+  bonus[nlocal_bonus].pole1[0] = pole1[0];
+  bonus[nlocal_bonus].pole1[1] = pole1[1];
+  bonus[nlocal_bonus].pole1[2] = pole1[2];
+  bonus[nlocal_bonus].pole2[0] = pole2[0];
+  bonus[nlocal_bonus].pole2[1] = pole2[1];
+  bonus[nlocal_bonus].pole2[2] = pole2[2];
+
+  bonus[nlocal_bonus].length = ibonus->length;
+  bonus[nlocal_bonus].diameter = ibonus->diameter;
+
+  quat[0] = ibonus->quat[0];
+  quat[1] = ibonus->quat[1];
+  quat[2] = ibonus->quat[2];
+  quat[3] = ibonus->quat[3];
+
+  inertia[0] = ibonus->inertia[0];
+  inertia[1] = ibonus->inertia[1];
+  inertia[2] = ibonus->inertia[2];
+
+  bonus[nlocal_bonus].ilocal = m;
+  bacillus[m] = nlocal_bonus++;
 }
 
 /* ----------------------------------------------------------------------

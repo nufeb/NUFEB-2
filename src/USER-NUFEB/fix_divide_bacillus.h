@@ -20,28 +20,21 @@ FixStyle(nufeb/divide/bacillus,FixDivideBacillus)
 #ifndef LMP_FIX_DIVIDE_BACILLUS_H
 #define LMP_FIX_DIVIDE_BACILLUS_H
 
-#include "fix.h"
+#include "fix_divide.h"
 
 namespace LAMMPS_NS {
 
-class FixDivideBacillus : public Fix {
+class FixDivideBacillus : public FixDivide {
  public:
-  int compute_flag;
   
   FixDivideBacillus(class LAMMPS *, int, char **);
-  ~FixDivideBacillus();
-  int setmask();
-  int modify_param(int, char **);
-  void post_integrate();
-  void post_neighbor();
-  void compute();
+  virtual ~FixDivideBacillus() {};
+  virtual void compute();
   
  private:
-  double diameter;
-  double eps_density;
-  int seed;  
+  double maxlength;
 
-  class RanPark *random;
+  class AtomVecBacillus *avec;
 };
 
 }

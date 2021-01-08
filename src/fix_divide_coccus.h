@@ -20,21 +20,16 @@ FixStyle(nufeb/divide/coccus,FixDivideCoccus)
 #ifndef LMP_FIX_DIVIDE_COCCUS_H
 #define LMP_FIX_DIVIDE_COCCUS_H
 
-#include "fix.h"
+#include "fix_divide.h"
 
 namespace LAMMPS_NS {
 
-class FixDivideCoccus : public Fix {
+class FixDivideCoccus : public FixDivide {
  public:
-  int compute_flag;
   
   FixDivideCoccus(class LAMMPS *, int, char **);
-  ~FixDivideCoccus();
-  int setmask();
-  int modify_param(int, char **);
-  void post_integrate();
-  void post_neighbor();
-  void compute();
+  virtual ~FixDivideCoccus();
+  virtual void compute();
   
  private:
   double diameter;

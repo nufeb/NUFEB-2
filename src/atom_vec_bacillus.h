@@ -31,7 +31,7 @@ class AtomVecBacillus : public AtomVec {
     double inertia[3];
     double pole1[3];
     double pole2[3];
-    double height;
+    double length;
     double diameter;
     int ilocal;
   };
@@ -87,6 +87,7 @@ class AtomVecBacillus : public AtomVec {
 
   double radius_bacillus(int, int, int *, double *);
   void set_quat(int, double *);
+  void set_bonus(int, double *, double *, Bonus *&);
 
   int nlocal_bonus;
 

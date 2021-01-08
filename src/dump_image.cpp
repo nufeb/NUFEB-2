@@ -853,7 +853,7 @@ void DumpImage::create_image()
 
   if (bacillusflag) {
     double *pole1, *pole2;
-    double height, diameter;
+    double diameter;
     double **x = atom->x;
     int *type = atom->type;
     int *bacillus = atom->bacillus;
@@ -868,11 +868,11 @@ void DumpImage::create_image()
 
       pole1 = avec_bacillus->bonus[bacillus[j]].pole1;
       pole2 = avec_bacillus->bonus[bacillus[j]].pole2;
-      height = avec_bacillus->bonus[bacillus[j]].height;
       diameter = avec_bacillus->bonus[bacillus[j]].diameter;
+
       if (pole1[0] == x[j][0] && pole1[1] == x[j][1] && pole1[2] == x[j][2]) { // spheres
 	image->draw_sphere(x[j],color,diameter);
-      } else {
+      } else { // rods
 	image->draw_cylinder(pole1,pole2,color,diameter,3);
       }
     }

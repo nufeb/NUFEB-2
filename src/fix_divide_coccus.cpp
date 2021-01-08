@@ -37,12 +37,10 @@ using namespace MathConst;
 /* ---------------------------------------------------------------------- */
 
 FixDivideCoccus::FixDivideCoccus(LAMMPS *lmp, int narg, char **arg) :
-  Fix(lmp, narg, arg)
+  FixDivide(lmp, narg, arg)
 {
   if (narg < 6)
-    error->all(FLERR, "Illegal fix nufeb/divide command");
-
-  compute_flag = 1;
+    error->all(FLERR, "Illegal fix nufeb/divide/coccus command");
   
   diameter = force->numeric(FLERR, arg[3]);
   eps_density = force->numeric(FLERR, arg[4]);
@@ -50,8 +48,6 @@ FixDivideCoccus::FixDivideCoccus(LAMMPS *lmp, int narg, char **arg) :
   
   // Random number generator, same for all procs
   random = new RanPark(lmp, seed);
-
-  force_reneighbor = 1;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -63,64 +59,16 @@ FixDivideCoccus::~FixDivideCoccus()
 
 /* ---------------------------------------------------------------------- */
 
-int FixDivideCoccus::setmask()
-{
-  int mask = 0;
-  mask |= POST_INTEGRATE;
-  mask |= POST_NEIGHBOR;
-  return mask;
-}
-
-/* ---------------------------------------------------------------------- */
-
-int FixDivideCoccus::modify_param(int narg, char **arg)
-{
-  int iarg = 0;
-  while (iarg < narg) {
-    if (strcmp(arg[iarg], "compute") == 0) {
-      if (strcmp(arg[iarg+1], "yes") == 0) {
-	compute_flag = 1;
-      } else if (strcmp(arg[iarg+1], "no") == 0) {
-	compute_flag = 0;
-      } else {
-	error->all(FLERR, "Illegal fix_modify command");
-      }
-      iarg += 2;
-    } else {
-      error->all(FLERR, "Illegal fix_modify command");
-    }
-  }
-  return iarg;
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixDivideCoccus::post_integrate()
-{
-  if (compute_flag)
-    compute();
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixDivideCoccus::post_neighbor()
-{
-  // reset reneighbour flag
-  next_reneighbor = 0;
-}
-
-/* ---------------------------------------------------------------------- */
-
 void FixDivideCoccus::compute()
 {  
   int nlocal = atom->nlocal;
 
   for (int i = 0; i < nlocal; i++) {
     if (atom->mask[i] & groupbit) {
-      double density = atom->rmass[i] /
-	(4.0 * MY_PI / 3.0 * atom->radius[i] * atom->radius[i] * atom->radius[i]);
-
       if (atom->radius[i] * 2 >= diameter) {
+	double density = atom->rmass[i] /
+	  (4.0 * MY_PI / 3.0 * atom->radius[i] * atom->radius[i] * atom->radius[i]);
+
         double split = 0.4 + (random->uniform() * 0.2);
         double parent_mass = atom->rmass[i] * split;
         double child_mass = atom->rmass[i] - parent_mass;
@@ -236,7 +184,4 @@ void FixDivideCoccus::compute()
     atom->map_init();
     atom->map_set();
   }
-
-  // trigger immediate reneighboring
-  next_reneighbor = update->ntimestep;
 }
