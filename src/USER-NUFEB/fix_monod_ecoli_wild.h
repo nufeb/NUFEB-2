@@ -31,9 +31,11 @@ class FixMonodEcoliWild: public FixMonod {
   virtual void compute();
 
  protected:
-  int isuc;   // sucrose
+  int isuc;	// sucrose
   int io2;
   int ico2;
+
+  class AtomVecBacillus *avec;
 
   double suc_affinity;
   double o2_affinity;

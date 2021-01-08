@@ -27,7 +27,7 @@ class FixMonod : public Fix {
   FixMonod(class LAMMPS *, int, char **);
   virtual ~FixMonod() {}
   int modify_param(int, char **);
-  void update_atom_cocci();
+  void update_atom();
   virtual void init();
   virtual void reset_dt();
   virtual int setmask();

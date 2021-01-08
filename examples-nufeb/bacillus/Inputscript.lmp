@@ -28,17 +28,16 @@ neigh_modify    check yes               # rebuild neighbour list if any atom
 					#   distance
 
 # select grid style
-grid_style      nufeb/monod 4 sub o2 no2 no3 2e-6 pp pp nd
+grid_style      nufeb/monod 3 o2 suc co2 2e-6 
 
 # test grid comm
 #run_style       test/comm_grid
 #run             0
 
-# set substrates initial concentration
-grid_modify     set sub    1e-4   
-grid_modify     set o2     1e-4   
-grid_modify     set no2    1e-4    
-grid_modify     set no3    1e-4    
+# set substrates initial concentration  
+grid_modify     set o2     10   
+grid_modify     set suc    10  
+grid_modify     set co2    10      
 
 # define pair style
 #pair_style  gran/hooke/history 1e-4 NULL 1e-5 NULL 0.0 1
@@ -46,6 +45,8 @@ grid_modify     set no3    1e-4
 
 # NVE integration with maximum distance limit
 fix nve all nve/limit 1e-8
+
+fix monod_ecoli ecoli nufeb/monod/ecoli/wild suc 3.5e-04 o2 3.5e-04 co2 growth 2.7e-04 yield 0.43 
 
 dump du1 all image 1 image.*.jpg type diameter zoom 2.2 bacillus type size 1280 720
 dump_modify du1 acolor 1 green
@@ -56,5 +57,5 @@ thermo 1
 
 # issue run command
 run_style nufeb diffdt 1e-4 difftol 1e-6 pairdt 1e-2 pairtol 1 pairmax 1000
-timestep 1000
-run 1
+timestep 600
+run 10

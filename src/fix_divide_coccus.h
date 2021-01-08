@@ -13,40 +13,35 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/monod/ecoli/wild,FixMonodEcoliWild)
+FixStyle(nufeb/divide/coccus,FixDivideCoccus)
 
 #else
 
-#ifndef LMP_FIX_MONOD_ECOLI_WILD_H
-#define LMP_FIX_MONOD_ECOLI_WILD_H
+#ifndef LMP_FIX_DIVIDE_COCCUS_H
+#define LMP_FIX_DIVIDE_COCCUS_H
 
-#include "fix_monod.h"
+#include "fix.h"
 
 namespace LAMMPS_NS {
 
-class FixMonodEcoliWild: public FixMonod {
+class FixDivideCoccus : public Fix {
  public:
-  FixMonodEcoliWild(class LAMMPS *, int, char **);
-  virtual ~FixMonodEcoliWild() {}
-  virtual void compute();
-
- protected:
-  int isuc;   // sucrose
-  int io2;
-  int ico2;
-
-  class AtomVecBacillus *avec;
-
-  double suc_affinity;
-  double o2_affinity;
-
-  double growth;
-  double yield;
-  double maintain;
-  double decay;
+  int compute_flag;
   
-  template <int, int> void update_cells();
-  void update_atoms();
+  FixDivideCoccus(class LAMMPS *, int, char **);
+  ~FixDivideCoccus();
+  int setmask();
+  int modify_param(int, char **);
+  void post_integrate();
+  void post_neighbor();
+  void compute();
+  
+ private:
+  double diameter;
+  double eps_density;
+  int seed;  
+
+  class RanPark *random;
 };
 
 }

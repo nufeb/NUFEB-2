@@ -11,7 +11,7 @@
  See the README file in the top-level LAMMPS directory.
  ------------------------------------------------------------------------- */
 
-#include "fix_divide.h"
+#include "fix_divide_bacillus.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -36,7 +36,7 @@ using namespace MathConst;
 
 /* ---------------------------------------------------------------------- */
 
-FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) :
+FixDivideBacillus::FixDivideBacillus(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
   if (narg < 6)
@@ -56,14 +56,14 @@ FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) :
 
 /* ---------------------------------------------------------------------- */
 
-FixDivide::~FixDivide()
+FixDivideBacillus::~FixDivideBacillus()
 {
   delete random;
 }
 
 /* ---------------------------------------------------------------------- */
 
-int FixDivide::setmask()
+int FixDivideBacillus::setmask()
 {
   int mask = 0;
   mask |= POST_INTEGRATE;
@@ -73,7 +73,7 @@ int FixDivide::setmask()
 
 /* ---------------------------------------------------------------------- */
 
-int FixDivide::modify_param(int narg, char **arg)
+int FixDivideBacillus::modify_param(int narg, char **arg)
 {
   int iarg = 0;
   while (iarg < narg) {
@@ -95,7 +95,7 @@ int FixDivide::modify_param(int narg, char **arg)
 
 /* ---------------------------------------------------------------------- */
 
-void FixDivide::post_integrate()
+void FixDivideBacillus::post_integrate()
 {
   if (compute_flag)
     compute();
@@ -103,7 +103,7 @@ void FixDivide::post_integrate()
 
 /* ---------------------------------------------------------------------- */
 
-void FixDivide::post_neighbor()
+void FixDivideBacillus::post_neighbor()
 {
   // reset reneighbour flag
   next_reneighbor = 0;
@@ -111,7 +111,7 @@ void FixDivide::post_neighbor()
 
 /* ---------------------------------------------------------------------- */
 
-void FixDivide::compute()
+void FixDivideBacillus::compute()
 {  
   int nlocal = atom->nlocal;
 
