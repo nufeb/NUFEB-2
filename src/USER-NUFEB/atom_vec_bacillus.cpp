@@ -1432,6 +1432,7 @@ void AtomVecBacillus::data_atom_bonus(int m, char **values)
   biomass[m] = rmass[m] * biomass[m];
 
   bonus[nlocal_bonus].ilocal = m;
+  bacillus[m] = nlocal_bonus++;
 }
 
 /* ----------------------------------------------------------------------

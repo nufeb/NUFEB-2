@@ -19,6 +19,7 @@
 #include "error.h"
 
 #include "fix_monod_ecoli_wild.h"
+#include "atom_vec_bacillus.h"
 #include "grid.h"
 #include "group.h"
 #include "grid_masks.h"
@@ -33,6 +34,10 @@ using namespace MathConst;
 FixMonodEcoliWild::FixMonodEcoliWild(LAMMPS *lmp, int narg, char **arg) :
   FixMonod(lmp, narg, arg)
 {
+  avec = (AtomVecBacillus *) atom->style_match("bacillus");
+  if (!avec) error->all(FLERR,"Fix nufeb/monod/ecoli/wild requires "
+      "atom style bacillus");
+
   if (narg < 8)
     error->all(FLERR, "Illegal fix nufeb/monod/ecoliw command");
 
@@ -52,7 +57,7 @@ FixMonodEcoliWild::FixMonodEcoliWild(LAMMPS *lmp, int narg, char **arg) :
 
   isuc = grid->find(arg[3]);
   if (isuc < 0)
-    error->all(FLERR, "Can't find substrate(sucrose) name");
+    error->all(FLERR, "Can't find substrate name");
   suc_affinity = force->numeric(FLERR, arg[4]);
   if (suc_affinity <= 0)
     error->all(FLERR, "Sucrose affinity must be greater than zero");
@@ -139,26 +144,37 @@ void FixMonodEcoliWild::update_atoms()
   double *radius = atom->radius;
   double *rmass = atom->rmass;
   double *biomass = atom->biomass;
-  double *outer_radius = atom->outer_radius;
-  double *outer_mass = atom->outer_mass;
 
-  const double three_quarters_pi = (3.0 / (4.0 * MY_PI));
   const double four_thirds_pi = 4.0 * MY_PI / 3.0;
-  const double third = 1.0 / 3.0;
 
   for (int i = 0; i < atom->nlocal; i++) {
     if (atom->mask[i] & groupbit) {
+      double vsphere = four_thirds_pi * atom->radius[i]*atom->radius[i]*atom->radius[i];
+      double acircle = MY_PI*atom->radius[i]*atom->radius[i];
+
+      int ibonus = atom->bacillus[i];
+      AtomVecBacillus::Bonus *bonus = &avec->bonus[ibonus];
+      double h = bonus->height;
+
       const int cell = grid->cell(x[i]);
-      const double density = rmass[i] /
-	(four_thirds_pi * radius[i] * radius[i] * radius[i]);
+      const double density = rmass[i] /	(vsphere + acircle * bonus->height);
       double growth = grid->growth[igroup][cell][0];
       double ratio = rmass[i] / biomass[i];
       // forward Eular to update biomass and rmass
       biomass[i] = biomass[i] * (1 + growth * dt);
       rmass[i] = rmass[i] * (1 + growth * dt * ratio);
-      radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
-      outer_mass[i] = 0;
-      outer_radius[i] = radius[i];
+      bonus->height = (rmass[i] - density * vsphere) / (density * acircle);
+      // update coordinates of two poles
+      double dh = (bonus->height - h) / 2;
+      double *pole1 = bonus->pole1;
+      double *pole2 = bonus->pole2;
+
+      pole1[0] += (pole1[0] - x[i][0]) / h * dh;
+      pole1[1] += (pole1[1] - x[i][1]) / h * dh;
+      pole1[2] += (pole1[2] - x[i][2]) / h * dh;
+      pole2[0] += (pole2[0] - x[i][0]) / h * dh;
+      pole2[1] += (pole2[1] - x[i][1]) / h * dh;
+      pole2[2] += (pole2[2] - x[i][2]) / h * dh;
     }
   }
 }
