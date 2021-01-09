@@ -165,16 +165,16 @@ void FixMonodEcoliWild::update_atoms()
       rmass[i] = rmass[i] * (1 + growth * dt * ratio);
       bonus->length = (rmass[i] - density * vsphere) / (density * acircle);
       // update coordinates of two poles
-      double dl = (bonus->length - length) / 2;
+      double dl = (bonus->length - length) / length;
       double *pole1 = bonus->pole1;
       double *pole2 = bonus->pole2;
 
-      pole1[0] += (pole1[0] - x[i][0]) / length * dl;
-      pole1[1] += (pole1[1] - x[i][1]) / length * dl;
-      pole1[2] += (pole1[2] - x[i][2]) / length * dl;
-      pole2[0] += (pole2[0] - x[i][0]) / length * dl;
-      pole2[1] += (pole2[1] - x[i][1]) / length * dl;
-      pole2[2] += (pole2[2] - x[i][2]) / length * dl;
+      pole1[0] += (pole1[0] - x[i][0]) * dl;
+      pole1[1] += (pole1[1] - x[i][1]) * dl;
+      pole1[2] += (pole1[2] - x[i][2]) * dl;
+      pole2[0] += (pole2[0] - x[i][0]) * dl;
+      pole2[1] += (pole2[1] - x[i][1]) * dl;
+      pole2[2] += (pole2[2] - x[i][2]) * dl;
     }
   }
 }
