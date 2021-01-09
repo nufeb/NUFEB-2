@@ -54,6 +54,7 @@ FixDivideBacillus::FixDivideBacillus(LAMMPS *lmp, int narg, char **arg) :
 void FixDivideBacillus::compute()
 {  
   int nlocal = atom->nlocal;
+  const double four_thirds_pi = 4.0 * MY_PI / 3.0;
 
   for (int i = 0; i < nlocal; i++) {
     if (atom->mask[i] & groupbit) {
@@ -61,6 +62,19 @@ void FixDivideBacillus::compute()
       AtomVecBacillus::Bonus *bonus = &avec->bonus[ibonus];
 
       if (bonus->length >= maxlength) {
+	double vsphere = four_thirds_pi * atom->radius[i]*atom->radius[i]*atom->radius[i];
+	double acircle = MY_PI*atom->radius[i]*atom->radius[i];
+	double density = atom->rmass[i] / (vsphere + acircle * bonus->length);
+
+        double new_rmass = atom->rmass[i]/2;
+        double new_biomass = atom->biomass[i]/2;
+
+        double half_length = bonus->length / 2;
+        // conserve mass
+        double new_length = (new_rmass - density * vsphere) / (density * acircle);
+        // conserve volume
+        //double new_length = half_length - atom->radius[i];
+
 	double *pole1 = bonus->pole1;
 	double *pole2 = bonus->pole2;
 
@@ -69,57 +83,51 @@ void FixDivideBacillus::compute()
 	double parentz = atom->x[i][2];
 	double parentpx = pole2[0];
 	double parentpy = pole2[1];
-	double parentyz = pole2[2];
-	double shiftx = 2*(pole1[0] - parentx) / bonus->length * bonus->diameter;
-	double shifty = 2*(pole1[1] - parenty) / bonus->length * bonus->diameter;
-	double shiftz = 2*(pole1[2] - parentz) / bonus->length * bonus->diameter;
-
-        double newx = (parentx + pole1[0])/2 + shiftx;
-        double newy = (parenty + pole1[1])/2 + shifty;
-        double newz = (parentz + pole1[2])/2 + shiftz;
-
-        double new_rmass = atom->rmass[i]/2;
-        double new_biomass = atom->biomass[i]/2;
+	double parentpz = pole2[2];
+	double parent_length = bonus->length;
 
         // update parent
+	double dl = atom->radius[i] / half_length;
+	pole2[0] = parentx - (parentx - pole1[0]) * dl;
+	pole2[1] = parenty - (parenty - pole1[1]) * dl;
+	pole2[2] = parentz - (parentz - pole1[2]) * dl;
+
+	dl = (new_length - half_length) / half_length;
+        pole1[0] -= (pole1[0] - parentx) * dl;
+        pole1[1] -= (pole1[1] - parenty) * dl;
+        pole1[2] -= (pole1[2] - parentz) * dl;
+
+        atom->x[i][0] = (pole1[0] + pole2[0])/2;
+        atom->x[i][1] = (pole1[1] + pole2[1])/2;;
+        atom->x[i][2] = (pole1[2] + pole2[2])/2;;
+
         atom->rmass[i] = new_rmass;
         atom->biomass[i] = new_biomass;
-        bonus->length /= 2;
-
-        pole1[0] += shiftx;
-        pole1[1] += shifty;
-        pole1[2] += shiftz;
-        pole2[0] = atom->x[i][0] + shiftx;
-        pole2[1] = atom->x[i][1] + shifty;
-        pole2[2] = atom->x[i][2] + shiftz;
-
-        atom->x[i][0] = newx;
-        atom->x[i][1] = newy;
-        atom->x[i][2] = newz;
+        bonus->length = new_length;
 
         // create child
         double *coord = new double[3];
         double *p1 = new double[3];
         double *p2 = new double[3];
 
-        shiftx = (parentx - pole2[0]) / bonus->length * bonus->diameter / 2;
-	shifty = (parenty - pole2[1]) / bonus->length * bonus->diameter / 2;
-	shiftz = (parentz - pole2[2]) / bonus->length * bonus->diameter / 2;
+	dl = atom->radius[i] / half_length;
+	p1[0] = parentx - (parentx - parentpx) * dl;
+	p1[1] = parenty - (parenty - parentpy) * dl;
+	p1[2] = parentz - (parentz - parentpz) * dl;
 
-        newx = (parentx + parentpx)/2 - shiftx;
-        newy = (parenty + parentpy)/2 - shifty;
-        newz = (parentz + parentyz)/2 - shiftz;
+	dl = (new_length - half_length) / half_length;
+        p2[0] = parentpx - (parentpx - parentx) * dl;
+        p2[1] = parentpy - (parentpy - parenty) * dl;
+        p2[2] = parentpz - (parentpz - parentz) * dl;
 
-        coord[0] = newx;
-        coord[1] = newy;
-        coord[2] = newz;
+        // conserve volume
+//        p2[0] = parentpx;
+//        p2[1] = parentpy;
+//        p2[2] = parentpz;
 
-        p1[0] = parentx - shiftx;
-        p1[1] = parenty - shifty;
-        p1[2] = parentz - shiftz;
-        p2[0] = 2*newx - p1[0];
-        p2[1] = 2*newy - p1[1];
-        p2[2] = 2*newz - p1[2];
+        coord[0] = (p1[0] + p2[0])/2;;
+        coord[1] = (p1[1] + p2[1])/2;;
+        coord[2] = (p1[2] + p2[2])/2;;
 
         avec->create_atom(atom->type[i], coord);
         int n = atom->nlocal - 1;

@@ -48,13 +48,14 @@ fix nve all nve/limit 1e-8
 
 fix monod_ecoli ecoli nufeb/monod/ecoli/wild suc 3.5e-04 o2 3.5e-04 co2 growth 2.7e-04 yield 0.43 
 
-fix div all nufeb/divide/bacillus 10e-6 
+fix div all nufeb/divide/bacillus 4e-6 
 
 dump du1 all image 1 image.*.jpg type diameter zoom 2.2 bacillus type size 1280 720
 dump_modify du1 acolor 1 green
 
 # thermo output
 thermo_style custom step atoms 
+thermo_modify lost ignore
 thermo 1
 
 # issue run command

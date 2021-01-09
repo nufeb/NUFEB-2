@@ -1599,8 +1599,6 @@ void AtomVecBacillus::set_quat(int m, double *quat_external)
 
 /* ----------------------------------------------------------------------
    set values in bonus data for particle m
-   oriented aligned with xyz axes
-   this may create or delete entry in bonus data
 ------------------------------------------------------------------------- */
 
 void AtomVecBacillus::set_bonus(int m, double *pole1, double *pole2, Bonus *&ibonus)
