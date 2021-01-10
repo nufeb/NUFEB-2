@@ -65,8 +65,10 @@ fi
 
 # all package files with dependencies
 
-action atom_vec_nufeb.cpp
-action atom_vec_nufeb.h
+action atom_vec_coccus.cpp
+action atom_vec_coccus.h
+action atom_vec_bacillus.cpp
+action atom_vec_bacillus.h
 action compute_volume.cpp
 action compute_volume.h
 action fix_death.cpp
@@ -77,6 +79,10 @@ action fix_diffusion_reaction.cpp
 action fix_diffusion_reaction.h
 action fix_divide.cpp
 action fix_divide.h
+action fix_divide_coccus.cpp
+action fix_divide_coccus.h
+action fix_divide_bacillus.cpp
+action fix_divide_bacillus.h
 action fix_eps_adhesion.cpp
 action fix_eps_adhesion.h
 action fix_eps_extract.cpp
@@ -101,3 +107,5 @@ action grid_vec_monod.cpp
 action grid_vec_monod.h
 action nufeb_run.cpp
 action nufeb_run.h
+
+

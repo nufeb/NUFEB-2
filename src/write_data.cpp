@@ -182,8 +182,9 @@ void WriteData::write(char *file)
     if ((atom->nellipsoids > 0)
         || (atom->nlines > 0)
         || (atom->ntris > 0)
-        || (atom->nbodies > 0))
-      error->warning(FLERR,"System has ellipsoids, lines, triangles, or bodies. "
+        || (atom->nbodies > 0)
+        || (atom->nbacilli > 0))
+      error->warning(FLERR,"System has ellipsoids, lines, triangles, bacillus, or bodies. "
                      "Those are not yet supported by write_data. The data file "
                      "will thus be incomplete.");
   }
