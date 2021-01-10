@@ -17,7 +17,7 @@ comm_modify     vel yes                    # communicate velocities for ghost
 comm_modify     cutoff 2e-6                # guarantee that enough atoms are
                                            # communicated to correctly compute
 
-read_data      atom.in					  
+read_data      atom-test.in					  
 
 group           ecoli   type 1            # defining het group
 
@@ -46,12 +46,12 @@ grid_modify     set co2    10
 # NVE integration with maximum distance limit
 fix nve all nve/limit 1e-8
 
-fix monod_ecoli ecoli nufeb/monod/ecoli/wild suc 3.5e-04 o2 3.5e-04 co2 growth 2.7e-04 yield 0.43 
+#fix monod_ecoli ecoli nufeb/monod/ecoli/wild suc 3.5e-04 o2 3.5e-04 co2 growth 2.7e-04 yield 0.43 
 
 fix div all nufeb/divide/bacillus 4e-6 
 
-dump du1 all image 1 image.*.jpg type diameter zoom 2.2 bacillus type size 1280 720
-dump_modify du1 acolor 1 green
+#dump du1 all image 1 image.*.jpg type diameter zoom 2.2 bacillus type size 1280 720
+#dump_modify du1 acolor 1 green
 
 # thermo output
 thermo_style custom step atoms 
@@ -61,4 +61,4 @@ thermo 1
 # issue run command
 run_style nufeb diffdt 1e-4 difftol 1e-6 pairdt 1e-2 pairtol 1 pairmax 1000
 timestep 600
-run 10
+run 2
