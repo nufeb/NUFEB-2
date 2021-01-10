@@ -13,38 +13,28 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/monod/nob,FixMonodNOB)
+FixStyle(nufeb/divide/bacillus,FixDivideBacillus)
 
 #else
 
-#ifndef LMP_FIX_MONOD_NOB_H
-#define LMP_FIX_MONOD_NOB_H
+#ifndef LMP_FIX_DIVIDE_BACILLUS_H
+#define LMP_FIX_DIVIDE_BACILLUS_H
 
-#include "fix_monod.h"
+#include "fix_divide.h"
 
 namespace LAMMPS_NS {
 
-class FixMonodNOB: public FixMonod {
+class FixDivideBacillus : public FixDivide {
  public:
-  FixMonodNOB(class LAMMPS *, int, char **);
-  virtual ~FixMonodNOB() {}
+  
+  FixDivideBacillus(class LAMMPS *, int, char **);
+  virtual ~FixDivideBacillus() {};
   virtual void compute();
-
- protected:
-  int io2;
-  int ino2;
-  int ino3;
   
-  double o2_affinity;
-  double no2_affinity;
+ private:
+  double maxlength;
 
-  double growth;
-  double yield;
-  double maintain;
-  double decay;
-  
-  template <int, int> void update_cells();
-  void update_atom();
+  class AtomVecBacillus *avec;
 };
 
 }

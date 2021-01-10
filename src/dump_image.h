@@ -50,6 +50,8 @@ class DumpImage : public DumpCustom {
   int bodyflag;                    // 0/1 for draw atoms as bodies
   int bodycolor;                   // what determines color of bodies
   double bodyflag1,bodyflag2;      // user-specified params for drawing bodies
+  int bacillusflag;
+  int bacilluscolor;
   int fixflag;                     // 0/1 to draw what fix provides
   int fixcolor;                    // what determines color of fix objects
   double fixflag1,fixflag2;        // user-specified params for fix objects
@@ -82,6 +84,7 @@ class DumpImage : public DumpCustom {
   class AtomVecLine *avec_line;    // ptrs to atom style (sub)classes
   class AtomVecTri *avec_tri;
   class AtomVecBody *avec_body;
+  class AtomVecBacillus *avec_bacillus;
 
   class Fix *fixptr;               // ptr to Fix that provides image data
 

@@ -1,4 +1,4 @@
-/* ----------------------------------------------------------------------
+/* -*- c++ -*- ----------------------------------------------------------
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
    http://lammps.sandia.gov, Sandia National Laboratories
    Steve Plimpton, sjplimp@sandia.gov
@@ -13,22 +13,32 @@
 
 #ifdef ATOM_CLASS
 
-AtomStyle(nufeb,AtomVecNufeb)
+AtomStyle(bacillus,AtomVecBacillus)
 
 #else
 
-#ifndef LMP_ATOM_VEC_NUFEB_H
-#define LMP_ATOM_VEC_NUFEB_H
+#ifndef LMP_ATOM_VEC_BACILLUS_H
+#define LMP_ATOM_VEC_BACILLUS_H
 
 #include "atom_vec.h"
 
 namespace LAMMPS_NS {
 
-class AtomVecNufeb : public AtomVec {
+class AtomVecBacillus : public AtomVec {
  public:
-  AtomVecNufeb(class LAMMPS *);
-  ~AtomVecNufeb() {}
-  void init();
+  struct Bonus {
+    double quat[4];
+    double inertia[3];
+    double pole1[3];
+    double pole2[3];
+    double length;
+    double diameter;
+    int ilocal;
+  };
+  struct Bonus *bonus;
+
+  AtomVecBacillus(class LAMMPS *);
+  ~AtomVecBacillus();
   void grow(int);
   void grow_reset();
   void copy(int, int, int);
@@ -68,15 +78,34 @@ class AtomVecNufeb : public AtomVec {
   int write_vel_hybrid(FILE *, double *);
   bigint memory_usage();
 
+  // manipulate Bonus data structure for extra atom info
+
+  void clear_bonus();
+  void data_atom_bonus(int, char **);
+
+  // methods used by other classes to query/set bacillus info
+
+  double radius_bacillus(int, int, int *, double *);
+  void set_quat(int, double *);
+  void set_bonus(int, double *, double *, Bonus *&);
+
+  int nlocal_bonus;
+
  private:
   tagint *tag;
   int *type,*mask;
   imageint *image;
   double **x,**v,**f;
-  double *radius,*rmass;
-  double *outer_radius, *outer_mass;
-  double **omega,**torque;
-  int radvary;
+  double *radius;
+  double *rmass;
+  double *biomass;
+  double **angmom,**torque;
+  int *bacillus;
+
+  int nghost_bonus,nmax_bonus;
+
+  void grow_bonus();
+  void copy_bonus(int, int);
 };
 
 }
@@ -85,6 +114,18 @@ class AtomVecNufeb : public AtomVec {
 #endif
 
 /* ERROR/WARNING messages:
+
+E: Internal error in atom_style body
+
+This error should not occur.  Contact the developers.
+
+E: Invalid atom_style body command
+
+No body style argument was provided.
+
+E: Unrecognized body style
+
+The choice of body style is unknown.
 
 E: Per-processor system is too big
 
@@ -95,12 +136,16 @@ E: Invalid atom type in Atoms section of data file
 
 Atom types must range from 1 to specified # of types.
 
-E: Invalid radius in Atoms section of data file
-
-Radius must be >= 0.0.
-
 E: Invalid density in Atoms section of data file
 
 Density value cannot be <= 0.0.
+
+E: Assigning body parameters to non-body atom
+
+Self-explanatory.
+
+E: Assigning quat to non-body atom
+
+Self-explanatory.
 
 */

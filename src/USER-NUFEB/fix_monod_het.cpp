@@ -159,6 +159,7 @@ void FixMonodHET::update_atoms()
   double **x = atom->x;
   double *radius = atom->radius;
   double *rmass = atom->rmass;
+  double *biomass = atom->biomass;
   double *outer_radius = atom->outer_radius;
   double *outer_mass = atom->outer_mass;
   double ***growth = grid->growth;
@@ -172,12 +173,14 @@ void FixMonodHET::update_atoms()
       const int cell = grid->cell(x[i]);
       const double density = rmass[i] /
 	(four_thirds_pi * radius[i] * radius[i] * radius[i]);
-      double m = rmass[i];
-      rmass[i] = m * (1 + growth[igroup][cell][0] * dt);
+      double ratio = rmass[i] / biomass[i];
+      // forward Eular to update biomass and rmass
+      biomass[i] = biomass[i] * (1 + growth[igroup][cell][0] * dt);
+      rmass[i] = rmass[i] * (1 + growth[igroup][cell][0] * dt * ratio);
       outer_mass[i] = four_thirds_pi *
 	(outer_radius[i] * outer_radius[i] * outer_radius[i] -
 	 radius[i] * radius[i] * radius[i]) *
-	eps_dens + growth[igroup][cell][1] * m * dt;
+	eps_dens + growth[igroup][cell][1] * rmass[i] * dt;
       radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
       outer_radius[i] = pow(three_quarters_pi *
 			    (rmass[i] / density + outer_mass[i] / eps_dens),
