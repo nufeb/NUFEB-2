@@ -28,11 +28,11 @@
 #include "domain.h"
 #include "atom_masks.h"
 
+#include "comm.h"
+
 using namespace LAMMPS_NS;
 using namespace FixConst;
 using namespace MathConst;
-
-#define DELTA 1.005
 
 /* ---------------------------------------------------------------------- */
 
@@ -71,9 +71,7 @@ void FixDivideBacillus::compute()
 
         double half_length = bonus->length / 2;
         // conserve mass
-        double new_length = (new_rmass - density * vsphere) / (density * acircle);
-        // conserve volume
-        //double new_length = half_length - atom->radius[i];
+        double new_length = (new_rmass / density - vsphere) / acircle;
 
 	double *pole1 = bonus->pole1;
 	double *pole2 = bonus->pole2;
@@ -92,10 +90,10 @@ void FixDivideBacillus::compute()
 	pole2[1] = parenty - (parenty - pole1[1]) * dl;
 	pole2[2] = parentz - (parentz - pole1[2]) * dl;
 
-	dl = (new_length - half_length) / half_length;
-        pole1[0] -= (pole1[0] - parentx) * dl;
-        pole1[1] -= (pole1[1] - parenty) * dl;
-        pole1[2] -= (pole1[2] - parentz) * dl;
+	dl = (new_length + atom->radius[i]) / half_length;
+        pole1[0] = parentx + (pole1[0] - parentx) * dl;
+        pole1[1] = parenty + (pole1[1] - parenty) * dl;
+        pole1[2] = parentz + (pole1[2] - parentz) * dl;
 
         atom->x[i][0] = (pole1[0] + pole2[0])/2;
         atom->x[i][1] = (pole1[1] + pole2[1])/2;;
@@ -115,15 +113,10 @@ void FixDivideBacillus::compute()
 	p1[1] = parenty - (parenty - parentpy) * dl;
 	p1[2] = parentz - (parentz - parentpz) * dl;
 
-	dl = (new_length - half_length) / half_length;
-        p2[0] = parentpx - (parentpx - parentx) * dl;
-        p2[1] = parentpy - (parentpy - parenty) * dl;
-        p2[2] = parentpz - (parentpz - parentz) * dl;
-
-        // conserve volume
-//        p2[0] = parentpx;
-//        p2[1] = parentpy;
-//        p2[2] = parentpz;
+	dl = (new_length + atom->radius[i]) / half_length;
+        p2[0] = parentx + (parentpx - parentx) * dl;
+        p2[1] = parenty + (parentpy - parenty) * dl;
+        p2[2] = parentz + (parentpz - parentz) * dl;
 
         coord[0] = (p1[0] + p2[0])/2;;
         coord[1] = (p1[1] + p2[1])/2;;
@@ -133,6 +126,9 @@ void FixDivideBacillus::compute()
         int n = atom->nlocal - 1;
         atom->bacillus[n] = 0;
         avec->set_bonus(n, p1, p2, bonus);
+
+        double d2 = sqrt((p1[0]-p2[0])*(p1[0]-p2[0]) + (p1[1]-p2[1])*(p1[1]-p2[1])+(p1[2]-p2[2])*(p1[2]-p2[2]));
+        double density2 = new_rmass / (vsphere + acircle * d2);
 
         atom->tag[n] = 0;
         atom->mask[n] = atom->mask[i];
