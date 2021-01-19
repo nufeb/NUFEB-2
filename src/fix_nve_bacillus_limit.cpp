@@ -1,0 +1,185 @@
+/* ----------------------------------------------------------------------
+   LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
+   http://lammps.sandia.gov, Sandia National Laboratories
+   Steve Plimpton, sjplimp@sandia.gov
+
+   Copyright (2003) Sandia Corporation.  Under the terms of Contract
+   DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+   certain rights in this software.  This software is distributed under
+   the GNU General Public License.
+
+   See the README file in the top-level LAMMPS directory.
+------------------------------------------------------------------------- */
+
+#include "fix_nve_bacillus_limit.h"
+
+#include <cmath>
+#include <cstdio>
+#include <cstring>
+#include "math_extra.h"
+#include "atom.h"
+#include "atom_vec_bacillus.h"
+#include "force.h"
+#include "update.h"
+#include "memory.h"
+#include "error.h"
+
+using namespace LAMMPS_NS;
+using namespace FixConst;
+
+/* ---------------------------------------------------------------------- */
+
+FixNVEBACILLUSLIMIT::FixNVEBACILLUSLIMIT(LAMMPS *lmp, int narg, char **arg) :
+  FixNVE(lmp, narg, arg)
+{
+  if (narg != 4) error->all(FLERR,"Illegal fix nve/bacillus/limit command");
+
+  xlimit = force->numeric(FLERR,arg[3]);
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixNVEBACILLUSLIMIT::init()
+{
+  avec = (AtomVecBacillus *) atom->style_match("bacillus");
+  if (!avec) error->all(FLERR,"Fix nve/bacillus requires atom style bacillus");
+
+  // check that all particles are bodies
+  // no point particles allowed
+
+  int *bacillus = atom->bacillus;
+  int *mask = atom->mask;
+  int nlocal = atom->nlocal;
+
+  for (int i = 0; i < nlocal; i++)
+    if (mask[i] & groupbit)
+      if (bacillus[i] < 0) error->one(FLERR,"Fix nve/bacillus requires bacilli");
+
+  FixNVE::init();
+
+  ncount = 0;
+  vlimitsq = (xlimit/dtv) * (xlimit/dtv);
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixNVEBACILLUSLIMIT::initial_integrate(int /*vflag*/)
+{
+  double dtfm, vsq, scale;
+  double omega[3];
+  double *quat,*inertia;
+
+  AtomVecBacillus::Bonus *bonus = avec->bonus;
+  int *bacillus = atom->bacillus;
+  double **x = atom->x;
+  double **v = atom->v;
+  double **f = atom->f;
+  double **angmom = atom->angmom;
+  double **torque = atom->torque;
+  double *rmass = atom->rmass;
+  int *mask = atom->mask;
+  int nlocal = atom->nlocal;
+  if (igroup == atom->firstgroup) nlocal = atom->nfirst;
+
+  // set timestep here since dt may have changed or come via rRESPA
+
+  dtq = 0.5 * dtv;
+
+  for (int i = 0; i < nlocal; i++)
+    if (mask[i] & groupbit) {
+      double dx, dy, dz;
+
+      dtfm = dtf / rmass[i];
+      v[i][0] += dtfm * f[i][0];
+      v[i][1] += dtfm * f[i][1];
+      v[i][2] += dtfm * f[i][2];
+
+      vsq = v[i][0]*v[i][0] + v[i][1]*v[i][1] + v[i][2]*v[i][2];
+
+      if (vsq > vlimitsq) {
+        ncount++;
+        scale = sqrt(vlimitsq/vsq);
+        v[i][0] *= scale;
+        v[i][1] *= scale;
+        v[i][2] *= scale;
+      }
+
+      x[i][0] += dtv * v[i][0];
+      x[i][1] += dtv * v[i][1];
+      x[i][2] += dtv * v[i][2];
+
+      // update angular momentum by 1/2 step
+
+      angmom[i][0] += dtf * torque[i][0];
+      angmom[i][1] += dtf * torque[i][1];
+      angmom[i][2] += dtf * torque[i][2];
+
+      // compute omega at 1/2 step from angmom at 1/2 step and current q
+      // update quaternion a full step via Richardson iteration
+      // returns new normalized quaternion
+
+      inertia = bonus[bacillus[i]].inertia;
+      quat = bonus[bacillus[i]].quat;
+      MathExtra::mq_to_omega(angmom[i],quat,inertia,omega);
+      MathExtra::richardson(quat,angmom[i],omega,inertia,dtq);
+    }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixNVEBACILLUSLIMIT::final_integrate()
+{
+  double dtfm,vsq,scale;
+
+  double **v = atom->v;
+  double **f = atom->f;
+  double **angmom = atom->angmom;
+  double **torque = atom->torque;
+  double *rmass = atom->rmass;
+  int *mask = atom->mask;
+  int nlocal = atom->nlocal;
+
+  if (igroup == atom->firstgroup) nlocal = atom->nfirst;
+
+  for (int i = 0; i < nlocal; i++)
+    if (mask[i] & groupbit) {
+      dtfm = dtf / rmass[i];
+      v[i][0] += dtfm * f[i][0];
+      v[i][1] += dtfm * f[i][1];
+      v[i][2] += dtfm * f[i][2];
+
+      vsq = v[i][0]*v[i][0] + v[i][1]*v[i][1] + v[i][2]*v[i][2];
+      if (vsq > vlimitsq) {
+        ncount++;
+        scale = sqrt(vlimitsq/vsq);
+        v[i][0] *= scale;
+        v[i][1] *= scale;
+        v[i][2] *= scale;
+      }
+
+      angmom[i][0] += dtf * torque[i][0];
+      angmom[i][1] += dtf * torque[i][1];
+      angmom[i][2] += dtf * torque[i][2];
+    }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixNVEBACILLUSLIMIT::reset_dt()
+{
+  dtv = update->dt;
+  dtf = 0.5 * update->dt * force->ftm2v;
+  vlimitsq = (xlimit/dtv) * (xlimit/dtv);
+}
+
+/* ----------------------------------------------------------------------
+   energy of indenter interaction
+------------------------------------------------------------------------- */
+
+double FixNVEBACILLUSLIMIT::compute_scalar()
+{
+  double one = ncount;
+  double all;
+  MPI_Allreduce(&one,&all,1,MPI_DOUBLE,MPI_SUM,world);
+  return all;
+}

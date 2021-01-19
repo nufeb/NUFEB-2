@@ -103,9 +103,12 @@ action fix_monod_ecoli_wild.cpp
 action fix_monod_ecoli_wild.h
 action fix_wall_adhesion.cpp
 action fix_wall_adhesion.h
+action fix_nve_bacillus.h
+action fix_nve_bacillus.cpp
 action grid_vec_monod.cpp
 action grid_vec_monod.h
 action nufeb_run.cpp
 action nufeb_run.h
-
+action pair_bacillus.h
+action pair_bacillus.cpp
 

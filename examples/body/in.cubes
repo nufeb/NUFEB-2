@@ -9,17 +9,17 @@ dimension   3
 atom_style  body rounded/polyhedron 1 10
 
 read_data   data.cubes
-
+grid_style      nufeb/monod 0 1 pp pp nd
 replicate   $r $r $r
 
-velocity    all create 1.2 187287 dist gaussian mom yes rot yes
+#velocity    all create 1.2 187287 dist gaussian mom yes rot yes
 
-variable cut_inner  equal 0.5
-variable k_n        equal 100
-variable k_na       equal 1
-variable c_n        equal 20
-variable c_t        equal 5
-variable mu         equal 0
+variable cut_inner  equal 0.1
+variable k_n        equal 100000000
+variable k_na       equal 10000000
+variable c_n        equal 0
+variable c_t        equal 0
+variable mu         equal 100
 variable A_ua       equal 1
 
 pair_style body/rounded/polyhedron ${c_n} ${c_t} ${mu} ${A_ua} ${cut_inner}
@@ -41,9 +41,9 @@ compute      p2 all pressure 1_temp
 #compute      1 all body/local id 1 2 3
 #dump         1 all local 1000 dump.* index c_1[1] c_1[2] c_1[3] c_1[4]
 
-#dump         2 all image 1000 image.*.jpg type type &
-#             zoom 1.5 adiam 1.5 body type 0 0 view 60 15
-#dump_modify  2 pad 6
+dump         2 all image 1000 image.*.jpg type type &
+             zoom 1.5 adiam 1.5 body type 0 0 view 60 15
+dump_modify  2 pad 6
 
 thermo_style custom step ke pe etotal c_p2 c_1_temp
 
