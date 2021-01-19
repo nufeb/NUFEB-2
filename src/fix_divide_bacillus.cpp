@@ -27,6 +27,7 @@
 #include "modify.h"
 #include "domain.h"
 #include "atom_masks.h"
+#include "random_park.h"
 
 #include "comm.h"
 
@@ -43,11 +44,20 @@ FixDivideBacillus::FixDivideBacillus(LAMMPS *lmp, int narg, char **arg) :
   if (!avec) error->all(FLERR,"Fix nufeb/monod/ecoli/wild requires "
       "atom style bacillus");
 
-  if (narg < 4)
+  if (narg < 5)
     error->all(FLERR, "Illegal fix nufeb/divide/bacillus command");
   
   maxlength = force->numeric(FLERR, arg[3]);
+  seed = force->inumeric(FLERR, arg[4]);
+
+  // Random number generator, same for all procs
+  random = new RanPark(lmp, seed);
 }
+
+FixDivideBacillus::~FixDivideBacillus()
+{
+  delete random;
+};
 
 /* ---------------------------------------------------------------------- */
 
@@ -62,6 +72,10 @@ void FixDivideBacillus::compute()
       AtomVecBacillus::Bonus *bonus = &avec->bonus[ibonus];
 
       if (bonus->length >= maxlength) {
+	double phix = random->uniform() * 2e-8;
+	double phiy = random->uniform() * 2e-8;
+	double phiz = random->uniform() * 2e-8;
+
 	double vsphere = four_thirds_pi * atom->radius[i]*atom->radius[i]*atom->radius[i];
 	double acircle = MY_PI*atom->radius[i]*atom->radius[i];
 	double density = atom->rmass[i] / (vsphere + acircle * bonus->length);
@@ -69,66 +83,66 @@ void FixDivideBacillus::compute()
         double new_rmass = atom->rmass[i]/2;
         double new_biomass = atom->biomass[i]/2;
 
-        double half_length = bonus->length / 2;
+        double half_l = bonus->length / 2;
         // conserve mass
-        double new_length = (new_rmass / density - vsphere) / acircle;
+        double new_l = (new_rmass / density - vsphere) / acircle;
+        double new_half_l = new_l / 2;
+	double xp1[3];
+	double xp2[3];
 
-	double *pole1 = bonus->pole1;
-	double *pole2 = bonus->pole2;
+	xp1[0] = xp1[1] = xp1[2] = 0.0;
+	xp2[0] = xp2[1] = xp2[2] = 0.0;
+
+	avec->get_pole_coords(i, xp1, xp2, 0);
 
 	double parentx = atom->x[i][0];
 	double parenty = atom->x[i][1];
 	double parentz = atom->x[i][2];
-	double parentpx = pole2[0];
-	double parentpy = pole2[1];
-	double parentpz = pole2[2];
 	double parent_length = bonus->length;
 
         // update parent
-	double dl = atom->radius[i] / half_length;
-	pole2[0] = parentx - (parentx - pole1[0]) * dl;
-	pole2[1] = parenty - (parenty - pole1[1]) * dl;
-	pole2[2] = parentz - (parentz - pole1[2]) * dl;
-
-	dl = (new_length + atom->radius[i]) / half_length;
-        pole1[0] = parentx + (pole1[0] - parentx) * dl;
-        pole1[1] = parenty + (pole1[1] - parenty) * dl;
-        pole1[2] = parentz + (pole1[2] - parentz) * dl;
-
-        atom->x[i][0] = (pole1[0] + pole2[0])/2;
-        atom->x[i][1] = (pole1[1] + pole2[1])/2;;
-        atom->x[i][2] = (pole1[2] + pole2[2])/2;;
+	double dl = (new_half_l + atom->radius[i]) / half_l;
+	atom->x[i][0] += (xp1[0] - parentx) * dl;
+	atom->x[i][1] += (xp1[1] - parenty) * dl;
+	atom->x[i][2] += (xp1[2] - parentz) * dl;
 
         atom->rmass[i] = new_rmass;
         atom->biomass[i] = new_biomass;
-        bonus->length = new_length;
+
+        bonus->pole1[0] *= new_half_l/half_l;
+        bonus->pole1[1] *= new_half_l/half_l;
+        bonus->pole1[2] *= new_half_l/half_l;
+        bonus->pole2[0] *= new_half_l/half_l;
+        bonus->pole2[1] *= new_half_l/half_l;
+        bonus->pole2[2] *= new_half_l/half_l;
+        bonus->length = new_l;
+
+//        printf("n: %i \n", i);
+//	printf("c1=%e, c2=%e, c3=%e \n", atom->x[i][0],atom->x[i][1],atom->x[i][2]);
+//	printf("p1x=%e, p1y=%e, p1z=%e \n", bonus->pole1[0],bonus->pole1[1],bonus->pole1[2]);
+//	printf("p2x=%e, p2y=%e, p2z=%e \n", bonus->pole2[0],bonus->pole2[1],bonus->pole2[2]);
+//	printf("\n");
 
         // create child
         double *coord = new double[3];
-        double *p1 = new double[3];
-        double *p2 = new double[3];
 
-	dl = atom->radius[i] / half_length;
-	p1[0] = parentx - (parentx - parentpx) * dl;
-	p1[1] = parenty - (parenty - parentpy) * dl;
-	p1[2] = parentz - (parentz - parentpz) * dl;
-
-	dl = (new_length + atom->radius[i]) / half_length;
-        p2[0] = parentx + (parentpx - parentx) * dl;
-        p2[1] = parenty + (parentpy - parenty) * dl;
-        p2[2] = parentz + (parentpz - parentz) * dl;
-
-        coord[0] = (p1[0] + p2[0])/2;;
-        coord[1] = (p1[1] + p2[1])/2;;
-        coord[2] = (p1[2] + p2[2])/2;;
+	coord[0] = parentx + (xp2[0] - parentx) * dl;
+	coord[1] = parenty + (xp2[1] - parenty) * dl;
+	coord[2] = parentz + (xp2[2] - parentz) * dl;
 
         avec->create_atom(atom->type[i], coord);
         int n = atom->nlocal - 1;
         atom->bacillus[n] = 0;
-        avec->set_bonus(n, p1, p2, bonus);
 
-        double d2 = sqrt((p1[0]-p2[0])*(p1[0]-p2[0]) + (p1[1]-p2[1])*(p1[1]-p2[1])+(p1[2]-p2[2])*(p1[2]-p2[2]));
-        double density2 = new_rmass / (vsphere + acircle * d2);
+        avec->set_bonus(n, bonus->pole1, bonus->diameter, bonus->quat, bonus->inertia);
+        ibonus = atom->bacillus[n];
+        bonus = &avec->bonus[ibonus];
+//        printf("n: %i \n", n);
+//	printf("c1=%e, c2=%e, c3=%e \n", coord[0],coord[1],coord[2]);
+//	printf("p1x=%e, p1y=%e, p1z=%e \n", bonus->pole1[0],bonus->pole1[1],bonus->pole1[2]);
+//	printf("p2x=%e, p2y=%e, p2z=%e \n", bonus->pole2[0],bonus->pole2[1],bonus->pole2[2]);
+//	printf("\n");
+        double density2 = new_rmass / (vsphere + acircle * avec->bonus[atom->bacillus[n]].length);
 
         atom->tag[n] = 0;
         atom->mask[n] = atom->mask[i];
@@ -151,8 +165,6 @@ void FixDivideBacillus::compute()
         modify->create_attribute(n);
 
         delete[] coord;
-        delete[] p1;
-        delete[] p2;
       }
     }
   }

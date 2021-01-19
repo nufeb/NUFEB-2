@@ -28,12 +28,14 @@ class FixDivideBacillus : public FixDivide {
  public:
   
   FixDivideBacillus(class LAMMPS *, int, char **);
-  virtual ~FixDivideBacillus() {};
+  virtual ~FixDivideBacillus();
   virtual void compute();
   
  private:
   double maxlength;
+  int seed;
 
+  class RanPark *random;
   class AtomVecBacillus *avec;
 };
 

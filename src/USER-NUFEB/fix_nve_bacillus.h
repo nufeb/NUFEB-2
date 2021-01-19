@@ -13,36 +13,41 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/divide/bacillus,FixDivideBacillus)
+FixStyle(nve/bacillus,FixNVEBACILLUS)
 
 #else
 
-#ifndef LMP_FIX_DIVIDE_BACILLUS_H
-#define LMP_FIX_DIVIDE_BACILLUS_H
+#ifndef LMP_FIX_NVE_BACILLUS_H
+#define LMP_FIX_NVE_BACILLUS_H
 
-#include "fix_divide.h"
+#include "fix_nve.h"
 
 namespace LAMMPS_NS {
 
-class FixDivideBacillus : public FixDivide {
+class FixNVEBACILLUS : public FixNVE {
  public:
-  
-  FixDivideBacillus(class LAMMPS *, int, char **);
-  virtual ~FixDivideBacillus();
-  virtual void compute();
-  
- private:
-  double maxlength;
-  int seed;
+  FixNVEBACILLUS(class LAMMPS *, int, char **);
+  void init();
+  void initial_integrate(int);
+  void final_integrate();
 
-  class RanPark *random;
+ private:
+  double dtq;
   class AtomVecBacillus *avec;
 };
 
 }
-
 #endif
 #endif
 
 /* ERROR/WARNING messages:
+
+E: Fix nve/body requires atom style body
+
+Self-explanatory.
+
+E: Fix nve/body requires bodies
+
+This fix can only be used for particles that are bodies.
+
 */
