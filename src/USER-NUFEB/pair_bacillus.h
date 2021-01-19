@@ -71,7 +71,7 @@ class PairBacillus : public Pair {
   void sphere_against_rod(int ibody, int jbody, int itype, int jtype,
                            double** x, double** v, double** f, double** torque,
                            double** angmom, AtomVecBacillus::Bonus *&ibonus,
-			   AtomVecBacillus::Bonus *&jbonus, int evflag);
+			   int evflag);
 
   // edge-edge interactions
   void rod_against_rod(int ibody, int jbody, int itype, int jtype,
@@ -106,15 +106,21 @@ class PairBacillus : public Pair {
   // accumulate torque to a body given a force at a given point
   void sum_torque(double* xm, double *x, double fx, double fy, double fz, double* torque);
 
+  // shortest distance between two rods (line segments)
   void distance_bt_rods(const double* x1, const double* x2,
                       const double* x3, const double* x4,
                       double* h1, double* h2, double& t1, double& t2, double& r);
+
+  // shortest distance between sphere (point) and rod (line segments)
+  void distance_bt_pt_rod(const double* q,
+       const double* xi1, const double* xi2, double* h, double& d, double& t);
 
   void total_velocity(double* p, double *xcm, double* vcm, double *angmom,
                       double *inertia, double *quat, double* vi);
 
   double dot(double x1, double x2, double x3, double y1, double y2, double y3) { return x1*y1 + x2*y2 + x3*y3; }
   double norm(double x1, double x2, double x3) { return sqrt(dot(x1, x2, x3, x1, x2, x3)); }
+  double dist(double u1, double u2, double u3, double v1, double v2, double v3) { return norm(u1-v1, u2-v2, u3-v3); }
 };
 
 }
