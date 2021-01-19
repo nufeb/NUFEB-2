@@ -155,11 +155,11 @@ void PairBacillus::compute(int eflag, int vflag)
       // one of the two bacillus is a sphere
       if (jshape == SPHERE) {
         sphere_against_rod(i, j, itype, jtype, x, v, f, torque,
-                            angmom, ibonus, jbonus, evflag);
+                            angmom, ibonus, evflag);
         continue;
       } else if (ishape == SPHERE) {
         sphere_against_rod(j, i, jtype, itype, x, v, f, torque,
-                            angmom, jbonus, ibonus, evflag);
+                            angmom, jbonus, evflag);
         continue;
       }
 
@@ -395,15 +395,14 @@ void PairBacillus::sphere_against_sphere(int i, int j,
    Interaction bt a rod (irod) and a sphere (jsphere)
 ---------------------------------------------------------------------- */
 
-void PairBacillus::sphere_against_rod(int irod, int jsphere,
+void PairBacillus::sphere_against_rod(int i, int j,
   int itype, int jtype, double** x, double** v, double** f, double** torque,
-  double** angmom, AtomVecBacillus::Bonus *&ibonus,
-  AtomVecBacillus::Bonus *&jbonus, int evflag)
+  double** angmom, AtomVecBacillus::Bonus *&ibonus, int evflag)
 {
   int ni,nei,ifirst,iefirst,npi1,npi2;
   double xi1[3],xi2[3],vti[3],h[3],fn[3],ft[3],d,t;
   double delx,dely,delz,rsq,rij,rsqinv,R,fx,fy,fz,fpair,energy;
-  double radi,radj,leni, contact_dist;
+  double radi,radj,leni,contact_dist;
   double vr1,vr2,vr3,vnnr,vn1,vn2,vn3,vt1,vt2,vt3;
   double *quat, *inertia;
 
@@ -411,36 +410,17 @@ void PairBacillus::sphere_against_rod(int irod, int jsphere,
   int newton_pair = force->newton_pair;
 
   radi = ibonus->diameter/2;
-  radj = jbonus->diameter/2;
+  radj = atom->radius[j];
   leni = ibonus->length/2;
-  contact_dist = radi + leni + radj;
+  contact_dist = radi + radj;
 
-  // find the projection of the jsphere's COM on the edge
-
- // project_pt_line(x[jsphere], xi1, xi2, h, d, t);
+  // find shortest distance between i and j
+  distance_bt_pt_rod(x[j], xi1, xi2, h, d, t);
 
   if (d > contact_dist + cutoff) return;
   if (t < 0 || t > 1) return;
 
-  if (fabs(t) < EPSILON) {
-    h[0] = xi1[0];
-    h[1] = xi1[1];
-    h[2] = xi1[2];
-  }
-
-  if (fabs(t-1) < EPSILON) {
-    h[0] = xi2[0];
-    h[1] = xi2[1];
-    h[2] = xi2[2];
-  }
-
-  delx = h[0] - x[jsphere][0];
-  dely = h[1] - x[jsphere][1];
-  delz = h[2] - x[jsphere][2];
-  rsq = delx*delx + dely*dely + delz*delz;
-  rsqinv = (rsq == 0.0) ? 0.0 : 1.0/rsq;
-  rij = sqrt(rsq);
-  R = rij - contact_dist;
+  R = d - contact_dist;
 
   energy = 0;
   kernel_force(R, itype, jtype, energy, fpair);
@@ -454,14 +434,14 @@ void PairBacillus::sphere_against_rod(int irod, int jsphere,
     // compute the velocity of the vertex in the space-fixed frame
     quat = ibonus->quat;
     inertia = ibonus->inertia;
-    total_velocity(h, x[irod], v[irod], angmom[irod],
+    total_velocity(h, x[i], v[i], angmom[i],
 		   inertia, quat, vti);
 
     // relative translational velocity
 
-    vr1 = vti[0] - v[jsphere][0];
-    vr2 = vti[1] - v[jsphere][1];
-    vr3 = vti[2] - v[jsphere][2];
+    vr1 = vti[0] - v[j][0];
+    vr2 = vti[1] - v[j][1];
+    vr3 = vti[2] - v[j][2];
 
     // normal component
 
@@ -494,15 +474,15 @@ void PairBacillus::sphere_against_rod(int irod, int jsphere,
     fz += fn[2] + ft[2];
   }
 
-  f[irod][0] += fx;
-  f[irod][1] += fy;
-  f[irod][2] += fz;
-  sum_torque(x[irod], h, fx, fy, fz, torque[irod]);
+  f[i][0] += fx;
+  f[i][1] += fy;
+  f[i][2] += fz;
+  sum_torque(x[i], h, fx, fy, fz, torque[i]);
 
-  if (newton_pair || jsphere < nlocal) {
-    f[jsphere][0] -= fx;
-    f[jsphere][1] -= fy;
-    f[jsphere][2] -= fz;
+  if (newton_pair || j < nlocal) {
+    f[j][0] -= fx;
+    f[j][1] -= fy;
+    f[j][2] -= fz;
   }
 }
 
@@ -718,6 +698,46 @@ void PairBacillus::contact_forces(int i, int j, double *xi, double *xj,
   sum_torque(x[j], xj, -fx, -fy, -fz, torque[j]);
 
   facc[0] += fx; facc[1] += fy; facc[2] += fz;
+}
+
+/* ----------------------------------------------------------------------
+ compute the shortest distance between sphere (point) and rod (line segments)
+------------------------------------------------------------------------- */
+
+void PairBacillus::distance_bt_pt_rod(const double* q,
+     const double* xi1, const double* xi2, double* h, double& d, double& t)
+{
+  double vx = xi2[0] - xi1[0];
+  double vy = xi2[1] - xi1[1];
+  double vz = xi2[2] - xi1[2];
+
+  double wx = q[0] - xi1[0];
+  double wy = q[1] - xi1[1];
+  double wz = q[2] - xi1[2];
+
+  double c1 = dot(wx, wy, wz, vx, vy, vz);
+  double c2 = dot(vx, vy, vz, vx, vy, vz);
+
+  if (c1 <= 0) {
+    t = 0;
+    h[0] = xi1[0];
+    h[1] = xi1[1];
+    h[2] = xi1[2];
+
+  } else if (c2 <= c1) {
+    t = 1;
+    h[0] = xi2[0];
+    h[1] = xi2[1];
+    h[2] = xi2[2];
+
+  } else {
+    t = c1 / c2;
+    h[0] = xi1[0] + t * vx;
+    h[1] = xi1[1] + t * vy;
+    h[2] = xi1[2] + t * vz;
+  }
+
+  d = dist(q[0], q[1], q[2], h[0], h[1], h[2]);
 }
 
 /* ----------------------------------------------------------------------
