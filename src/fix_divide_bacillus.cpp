@@ -48,6 +48,8 @@ FixDivideBacillus::FixDivideBacillus(LAMMPS *lmp, int narg, char **arg) :
     error->all(FLERR, "Illegal fix nufeb/divide/bacillus command");
   
   maxlength = force->numeric(FLERR, arg[3]);
+  if (maxlength <= 0)
+    error->all(FLERR, "Max division length cannot be less or equal to 0");
   seed = force->inumeric(FLERR, arg[4]);
 
   // Random number generator, same for all procs
@@ -72,77 +74,60 @@ void FixDivideBacillus::compute()
       AtomVecBacillus::Bonus *bonus = &avec->bonus[ibonus];
 
       if (bonus->length >= maxlength) {
-	double phix = random->uniform() * 2e-8;
-	double phiy = random->uniform() * 2e-8;
-	double phiz = random->uniform() * 2e-8;
+	double imass, ibiomass;
+	double ilen, xp1[3], xp2[3];
+
+//	double phiz = random->uniform() * 2e-8;
 
 	double vsphere = four_thirds_pi * atom->radius[i]*atom->radius[i]*atom->radius[i];
 	double acircle = MY_PI*atom->radius[i]*atom->radius[i];
 	double density = atom->rmass[i] / (vsphere + acircle * bonus->length);
 
-        double new_rmass = atom->rmass[i]/2;
-        double new_biomass = atom->biomass[i]/2;
+	double oldx = atom->x[i][0];
+	double oldy = atom->x[i][1];
+	double oldz = atom->x[i][2];
+	double old_len = bonus->length;
 
-        double half_l = bonus->length / 2;
+        imass = atom->rmass[i]/2;
+        ibiomass = atom->biomass[i]/2;
+
         // conserve mass
-        double new_l = (new_rmass / density - vsphere) / acircle;
-        double new_half_l = new_l / 2;
-	double xp1[3];
-	double xp2[3];
+        ilen = (imass / density - vsphere) / acircle;
 
 	xp1[0] = xp1[1] = xp1[2] = 0.0;
 	xp2[0] = xp2[1] = xp2[2] = 0.0;
 
 	avec->get_pole_coords(i, xp1, xp2, 0);
 
-	double parentx = atom->x[i][0];
-	double parenty = atom->x[i][1];
-	double parentz = atom->x[i][2];
-	double parent_length = bonus->length;
+        // update bacillus i
+	double dl = (0.5*ilen + atom->radius[i]) / (0.5*old_len);
+	atom->x[i][0] += (xp1[0] - oldx) * dl;
+	atom->x[i][1] += (xp1[1] - oldy) * dl;
+	atom->x[i][2] += (xp1[2] - oldz) * dl;
 
-        // update parent
-	double dl = (new_half_l + atom->radius[i]) / half_l;
-	atom->x[i][0] += (xp1[0] - parentx) * dl;
-	atom->x[i][1] += (xp1[1] - parenty) * dl;
-	atom->x[i][2] += (xp1[2] - parentz) * dl;
+        atom->rmass[i] = imass;
+        atom->biomass[i] = ibiomass;
 
-        atom->rmass[i] = new_rmass;
-        atom->biomass[i] = new_biomass;
+        bonus->pole1[0] *= ilen / old_len;
+        bonus->pole1[1] *= ilen / old_len;
+        bonus->pole1[2] *= ilen / old_len;
+        bonus->pole2[0] *= ilen / old_len;
+        bonus->pole2[1] *= ilen / old_len;
+        bonus->pole2[2] *= ilen / old_len;
+        bonus->length = ilen;
 
-        bonus->pole1[0] *= new_half_l/half_l;
-        bonus->pole1[1] *= new_half_l/half_l;
-        bonus->pole1[2] *= new_half_l/half_l;
-        bonus->pole2[0] *= new_half_l/half_l;
-        bonus->pole2[1] *= new_half_l/half_l;
-        bonus->pole2[2] *= new_half_l/half_l;
-        bonus->length = new_l;
-
-//        printf("n: %i \n", i);
-//	printf("c1=%e, c2=%e, c3=%e \n", atom->x[i][0],atom->x[i][1],atom->x[i][2]);
-//	printf("p1x=%e, p1y=%e, p1z=%e \n", bonus->pole1[0],bonus->pole1[1],bonus->pole1[2]);
-//	printf("p2x=%e, p2y=%e, p2z=%e \n", bonus->pole2[0],bonus->pole2[1],bonus->pole2[2]);
-//	printf("\n");
-
-        // create child
+        // create bacillus j
         double *coord = new double[3];
 
-	coord[0] = parentx + (xp2[0] - parentx) * dl;
-	coord[1] = parenty + (xp2[1] - parenty) * dl;
-	coord[2] = parentz + (xp2[2] - parentz) * dl;
+	coord[0] = oldx + (xp2[0] - oldx) * dl;
+	coord[1] = oldy + (xp2[1] - oldy) * dl;
+	coord[2] = oldz + (xp2[2] - oldz) * dl;
 
         avec->create_atom(atom->type[i], coord);
         int n = atom->nlocal - 1;
         atom->bacillus[n] = 0;
 
         avec->set_bonus(n, bonus->pole1, bonus->diameter, bonus->quat, bonus->inertia);
-        ibonus = atom->bacillus[n];
-        bonus = &avec->bonus[ibonus];
-//        printf("n: %i \n", n);
-//	printf("c1=%e, c2=%e, c3=%e \n", coord[0],coord[1],coord[2]);
-//	printf("p1x=%e, p1y=%e, p1z=%e \n", bonus->pole1[0],bonus->pole1[1],bonus->pole1[2]);
-//	printf("p2x=%e, p2y=%e, p2z=%e \n", bonus->pole2[0],bonus->pole2[1],bonus->pole2[2]);
-//	printf("\n");
-        double density2 = new_rmass / (vsphere + acircle * avec->bonus[atom->bacillus[n]].length);
 
         atom->tag[n] = 0;
         atom->mask[n] = atom->mask[i];
@@ -158,8 +143,8 @@ void FixDivideBacillus::compute()
 	atom->angmom[n][0] = atom->angmom[i][0];
 	atom->angmom[n][1] = atom->angmom[i][1];
 	atom->angmom[n][2] = atom->angmom[i][2];
-        atom->rmass[n] = new_rmass;
-        atom->biomass[n] = new_biomass;
+        atom->rmass[n] = imass;
+        atom->biomass[n] = ibiomass;
         atom->radius[n] = atom->radius[i];
 
         modify->create_attribute(n);
@@ -168,6 +153,7 @@ void FixDivideBacillus::compute()
       }
     }
   }
+
   bigint nblocal = atom->nlocal;
   MPI_Allreduce(&nblocal, &atom->natoms, 1, MPI_LMP_BIGINT, MPI_SUM, world);
   if (atom->natoms < 0 || atom->natoms >= MAXBIGINT)

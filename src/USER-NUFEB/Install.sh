@@ -83,6 +83,8 @@ action fix_divide_coccus.cpp
 action fix_divide_coccus.h
 action fix_divide_bacillus.cpp
 action fix_divide_bacillus.h
+action fix_divide_bacillus_minicell.cpp
+action fix_divide_bacillus_minicell.h
 action fix_eps_adhesion.cpp
 action fix_eps_adhesion.h
 action fix_eps_extract.cpp
