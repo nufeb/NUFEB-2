@@ -34,9 +34,10 @@ using namespace MathConst;
 FixMonodEcoliWild::FixMonodEcoliWild(LAMMPS *lmp, int narg, char **arg) :
   FixMonod(lmp, narg, arg)
 {
+  avec = NULL;
   avec = (AtomVecBacillus *) atom->style_match("bacillus");
-  if (!avec) error->all(FLERR,"Fix nufeb/monod/ecoli/wild requires "
-      "atom style bacillus");
+//  if (!avec) error->all(FLERR,"Fix nufeb/monod/ecoli/wild requires "
+//      "atom style bacillus");
 
   if (narg < 8)
     error->all(FLERR, "Illegal fix nufeb/monod/ecoliw command");
@@ -140,43 +141,11 @@ void FixMonodEcoliWild::update_cells()
 
 void FixMonodEcoliWild::update_atoms()
 {
-  double **x = atom->x;
-  double *radius = atom->radius;
-  double *rmass = atom->rmass;
-  double *biomass = atom->biomass;
-
-  const double four_thirds_pi = 4.0 * MY_PI / 3.0;
-
-  for (int i = 0; i < atom->nlocal; i++) {
-    if (atom->mask[i] & groupbit) {
-      double vsphere = four_thirds_pi * atom->radius[i]*atom->radius[i]*atom->radius[i];
-      double acircle = MY_PI*atom->radius[i]*atom->radius[i];
-
-      int ibonus = atom->bacillus[i];
-      AtomVecBacillus::Bonus *bonus = &avec->bonus[ibonus];
-      double length = bonus->length;
-
-      double new_length;
-      const int cell = grid->cell(x[i]);
-      const double density = rmass[i] /	(vsphere + acircle * bonus->length);
-      double growth = grid->growth[igroup][cell][0];
-      double ratio = rmass[i] / biomass[i];
-      // forward Eular to update biomass and rmass
-      biomass[i] = biomass[i] * (1 + growth * dt);
-      rmass[i] = rmass[i] * (1 + growth * dt * ratio);
-      new_length = (rmass[i] - density * vsphere) / (density * acircle);
-      bonus->length = new_length;
-      // update coordinates of two poles
-      double dl = length-bonus->length;
-      double *pole1 = bonus->pole1;
-      double *pole2 = bonus->pole2;
-
-      pole1[0] *= new_length/length;
-      pole1[1] *= new_length/length;
-      pole1[2] *= new_length/length;
-      pole2[0] *= new_length/length;
-      pole2[1] *= new_length/length;
-      pole2[2] *= new_length/length;
-    }
+  // coccus shape
+  if (!avec) {
+    update_atoms_coccus();
+  // bacillus shape
+  } else {
+    update_atoms_bacillus(avec);
   }
 }

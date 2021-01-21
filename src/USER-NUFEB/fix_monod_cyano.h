@@ -48,7 +48,7 @@ class FixMonodCyano: public FixMonod {
   double gco2_flag;
   
   template <int, int> void update_cells();
-  void update_atoms();
+  virtual void update_atoms();
 };
 
 }

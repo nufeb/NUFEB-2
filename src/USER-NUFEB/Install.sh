@@ -113,4 +113,6 @@ action nufeb_run.cpp
 action nufeb_run.h
 action pair_bacillus.h
 action pair_bacillus.cpp
+action compute_avgcon.h
+action compute_avgcon.cpp
 

@@ -61,24 +61,24 @@ FixMonodCyano::FixMonodCyano(LAMMPS *lmp, int narg, char **arg) :
   if (sub_affinity <= 0)
     error->all(FLERR, "light affinity must be greater than zero");
 
-  ico2 = grid->find(arg[5]);
-  if (ico2 < 0)
-    error->all(FLERR, "Can't find substrate(co2) name");
-  co2_affinity = force->numeric(FLERR, arg[6]);
-  if (co2_affinity <= 0)
-    error->all(FLERR, "co2 affinity must be greater than zero");
-
-  io2 = grid->find(arg[7]);
+  io2 = grid->find(arg[5]);
   if (io2 < 0)
     error->all(FLERR, "Can't find substrate(o2) name");
 
-  igco2 = grid->find(arg[8]);
-  if (igco2 < 0)
-    error->all(FLERR, "Can't find substrate(gco2) name");
+  ico2 = grid->find(arg[6]);
+  if (ico2 < 0)
+    error->all(FLERR, "Can't find substrate(co2) name");
+  co2_affinity = force->numeric(FLERR, arg[7]);
+  if (co2_affinity <= 0)
+    error->all(FLERR, "co2 affinity must be greater than zero");
 
-  isuc = grid->find(arg[9]);
+  isuc = grid->find(arg[8]);
   if (isuc < 0)
     error->all(FLERR, "Can't find substrate(sucrose) name");
+
+  igco2 = grid->find(arg[9]);
+  if (igco2 < 0)
+    error->all(FLERR, "Can't find substrate(gco2) name");
 
   int iarg = 10;
   while (iarg < narg) {
@@ -98,7 +98,7 @@ FixMonodCyano::FixMonodCyano(LAMMPS *lmp, int narg, char **arg) :
       suc_exp = force->numeric(FLERR, arg[iarg+1]);
       iarg += 2;
     } else if (strcmp(arg[iarg], "gco2_flag") == 0) {
-      suc_exp = force->inumeric(FLERR, arg[iarg+1]);
+      gco2_flag = force->inumeric(FLERR, arg[iarg+1]);
       iarg += 2;
     } else {
       error->all(FLERR, "Illegal fix nufeb/monod/cyano command");
@@ -154,7 +154,7 @@ void FixMonodCyano::update_cells()
     }
 
     if (Growth) {
-      grid->growth[igroup][i][0] = tmp1 - tmp2 - tmp3 - decay - maintain;
+      grid->growth[igroup][i][0] = tmp1 - tmp2 - decay - maintain;
     }
   }
 }
@@ -163,30 +163,5 @@ void FixMonodCyano::update_cells()
 
 void FixMonodCyano::update_atoms()
 {
-  double **x = atom->x;
-  double *radius = atom->radius;
-  double *rmass = atom->rmass;
-  double *biomass = atom->biomass;
-  double *outer_radius = atom->outer_radius;
-  double *outer_mass = atom->outer_mass;
-
-  const double three_quarters_pi = (3.0 / (4.0 * MY_PI));
-  const double four_thirds_pi = 4.0 * MY_PI / 3.0;
-  const double third = 1.0 / 3.0;
-
-  for (int i = 0; i < atom->nlocal; i++) {
-    if (atom->mask[i] & groupbit) {
-      const int cell = grid->cell(x[i]);
-      const double density = rmass[i] /
-	(four_thirds_pi * radius[i] * radius[i] * radius[i]);
-      double growth = grid->growth[igroup][cell][0];
-      double ratio = rmass[i] / biomass[i];
-      // forward Eular to update biomass and rmass
-      biomass[i] = biomass[i] * (1 + growth * dt);
-      rmass[i] = rmass[i] * (1 + growth * dt * ratio);
-      radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
-      outer_mass[i] = 0;
-      outer_radius[i] = radius[i];
-    }
-  }
+  update_atoms_coccus();
 }
