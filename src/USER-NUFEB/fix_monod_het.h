@@ -31,7 +31,7 @@ class FixMonodHET: public FixMonod {
   virtual void compute();
 
   template <int, int> void update_cells();
-  void update_atoms();
+  virtual void update_atoms();
 
  protected:
   int isub;

@@ -1,16 +1,16 @@
 # NUFEB simulation with Cyanobacteria and E.Coli-Wild
 
 units si                                   # using si units
-atom_style      nufeb                      # using nufeb atom style
-atom_modify     map array sort 1000 5.0e-6 # map array: find atoms using indices
+atom_style      coccus                      # using coccus atom style
+atom_modify     map array sort 1000 5e-6  # map array: find atoms using indices
 		                           # sort 1000 5.0e-6: sort every 1000
 					   #   steps with 5.0e-6 binsize
-boundary        pp pp ff                   # periodic boundaries in x and y
+boundary        ff ff ff                   # periodic boundaries in x and y
                                            #   fixed boundary in z
 newton          off                        # forces between local and ghost
                                            #   atoms are computed in each
 					   #   processor without communication
-#processors      1 1 1                      # processor grid
+#processors      4 1 1                      # processor grid
 
 comm_modify     vel yes                    # communicate velocities for ghost
                                            # atoms
@@ -21,10 +21,8 @@ comm_modify     cutoff 2e-6                # guarantee that enough atoms are
 read_data atom.in
 
 
-group           cyano type 1            # defining cyano group
-group           ecw   type 2            # defining ecw group
-group           alive type 1 2
-group           dead  type 3
+group           CYANO type 1            # defining cyano group
+group           ECW   type 2            # defining ecw group
 
 neighbor        1e-6 bin                # setting neighbour skin distance and
                                         #   style
@@ -33,48 +31,61 @@ neigh_modify    check yes               # rebuild neighbour list if any atom
 					#   distance
 
 # select grid style
-grid_style      nufeb/monod 5 sub o2 suc co2 gco2 2e-6 pp pp nd
+grid_style      nufeb/monod 5 light o2 suc co2 gco2 2e-6
 
 # set substrates initial concentration
-grid_modify     set sub    0.1    
+grid_modify     set light    0.1    
 grid_modify     set o2     9e-3   
-grid_modify     set suc    0.0    
-grid_modify     set co2    0.1     
-grid_modify     set gco2   0.0    
+grid_modify     set suc    3.42e-20    
+grid_modify     set co2    4.40e+01        
+grid_modify     set gco2   0
 
 # define pair style
 pair_style  gran/hooke/history 1e-4 NULL 1e-5 NULL 0.0 1
 pair_coeff  * *
 
 # NVE integration with maximum distance limit
-fix nve all nve/limit 1e-7
+fix nve all nve/limit 1e-8
 
 # monod reaction fixes
 # should consider using read_data's fix keyword
-fix monod_cyano cyano nufeb/monod/cyano sub 3.5e-04 co2 2e-4 o2 suc gco2 growth 2.25e-05 yield 0.6 suc_exp 0.1 
-fix monod_aob ecw nufeb/monod/ecoli/wild suc 3.5e-04 o2 3.5e-04 co2 growth 2.7e-04 yield 0.43 
+fix monod_cyano CYANO nufeb/monod/cyano light 3.5e-04 o2 co2 2e-4 suc gco2 growth 1.67e-05 yield 0.55 suc_exp 0.285 
+fix monod_ecw ECW nufeb/monod/ecoli/wild suc 3.6 o2 0.001 co2 growth 0.00027 yield 0.43 maintain 9.5e-07 decay 2e-05
 
 # diffusion reaction fixes
-fix diff_o2  all nufeb/diffusion_reaction o2  2.3e-09 nn nn nd 9e-3
-fix diff_suc all nufeb/diffusion_reaction suc 5.2e-10 nn nn nn 0.1
+fix diff_o2  all nufeb/diffusion_reaction o2  2.3e-09 nn nn nn 9e-3
+fix diff_suc all nufeb/diffusion_reaction suc 5.2e-10 nn nn nn 3.42e-20
+fix diff_co2 all nufeb/diffusion_reaction co2 1.9e-09 nn nn nn 4.40e+01
 
 # biological model fixes
-fix div all nufeb/divide 1.96e-6 30 1234
+fix div_cya CYANO nufeb/divide/coccus 1.96e-6 30 390445
+fix div_ecw ECW nufeb/divide/coccus 1.04e-6 30 372540
 
 # mechanical model fixes
-fix wall all wall/gran hooke/history 1e-4 NULL 1e-5 NULL 0 0 zplane 0.0 4e-5
+fix wall all wall/gran hooke/history 1e-4 NULL 1e-5 NULL 0 0 zplane 0.0 1e-5
 fix_modify wall virial yes
 fix vis all viscous 1.14e-8
 
+variable mass equal "mass(all)"
+variable ncyano equal "count(CYANO)"
+variable necoli equal "count(ECW)"
+
+compute mycon all avg_con
+
+##############Simulation exit condition##############
+variable co2 equal c_mycon[4]
+fix f_myhalt all halt 1 v_co2 <= 1e-19
+
+
 # file output
-dump 1 all vtk 10 dump*.vtu id type radius #vx vy vz fx fy fz
-dump 2 all grid/vtk 10 dump_%_*.vti con rea den gro
+dump 1 all vtk 1 dump*.vtu id type diameter #vx vy vz fx fy fz
+dump 2 all grid/vtk 1 dump_%_*.vti con 
 
 # thermo output
-thermo_style custom step atoms 
+thermo_style custom step atoms v_mass v_ncyano v_necoli c_mycon[*]
 thermo 1
 
 # issue run command
-run_style nufeb diffdt 1e-4 difftol 1e-13 pairdt 1e-2 pairtol 10 diffmax 50000
+run_style nufeb diffdt 1e-4 difftol 1e-11 pairdt 1e-2 pairtol 10 diffmax 1000000
 timestep 1000
-run 10000
+run 350

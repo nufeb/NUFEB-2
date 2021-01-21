@@ -84,13 +84,13 @@ FixDiffusionReaction::FixDiffusionReaction(LAMMPS *lmp, int narg, char **arg) :
     }
   }
 
-  if (!ndirichlet) {
-    closed_system = 1;
-    if (comm->me == 0 && logfile)
-      fprintf(logfile, "Model is defined as a closed system. \n");
-    if (comm->me == 0 && screen)
-      fprintf(screen, "Model is defined as a closed system. \n");
-  }
+//  if (!ndirichlet) {
+//    closed_system = 1;
+//    if (comm->me == 0 && logfile)
+//      fprintf(logfile, "Solving %s diffusion in closed system \n", grid->sub_names[isub]);
+//    if (comm->me == 0 && screen)
+//      fprintf(screen, "Solving %s diffusion in closed system \n", grid->sub_names[isub]);
+//  }
 
   if (narg < ndirichlet + 7)
     error->all(FLERR, "Not enough values for dirichlet boundaries");

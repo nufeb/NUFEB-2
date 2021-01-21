@@ -15,6 +15,7 @@
 #define LMP_FIX_MONOD_H
 
 #include "fix.h"
+#include "atom_vec_bacillus.h"
 
 namespace LAMMPS_NS {
 
@@ -36,6 +37,10 @@ class FixMonod : public Fix {
   
  protected:
   double dt;
+
+  virtual void update_atoms() = 0;
+  void update_atoms_coccus();
+  void update_atoms_bacillus(AtomVecBacillus *&avec);
 };
 
 }
