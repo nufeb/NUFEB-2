@@ -31,13 +31,13 @@ class FixMonodCyano: public FixMonod {
   virtual void compute();
 
  protected:
-  int isub;   // light
+  int ilight;   // light
   int ico2;   // dissolved co2
   int igco2;  // co2
   int isuc;   // sucrose
   int io2;
 
-  double sub_affinity;
+  double light_affinity;
   double co2_affinity;
 
   double growth;

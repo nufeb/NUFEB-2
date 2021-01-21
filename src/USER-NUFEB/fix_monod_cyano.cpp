@@ -37,13 +37,13 @@ FixMonodCyano::FixMonodCyano(LAMMPS *lmp, int narg, char **arg) :
 
   dynamic_group_allow = 1;
 
-  isub = -1;
+  ilight = -1;
   ico2 = -1;
   igco2 = -1;
   isuc = -1;
   io2 = -1;
 
-  sub_affinity = 0.0;
+  light_affinity = 0.0;
   co2_affinity = 0.0;
 
   growth = 0.0;
@@ -54,11 +54,11 @@ FixMonodCyano::FixMonodCyano(LAMMPS *lmp, int narg, char **arg) :
 
   gco2_flag = 0;
 
-  isub = grid->find(arg[3]);
-  if (isub < 0)
+  ilight = grid->find(arg[3]);
+  if (ilight < 0)
     error->all(FLERR, "Can't find substrate(light) name");
-  sub_affinity = force->numeric(FLERR, arg[4]);
-  if (sub_affinity <= 0)
+  light_affinity = force->numeric(FLERR, arg[4]);
+  if (light_affinity <= 0)
     error->all(FLERR, "light affinity must be greater than zero");
 
   io2 = grid->find(arg[5]);
@@ -132,14 +132,14 @@ void FixMonodCyano::update_cells()
 
   for (int i = 0; i < grid->ncells; i++) {
     // cyanobacterial growth rate based on light(sub) and co2
-    double tmp1 = growth * conc[isub][i] / (sub_affinity + conc[isub][i]) * conc[ico2][i] / (co2_affinity + conc[ico2][i]);
+    double tmp1 = growth * conc[ilight][i] / (light_affinity + conc[ilight][i]) * conc[ico2][i] / (co2_affinity + conc[ico2][i]);
     // sucrose export-induced growth reduction
     double tmp2 = 0.2 * tmp1 * suc_exp;
     double tmp3 = 4 * tmp1 * suc_exp;
 
     if (Reaction && !(grid->mask[i] & GHOST_MASK)) {
       // nutrient utilization
-      reac[isub][i] -= 1 / yield * (tmp1 + tmp3) * dens[igroup][i];
+      reac[ilight][i] -= 1 / yield * (tmp1 + tmp3) * dens[igroup][i];
       reac[ico2][i] -= 1 / yield * (tmp1 + tmp3) * dens[igroup][i];
       reac[io2][i] -= 0.1 * maintain * dens[igroup][i];
       // oxygen evolution

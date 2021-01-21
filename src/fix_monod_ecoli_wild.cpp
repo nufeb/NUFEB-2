@@ -65,7 +65,7 @@ FixMonodEcoliWild::FixMonodEcoliWild(LAMMPS *lmp, int narg, char **arg) :
 
   io2 = grid->find(arg[5]);
   if (io2 < 0)
-    error->all(FLERR, "Can't find substrate(co2) name");
+    error->all(FLERR, "Can't find substrate(oo2) name");
   o2_affinity = force->numeric(FLERR, arg[6]);
   if (o2_affinity <= 0)
     error->all(FLERR, "O2 affinity must be greater than zero");
