@@ -155,34 +155,34 @@ void FixMonod::update_atoms_bacillus(AtomVecBacillus *&avec)
 
   for (int i = 0; i < atom->nlocal; i++) {
     if (atom->mask[i] & groupbit) {
-	double vsphere = four_thirds_pi * atom->radius[i]*atom->radius[i]*atom->radius[i];
-	double acircle = MY_PI*atom->radius[i]*atom->radius[i];
+      double vsphere = four_thirds_pi * atom->radius[i]*atom->radius[i]*atom->radius[i];
+      double acircle = MY_PI*atom->radius[i]*atom->radius[i];
 
-	int ibonus = atom->bacillus[i];
-	AtomVecBacillus::Bonus *bonus = &avec->bonus[ibonus];
-	double length = bonus->length;
+      int ibonus = atom->bacillus[i];
+      AtomVecBacillus::Bonus *bonus = &avec->bonus[ibonus];
+      double length = bonus->length;
 
-	double new_length;
-	const int cell = grid->cell(x[i]);
-	const double density = rmass[i] /	(vsphere + acircle * bonus->length);
-	double growth = grid->growth[igroup][cell][0];
-	double ratio = rmass[i] / biomass[i];
-	// forward Eular to update biomass and rmass
-	biomass[i] = biomass[i] * (1 + growth * dt);
-	rmass[i] = rmass[i] * (1 + growth * dt * ratio);
-	new_length = (rmass[i] - density * vsphere) / (density * acircle);
-	bonus->length = new_length;
-	// update coordinates of two poles
-	double dl = length-bonus->length;
-	double *pole1 = bonus->pole1;
-	double *pole2 = bonus->pole2;
+      double new_length;
+      const int cell = grid->cell(x[i]);
+      const double density = rmass[i] /	(vsphere + acircle * bonus->length);
+      double growth = grid->growth[igroup][cell][0];
+      double ratio = rmass[i] / biomass[i];
+      // forward Eular to update biomass and rmass
+      biomass[i] = biomass[i] * (1 + growth * dt);
+      rmass[i] = rmass[i] * (1 + growth * dt * ratio);
+      new_length = (rmass[i] - density * vsphere) / (density * acircle);
+      bonus->length = new_length;
+      // update coordinates of two poles
+      double dl = length-bonus->length;
+      double *pole1 = bonus->pole1;
+      double *pole2 = bonus->pole2;
 
-	pole1[0] *= new_length/length;
-	pole1[1] *= new_length/length;
-	pole1[2] *= new_length/length;
-	pole2[0] *= new_length/length;
-	pole2[1] *= new_length/length;
-	pole2[2] *= new_length/length;
+      pole1[0] *= new_length/length;
+      pole1[1] *= new_length/length;
+      pole1[2] *= new_length/length;
+      pole2[0] *= new_length/length;
+      pole2[1] *= new_length/length;
+      pole2[2] *= new_length/length;
     }
   }
 }

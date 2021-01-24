@@ -1431,7 +1431,7 @@ void AtomVecBacillus::data_atom_bonus(int m, char **values)
       atom->radius[m]*atom->radius[m]*atom->radius[m] +
       MY_PI*atom->radius[m]*atom->radius[m]*bonus[nlocal_bonus].length);
   biomass[m] = rmass[m] * biomass[m];
-  printf("rmass=%e \n", rmass[m]);
+
   bonus[nlocal_bonus].ilocal = m;
   bacillus[m] = nlocal_bonus++;
 }
@@ -1637,7 +1637,7 @@ void AtomVecBacillus::set_bonus(int m, double *pole1, double diameter, double *q
 /* ----------------------------------------------------------------------
    get pole coordinate for bacillus m
 ------------------------------------------------------------------------- */
-void AtomVecBacillus::get_pole_coords(int m, double *xp1, double *xp2, double shift)
+void AtomVecBacillus::get_pole_coords(int m, double *xp1, double *xp2)
 {
   if (bacillus[m] < 0)
     error->one(FLERR,"Assigning bacillus parameters to non-bacillus atom");
@@ -1645,24 +1645,28 @@ void AtomVecBacillus::get_pole_coords(int m, double *xp1, double *xp2, double sh
   double p[3][3];
   double *x;
 
-  xp1[0] += shift;
-  xp1[1] += shift;
-  xp1[2] += shift;
-  xp2[0] -= shift;
-  xp2[1] -= shift;
-  xp2[2] -= shift;
-
   MathExtra::quat_to_mat(bonus[bacillus[m]].quat,p);
   MathExtra::matvec(p,bonus[bacillus[m]].pole1, xp1);
   MathExtra::matvec(p,bonus[bacillus[m]].pole2, xp2);
 
   x = atom->x[bonus[bacillus[m]].ilocal];
+
   xp1[0] += x[0];
   xp1[1] += x[1];
   xp1[2] += x[2];
   xp2[0] += x[0];
   xp2[1] += x[1];
   xp2[2] += x[2];
+//
+//  if (shift > 0) {
+//    double dl = 2*shift/bonus[bacillus[m]].length;
+//    xp1[0] += (xp1[0] - x[0]) * dl;
+//    xp1[1] += (xp1[1] - x[1]) * dl;
+//    xp1[2] += (xp1[2] - x[2]) * dl;
+//    xp2[0] += (xp2[0] - x[0]) * dl;
+//    xp2[1] += (xp2[1] - x[1]) * dl;
+//    xp2[2] += (xp2[2] - x[2]) * dl;
+//  }
 }
 
 

@@ -24,6 +24,7 @@
 #include "lmptype.h"
 #include "math_const.h"
 #include "update.h"
+#include "group.h"
 #include "modify.h"
 #include "domain.h"
 #include "atom_masks.h"
@@ -41,22 +42,31 @@ FixDivideBacillusMinicell::FixDivideBacillusMinicell(LAMMPS *lmp, int narg, char
   FixDivide(lmp, narg, arg)
 {
   avec = (AtomVecBacillus *) atom->style_match("bacillus");
-  if (!avec) error->all(FLERR,"Fix nufeb/monod/ecoli/wild requires "
+  if (!avec) error->all(FLERR,"Fix nufeb/divide/bacillus/minicell requires "
       "atom style bacillus");
 
-  if (narg < 6)
+  if (narg < 8)
     error->all(FLERR, "Illegal fix nufeb/divide/bacillus/minicell command");
   
-  maxlength = force->numeric(FLERR, arg[3]);
+  imini = group->find(arg[3]);
+  if (imini < 0)
+    error->all(FLERR, "Can't find minicell group name");
+
+  type = force->inumeric(FLERR, arg[4]);
+
+  maxlength = force->numeric(FLERR, arg[5]);
   if (maxlength <= 0)
     error->all(FLERR, "Max division length must be greater than 0");
-  prob = force->numeric(FLERR, arg[4]);
-  if (prob <= 0)
+  prob = force->numeric(FLERR, arg[6]);
+
+  if (prob < 0 || prob > 1)
     error->all(FLERR, "Minicell division probability must be between 0-1");
-  seed = force->inumeric(FLERR, arg[5]);
+  seed = force->inumeric(FLERR, arg[7]);
 
   // Random number generator, same for all procs
   random = new RanPark(lmp, seed);
+
+  maxradius = 0.0;
 }
 
 FixDivideBacillusMinicell::~FixDivideBacillusMinicell()
@@ -69,6 +79,7 @@ FixDivideBacillusMinicell::~FixDivideBacillusMinicell()
 void FixDivideBacillusMinicell::compute()
 {  
   int nlocal = atom->nlocal;
+  int mini_mask = group->bitmask[imini];
   const double four_thirds_pi = 4.0 * MY_PI / 3.0;
 
   for (int i = 0; i < nlocal; i++) {
@@ -94,11 +105,11 @@ void FixDivideBacillusMinicell::compute()
       xp1[0] = xp1[1] = xp1[2] = 0.0;
       xp2[0] = xp2[1] = xp2[2] = 0.0;
 
-      avec->get_pole_coords(i, xp1, xp2, 0);
+      avec->get_pole_coords(i, xp1, xp2);
 
-      double p = random->uniform();
+      double prob_mini = random->uniform();
       // normal division
-      if (p > prob) {
+      if (prob_mini > prob) {
         imass = atom->rmass[i]/2;
         ibiomass = atom->biomass[i]/2;
         jmass = imass;
@@ -133,57 +144,67 @@ void FixDivideBacillusMinicell::compute()
         avec->create_atom(atom->type[i], coord);
         n = atom->nlocal - 1;
         atom->bacillus[n] = 0;
-
+        atom->mask[n] = atom->mask[i];
         avec->set_bonus(n, bonus->pole1, bonus->diameter, bonus->quat, bonus->inertia);
 
         delete[] coord;
       // abnormal division, generate one sphere (j) and one long rod (i)
       } else {
+	double prob_pole = random->uniform();
+
+	double *coord = new double[3];
+	double idl, jdl, pole1[3];
+
 	jmass = vsphere * density;
         jbiomass = atom->biomass[i] * jmass / atom->rmass[i];
         imass = atom->rmass[i] - jmass;
         ibiomass = atom->biomass[i] - jbiomass;
-
         ilen = (imass / density - vsphere) / acircle;
+        idl = ilen / old_len;
+	jdl = (ilen + 2*atom->radius[i]) / old_len;
 
-        // update parent
-	double dl = ilen / old_len;
-	atom->x[i][0] = xp1[0] + (oldx - xp1[0]) * dl;
-	atom->x[i][1] = xp1[1] + (oldy - xp1[1]) * dl;
-	atom->x[i][2] = xp1[2] + (oldz - xp1[2]) * dl;
+	atom->rmass[i] = imass;
+	atom->biomass[i] = ibiomass;
+	bonus->length = ilen;
+	bonus->pole1[0] *= ilen / old_len;
+	bonus->pole1[1] *= ilen / old_len;
+	bonus->pole1[2] *= ilen / old_len;
+	bonus->pole2[0] *= ilen / old_len;
+	bonus->pole2[1] *= ilen / old_len;
+	bonus->pole2[2] *= ilen / old_len;
 
-        atom->rmass[i] = imass;
-        atom->biomass[i] = ibiomass;
+        if (prob_pole > 0.5) {
+	  // update parent
+	  atom->x[i][0] = xp1[0] + (oldx - xp1[0]) * idl;
+	  atom->x[i][1] = xp1[1] + (oldy - xp1[1]) * idl;
+	  atom->x[i][2] = xp1[2] + (oldz - xp1[2]) * idl;
 
-        bonus->pole1[0] *= ilen / old_len;
-        bonus->pole1[1] *= ilen / old_len;
-        bonus->pole1[2] *= ilen / old_len;
-        bonus->pole2[0] *= ilen / old_len;
-        bonus->pole2[1] *= ilen / old_len;
-        bonus->pole2[2] *= ilen / old_len;
-        bonus->length = ilen;
+	  // create child
+	  coord[0] = oldx + (xp2[0] - oldx) * jdl;
+	  coord[1] = oldy + (xp2[1] - oldy) * jdl;
+	  coord[2] = oldz + (xp2[2] - oldz) * jdl;
+        } else {
+  	  // update parent
+  	  atom->x[i][0] = xp2[0] + (oldx - xp2[0]) * idl;
+  	  atom->x[i][1] = xp2[1] + (oldy - xp2[1]) * idl;
+  	  atom->x[i][2] = xp2[2] + (oldz - xp2[2]) * idl;
 
-        // create child
-        double *coord = new double[3];
-        double pole1[3];
-        pole1[0] = pole1[1] = pole1[2] = 0;
+  	  // create child
+  	  coord[0] = oldx + (xp1[0] - oldx) * jdl;
+  	  coord[1] = oldy + (xp1[1] - oldy) * jdl;
+  	  coord[2] = oldz + (xp1[2] - oldz) * jdl;
+        }
 
-        dl = (ilen + 2*atom->radius[i]) / old_len;
-	coord[0] = oldx + (xp2[0] - oldx) * dl;
-	coord[1] = oldy + (xp2[1] - oldy) * dl;
-	coord[2] = oldz + (xp2[2] - oldz) * dl;
-
-        avec->create_atom(atom->type[i], coord);
-        n = atom->nlocal - 1;
-        atom->bacillus[n] = 0;
-
-        avec->set_bonus(n, pole1, bonus->diameter, bonus->quat, bonus->inertia);
-
-        delete[] coord;
+	avec->create_atom(type, coord);
+	n = atom->nlocal - 1;
+	atom->bacillus[n] = 0;
+	atom->mask[n] = 1 | mini_mask;
+	pole1[0] = pole1[1] = pole1[2] = 0;
+	avec->set_bonus(n, pole1, bonus->diameter, bonus->quat, bonus->inertia);
+	delete[] coord;
       }
       // set attributes for child
       atom->tag[n] = 0;
-      atom->mask[n] = atom->mask[i];
       atom->v[n][0] = atom->v[i][0];
       atom->v[n][1] = atom->v[i][1];
       atom->v[n][2] = atom->v[i][2];
@@ -218,4 +239,24 @@ void FixDivideBacillusMinicell::compute()
     atom->map_init();
     atom->map_set();
   }
+}
+
+/* ----------------------------------------------------------------------
+   extract particle radius for atom type = itype
+------------------------------------------------------------------------- */
+
+void *FixDivideBacillusMinicell::extract(const char *str, int &itype)
+{
+  if (strcmp(str,"radius") == 0) {
+    for (int i = 0; i < atom->nlocal; i++) {
+      if (atom->bacillus[i] >= 0) {
+	double radius = atom->radius[i];
+	if (radius > maxradius) maxradius = radius;
+      }
+    }
+    MPI_Allreduce(MPI_IN_PLACE, &maxradius, 1, MPI_DOUBLE, MPI_MAX, world);
+    printf("maxradius=%e!\n",maxradius);
+    return &maxradius;
+  }
+  return NULL;
 }

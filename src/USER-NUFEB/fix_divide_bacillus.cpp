@@ -97,7 +97,7 @@ void FixDivideBacillus::compute()
 	xp1[0] = xp1[1] = xp1[2] = 0.0;
 	xp2[0] = xp2[1] = xp2[2] = 0.0;
 
-	avec->get_pole_coords(i, xp1, xp2, 0);
+	avec->get_pole_coords(i, xp1, xp2);
 
         // update bacillus i
 	double dl = (0.5*ilen + atom->radius[i]) / (0.5*old_len);
