@@ -82,7 +82,7 @@ class AtomVecBacillus : public AtomVec {
 
   void clear_bonus();
   void data_atom_bonus(int, char **);
-  void get_pole_coords(int, double *, double *, double);
+  void get_pole_coords(int, double *, double *);
 
   // methods used by other classes to query/set bacillus info
 

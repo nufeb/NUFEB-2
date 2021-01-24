@@ -280,6 +280,40 @@ void PairBacillus::init_style()
   for (i = 1; i <= ntypes; i++)
     maxrad[i] = merad[i] = 0;
 
+  int ipour;
+  for (ipour = 0; ipour < modify->nfix; ipour++)
+    if (strcmp(modify->fix[ipour]->style,"pour") == 0) break;
+  if (ipour == modify->nfix) ipour = -1;
+
+  int idep;
+  for (idep = 0; idep < modify->nfix; idep++)
+    if (strcmp(modify->fix[idep]->style,"deposit") == 0) break;
+  if (idep == modify->nfix) idep = -1;
+
+  int idiv;
+  for (idiv = 0; idiv < modify->nfix; idiv++)
+    if (strcmp(modify->fix[idiv]->style,"nufeb/divide/bacillus/minicell") == 0) break;
+  if (idiv == modify->nfix) idiv = -1;
+
+  for (i = 1; i <= ntypes; i++) {
+    merad[i] = 0.0;
+    if (ipour >= 0) {
+      itype = i;
+      merad[i] =
+        *((double *) modify->fix[ipour]->extract("radius",itype));
+    }
+    if (idep >= 0) {
+      itype = i;
+      merad[i] =
+        *((double *) modify->fix[idep]->extract("radius",itype));
+    }
+    if (idiv >= 0) {
+      itype = i;
+      merad[i] =
+	*((double *) modify->fix[idiv]->extract("radius",itype));
+    }
+  }
+
   for (i = 0; i < nlocal; i++) {
     itype = type[i];
     if (bacillus[i] >= 0) {
@@ -287,7 +321,8 @@ void PairBacillus::init_style()
       AtomVecBacillus::Bonus *bonus = &avec->bonus[index];
       leni = bonus->length/2;
       radi = bonus->diameter/2;
-      if (leni+radi > merad[itype]) merad[itype] = leni+radi;
+      if (leni+radi > merad[itype])
+	merad[itype] = leni+radi;
     } else
       merad[itype] = 0;
   }
@@ -338,7 +373,6 @@ void PairBacillus::sphere_against_sphere(int i, int j,
   fz = delz*fpair/rij;
 
   if (R <= 0) { // in contact
-
     // relative translational velocity
 
     vr1 = v[i][0] - v[j][0];
@@ -409,10 +443,12 @@ void PairBacillus::sphere_against_rod(int i, int j,
   int nlocal = atom->nlocal;
   int newton_pair = force->newton_pair;
 
-  radi = ibonus->diameter/2;
+  radi = atom->radius[i];
   radj = atom->radius[j];
   leni = ibonus->length/2;
   contact_dist = radi + radj;
+
+  avec->get_pole_coords(i, xi1, xi2);
 
   // find shortest distance between i and j
   distance_bt_pt_rod(x[j], xi1, xi2, h, d, t);
@@ -420,6 +456,11 @@ void PairBacillus::sphere_against_rod(int i, int j,
   if (d > contact_dist + cutoff) return;
   if (t < 0 || t > 1) return;
 
+  delx = h[0] - x[j][0];
+  dely = h[1] - x[j][1];
+  delz = h[2] - x[j][2];
+  rsq = delx*delx + dely*dely + delz*delz;
+  rij = sqrt(rsq);
   R = d - contact_dist;
 
   energy = 0;
@@ -445,6 +486,7 @@ void PairBacillus::sphere_against_rod(int i, int j,
 
     // normal component
 
+    rsqinv = 1.0/rsq;
     vnnr = vr1*delx + vr2*dely + vr3*delz;
     vn1 = delx*vnnr * rsqinv;
     vn2 = dely*vnnr * rsqinv;
@@ -484,6 +526,9 @@ void PairBacillus::sphere_against_rod(int i, int j,
     f[j][1] -= fy;
     f[j][2] -= fz;
   }
+
+  if (evflag) ev_tally_xyz(i,j,nlocal,newton_pair,
+                         energy,0.0,fx,fy,fz,delx,dely,delz);
 }
 
 /* ----------------------------------------------------------------------
@@ -511,20 +556,20 @@ void PairBacillus::rod_against_rod(int i, int j, int itype, int jtype,
   double r,t1,t2,h1[3],h2[3];
   double contact_dist, energy;
 
-  avec->get_pole_coords(i, xi1, xi2, atom->radius[i]);
-  avec->get_pole_coords(j, xpj1, xpj2, atom->radius[j]);
+  avec->get_pole_coords(i, xi1, xi2);
+  avec->get_pole_coords(j, xpj1, xpj2);
 
   contact_dist = (ibonus->diameter + jbonus->diameter)/2;
 
   int jflag = 1;
-//  printf("  line1:\n p1 = (%f %f %e);\n p2 = (%f %f %e)\n \n"
-//         "  line2:\n p1 = (%f %f %e);\n p2 = (%f %f %e)\n: "
+//  printf("  line1:\n p1 = (%e %e %e);\n p2 = (%e %e %e)\n \n"
+//         "  line2:\n p1 = (%e %e %e);\n p2 = (%e %e %e)\n: "
 //         "t1 = %f; t2 = %f; r = %e\n",
 //    xi1[0], xi1[1], xi1[2], xi2[0], xi2[1], xi2[2],
 //    xpj1[0], xpj1[1], xpj1[2], xpj2[0], xpj2[1], xpj2[2],
 //    t1, t2, r);
   distance_bt_rods(xpj1, xpj2, xi1, xi2, h2, h1, t2, t1, r);
-  //printf("r=%e h1x=%e  h1y=%e h1y=%e  h2x=%e h2y=%e h2z=%e\n", r, h1[0],h1[1],h1[2],h2[0],h2[1],h2[2]);
+
   // include the vertices for interactions
   if (t1 >= 0 && t1 <= 1 && t2 >= 0 && t2 <= 1 &&
       r < contact_dist + cutoff) {

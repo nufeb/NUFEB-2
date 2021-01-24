@@ -870,7 +870,7 @@ void DumpImage::create_image()
       xp1[0] = xp1[1] = xp1[2] = 0.0;
       xp2[0] = xp2[1] = xp2[2] = 0.0;
 
-      avec_bacillus->get_pole_coords(j, xp1, xp2, 0);
+      avec_bacillus->get_pole_coords(j, xp1, xp2);
 
       diameter = avec_bacillus->bonus[bacillus[j]].diameter;
 
