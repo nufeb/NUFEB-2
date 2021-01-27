@@ -58,7 +58,8 @@ fix vis all viscous 1e-13
 
 variable mass equal "mass(all)"
 
-dump du1 all image 15 image.*.jpg type diameter zoom 2 bacillus type size 1280 720 view 45 60
+#dump du1 all image 15 image.*.jpg type diameter zoom 2 bacillus type size 1280 720 view 45 60
+dump du1 all movie 15 movie.avi type diameter zoom 2 bacillus type size 1280 720 view 45 60
 dump_modify du1 acolor 1 green
 dump_modify du1 acolor 2 red
 
