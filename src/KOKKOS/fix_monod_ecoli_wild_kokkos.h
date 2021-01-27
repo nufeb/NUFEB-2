@@ -13,29 +13,29 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/monod/cyano/kk,FixMonodCyanoKokkos<LMPDeviceType>)
-FixStyle(nufeb/monod/cyano/kk/device,FixMonodCyanoKokkos<LMPDeviceType>)
-FixStyle(nufeb/monod/cyano/kk/host,FixMonodCyanoKokkos<LMPHostType>)
+FixStyle(nufeb/monod/ecoli/wild/kk,FixMonodEcoliWildKokkos<LMPDeviceType>)
+FixStyle(nufeb/monod/ecoli/wild/kk/device,FixMonodEcoliWildKokkos<LMPDeviceType>)
+FixStyle(nufeb/monod/ecoli/wild/kk/host,FixMonodEcoliWildKokkos<LMPHostType>)
 
 #else
 
-#ifndef LMP_FIX_MONOD_CYANO_KOKKOS_H
-#define LMP_FIX_MONOD_CYANO_KOKKOS_H
+#ifndef LMP_FIX_MONOD_ECOLI_WILD_KOKKOS_H
+#define LMP_FIX_MONOD_ECOLI_WILD_KOKKOS_H
 
-#include "fix_monod_cyano.h"
+#include "fix_monod_ecoli_wild.h"
 #include "kokkos_type.h"
 
 namespace LAMMPS_NS {
 
 template <int, int>
-struct FixMonodCyanoCellsTag {};
-struct FixMonodCyanoAtomsTag {};
+struct FixMonodEcoliWildCellsTag {};
+struct FixMonodEcoliWildAtomsTag {};
 
 template <class DeviceType>
-class FixMonodCyanoKokkos: public FixMonodCyano {
+class FixMonodEcoliWildKokkos: public FixMonodEcoliWild {
  public:
-  FixMonodCyanoKokkos(class LAMMPS *, int, char **);
-  virtual ~FixMonodCyanoKokkos() {}
+  FixMonodEcoliWildKokkos(class LAMMPS *, int, char **);
+  virtual ~FixMonodEcoliWildKokkos() {}
   virtual void compute();
 
   template <int, int> void update_cells();
@@ -43,21 +43,17 @@ class FixMonodCyanoKokkos: public FixMonodCyano {
 
   struct Functor
   {
-    int ilight;   // light
-    int ico2;     // co2
-    int igco2;    // gas co2
-    int isuc;     // sucrose
-    int io2;      // dissolved co2
+    int isuc;
+    int io2;
+    int ico2;
     
-    double light_affinity;
-    double co2_affinity;
+    double suc_affinity;
+    double o2_affinity;
 
     double growth;
     double yield;
     double maintain;
     double decay;
-    double suc_exp;
-    double gco2_flag;
 
     typedef ArrayTypes<DeviceType> AT;
     typename AT::t_int_1d d_mask;
@@ -66,11 +62,11 @@ class FixMonodCyanoKokkos: public FixMonodCyano {
     typename AT::t_float_2d d_dens;
     typename AT::t_float_3d d_growth;
 
-    Functor(FixMonodCyanoKokkos *ptr);
+    Functor(FixMonodEcoliWildKokkos *ptr);
     
     template <int Reaction, int Growth>
     KOKKOS_INLINE_FUNCTION
-    void operator()(FixMonodCyanoCellsTag<Reaction, Growth>, int) const;
+    void operator()(FixMonodEcoliWildCellsTag<Reaction, Growth>, int) const;
   };
 
  protected:

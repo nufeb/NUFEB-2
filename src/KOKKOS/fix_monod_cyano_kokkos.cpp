@@ -14,7 +14,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cmath>
-#include "fix_monod_nob_kokkos.h"
+#include "fix_monod_cyano_kokkos.h"
 #include "atom_kokkos.h"
 #include "grid_kokkos.h"
 #include "grid_masks.h"
@@ -27,8 +27,8 @@ using namespace MathConst;
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-FixMonodNOBKokkos<DeviceType>::FixMonodNOBKokkos(LAMMPS *lmp, int narg, char **arg) :
-  FixMonodNOB(lmp, narg, arg)
+FixMonodCyanoKokkos<DeviceType>::FixMonodCyanoKokkos(LAMMPS *lmp, int narg, char **arg) :
+  FixMonodCyano(lmp, narg, arg)
 {
   kokkosable = 1;
   execution_space = ExecutionSpaceFromDevice<DeviceType>::space;
@@ -37,7 +37,7 @@ FixMonodNOBKokkos<DeviceType>::FixMonodNOBKokkos(LAMMPS *lmp, int narg, char **a
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-void FixMonodNOBKokkos<DeviceType>::compute()
+void FixMonodCyanoKokkos<DeviceType>::compute()
 { 
   if (reaction_flag && growth_flag) {
     update_cells<1, 1>();
@@ -54,7 +54,7 @@ void FixMonodNOBKokkos<DeviceType>::compute()
 
 template <class DeviceType>
 template <int Reaction, int Growth>
-void FixMonodNOBKokkos<DeviceType>::update_cells()
+void FixMonodCyanoKokkos<DeviceType>::update_cells()
 {
   d_mask = gridKK->k_mask.template view<DeviceType>();
   d_conc = gridKK->k_conc.template view<DeviceType>();
@@ -72,7 +72,7 @@ void FixMonodNOBKokkos<DeviceType>::update_cells()
   Kokkos::parallel_for(
     Kokkos::RangePolicy<
     DeviceType,
-    FixMonodNOBCellsTag<Reaction, Growth> >(0, grid->ncells), f);
+    FixMonodCyanoCellsTag<Reaction, Growth> >(0, grid->ncells), f);
   copymode = 0;
 
   if (Growth)
@@ -84,7 +84,7 @@ void FixMonodNOBKokkos<DeviceType>::update_cells()
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-void FixMonodNOBKokkos<DeviceType>::update_atoms()
+void FixMonodCyanoKokkos<DeviceType>::update_atoms()
 {
   double **x = atom->x;
   double *radius = atom->radius;
@@ -106,7 +106,7 @@ void FixMonodNOBKokkos<DeviceType>::update_atoms()
 	(four_thirds_pi * radius[i] * radius[i] * radius[i]);
       rmass[i] = rmass[i] * (1 + growth[igroup][cell][0] * dt);
       radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
-      outer_mass[i] = rmass[i];
+      outer_mass[i] = 0;
       outer_radius[i] = radius[i];
     }
   }
@@ -115,10 +115,11 @@ void FixMonodNOBKokkos<DeviceType>::update_atoms()
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-FixMonodNOBKokkos<DeviceType>::Functor::Functor(FixMonodNOBKokkos<DeviceType> *ptr):
+FixMonodCyanoKokkos<DeviceType>::Functor::Functor(FixMonodCyanoKokkos<DeviceType> *ptr):
   igroup(ptr->igroup),
-  io2(ptr->io2), ino2(ptr->ino2), ino3(ptr->ino3),
-  o2_affinity(ptr->o2_affinity), no2_affinity(ptr->no2_affinity),
+  ilight(ptr->ilight), ico2(ptr->ico2), igco2(ptr->igco2),
+  isuc(ptr->isuc), io2(ptr->io2), suc_exp(ptr->suc_exp), gco2_flag(ptr->gco2_flag),
+  light_affinity(ptr->light_affinity), co2_affinity(ptr->co2_affinity),
   growth(ptr->growth), yield(ptr->yield),
   maintain(ptr->maintain), decay(ptr->decay),
   d_mask(ptr->d_mask), d_conc(ptr->d_conc), d_reac(ptr->d_reac),
@@ -129,27 +130,38 @@ FixMonodNOBKokkos<DeviceType>::Functor::Functor(FixMonodNOBKokkos<DeviceType> *p
 template <class DeviceType>
 template <int Reaction, int Growth>
 KOKKOS_INLINE_FUNCTION
-void FixMonodNOBKokkos<DeviceType>::Functor::operator()(FixMonodNOBCellsTag<Reaction, Growth>, int i) const
+void FixMonodCyanoKokkos<DeviceType>::Functor::operator()(FixMonodCyanoCellsTag<Reaction, Growth>, int i) const
 {
-  double tmp1 = growth * d_conc(ino2, i) / (no2_affinity + d_conc(ino2, i)) * d_conc(io2, i) / (o2_affinity + d_conc(io2, i));
-  double tmp2 = maintain * d_conc(io2, i) / (o2_affinity + d_conc(io2, i));
+  double tmp1 = growth * d_conc(ilight, i) / (light_affinity + d_conc(ilight, i)) *
+      d_conc(ico2, i) / (co2_affinity + d_conc(ico2, i));
+  double tmp2 = 0.2 * tmp1 * suc_exp;
+  double tmp3 = 4 * tmp1 * suc_exp;
 
   if (Reaction && !(d_mask(i) & GHOST_MASK)) {
-    d_reac(ino2, i) -= 1 / yield * tmp1 * d_dens(igroup, i);
-    d_reac(io2, i) -= (1.15 - yield) / yield * tmp1 * d_dens(igroup, i) + tmp2 * d_dens(igroup, i);
-    d_reac(ino3, i) += 1 / yield * tmp1 * d_dens(igroup, i);
+    // nutrient utilization
+    d_reac(ilight, i) -= 1 / yield * (tmp1 + tmp3) * d_dens(igroup, i);
+    d_reac(ico2, i) -= 1 / yield * (tmp1 + tmp3) * d_dens(igroup, i);
+    d_reac(io2, i) -= 0.1 * maintain * d_dens(igroup, i);
+    // oxygen evolution
+    d_reac(io2, i) += (0.727 / yield) * (tmp1 + tmp3) * d_dens(igroup, i);
+    // sucrose export
+    d_reac(isuc, i) += (0.65 / yield) * tmp3 * d_dens(igroup, i);
+
+    // co2 dissolution
+    if (gco2_flag == 1)
+      d_reac(ico2, i) += 4.4e-6 * d_conc(igco2, i) - (4.4e-6 * d_conc(ico2, i));
   }
 
   if (Growth) {
-    d_growth(igroup, i, 0) = tmp1 - tmp2 - decay;
+    d_growth(igroup, i, 0) = tmp1 - tmp2 - decay - maintain;
   }
 }
 
 /* ---------------------------------------------------------------------- */
 
 namespace LAMMPS_NS {
-template class FixMonodNOBKokkos<LMPDeviceType>;
+template class FixMonodCyanoKokkos<LMPDeviceType>;
 #ifdef KOKKOS_ENABLE_CUDA
-template class FixMonodNOBKokkos<LMPHostType>;
+template class FixMonodCyanoKokkos<LMPHostType>;
 #endif
 }

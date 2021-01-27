@@ -36,8 +36,6 @@ FixMonodEcoliWild::FixMonodEcoliWild(LAMMPS *lmp, int narg, char **arg) :
 {
   avec = NULL;
   avec = (AtomVecBacillus *) atom->style_match("bacillus");
-//  if (!avec) error->all(FLERR,"Fix nufeb/monod/ecoli/wild requires "
-//      "atom style bacillus");
 
   if (narg < 8)
     error->all(FLERR, "Illegal fix nufeb/monod/ecoliw command");

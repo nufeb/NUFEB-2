@@ -14,7 +14,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cmath>
-#include "fix_monod_aob_kokkos.h"
+#include "fix_monod_ecoli_wild_kokkos.h"
 #include "atom_kokkos.h"
 #include "grid_kokkos.h"
 #include "grid_masks.h"
@@ -27,8 +27,8 @@ using namespace MathConst;
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-FixMonodAOBKokkos<DeviceType>::FixMonodAOBKokkos(LAMMPS *lmp, int narg, char **arg) :
-  FixMonodAOB(lmp, narg, arg)
+FixMonodEcoliWildKokkos<DeviceType>::FixMonodEcoliWildKokkos(LAMMPS *lmp, int narg, char **arg) :
+  FixMonodEcoliWild(lmp, narg, arg)
 {
   kokkosable = 1;
   execution_space = ExecutionSpaceFromDevice<DeviceType>::space;
@@ -37,7 +37,7 @@ FixMonodAOBKokkos<DeviceType>::FixMonodAOBKokkos(LAMMPS *lmp, int narg, char **a
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-void FixMonodAOBKokkos<DeviceType>::compute()
+void FixMonodEcoliWildKokkos<DeviceType>::compute()
 { 
   if (reaction_flag && growth_flag) {
     update_cells<1, 1>();
@@ -54,7 +54,7 @@ void FixMonodAOBKokkos<DeviceType>::compute()
 
 template <class DeviceType>
 template <int Reaction, int Growth>
-void FixMonodAOBKokkos<DeviceType>::update_cells()
+void FixMonodEcoliWildKokkos<DeviceType>::update_cells()
 {
   d_mask = gridKK->k_mask.template view<DeviceType>();
   d_conc = gridKK->k_conc.template view<DeviceType>();
@@ -72,7 +72,7 @@ void FixMonodAOBKokkos<DeviceType>::update_cells()
   Kokkos::parallel_for(
     Kokkos::RangePolicy<
     DeviceType,
-    FixMonodAOBCellsTag<Reaction, Growth> >(0, grid->ncells), f);
+    FixMonodEcoliWildCellsTag<Reaction, Growth> >(0, grid->ncells), f);
   copymode = 0;
 
   if (Growth)
@@ -84,7 +84,7 @@ void FixMonodAOBKokkos<DeviceType>::update_cells()
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-void FixMonodAOBKokkos<DeviceType>::update_atoms()
+void FixMonodEcoliWildKokkos<DeviceType>::update_atoms()
 {
   double **x = atom->x;
   double *radius = atom->radius;
@@ -98,7 +98,7 @@ void FixMonodAOBKokkos<DeviceType>::update_atoms()
   const double third = 1.0 / 3.0;
 
   gridKK->sync(Host, GROWTH_MASK);
-
+  
   for (int i = 0; i < atom->nlocal; i++) {
     if (atom->mask[i] & groupbit) {
       const int cell = grid->cell(x[i]);
@@ -115,10 +115,10 @@ void FixMonodAOBKokkos<DeviceType>::update_atoms()
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-FixMonodAOBKokkos<DeviceType>::Functor::Functor(FixMonodAOBKokkos<DeviceType> *ptr):
+FixMonodEcoliWildKokkos<DeviceType>::Functor::Functor(FixMonodEcoliWildKokkos<DeviceType> *ptr):
   igroup(ptr->igroup),
-  inh4(ptr->inh4), io2(ptr->io2), ino2(ptr->ino2),
-  nh4_affinity(ptr->nh4_affinity), o2_affinity(ptr->o2_affinity),
+  isuc(ptr->isuc), io2(ptr->io2), ico2(ptr->ico2),
+  suc_affinity(ptr->suc_affinity), o2_affinity(ptr->o2_affinity),
   growth(ptr->growth), yield(ptr->yield),
   maintain(ptr->maintain), decay(ptr->decay),
   d_mask(ptr->d_mask), d_conc(ptr->d_conc), d_reac(ptr->d_reac),
@@ -129,15 +129,15 @@ FixMonodAOBKokkos<DeviceType>::Functor::Functor(FixMonodAOBKokkos<DeviceType> *p
 template <class DeviceType>
 template <int Reaction, int Growth>
 KOKKOS_INLINE_FUNCTION
-void FixMonodAOBKokkos<DeviceType>::Functor::operator()(FixMonodAOBCellsTag<Reaction, Growth>, int i) const
+void FixMonodEcoliWildKokkos<DeviceType>::Functor::operator()(FixMonodEcoliWildCellsTag<Reaction, Growth>, int i) const
 {
-  double tmp1 = growth * d_conc(inh4, i) / (nh4_affinity + d_conc(inh4, i)) * d_conc(io2, i) / (o2_affinity + d_conc(io2, i));
+  double tmp1 = growth * d_conc(isuc, i) / (suc_affinity + d_conc(isuc, i)) * d_conc(io2, i) / (o2_affinity + d_conc(io2, i));
   double tmp2 = maintain * d_conc(io2, i) / (o2_affinity + d_conc(io2, i));
 
-  if (Reaction &&  !(d_mask(i) & GHOST_MASK)) {
-    d_reac(inh4, i) -= 1 / yield * tmp1 * d_dens(igroup, i);
-    d_reac(io2, i) -= (4.57 - yield) / yield * tmp1 * d_dens(igroup, i) + tmp2 * d_dens(igroup, i);
-    d_reac(ino2, i) += 1 / yield * tmp1 * d_dens(igroup, i);
+  if (Reaction && !(d_mask(i) & GHOST_MASK)) {
+    d_reac(isuc, i) -= 1 / yield * tmp1 * d_dens(igroup, i);
+    d_reac(io2, i) -= 0.399 * (tmp1 + tmp2) * d_dens(igroup, i);
+    d_reac(ico2, i) += 0.2 * (tmp1 + tmp2) * d_dens(igroup, i);
   }
 
   if (Growth) {
@@ -148,8 +148,8 @@ void FixMonodAOBKokkos<DeviceType>::Functor::operator()(FixMonodAOBCellsTag<Reac
 /* ---------------------------------------------------------------------- */
 
 namespace LAMMPS_NS {
-template class FixMonodAOBKokkos<LMPDeviceType>;
+template class FixMonodEcoliWildKokkos<LMPDeviceType>;
 #ifdef KOKKOS_ENABLE_CUDA
-template class FixMonodAOBKokkos<LMPHostType>;
+template class FixMonodEcoliWildKokkos<LMPHostType>;
 #endif
 }
