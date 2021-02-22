@@ -65,8 +65,12 @@ fix death het nufeb/death dead 5e-7
 # mechanical model fixes
 fix wall all wall/gran hooke/history 1e-3 NULL 1e-4 NULL 0 0 zplane 0.0 8e-5
 #fix_modify wall virial yes
-fix eps_adh all nufeb/eps_adhesion eps 1e6
+fix eps_adh all nufeb/adhesion/eps eps 1e6
 #fix_modify eps_adh virial yes
+
+#fix f_adh all nufeb/adhesion 0 1e-6
+#fix_modify f_adh ah * * 1e-17
+
 fix vis all viscous 1e-5
 
 # pressure computation
