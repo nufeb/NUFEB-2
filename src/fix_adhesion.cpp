@@ -124,9 +124,6 @@ int FixAdhesion::setmask()
 void FixAdhesion::post_force(int vflag)
 {
   // energy and virial setup
-  for (int i = 1; i <= atom->ntypes; i++)
-    for (int j = 1; j <= atom->ntypes; j++)
-      printf("i=%i j%i ah=%e \n", i, j, ah[i][j]);
   if (vflag) v_setup(vflag);
   else evflag = 0;
 
@@ -138,8 +135,6 @@ void FixAdhesion::post_force(int vflag)
 template <int DISP>
 void FixAdhesion::compute(int vflag)
 {
-  double radi,radj,radsum,rsq,r,rinv;
-  double del;
   int nlocal = atom->nlocal;
   int *type = atom->type;
   double **x = atom->x;
@@ -180,8 +175,8 @@ void FixAdhesion::compute(int vflag)
       double ccel = 0;
 
       if (rsq < (radsum + smax)*(radsum + smax)){
-	r = sqrt(rsq);
-	del = r - radsum;
+	double r = sqrt(rsq);
+	double del = r - radsum;
 	if (del > smin) {
 	  double first = del*del+2*radi*del+2*radj*del;
 	  double second = del*del+2*radi*del+2*radj*del+4*radi*radj;
@@ -194,7 +189,7 @@ void FixAdhesion::compute(int vflag)
 	} else
 	  ccel = 0;
 
-	rinv = 1/r;
+	double rinv = 1/r;
 
 	double ccelx = delx*ccel*rinv;
 	double ccely = dely*ccel*rinv;
