@@ -167,10 +167,8 @@ void FixMonodCyano::update_cells()
 
 void FixMonodCyano::update_atoms()
 {
-  // coccus shape
   if (!avec) {
     update_atoms_coccus();
-  // bacillus shape
   } else {
     update_atoms_bacillus(avec);
   }
