@@ -29,12 +29,12 @@ using namespace FixConst;
 
 /* ---------------------------------------------------------------------- */
 
-FixNVEBACILLUS::FixNVEBACILLUS(LAMMPS *lmp, int narg, char **arg) :
+FixNVEBacillus::FixNVEBacillus(LAMMPS *lmp, int narg, char **arg) :
   FixNVE(lmp, narg, arg) {}
 
 /* ---------------------------------------------------------------------- */
 
-void FixNVEBACILLUS::init()
+void FixNVEBacillus::init()
 {
   avec = (AtomVecBacillus *) atom->style_match("bacillus");
   if (!avec) error->all(FLERR,"Fix nve/bacillus requires atom style bacillus");
@@ -55,7 +55,7 @@ void FixNVEBACILLUS::init()
 
 /* ---------------------------------------------------------------------- */
 
-void FixNVEBACILLUS::initial_integrate(int /*vflag*/)
+void FixNVEBacillus::initial_integrate(int /*vflag*/)
 {
   double dtfm;
   double omega[3];
@@ -63,6 +63,7 @@ void FixNVEBACILLUS::initial_integrate(int /*vflag*/)
 
   AtomVecBacillus::Bonus *bonus = avec->bonus;
   int *bacillus = atom->bacillus;
+
   double **x = atom->x;
   double **v = atom->v;
   double **f = atom->f;
@@ -108,7 +109,7 @@ void FixNVEBACILLUS::initial_integrate(int /*vflag*/)
 
 /* ---------------------------------------------------------------------- */
 
-void FixNVEBACILLUS::final_integrate()
+void FixNVEBacillus::final_integrate()
 {
   double dtfm;
 

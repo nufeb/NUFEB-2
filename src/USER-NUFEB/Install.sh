@@ -109,6 +109,8 @@ action fix_wall_adhesion.cpp
 action fix_wall_adhesion.h
 action fix_nve_bacillus.h
 action fix_nve_bacillus.cpp
+action fix_nve_bacillus_limit.h
+action fix_nve_bacillus_limit.cpp
 action grid_vec_monod.cpp
 action grid_vec_monod.h
 action nufeb_run.cpp
