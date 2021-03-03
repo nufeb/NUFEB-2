@@ -30,7 +30,7 @@ neigh_modify    check yes               # rebuild neighbour list if any atom
 					#   distance
 
 # select grid style
-grid_style      nufeb/monod 4 sub o2 no2 no3 2e-5 pp pp nd
+grid_style      nufeb/monod 4 sub o2 no2 no3 4e-6 pp pp nd
 
 # test grid comm
 #run_style       test/comm_grid
