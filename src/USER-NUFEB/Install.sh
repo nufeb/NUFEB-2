@@ -85,8 +85,10 @@ action fix_divide_bacillus.cpp
 action fix_divide_bacillus.h
 action fix_divide_bacillus_minicell.cpp
 action fix_divide_bacillus_minicell.h
-action fix_eps_adhesion.cpp
-action fix_eps_adhesion.h
+action fix_adhesion.cpp
+action fix_adhesion.h
+action fix_adhesion_eps.cpp
+action fix_adhesion_eps.h
 action fix_eps_extract.cpp
 action fix_eps_extract.h
 action fix_monod.cpp
@@ -107,6 +109,8 @@ action fix_wall_adhesion.cpp
 action fix_wall_adhesion.h
 action fix_nve_bacillus.h
 action fix_nve_bacillus.cpp
+action fix_nve_bacillus_limit.h
+action fix_nve_bacillus_limit.cpp
 action grid_vec_monod.cpp
 action grid_vec_monod.h
 action nufeb_run.cpp

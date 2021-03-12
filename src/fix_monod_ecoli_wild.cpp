@@ -141,10 +141,8 @@ void FixMonodEcoliWild::update_cells()
 
 void FixMonodEcoliWild::update_atoms()
 {
-  // coccus shape
   if (!avec) {
     update_atoms_coccus();
-  // bacillus shape
   } else {
     update_atoms_bacillus(avec);
   }

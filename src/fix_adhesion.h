@@ -13,28 +13,32 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/eps_adhesion,FixEPSAdhesion)
+FixStyle(nufeb/adhesion,FixAdhesion)
 
 #else
 
-#ifndef LMP_FIX_EPS_ADHESION_H
-#define LMP_FIX_EPS_ADHESION_H
+#ifndef LMP_FIX_ADHESION_H
+#define LMP_FIX_ADHESION_H
 
 #include "fix.h"
 
 namespace LAMMPS_NS {
 
-class FixEPSAdhesion : public Fix {
+class FixAdhesion : public Fix {
  public:
-  FixEPSAdhesion(class LAMMPS *, int, char **);
-  ~FixEPSAdhesion() {}
+  FixAdhesion(class LAMMPS *, int, char **);
+  ~FixAdhesion();
+  void allocate();
+  void init();
+  int modify_param(int, char **);
   int setmask();
   virtual void post_force(int);
 
  protected:
-  int ieps;
-  double ke;
-  int disp;
+  double **ah; //Hammaker constant
+  double smin; //minimum separation
+  double smax; //maximum seperatioin
+  int allocated;
 
   template <int DISP>
   void compute(int);
