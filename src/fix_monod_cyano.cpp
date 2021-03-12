@@ -15,6 +15,7 @@
 #include <cstring>
 #include <cmath>
 #include "fix_monod_cyano.h"
+#include "atom_vec_bacillus.h"
 #include "atom.h"
 #include "force.h"
 #include "error.h"
@@ -32,6 +33,9 @@ using namespace MathConst;
 FixMonodCyano::FixMonodCyano(LAMMPS *lmp, int narg, char **arg) :
   FixMonod(lmp, narg, arg)
 {
+  avec = NULL;
+  avec = (AtomVecBacillus *) atom->style_match("bacillus");
+
   if (narg < 10)
     error->all(FLERR, "Illegal fix nufeb/monod/cyano command");
 
@@ -163,5 +167,9 @@ void FixMonodCyano::update_cells()
 
 void FixMonodCyano::update_atoms()
 {
-  update_atoms_coccus();
+  if (!avec) {
+    update_atoms_coccus();
+  } else {
+    update_atoms_bacillus(avec);
+  }
 }

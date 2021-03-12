@@ -11,9 +11,10 @@
  See the README file in the top-level LAMMPS directory.
  ------------------------------------------------------------------------- */
 
+#include "fix_adhesion_eps.h"
+
 #include <math.h>
 #include <string.h>
-#include "fix_eps_adhesion.h"
 #include "atom.h"
 #include "atom_vec.h"
 #include "error.h"
@@ -34,7 +35,7 @@ FixEPSAdhesion::FixEPSAdhesion(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
   if (narg < 5)
-    error->all(FLERR, "Illegal fix nufeb/eps_adhesion command");
+    error->all(FLERR, "Illegal fix nufeb/adhesion/eps command");
 
   virial_flag = 1;
   
@@ -44,7 +45,7 @@ FixEPSAdhesion::FixEPSAdhesion(LAMMPS *lmp, int narg, char **arg) :
 
   ieps = group->find(arg[3]);
   if (ieps < 0)
-    error->all(FLERR, "Can't find group in fix nufeb/eps_adhesion");
+    error->all(FLERR, "Can't find group in fix nufeb/adhesion/eps");
   ke = force->numeric(FLERR, arg[4]);
     
   int iarg = 5;
@@ -55,11 +56,11 @@ FixEPSAdhesion::FixEPSAdhesion(LAMMPS *lmp, int narg, char **arg) :
       } else if (strcmp(arg[iarg+1], "square") == 0) {
 	disp = SQUARE;
       } else {
-	error->all(FLERR, "Illegal value for displace parameter in fix nufeb/eps_adhesion");
+	error->all(FLERR, "Illegal value for displace parameter in fix nufeb/adhesion/eps");
       }
       iarg += 2;
     } else {
-      error->all(FLERR, "Illegal parameter in fix nufeb/eps_adhesion");
+      error->all(FLERR, "Illegal parameter in fix nufeb/adhesion/eps");
     }
   }
 }

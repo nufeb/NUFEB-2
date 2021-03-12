@@ -173,7 +173,6 @@ void FixMonod::update_atoms_bacillus(AtomVecBacillus *&avec)
       new_length = (rmass[i] - density * vsphere) / (density * acircle);
       bonus->length = new_length;
       // update coordinates of two poles
-      double dl = length-bonus->length;
       double *pole1 = bonus->pole1;
       double *pole2 = bonus->pole2;
 
