@@ -43,6 +43,7 @@ class FixMonodCyanoKokkos: public FixMonodCyano {
 
   struct Functor
   {
+    int igroup;
     int ilight;   // light
     int ico2;     // co2
     int igco2;    // gas co2

@@ -43,6 +43,7 @@ class FixMonodEcoliWildKokkos: public FixMonodEcoliWild {
 
   struct Functor
   {
+    int igroup;
     int isuc;
     int io2;
     int ico2;
