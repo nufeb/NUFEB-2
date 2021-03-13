@@ -881,8 +881,13 @@ int NufebRunKokkos::diffusion()
   update->dt = diffdt;
   reset_dt();
   
+  for (int i = 0; i < nfix_diffusion; i++) {
+    fix_diffusion[i]->closed_system_init();
+  }
+
   int niter = 0;
   bool flag;
+  bool converge[nfix_diffusion] = {};
   do {
     timer->stamp();
     comm_grid->forward_comm();
@@ -890,7 +895,8 @@ int NufebRunKokkos::diffusion()
 
     flag = true;
     for (int i = 0; i < nfix_diffusion; i++) {
-      fix_diffusion[i]->compute_initial();
+      if (!converge[i])
+	fix_diffusion[i]->compute_initial();
     }
 
     // gridKK->sync(Host, CONC_MASK);
@@ -903,9 +909,12 @@ int NufebRunKokkos::diffusion()
     // gridKK->modified(Host, REAC_MASK);
 
     for (int i = 0; i < nfix_diffusion; i++) {
-      fix_diffusion[i]->compute_final();
-      double res = fix_diffusion[i]->compute_scalar();
-      flag &= res < difftol;
+      if (!converge[i]) {
+	fix_diffusion[i]->compute_final();
+	double res = fix_diffusion[i]->compute_scalar();
+	if (res < difftol) converge[i] = true;
+	if (!converge[i]) flag = false;
+      }
     }
 
     timer->stamp(Timer::MODIFY);
@@ -915,6 +924,11 @@ int NufebRunKokkos::diffusion()
       flag = true;
     
   } while (!flag);
+
+  for (int i = 0; i < nfix_diffusion; i++) {
+    fix_diffusion[i]->closed_system_scaleup(biodt);
+  }
+
   return niter;
 }
 

@@ -42,6 +42,7 @@ FixDiffusionReactionKokkos<DeviceType>::~FixDiffusionReactionKokkos()
 {
   if (copymode) return;
   memoryKK->destroy_kokkos(prev);
+  if (closed_system) memory->destroy(penult);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -51,7 +52,7 @@ void FixDiffusionReactionKokkos<DeviceType>::init()
 {
   FixDiffusionReaction::init();
   memory->destroy(prev);
-
+  if (closed_system) memory->destroy(penult);
   grow_arrays(ncells);
 }
 
@@ -61,9 +62,16 @@ template <class DeviceType>
 void FixDiffusionReactionKokkos<DeviceType>::grow_arrays(int nmax)
 {
   k_prev.template sync<LMPHostType>();
+  k_penult.template sync<LMPHostType>();
+
   memoryKK->grow_kokkos(k_prev, prev, nmax, "nufeb/diffusion_reaction:prev");
+  memoryKK->grow_kokkos(k_penult, penult, nmax, "nufeb/diffusion_reaction:penult");
+
   d_prev = k_prev.template view<DeviceType>();
+  d_penult = k_penult.template view<DeviceType>();
+
   k_prev.template modify<LMPHostType>();
+  k_penult.template modify<LMPHostType>();
 }
 
 /* ---------------------------------------------------------------------- */
@@ -96,9 +104,6 @@ double FixDiffusionReactionKokkos<DeviceType>::compute_scalar()
 template <class DeviceType>
 void FixDiffusionReactionKokkos<DeviceType>::compute_initial()
 {
-  for (int i = 0; i < 6; i++)
-    boundary[i] = grid->boundary[i];
-
   d_mask = gridKK->k_mask.template view<DeviceType>();
   d_conc = gridKK->k_conc.template view<DeviceType>();
   d_reac = gridKK->k_reac.template view<DeviceType>();
@@ -129,8 +134,6 @@ void FixDiffusionReactionKokkos<DeviceType>::compute_final()
   cell_size = grid->cell_size;
   for (int i = 0; i < 3; i++)
     subbox[i] = grid->subbox[i];
-  for (int i = 0; i < 6; i++)
-    boundary[i] = grid->boundary[i];
 
   d_mask = gridKK->k_mask.template view<DeviceType>();
   d_conc = gridKK->k_conc.template view<DeviceType>();
@@ -150,6 +153,59 @@ void FixDiffusionReactionKokkos<DeviceType>::compute_final()
     DeviceType,
     FixDiffusionReactionFinalTag>(0, grid->ncells), f);
   copymode = 0;
+
+  gridKK->modified(execution_space, CONC_MASK);
+}
+
+/* ---------------------------------------------------------------------- */
+
+template <class DeviceType>
+void FixDiffusionReactionKokkos<DeviceType>::closed_system_init()
+{
+  if (!closed_system) return;
+
+  d_mask = gridKK->k_mask.template view<DeviceType>();
+  d_conc = gridKK->k_conc.template view<DeviceType>();
+
+  gridKK->sync(execution_space, GMASK_MASK);
+  gridKK->sync(execution_space, CONC_MASK);
+
+  double result = 0.0;
+  Kokkos::parallel_reduce(
+    Kokkos::RangePolicy<DeviceType>(0, grid->ncells), LAMMPS_LAMBDA(int i, double& sum) {
+      if (!(d_mask(i) & GHOST_MASK))
+	sum += d_conc(isub, i);
+    }, Kokkos::Max<double>(result));
+  DeviceType::fence();
+
+  MPI_Allreduce(MPI_IN_PLACE, &result, 1, MPI_DOUBLE, MPI_MAX, world);
+
+  result /= (grid->box[0] * grid->box[1] * grid->box[2]);
+
+  Kokkos::parallel_for(
+    Kokkos::RangePolicy<DeviceType>(0, grid->ncells), LAMMPS_LAMBDA(int i) {
+      d_conc(isub, i) = result;
+  });
+
+  gridKK->modified(execution_space, CONC_MASK);
+}
+
+/* ---------------------------------------------------------------------- */
+
+template <class DeviceType>
+void FixDiffusionReactionKokkos<DeviceType>::closed_system_scaleup(double biodt)
+{
+  if (!closed_system) return;
+
+  d_conc = gridKK->k_conc.template view<DeviceType>();
+  gridKK->sync(execution_space, CONC_MASK);
+
+  Kokkos::parallel_for(
+    Kokkos::RangePolicy<DeviceType>(0, grid->ncells), LAMMPS_LAMBDA(int i) {
+    double res = d_conc(isub, i) - d_prev(i);
+    d_conc(isub, i) += res / dt * biodt;
+    d_conc(isub, i) = MAX(0, d_conc(isub, i));
+  });
 
   gridKK->modified(execution_space, CONC_MASK);
 }
@@ -220,6 +276,7 @@ void FixDiffusionReactionKokkos<DeviceType>::Functor::operator()(FixDiffusionRea
     int pz = i - nxy;
     d_conc(isub, i) = d_conc(isub, pz);
   }
+  if (closed_system) d_penult(i) = d_prev(i);
   d_prev(i) = d_conc(isub, i);
 }
 
@@ -257,8 +314,14 @@ template <class DeviceType>
 KOKKOS_INLINE_FUNCTION
 void FixDiffusionReactionKokkos<DeviceType>::Functor::operator()(FixDiffusionReactionScalarTag, int i, double &max) const
 {
-  if (!(d_mask(i) & GHOST_MASK)) 
-    max = fabs((d_conc(isub, i) - d_prev(i)) / d_prev(i));
+  if (!(d_mask(i) & GHOST_MASK)) {
+    double res = fabs((d_conc(isub, i) - d_prev(i)) / d_prev(i));
+    if (closed_system) {
+      double res2 = fabs((d_prev(i) - d_penult(i)) / d_penult(i));
+      res = fabs(res - res2);
+    }
+    max = MAX(max, res);
+  }
 }
 
 /* ---------------------------------------------------------------------- */
