@@ -39,7 +39,7 @@ AtomVecCoccus::AtomVecCoccus(LAMMPS *lmp) : AtomVec(lmp)
   molecular = 0;
   radvary = 1;
 
-  comm_x_only = 1;
+  comm_x_only = 0;
   comm_f_only = 0;
   size_forward = 8;
   size_reverse = 6;
@@ -51,8 +51,8 @@ AtomVecCoccus::AtomVecCoccus(LAMMPS *lmp) : AtomVec(lmp)
 
   atom->sphere_flag = 1;
   atom->radius_flag = atom->rmass_flag = atom->omega_flag =
-    atom->torque_flag = atom->outer_radius_flag = atom->biomass_flag =
-	atom->outer_mass_flag = 1;
+    atom->torque_flag = atom->biomass_flag = atom->outer_radius_flag =
+    atom->outer_mass_flag = 1;
 }
 
 /* ---------------------------------------------------------------------- */
