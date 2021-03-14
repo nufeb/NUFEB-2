@@ -102,5 +102,6 @@
 
 #define OUTER_MASS_MASK   0x0200000
 #define OUTER_RADIUS_MASK 0x0400000
+#define BIOMASS_MASK      0x0800000
 
 #endif
