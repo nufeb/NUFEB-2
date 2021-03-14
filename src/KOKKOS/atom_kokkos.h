@@ -65,6 +65,7 @@ class AtomKokkos : public Atom {
 
   DAT::tdual_float_1d k_outer_radius;
   DAT::tdual_float_1d k_outer_mass;
+  DAT::tdual_float_1d k_biomass;
   
   AtomKokkos(class LAMMPS *);
   ~AtomKokkos();
