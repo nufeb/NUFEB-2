@@ -97,7 +97,7 @@ template <class DeviceType>
 void FixDiffusionReactionKokkos<DeviceType>::compute_initial()
 {
   for (int i = 0; i < 6; i++)
-    boundary[i] = grid->boundary[i];
+    boundary[i] = FixDiffusionReaction::boundary[i];
 
   d_mask = gridKK->k_mask.template view<DeviceType>();
   d_conc = gridKK->k_conc.template view<DeviceType>();
@@ -130,7 +130,7 @@ void FixDiffusionReactionKokkos<DeviceType>::compute_final()
   for (int i = 0; i < 3; i++)
     subbox[i] = grid->subbox[i];
   for (int i = 0; i < 6; i++)
-    boundary[i] = grid->boundary[i];
+    boundary[i] = FixDiffusionReaction::boundary[i];
 
   d_mask = gridKK->k_mask.template view<DeviceType>();
   d_conc = gridKK->k_conc.template view<DeviceType>();
