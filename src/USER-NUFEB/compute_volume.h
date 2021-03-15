@@ -30,6 +30,8 @@ class ComputeVolume : public Compute {
   virtual ~ComputeVolume() {}
   virtual void init() {}
   virtual double compute_scalar();
+
+  class AtomVecBacillus *avec;
 };
 
 }
