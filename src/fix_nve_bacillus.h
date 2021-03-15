@@ -13,7 +13,7 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nve/bacillus,FixNVEBACILLUS)
+FixStyle(nve/bacillus,FixNVEBacillus)
 
 #else
 
@@ -24,9 +24,9 @@ FixStyle(nve/bacillus,FixNVEBACILLUS)
 
 namespace LAMMPS_NS {
 
-class FixNVEBACILLUS : public FixNVE {
+class FixNVEBacillus : public FixNVE {
  public:
-  FixNVEBACILLUS(class LAMMPS *, int, char **);
+  FixNVEBacillus(class LAMMPS *, int, char **);
   void init();
   void initial_integrate(int);
   void final_integrate();
