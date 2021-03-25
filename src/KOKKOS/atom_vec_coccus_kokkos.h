@@ -13,24 +13,24 @@
 
 #ifdef ATOM_CLASS
 
-AtomStyle(nufeb/kk,AtomVecNufebKokkos)
-AtomStyle(nufeb/kk/device,AtomVecNufebKokkos)
-AtomStyle(nufeb/kk/host,AtomVecNufebKokkos)
+AtomStyle(coccus/kk,AtomVecCoccusKokkos)
+AtomStyle(coccus/kk/device,AtomVecCoccusKokkos)
+AtomStyle(coccus/kk/host,AtomVecCoccusKokkos)
 
 #else
 
-#ifndef LMP_ATOM_VEC_NUFEB_KOKKOS_H
-#define LMP_ATOM_VEC_NUFEB_KOKKOS_H
+#ifndef LMP_ATOM_VEC_COCCUS_KOKKOS_H
+#define LMP_ATOM_VEC_COCCUS_KOKKOS_H
 
 #include "atom_vec_kokkos.h"
 #include "kokkos_type.h"
 
 namespace LAMMPS_NS {
 
-class AtomVecNufebKokkos : public AtomVecKokkos {
+class AtomVecCoccusKokkos : public AtomVecKokkos {
  public:
-  AtomVecNufebKokkos(class LAMMPS *);
-  ~AtomVecNufebKokkos() {}
+  AtomVecCoccusKokkos(class LAMMPS *);
+  ~AtomVecCoccusKokkos() {}
   void init();
   void grow(int);
   void grow_reset();
@@ -121,7 +121,7 @@ class AtomVecNufebKokkos : public AtomVecKokkos {
   imageint *image;
   double **x,**v,**f;
   double *radius,*rmass;
-  double *outer_radius,*outer_mass;
+  double *biomass, *outer_radius,*outer_mass;
   double **omega,**torque;
   int radvary;
 
@@ -139,6 +139,8 @@ class AtomVecNufebKokkos : public AtomVecKokkos {
   HAT::t_float_1d h_radius;
   DAT::t_float_1d d_rmass;
   HAT::t_float_1d h_rmass;
+  DAT::t_float_1d d_biomass;
+  HAT::t_float_1d h_biomass;
   DAT::t_float_1d d_outer_radius;
   HAT::t_float_1d h_outer_radius;
   DAT::t_float_1d d_outer_mass;

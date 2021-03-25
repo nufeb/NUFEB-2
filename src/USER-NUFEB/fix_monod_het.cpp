@@ -174,7 +174,7 @@ void FixMonodHET::update_atoms()
       const double density = rmass[i] /
 	(four_thirds_pi * radius[i] * radius[i] * radius[i]);
       double ratio = rmass[i] / biomass[i];
-      // forward Eular to update biomass and rmass
+      // forward Euler to update biomass and rmass
       biomass[i] = biomass[i] * (1 + growth[igroup][cell][0] * dt);
       rmass[i] = rmass[i] * (1 + growth[igroup][cell][0] * dt * ratio);
       outer_mass[i] = four_thirds_pi *

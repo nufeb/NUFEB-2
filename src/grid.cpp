@@ -79,10 +79,14 @@ Grid::~Grid()
 void Grid::modify_params(int narg, char **arg)
 {
   if (strcmp(arg[0], "set") == 0) {
-    if (narg < 3) error->all(FLERR, "Invalid grid_modify command");
+    if (narg != 3 && narg != 9) error->all(FLERR, "Invalid grid_modify command");
     lmp->init();
     grid->setup();
-    gvec->set(find(arg[1]), force->numeric(FLERR, arg[2]));
+    if (narg == 3) gvec->set(find(arg[1]), force->numeric(FLERR, arg[2]));
+    else gvec->set(find(arg[1]), force->numeric(FLERR, arg[2]),
+	      force->numeric(FLERR, arg[3]), force->numeric(FLERR, arg[4]),
+	      force->numeric(FLERR, arg[5]), force->numeric(FLERR, arg[6]),
+	      force->numeric(FLERR, arg[7]), force->numeric(FLERR, arg[8]));
   }
 }
 

@@ -43,6 +43,7 @@ class GridVec : protected Pointers {
   virtual void unpack_exchange(int, int *, double *) = 0;
   
   virtual void set(int, double) = 0;
+  virtual void set(int, double, double, double, double, double, double, double) = 0;
 
  protected:
   int nmax;              // local copy of grid->nmax

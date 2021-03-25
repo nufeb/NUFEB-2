@@ -278,6 +278,37 @@ void GridVecMonodKokkos::set(int sub, double domain)
 
 /* ---------------------------------------------------------------------- */
 
+void GridVecMonodKokkos::set(int sub, double domain, double nx, double px,
+			     double ny, double py, double nz, double pz)
+{
+  sync(Host, GMASK_MASK);
+  sync(Host, CONC_MASK);
+
+  for (int i = 0; i < grid->ncells; i++) {
+    if (!(mask[i] & CORNER_MASK)) {
+      if (mask[i] & X_NB_MASK) {
+	conc[sub][i] = nx;
+      } else if (mask[i] & X_PB_MASK) {
+	conc[sub][i] = px;
+      } else if (mask[i] & Y_NB_MASK) {
+	conc[sub][i] = ny;
+      } else if (mask[i] & Y_PB_MASK) {
+	conc[sub][i] = py;
+      } else if (mask[i] & Z_NB_MASK) {
+	conc[sub][i] = nz;
+      } else if (mask[i] & Z_PB_MASK) {
+	conc[sub][i] = pz;
+      } else {
+	conc[sub][i] = domain;
+      }
+    }
+  }
+
+  modified(Host, CONC_MASK);
+}
+
+/* ---------------------------------------------------------------------- */
+
 void GridVecMonodKokkos::sync(ExecutionSpace space, unsigned int mask)
 {
   if (space == Device) {
