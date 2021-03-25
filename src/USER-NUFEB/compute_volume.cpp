@@ -44,7 +44,7 @@ double ComputeVolume::compute_scalar()
   scalar = 0.0;
   for (int i = 0; i < atom->nlocal; i++) {
     double r = atom->radius[i];
-    if (atom->bacillus[i]) {
+    if (avec) {
       int ibonus = atom->bacillus[i];
       AtomVecBacillus::Bonus *bonus = &avec->bonus[ibonus];
 

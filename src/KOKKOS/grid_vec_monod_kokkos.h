@@ -44,6 +44,7 @@ class GridVecMonodKokkos : public GridVecKokkos {
   void unpack_exchange_kokkos(int, int, const DAT::tdual_int_1d &, const DAT::tdual_xfloat_1d &);
 
   void set(int, double);
+  void set(int, double, double, double, double, double, double, double) override;
 
   void sync(ExecutionSpace, unsigned int);
   void modified(ExecutionSpace, unsigned int);

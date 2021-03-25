@@ -60,6 +60,7 @@ class FixDiffusionReactionKokkos : public FixDiffusionReaction {
     int subbox[3];
     int boundary[6];
     double dirichlet[6];
+    int closed_system;
 
     Functor(FixDiffusionReactionKokkos *ptr);
     

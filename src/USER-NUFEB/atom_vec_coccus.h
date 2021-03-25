@@ -17,8 +17,8 @@ AtomStyle(coccus,AtomVecCoccus)
 
 #else
 
-#ifndef LMP_ATOM_VEC_COCCI_H
-#define LMP_ATOM_VEC_COCCI_H
+#ifndef LMP_ATOM_VEC_COCCUS_H
+#define LMP_ATOM_VEC_COCCUS_H
 
 #include "atom_vec.h"
 
@@ -74,7 +74,7 @@ class AtomVecCoccus : public AtomVec {
   imageint *image;
   double **x,**v,**f;
   double *radius,*rmass;
-  double *biomass, *outer_radius, *outer_mass;
+  double *biomass,*outer_radius,*outer_mass;
   double **omega,**torque;
   int radvary;
 };

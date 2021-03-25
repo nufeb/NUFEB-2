@@ -104,6 +104,9 @@ double FixDiffusionReactionKokkos<DeviceType>::compute_scalar()
 template <class DeviceType>
 void FixDiffusionReactionKokkos<DeviceType>::compute_initial()
 {
+  for (int i = 0; i < 6; i++)
+    boundary[i] = FixDiffusionReaction::boundary[i];
+
   d_mask = gridKK->k_mask.template view<DeviceType>();
   d_conc = gridKK->k_conc.template view<DeviceType>();
   d_reac = gridKK->k_reac.template view<DeviceType>();
@@ -134,6 +137,9 @@ void FixDiffusionReactionKokkos<DeviceType>::compute_final()
   cell_size = grid->cell_size;
   for (int i = 0; i < 3; i++)
     subbox[i] = grid->subbox[i];
+
+  for (int i = 0; i < 6; i++)
+    boundary[i] = FixDiffusionReaction::boundary[i];
 
   d_mask = gridKK->k_mask.template view<DeviceType>();
   d_conc = gridKK->k_conc.template view<DeviceType>();
@@ -217,7 +223,7 @@ FixDiffusionReactionKokkos<DeviceType>::Functor::Functor(FixDiffusionReactionKok
   d_prev(ptr->d_prev), d_conc(ptr->d_conc),
   d_reac(ptr->d_reac), d_mask(ptr->d_mask),
   cell_size(ptr->cell_size), diff_coef(ptr->diff_coef), dt(ptr->dt),
-  isub(ptr->isub)
+  isub(ptr->isub), closed_system(ptr->closed_system)
 {
   for (int i = 0; i < 3; i++)
     subbox[i] = ptr->subbox[i];
