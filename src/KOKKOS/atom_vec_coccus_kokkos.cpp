@@ -2939,8 +2939,6 @@ void AtomVecCoccusKokkos::data_atom(double *coord, imageint imagetmp, char **val
     error->one(FLERR,"Biomass/Mass (dry/wet weight) ratio must be between 0-1");
   h_biomass[nlocal] = h_rmass[nlocal] * ratio;
 
-  atom->nlocal++;
-
   atomKK->modified(Host,ALL_MASK);
 
   atom->nlocal++;

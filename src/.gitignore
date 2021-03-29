@@ -1291,10 +1291,16 @@
 /pair_vashishta*.cpp
 /pair_vashishta*.h
 
+/atom_vec_coccus.cpp
+/atom_vec_coccus.h
+/atom_vec_bacillus.cpp
+/atom_vec_bacillus.h
 /atom_vec_nufeb.cpp
 /atom_vec_nufeb.h
 /compute_volume.cpp
 /compute_volume.h
+/compute_avgcon.cpp
+/compute_avgcon.h
 /fix_death.cpp
 /fix_death.h
 /fix_density.cpp
@@ -1303,8 +1309,6 @@
 /fix_divide.h
 /fix_diffusion_reaction.cpp
 /fix_diffusion_reaction.h
-/fix_eps_adhesion.cpp
-/fix_eps_adhesion.h
 /fix_eps_extract.cpp
 /fix_eps_extract.h
 /fix_monod.cpp
@@ -1323,6 +1327,27 @@
 /grid_vec_monod.h
 /nufeb_run.cpp
 /nufeb_run.h
+/fix_adhesion.cpp
+/fix_adhesion.h
+/fix_adhesion_eps.cpp
+/fix_adhesion_eps.h
+/fix_divide_bacillus.cpp
+/fix_divide_bacillus.h
+/fix_divide_bacillus_minicell.cpp
+/fix_divide_bacillus_minicell.h
+/fix_divide_coccus.cpp
+/fix_divide_coccus.h
+/fix_monod_cyano.cpp
+/fix_monod_cyano.h
+/fix_monod_ecoli_wild.cpp
+/fix_monod_ecoli_wild.h
+/fix_nve_bacillus.cpp
+/fix_nve_bacillus.h
+/fix_nve_bacillus_limit.cpp
+/fix_nve_bacillus_limit.h
+/pair_bacillus.cpp
+/pair_bacillus.h
+
 
 !accelerator_kokkos.h 
 !accelerator_omp.h 

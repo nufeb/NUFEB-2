@@ -13,16 +13,16 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/eps_adhesion/kk,FixEPSAdhesionKokkos<LMPDeviceType>)
-FixStyle(nufeb/eps_adhesion/kk/device,FixEPSAdhesionKokkos<LMPDeviceType>)
-FixStyle(nufeb/eps_adhesion/kk/host,FixEPSAdhesionKokkos<LMPHostType>)
+FixStyle(nufeb/adhesion/eps/kk,FixEPSAdhesionKokkos<LMPDeviceType>)
+FixStyle(nufeb/adhesion/eps/kk/device,FixEPSAdhesionKokkos<LMPDeviceType>)
+FixStyle(nufeb/adhesion/eps/kk/host,FixEPSAdhesionKokkos<LMPHostType>)
 
 #else
 
 #ifndef LMP_FIX_EPS_ADHESION_KOKKOS_H
 #define LMP_FIX_EPS_ADHESION_KOKKOS_H
 
-#include "fix_eps_adhesion.h"
+#include "fix_adhesion_eps.h"
 #include "kokkos_type.h"
   
 namespace LAMMPS_NS {

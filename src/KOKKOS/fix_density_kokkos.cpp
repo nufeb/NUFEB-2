@@ -103,7 +103,8 @@ void FixDensityKokkos<DeviceType>::compute()
 			   double d = d_biomass(i) / vol;
 			   d_dens(0,cell) += d;
 			   for (int igroup = 0; igroup < ngroup; igroup++)
-			     if (d_mask(i) & d_bitmask(igroup))
+			    // if (d_mask(i) & d_bitmask(igroup))
+			     if (atom->mask[i] & group->bitmask[i])
 			       d_dens(igroup,cell) += d;
 			 }
 		       });

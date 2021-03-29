@@ -91,7 +91,7 @@ AtomKokkos::~AtomKokkos()
 
   memoryKK->destroy_kokkos(k_outer_radius, outer_radius);
   memoryKK->destroy_kokkos(k_outer_mass, outer_mass);
-  
+  memoryKK->destroy_kokkos(k_biomass, biomass);
   memoryKK->destroy_kokkos(k_dvector,dvector);
   dvector = NULL;
 }
