@@ -113,8 +113,8 @@ action fix_enforce2d_kokkos.cpp
 action fix_enforce2d_kokkos.h
 action fix_eos_table_rx_kokkos.cpp fix_eos_table_rx.cpp
 action fix_eos_table_rx_kokkos.h fix_eos_table_rx.h
-action fix_eps_adhesion_kokkos.cpp fix_eps_adhesion.cpp
-action fix_eps_adhesion_kokkos.h fix_eps_adhesion.h
+action fix_eps_adhesion_kokkos.cpp fix_adhesion_eps.cpp
+action fix_eps_adhesion_kokkos.h fix_adhesion_eps.h
 action fix_freeze_kokkos.cpp fix_freeze.cpp
 action fix_freeze_kokkos.h fix_freeze.h
 action fix_gravity_kokkos.cpp

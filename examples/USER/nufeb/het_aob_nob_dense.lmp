@@ -107,26 +107,26 @@ fix monod_nob nob nufeb/monod/nob o2 6.8e-4 no2 1.3e-3 no3 growth 0.9375021e-5 y
 fix monod_eps eps nufeb/monod/eps sub decay 0.1967597e-5
 
 # diffusion reaction fixes
-fix diff_sub all nufeb/diffusion_reaction sub 1.1574e-9 5e-3
-fix diff_o2  all nufeb/diffusion_reaction o2  2.3e-9    1e-3
-fix diff_nh4 all nufeb/diffusion_reaction nh4 1.97e-9   2e-3
-fix diff_no2 all nufeb/diffusion_reaction no2 1.85e-9   1e-4
-fix diff_no3 all nufeb/diffusion_reaction no3 1.85e-9   1e-4
+fix diff_sub all nufeb/diffusion_reaction sub 1.1574e-9 pp pp nd 5e-3
+fix diff_o2  all nufeb/diffusion_reaction o2  2.3e-9    pp pp nd 1e-3
+fix diff_nh4 all nufeb/diffusion_reaction nh4 1.97e-9  pp pp nd 2e-3
+fix diff_no2 all nufeb/diffusion_reaction no2 1.85e-9  pp pp nd 1e-4
+fix diff_no3 all nufeb/diffusion_reaction no3 1.85e-9 pp pp nd  1e-4
 
 # biological model fixes
-fix div all nufeb/divide 1.36e-6 30 1234
+fix div all nufeb/divide/coccus 1.36e-6 30 1234
 fix eps_ext het nufeb/eps_extract 4 eps 1.1 30 5678
 fix death alive nufeb/death dead 5e-7
 
 # mechanical model fixes
 fix wall all wall/gran hooke/history 1e-4 NULL 1e-5 NULL 0 0 zplane 0.0 4e-5
 fix_modify wall virial yes
-fix eps_adh all nufeb/eps_adhesion eps 1e6
+fix eps_adh all nufeb/adhesion/eps eps 1e6
 #fix_modify eps_adh virial yes
 fix vis all viscous 1.14e-8
 
 # file output
-dump 1 all image 100 dump*.png type diameter
+#dump 1 all image 100 dump*.png type diameter
 
 # thermo output
 thermo_style custom step atoms f_diff_sub f_diff_o2 f_diff_nh4 f_diff_no2 f_diff_no3
