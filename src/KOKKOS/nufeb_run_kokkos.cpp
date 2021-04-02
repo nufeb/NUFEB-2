@@ -887,7 +887,9 @@ int NufebRunKokkos::diffusion()
 
   int niter = 0;
   bool flag;
-  bool converge[nfix_diffusion] = {};
+  bool converge[nfix_diffusion];
+  for (int i = 0; i < nfix_diffusion; i++)
+    converge[i] = false;
   do {
     timer->stamp();
     comm_grid->forward_comm();
