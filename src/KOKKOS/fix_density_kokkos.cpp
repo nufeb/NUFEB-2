@@ -43,6 +43,7 @@ void FixDensityKokkos<DeviceType>::init()
 {
   FixDensity::init();
 
+  d_bitmask = typename AT::t_int_1d("nufeb/density/kk:bitmask", group->ngroup);
   // copy group bitmask to device
   Kokkos::View<int *, Kokkos::HostSpace,
 	       Kokkos::MemoryTraits<Kokkos::Unmanaged> > h_bitmask(group->bitmask, group->ngroup);
@@ -72,6 +73,7 @@ void FixDensityKokkos<DeviceType>::compute()
   d_biomass = atomKK->k_biomass.template view<DeviceType>();
   d_dens = gridKK->k_dens.template view<DeviceType>();
 
+  copymode = 1;
   Kokkos::parallel_for(grid->ncells,
 		       LAMMPS_LAMBDA(int i) {
 			 for (int igroup = 0; igroup < ngroup; igroup++) {
@@ -103,11 +105,11 @@ void FixDensityKokkos<DeviceType>::compute()
 			   double d = d_biomass(i) / vol;
 			   d_dens(0,cell) += d;
 			   for (int igroup = 0; igroup < ngroup; igroup++)
-			    // if (d_mask(i) & d_bitmask(igroup))
-			     if (atom->mask[i] & group->bitmask[i])
+			     if (d_mask(i) & d_bitmask(igroup))
 			       d_dens(igroup,cell) += d;
 			 }
 		       });
+  copymode = 0;
 
   gridKK->modified(execution_space, DENS_MASK);
 }
