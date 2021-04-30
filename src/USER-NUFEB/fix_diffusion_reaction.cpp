@@ -28,7 +28,7 @@
 using namespace LAMMPS_NS;
 using namespace FixConst;
 
-enum{DIRICHLET,NEUMANN,PERIODIC};
+enum{DIRICHLET,NEUMANN,PERIODIC,BULK};
 
 /* ---------------------------------------------------------------------- */
 
@@ -60,28 +60,31 @@ FixDiffusionReaction::FixDiffusionReaction(LAMMPS *lmp, int narg, char **arg) :
   diff_coef = force->numeric(FLERR, arg[4]);
 
   for (int i = 0; i < 3; i++) {
-    if (strcmp(arg[5+i], "dd") == 0) {
-      boundary[2*i] = DIRICHLET;
-      boundary[2*i+1] = DIRICHLET;
-      ndirichlet += 2;
-    } else if (strcmp(arg[5+i], "dn") == 0) {
-      boundary[2*i] = DIRICHLET;
-      boundary[2*i+1] = NEUMANN;
-      ndirichlet += 1;
-    } else if (strcmp(arg[5+i], "nd") == 0) {
-      boundary[2*i] = NEUMANN;
-      boundary[2*i+1] = DIRICHLET;
-      ndirichlet += 1;
-    } else if (strcmp(arg[5+i], "nn") == 0) {
-      boundary[2*i] = NEUMANN;
-      boundary[2*i+1] = NEUMANN;
-    } else if (strcmp(arg[5+i], "pp") == 0) {
-      boundary[2*i] = PERIODIC;
-      boundary[2*i+1] = PERIODIC;
-      grid->periodic[i] = 1;
-    } else {
+    if ((arg[5+i][0] == 'p' && arg[5+i][1] != 'p') ||
+	(arg[5+i][1] == 'p' && arg[5+i][0] != 'p'))
       error->all(FLERR, "Illegal boundary condition");
+
+    for (int j = 0; j < 2; j++) {
+      if (arg[5+i][j] == 'p') {
+	boundary[2*i+j] = PERIODIC;
+	grid->periodic[i] = 1;
+      } else if (arg[5+i][j] == 'n') {
+	boundary[2*i+j] = NEUMANN;
+      } else if (arg[5+i][j] == 'd') {
+	boundary[2*i+j] = DIRICHLET;
+	ndirichlet++;
+      } else if (arg[5+i][j] == 'b') {
+	if (!grid->reactor_flag)
+	  error->all(FLERR, "Illegal boundary condition");
+	boundary[2*i+j] = BULK;
+      } else {
+	error->all(FLERR, "Illegal boundary condition");
+      }
     }
+  }
+
+  for (int i = 0; i<6;i++) {
+    printf("i=%i b=%i \n", i, boundary[i]);
   }
 
   if (!ndirichlet) closed_system = 1;
@@ -220,6 +223,18 @@ void FixDiffusionReaction::compute_initial()
       grid->conc[isub][i] = dirichlet[4];
     } else if (grid->mask[i] & Z_PB_MASK && boundary[5] == DIRICHLET) {
       grid->conc[isub][i] = dirichlet[5];
+    } else if (grid->mask[i] & X_NB_MASK && boundary[0] == BULK) {
+      grid->conc[isub][i] = grid->bulk[isub];
+    } else if (grid->mask[i] & X_PB_MASK && boundary[1] == BULK) {
+      grid->conc[isub][i] = grid->bulk[isub];
+    } else if (grid->mask[i] & Y_NB_MASK && boundary[2] == BULK) {
+      grid->conc[isub][i] = grid->bulk[isub];
+    } else if (grid->mask[i] & Y_PB_MASK && boundary[3] == BULK) {
+      grid->conc[isub][i] = grid->bulk[isub];
+    } else if (grid->mask[i] & Z_NB_MASK && boundary[4] == BULK) {
+      grid->conc[isub][i] = grid->bulk[isub];
+    } else if (grid->mask[i] & Z_PB_MASK && boundary[5] == BULK) {
+      grid->conc[isub][i] = grid->bulk[isub];
     }
     grid->reac[isub][i] = 0.0;
   }
