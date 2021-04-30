@@ -39,7 +39,6 @@ class Grid : protected Pointers {
   int subbox[3];              // # of cells on this proc in each dimension
   int ncells;                 // total # of cells
   int periodic[3];            // flag if x, y and z boundaries are periodic
-
   
   Grid(class LAMMPS *);
   virtual ~Grid();
@@ -54,12 +53,16 @@ class Grid : protected Pointers {
   int *mask;
 
   // nufeb/monod
-  
+  int monod_flag;
   double **conc;    // concentration
   double **reac;    // reaction rate
   double **dens;    // density
   double ***growth; // growth rate
   
+  // nufeb/reactor
+  int reactor_flag;
+  double *bulk;    // bulk concentration
+
 private:
   template <typename T> static GridVec *gvec_creator(LAMMPS *);
 };
