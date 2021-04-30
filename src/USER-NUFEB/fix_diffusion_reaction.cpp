@@ -83,10 +83,6 @@ FixDiffusionReaction::FixDiffusionReaction(LAMMPS *lmp, int narg, char **arg) :
     }
   }
 
-  for (int i = 0; i<6;i++) {
-    printf("i=%i b=%i \n", i, boundary[i]);
-  }
-
   if (!ndirichlet) closed_system = 1;
 
   if (narg < ndirichlet + 7)
