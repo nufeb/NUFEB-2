@@ -11,7 +11,7 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#include "grid_vec_monod.h"
+#include "grid_vec_reactor.h"
 #include "grid.h"
 #include "force.h"
 #include "error.h"
@@ -25,19 +25,20 @@ using namespace LAMMPS_NS;
 
 /* ---------------------------------------------------------------------- */
 
-GridVecMonod::GridVecMonod(LAMMPS *lmp) : GridVec(lmp)
+GridVecReactor::GridVecReactor(LAMMPS *lmp) : GridVec(lmp)
 {
   mask = NULL;
   conc = NULL;
   reac = NULL;
   dens = NULL;
   growth = NULL;
-  grid->monod_flag = 1;
+  bulk = NULL;
+  grid->reactor_flag = 1;
 }
 
 /* ---------------------------------------------------------------------- */
 
-void GridVecMonod::init()
+void GridVecReactor::init()
 {
   GridVec::init();
 
@@ -47,17 +48,18 @@ void GridVecMonod::init()
 
 /* ---------------------------------------------------------------------- */
 
-void GridVecMonod::grow(int n)
+void GridVecReactor::grow(int n)
 {
   if (n < 0 || n > MAXSMALLINT)
     error->one(FLERR,"Per-processor system is too big");
 
   if (n > nmax) {
-    mask = memory->grow(grid->mask, n, "nufeb/monod:mask");
-    conc = memory->grow(grid->conc, grid->nsubs, n, "nufeb/monod:conc");
-    reac = memory->grow(grid->reac, grid->nsubs, n, "nufeb/monod:reac");
-    dens = memory->grow(grid->dens, group->ngroup, n, "nufeb/monod:dens");
-    growth = memory->grow(grid->growth, group->ngroup, n, 2, "nufeb/monod:grow");
+    mask = memory->grow(grid->mask, n, "nufeb/reactor:mask");
+    conc = memory->grow(grid->conc, grid->nsubs, n, "nufeb/reactor:conc");
+    reac = memory->grow(grid->reac, grid->nsubs, n, "nufeb/reactor:reac");
+    dens = memory->grow(grid->dens, group->ngroup, n, "nufeb/reactor:dens");
+    growth = memory->grow(grid->growth, group->ngroup, n, 2, "nufeb/reactor:grow");
+    bulk  = memory->grow(grid->bulk, grid->nsubs, "nufeb/reactor:bulk");
     nmax = n;
     grid->nmax = nmax;
 
@@ -66,12 +68,13 @@ void GridVecMonod::grow(int n)
     grid->reac = reac;
     grid->dens = dens;
     grid->growth = growth;
+    grid->bulk = bulk;
   }
 }
 
 /* ---------------------------------------------------------------------- */
 
-int GridVecMonod::pack_comm(int n, int *cells, double *buf)
+int GridVecReactor::pack_comm(int n, int *cells, double *buf)
 {
   int m = 0;
   for (int s = 0; s < grid->nsubs; s++) {
@@ -84,7 +87,7 @@ int GridVecMonod::pack_comm(int n, int *cells, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-void GridVecMonod::unpack_comm(int n, int *cells, double *buf)
+void GridVecReactor::unpack_comm(int n, int *cells, double *buf)
 {
   int m = 0;
   for (int s = 0; s < grid->nsubs; s++) {
@@ -96,7 +99,7 @@ void GridVecMonod::unpack_comm(int n, int *cells, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-int GridVecMonod::pack_exchange(int n, int *cells, double *buf)
+int GridVecReactor::pack_exchange(int n, int *cells, double *buf)
 {
   int m = 0;
   for (int s = 0; s < grid->nsubs; s++) {
@@ -109,7 +112,7 @@ int GridVecMonod::pack_exchange(int n, int *cells, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-void GridVecMonod::unpack_exchange(int n, int *cells, double *buf)
+void GridVecReactor::unpack_exchange(int n, int *cells, double *buf)
 {
   int m = 0;
   for (int s = 0; s < grid->nsubs; s++) {
@@ -121,49 +124,19 @@ void GridVecMonod::unpack_exchange(int n, int *cells, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-void GridVecMonod::set(int narg, char **arg)
+void GridVecReactor::set(int narg, char **arg)
 {
-  if (narg != 3 && narg != 9) error->all(FLERR, "Invalid grid_modify set command");
-  if (narg == 3) set_monod(grid->find(arg[1]), force->numeric(FLERR, arg[2]));
-  else set_monod(grid->find(arg[1]), force->numeric(FLERR, arg[2]),
-		force->numeric(FLERR, arg[3]), force->numeric(FLERR, arg[4]),
-		force->numeric(FLERR, arg[5]), force->numeric(FLERR, arg[6]),
-		force->numeric(FLERR, arg[7]), force->numeric(FLERR, arg[8]));
+  if (narg != 4) error->all(FLERR, "Invalid grid_modify set command");
+  set_reactor(grid->find(arg[1]), force->numeric(FLERR, arg[2]), force->numeric(FLERR, arg[3]));
 }
-
 
 /* ---------------------------------------------------------------------- */
 
-void GridVecMonod::set_monod(int sub, double domain)
+void GridVecReactor::set_reactor(int sub, double domain, double cbulk)
 {
   for (int i = 0; i < grid->ncells; i++) {
     if (!(mask[i] & CORNER_MASK))
       conc[sub][i] = domain;
   }
-}
-
-/* ---------------------------------------------------------------------- */
-
-void GridVecMonod::set_monod(int sub, double domain, double nx, double px,
-		       double ny, double py, double nz, double pz)
-{
-  for (int i = 0; i < grid->ncells; i++) {
-    if (!(mask[i] & CORNER_MASK)) {
-      if (mask[i] & X_NB_MASK) {
-	conc[sub][i] = nx;
-      } else if (mask[i] & X_PB_MASK) {
-	conc[sub][i] = px;
-      } else if (mask[i] & Y_NB_MASK) {
-	conc[sub][i] = ny;
-      } else if (mask[i] & Y_PB_MASK) {
-	conc[sub][i] = py;
-      } else if (mask[i] & Z_NB_MASK) {
-	conc[sub][i] = nz;
-      } else if (mask[i] & Z_PB_MASK) {
-	conc[sub][i] = pz;
-      } else {
-	conc[sub][i] = domain;
-      }
-    }
-  }
+  bulk[sub] = cbulk;
 }

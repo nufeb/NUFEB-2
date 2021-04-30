@@ -17,7 +17,6 @@
 #include "grid_vec.h"
 #include "comm.h"
 #include "comm_grid.h"
-#include "force.h"
 #include "domain.h"
 #include "math_const.h"
 #include "memory.h"
@@ -57,6 +56,9 @@ Grid::Grid(LAMMPS *lmp) : Pointers(lmp)
   reac = NULL;
   dens = NULL;
   growth = NULL;
+  bulk = NULL;
+
+  monod_flag = reactor_flag = 0;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -72,6 +74,7 @@ Grid::~Grid()
   memory->destroy(conc);
   memory->destroy(reac);
   memory->destroy(growth);
+  memory->destroy(bulk);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -79,14 +82,9 @@ Grid::~Grid()
 void Grid::modify_params(int narg, char **arg)
 {
   if (strcmp(arg[0], "set") == 0) {
-    if (narg != 3 && narg != 9) error->all(FLERR, "Invalid grid_modify command");
     lmp->init();
     grid->setup();
-    if (narg == 3) gvec->set(find(arg[1]), force->numeric(FLERR, arg[2]));
-    else gvec->set(find(arg[1]), force->numeric(FLERR, arg[2]),
-	      force->numeric(FLERR, arg[3]), force->numeric(FLERR, arg[4]),
-	      force->numeric(FLERR, arg[5]), force->numeric(FLERR, arg[6]),
-	      force->numeric(FLERR, arg[7]), force->numeric(FLERR, arg[8]));
+    gvec->set(narg, arg);
   }
 }
 
