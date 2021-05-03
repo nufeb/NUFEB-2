@@ -1301,6 +1301,8 @@
 /compute_volume.h
 /compute_avgcon.cpp
 /compute_avgcon.h
+/fix_biomass_balance.cpp
+/fix_biomadd_balance.h
 /fix_death.cpp
 /fix_death.h
 /fix_density.cpp
@@ -1325,6 +1327,8 @@
 /fix_wall_adhesion.h
 /grid_vec_monod.cpp
 /grid_vec_monod.h
+/grid_vec_reactor.cpp
+/grid_vec_reactor.h
 /nufeb_run.cpp
 /nufeb_run.h
 /fix_adhesion.cpp

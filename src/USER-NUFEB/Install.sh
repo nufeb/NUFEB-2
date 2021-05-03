@@ -71,6 +71,12 @@ action atom_vec_bacillus.cpp
 action atom_vec_bacillus.h
 action compute_volume.cpp
 action compute_volume.h
+action fix_adhesion.cpp
+action fix_adhesion.h
+action fix_adhesion_eps.cpp
+action fix_adhesion_eps.h
+action fix_biomass_balance.cpp
+action fix_biomass_balance.h
 action fix_death.cpp
 action fix_death.h
 action fix_density.cpp
@@ -85,10 +91,6 @@ action fix_divide_bacillus.cpp
 action fix_divide_bacillus.h
 action fix_divide_bacillus_minicell.cpp
 action fix_divide_bacillus_minicell.h
-action fix_adhesion.cpp
-action fix_adhesion.h
-action fix_adhesion_eps.cpp
-action fix_adhesion_eps.h
 action fix_eps_extract.cpp
 action fix_eps_extract.h
 action fix_monod.cpp
@@ -113,6 +115,8 @@ action fix_nve_bacillus_limit.h
 action fix_nve_bacillus_limit.cpp
 action grid_vec_monod.cpp
 action grid_vec_monod.h
+action grid_vec_reactor.cpp
+action grid_vec_reactor.h
 action nufeb_run.cpp
 action nufeb_run.h
 action pair_bacillus.h
