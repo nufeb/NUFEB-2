@@ -43,7 +43,6 @@ FixDiffusionReaction::FixDiffusionReaction(LAMMPS *lmp, int narg, char **arg) :
   scalar_flag = 1;
 
   closed_system = 0;
-  ndirichlet = 0;
 
   ncells = 0;
   prev = NULL;
@@ -58,6 +57,9 @@ FixDiffusionReaction::FixDiffusionReaction(LAMMPS *lmp, int narg, char **arg) :
     error->all(FLERR, "Can't find substrate for nufeb/diffusion_reaction");
 
   diff_coef = force->numeric(FLERR, arg[4]);
+
+  int ndirichlet = 0;
+  int nbulk = 0;
 
   for (int i = 0; i < 3; i++) {
     if ((arg[5+i][0] == 'p' && arg[5+i][1] != 'p') ||
@@ -77,13 +79,14 @@ FixDiffusionReaction::FixDiffusionReaction(LAMMPS *lmp, int narg, char **arg) :
 	if (!grid->reactor_flag)
 	  error->all(FLERR, "Illegal boundary condition");
 	boundary[2*i+j] = BULK;
+	nbulk++;
       } else {
 	error->all(FLERR, "Illegal boundary condition");
       }
     }
   }
 
-  if (!ndirichlet) closed_system = 1;
+  if (!ndirichlet && !nbulk) closed_system = 1;
 
   if (narg < ndirichlet + 7)
     error->all(FLERR, "Not enough values for dirichlet boundaries");
