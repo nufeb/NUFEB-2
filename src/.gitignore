@@ -1302,7 +1302,7 @@
 /compute_avgcon.cpp
 /compute_avgcon.h
 /fix_biomass_balance.cpp
-/fix_biomadd_balance.h
+/fix_biomass_balance.h
 /fix_death.cpp
 /fix_death.h
 /fix_density.cpp

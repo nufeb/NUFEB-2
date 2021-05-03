@@ -50,7 +50,6 @@ class FixDiffusionReaction : public Fix {
   double dt;
   double dirichlet[6];
   int boundary[6];             // boundary conditions (-x, +x, -y, +y, -z, +z)
-  int ndirichlet;
 
   double *penult;	       // substrate concentration at n-2 step
   int closed_system;
