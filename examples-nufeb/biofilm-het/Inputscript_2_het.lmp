@@ -93,9 +93,9 @@ variable h2v equal "c_h2v"
 variable step equal "step"
 
 # file output
-dump du1 all vtk 1 dump*.vtu id type diameter 
+#dump du1 all vtk 1 dump*.vtu id type diameter 
 #dump du2 all grid/vtk 10 dump_%_*.vti con rea den gro 
-dump du3 all nufeb/hdf5 10 dump.h5 id type x y z vx vy vz fx fy fz radius conc reac 
+#dump du3 all nufeb/hdf5 10 dump.h5 id type x y z vx vy vz fx fy fz radius conc reac 
 
 
 fix volcsv all print 1 "${step},${vol},${h1v},${h2v},${h1rv}" & 
