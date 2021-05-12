@@ -41,14 +41,11 @@ double ComputeVolume::compute_scalar()
 {
   invoked_scalar = update->ntimestep;
   int *mask = atom->mask;
-  int n_Atoms = 0;
+  
   scalar = 0.0;
   for (int i = 0; i < atom->nlocal; i++) {
     if ((mask[i] & groupbit)) {
-      int combined = (mask[i] & groupbit);
-//      printf("groupbit: %X   mask:%X   combined: %X\n",groupbit,mask[i],combined);
-      n_Atoms++;
-         double r = atom->radius[i];
+        double r = atom->radius[i];
         if (avec) {
             int ibonus = atom->bacillus[i];
             AtomVecBacillus::Bonus *bonus = &avec->bonus[ibonus];
@@ -61,7 +58,6 @@ double ComputeVolume::compute_scalar()
         }
     }
   }
-  printf("Read natoms: %d\n",n_Atoms);
   MPI_Allreduce(MPI_IN_PLACE, &scalar, 1, MPI_DOUBLE, MPI_SUM, world); 
   return scalar;
 }
