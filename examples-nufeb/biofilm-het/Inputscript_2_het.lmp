@@ -31,7 +31,7 @@ neigh_modify    check yes               # rebuild neighbour list if any atom
 					#   distance
 
 # select grid style
-grid_style      nufeb/monod 4 sub o2 no2 no3 4e-6 pp pp nd
+grid_style      nufeb/monod 4 sub o2 no2 no3 4e-6
 
 # test grid comm
 #run_style       test/comm_grid
@@ -112,7 +112,7 @@ fix volcsv all print 1 "${step},${vol},${h1v},${h2v},${h1rv}" &
 
 
 # thermo output
-thermo_style custom step atoms c_vol c_h1v  c_h2v v_h1rv
+thermo_style custom step atoms c_vol v_press v_mass c_h1v  c_h2v v_h1rv
 thermo 1
 thermo_modify lost ignore
 # issue run command
