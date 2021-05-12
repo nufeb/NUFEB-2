@@ -96,13 +96,12 @@ variable step equal "step"
 dump du1 all vtk 1 dump*.vtu id type diameter 
 #dump du2 all grid/vtk 10 dump_%_*.vti con rea den gro 
 dump du3 all nufeb/hdf5 10 dump.h5 id type x y z vx vy vz fx fy fz radius conc reac 
-#fix volcsv all print 1 "Testing fix print ${press}" title "total volume, heterotroph 1 volume, heterotroph 2 volume, heterotroph 1 volume fraction" file vol.csv
 
-fix volcsv all print 1 "${step},${vol},${h1v},${h2v},${h1rv}" title "step,total volume, heterotroph 1 volume, heterotroph 2 volume, heterotroph 1 volume fraction" file vol.csv
+
+fix volcsv all print 1 "${step},${vol},${h1v},${h2v},${h1rv}" title "step,total volume, heterotroph 1 volume, heterotroph 2 volume, heterotroph 1 volume fraction" screen no file vol.csv
 
 # thermo output
 thermo_style custom step atoms c_vol c_h1v  c_h2v v_h1rv
-#thermo_style custom step atoms c_vol c_h1v c_h2v v_h1rv
 thermo 1
 thermo_modify lost ignore
 # issue run command
