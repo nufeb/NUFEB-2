@@ -40,21 +40,28 @@ ComputeVolume::ComputeVolume(LAMMPS *lmp, int narg, char **arg) :
 double ComputeVolume::compute_scalar()
 {
   invoked_scalar = update->ntimestep;
-
+  int *mask = atom->mask;
+  int n_Atoms = 0;
   scalar = 0.0;
   for (int i = 0; i < atom->nlocal; i++) {
-    double r = atom->radius[i];
-    if (avec) {
-      int ibonus = atom->bacillus[i];
-      AtomVecBacillus::Bonus *bonus = &avec->bonus[ibonus];
+    if ((mask[i] & groupbit)) {
+      int combined = (mask[i] & groupbit);
+//      printf("groupbit: %X   mask:%X   combined: %X\n",groupbit,mask[i],combined);
+      n_Atoms++;
+         double r = atom->radius[i];
+        if (avec) {
+            int ibonus = atom->bacillus[i];
+            AtomVecBacillus::Bonus *bonus = &avec->bonus[ibonus];
 
-      double vsphere = FOURTHIRDSPI * r * r * r;
-      double vcylinder = MY_PI * r * r * bonus->length;
-      scalar += vsphere + vcylinder;
-    } else {
-      scalar += FOURTHIRDSPI * r * r * r;
+            double vsphere = FOURTHIRDSPI * r * r * r;
+            double vcylinder = MY_PI * r * r * bonus->length;
+            scalar += vsphere + vcylinder;
+        } else {
+            scalar += FOURTHIRDSPI * r * r * r;
+        }
     }
   }
+  printf("Read natoms: %d\n",n_Atoms);
   MPI_Allreduce(MPI_IN_PLACE, &scalar, 1, MPI_DOUBLE, MPI_SUM, world); 
   return scalar;
 }
