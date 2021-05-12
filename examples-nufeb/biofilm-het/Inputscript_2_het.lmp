@@ -78,18 +78,25 @@ fix eps_adh all nufeb/adhesion/eps eps 1e6
 fix vis all viscous 1e-5
 
 # pressure computation
-compute vol all nufeb/volume
-compute h1v het_1 nufeb/volume
-compute h2v het_2 nufeb/volume
-variable h1rv equal "c_h1v / (c_h1v + c_h2v)" 
 compute ke all ke
 variable one equal 1.0
 compute press all pressure NULL pair vol v_one
 variable press equal "(c_ke + c_press) / (3.0 * c_vol)" 
 variable mass equal "mass(all)"
+
+# Relative volume of the two heterotrophs
+# Compute scalar volumes representing total volume and per-heterotroph volume
+compute vol all nufeb/volume
+compute h1v het_1 nufeb/volume
+compute h2v het_2 nufeb/volume
+
+# Use the computes to populate variables for output
 variable vol equal "c_vol"
 variable h1v equal "c_h1v"
 variable h2v equal "c_h2v"
+# Relative volume of hetertroph 1 vs total heterotrophs
+variable h1rv equal "c_h1v / (c_h1v + c_h2v)" 
+# Timestep
 variable step equal "step"
 
 # file output
@@ -97,9 +104,10 @@ variable step equal "step"
 #dump du2 all grid/vtk 10 dump_%_*.vti con rea den gro 
 #dump du3 all nufeb/hdf5 10 dump.h5 id type x y z vx vy vz fx fy fz radius conc reac 
 
-
+# Record the cell volume data to a csv file
 fix volcsv all print 1 "${step},${vol},${h1v},${h2v},${h1rv}" & 
-    screen no file "cell_volumes.csv" & 
+    screen no &
+    file "cell_volumes.csv" & 
     title "step,total volume,heterotroph 1 volume,heterotroph 2 volume,heterotroph 1 volume fraction"
 
 
