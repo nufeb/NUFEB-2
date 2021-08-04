@@ -11,27 +11,34 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#ifndef LMP_FIX_DEATH_H
-#define LMP_FIX_DEATH_H
+#ifdef FIX_CLASS
 
-#include "fix.h"
+FixStyle(nufeb/death/diameter,FixDeathDiameter)
+
+#else
+
+#ifndef LMP_FIX_DEATH_DIAMETER_H
+#define LMP_FIX_DEATH_DIAMETER_H
+
+#include "fix_death.h"
 
 namespace LAMMPS_NS {
 
-class FixDeath : public Fix {
+class FixDeathDiameter : public FixDeath {
  public:
   int compute_flag;
 
-  FixDeath(class LAMMPS *, int, char **);
-  virtual ~FixDeath() {}
-  int modify_param(int, char **);
-
-  virtual void init() {};
-  virtual int setmask();
-  virtual void post_integrate();
-  virtual void compute() = 0;
+  FixDeathDiameter(class LAMMPS *, int, char **);
+  virtual ~FixDeathDiameter() {}
+  virtual void init() {}
+  virtual void compute();
+  
+ private:
+  int idead;
+  double diameter;
 };
 
 }
 
+#endif
 #endif
