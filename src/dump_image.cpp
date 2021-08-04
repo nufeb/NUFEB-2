@@ -837,13 +837,16 @@ void DumpImage::create_image()
   if (bacillusflag) {
     double *pole1, *pole2;
     double xp1[3], xp2[3];
+    int ilocal;
     double diameter;
     double **x = atom->x;
     int *type = atom->type;
     int *bacillus = atom->bacillus;
+    AtomVecBacillus::Bonus *bonus;
 
     for (i = 0; i < nchoose; i++) {
       j = clist[i];
+      bonus = &avec_bacillus->bonus[bacillus[i]];
       if (bacillus[j] < 0) continue;
 
       if (bacilluscolor == TYPE) {
@@ -853,28 +856,34 @@ void DumpImage::create_image()
       xp1[0] = xp1[1] = xp1[2] = 0.0;
       xp2[0] = xp2[1] = xp2[2] = 0.0;
 
-      avec_bacillus->get_pole_coords(j, xp1, xp2);
-
-      diameter = avec_bacillus->bonus[bacillus[j]].diameter;
+      avec_bacillus->get_pole_coords(i, xp1, xp2);
+      diameter = bonus->diameter;
 
       if (!plasmidflag){
-	if (avec_bacillus->bonus[bacillus[j]].length == 0) { // spheres
-	  image->draw_sphere(x[j],color,diameter);
+	if (bonus->length == 0) { // spheres
+	  image->draw_sphere(x[i],color,diameter);
 	} else { // rods
 	  image->draw_cylinder(xp1,xp2,color,diameter,3);
 	}
       } else{
-	FixPropertyPlasmid *fix = nullptr;;
-	for (int k = 0; k < modify->nfix; k++)
-	  if (strcmp(modify->fix[k]->style,"nufeb/property/plasmid") == 0) {
-	    fix = (FixPropertyPlasmid *) modify->fix[k];
-	    break;
-	  }
-	if (fix == nullptr) error->all(FLERR,"Illegal dump_modify command: keyword plasmid requires fix nufeb/property/plasmid");
+	int ifix = modify->find_fix_by_style("^nufeb/property/plasmid");
+	if (ifix < 0 ) error->all(FLERR,"Illegal dump_modify command: keyword plasmid requires fix nufeb/property/plasmid");
+	FixPropertyPlasmid *fix = (FixPropertyPlasmid *) modify->fix[ifix];
+
 	double xplasmid[3];
-	for (int k = 0; k < (int)fix->vprop[j]; k++) {
-	  fix->get_plasmid_coords(j,k,xplasmid,x[j]);
+	xplasmid[0] = xplasmid[1] = xplasmid[2] = 0.0;
+	for (int k = 0; k < (int)fix->vprop[i]; k++) {
+	  fix->get_plasmid_coords(i,k,xplasmid);
 	  image->draw_sphere(xplasmid,image->color2rgb("green"),fix->get_plasmid_diameter());
+	}
+	double xfilament1[3];
+	double xfilament2[3];
+	for (int k = 0; k < fix->nfilas[i]; k++) {
+	  int p1 = fix->fila[i][k][0];
+	  int p2 = fix->fila[i][k][1];
+	  fix->get_plasmid_coords(i,p1,xfilament1);
+	  fix->get_plasmid_coords(i,p2,xfilament2);
+	  image->draw_cylinder(xfilament1,xfilament2,image->color2rgb("red"),5e-8,0);
 	}
       }
     }
