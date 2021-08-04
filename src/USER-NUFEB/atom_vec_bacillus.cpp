@@ -21,6 +21,7 @@
 #include "modify.h"
 #include "math_const.h"
 #include "math_extra.h"
+#include "random_park.h"
 
 #include <cstring>
 
@@ -551,7 +552,7 @@ void AtomVecBacillus::data_atom_bonus(int m, char **values)
   // create initial quaternion
   MathExtra::exyz_to_q(ex_space,ey_space,ez_space,bonus[nlocal_bonus].quat);
 
-  // initialise cooridnates os two cell poles
+  // initialise coordinate as two cell poles
   double *pole1 = bonus[nlocal_bonus].pole1;
   double *pole2 = bonus[nlocal_bonus].pole2;
   double px = utils::numeric(FLERR,values[6],true,lmp);
@@ -606,9 +607,7 @@ double AtomVecBacillus::memory_usage_bonus()
 void AtomVecBacillus::create_atom_post(int ilocal)
 {
   radius[ilocal] = 0.5e-6;
-  rmass[ilocal] *= (4.0*MY_PI/3.0*
-      radius[ilocal]*radius[ilocal]*radius[ilocal] +
-      MY_PI*radius[ilocal]*radius[ilocal]*bonus[nlocal_bonus].length);
+  rmass[ilocal] = 1.0;
   biomass[ilocal] = 1.0;
   bacillus[ilocal] = -1;
 }
@@ -783,3 +782,140 @@ void AtomVecBacillus::get_pole_coords(int m, double *xp1, double *xp2)
   xp2[1] += x[1];
   xp2[2] += x[2];
 }
+
+/* ----------------------------------------------------------------------
+   set length, called from set cmd
+------------------------------------------------------------------------- */
+void AtomVecBacillus::set_length(int i, double value)
+{
+  if (bacillus[i] < 0) {
+    if (nlocal_bonus == nmax_bonus) grow_bonus();
+    bonus[nlocal_bonus].ilocal = i;
+    bacillus[i] = nlocal_bonus++;
+  }
+  bonus[bacillus[i]].length = value;
+}
+
+/* ----------------------------------------------------------------------
+   set diameter, called from set cmd
+------------------------------------------------------------------------- */
+void AtomVecBacillus::set_diameter(int i, double value)
+{
+  if (bacillus[i] < 0) {
+    if (nlocal_bonus == nmax_bonus) grow_bonus();
+    bonus[nlocal_bonus].ilocal = i;
+    bacillus[i] = nlocal_bonus++;
+  }
+  bonus[bacillus[i]].diameter = value;
+}
+
+/* ----------------------------------------------------------------------
+   set initial quaternion, called from set cmd
+------------------------------------------------------------------------- */
+void AtomVecBacillus::set_quat(int i, double ixx, double iyy, double izz, double ixy, double ixz, double iyz)
+{
+  if (bacillus[i] < 0) {
+    if (nlocal_bonus == nmax_bonus) grow_bonus();
+    bonus[nlocal_bonus].ilocal = i;
+    bacillus[i] = nlocal_bonus++;
+  }
+
+  double tensor[3][3];
+  tensor[0][0] = ixx;
+  tensor[1][1] = iyy;
+  tensor[2][2] = izz;
+  tensor[0][1] = tensor[1][0] = ixy;
+  tensor[0][2] = tensor[2][0] = ixz;
+  tensor[1][2] = tensor[2][1] = iyz;
+
+  double *inertia = bonus[bacillus[i]].inertia;
+  double evectors[3][3];
+  int ierror = MathExtra::jacobi(tensor,inertia,evectors);
+  if (ierror) error->one(FLERR,
+                         "Insufficient Jacobi rotations for bacillus");
+
+  // if any principal moment < scaled EPSILON, set to 0.0
+  double max;
+  max = MAX(inertia[0],inertia[1]);
+  max = MAX(max,inertia[2]);
+
+  if (inertia[0] < EPSILON * max) inertia[0] = 0.0;
+  if (inertia[1] < EPSILON * max) inertia[1] = 0.0;
+  if (inertia[2] < EPSILON * max) inertia[2] = 0.0;
+
+  // exyz_space = principal axes in space frame
+  double ex_space[3],ey_space[3],ez_space[3];
+
+  ex_space[0] = evectors[0][0];
+  ex_space[1] = evectors[1][0];
+  ex_space[2] = evectors[2][0];
+  ey_space[0] = evectors[0][1];
+  ey_space[1] = evectors[1][1];
+  ey_space[2] = evectors[2][1];
+  ez_space[0] = evectors[0][2];
+  ez_space[1] = evectors[1][2];
+  ez_space[2] = evectors[2][2];
+
+  // enforce 3 evectors as a right-handed coordinate system
+  // flip 3rd vector if needed
+  double cross[3];
+  MathExtra::cross3(ex_space,ey_space,cross);
+  if (MathExtra::dot3(cross,ez_space) < 0.0) MathExtra::negate3(ez_space);
+
+  // create initial quaternion
+  MathExtra::exyz_to_q(ex_space,ey_space,ez_space,bonus[bacillus[i]].quat);
+}
+
+/* ----------------------------------------------------------------------
+   set random pole orientation, called from set cmd
+------------------------------------------------------------------------- */
+void AtomVecBacillus::set_pole_random(int i, int poleflag, double ran1, double ran2)
+{
+  if (bacillus[i] < 0) {
+    if (nlocal_bonus == nmax_bonus) grow_bonus();
+    bonus[nlocal_bonus].ilocal = i;
+    bacillus[i] = nlocal_bonus++;
+  }
+
+  double dist = 0.5*bonus[bacillus[i]].length;
+  double *pole1 = bonus[bacillus[i]].pole1;
+  double *pole2 = bonus[bacillus[i]].pole2;
+
+  double theta = ran1 * 2 * MY_PI;
+  double phi = ran2 * (MY_PI);
+
+  if (poleflag == 1) { // x
+    pole1[0] = dist;
+    pole1[1] = 0.0;
+    pole1[2] = 0.0;
+  } else if (poleflag == 2) { // y
+    pole1[0] = 0.0;
+    pole1[1] = dist;
+    pole1[2] = 0.0;
+  } else if (poleflag == 3) { // z
+    pole1[0] = 0.0;
+    pole1[1] = 0.0;
+    pole1[2] = dist;
+  } else if (poleflag == 4) { // xy
+    pole1[0] = cos(theta) * dist;
+    pole1[1] = sin(theta) * dist;
+    pole1[2] = 0.0;
+  } else if (poleflag == 5) { // xz
+    pole1[0] = cos(theta) * dist;
+    pole1[1] = 0.0;
+    pole1[2] = sin(theta) * dist;
+  } else if (poleflag == 6) { // yz
+    pole1[0] = 0.0;
+    pole1[1] = cos(theta) * dist;
+    pole1[2] = sin(theta) * dist;
+  } else if (poleflag == 7) { // xyz
+    pole1[0] = dist * cos(theta) * sin(phi);
+    pole1[1] = dist * sin(theta) * sin(phi);
+    pole1[2] = dist * sin(phi);
+  }
+
+  pole2[0] = -pole1[0];
+  pole2[1] = -pole1[1];
+  pole2[2] = -pole1[2];
+}
+

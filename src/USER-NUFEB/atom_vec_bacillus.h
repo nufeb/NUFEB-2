@@ -69,6 +69,10 @@ class AtomVecBacillus : public AtomVec {
 
   void get_pole_coords(int, double *, double *);
   void set_bonus(int, double *, double, double *, double *);
+  void set_quat(int, double, double, double, double, double, double);
+  void set_pole_random(int, int, double, double);
+  void set_length(int, double);
+  void set_diameter(int, double);
 
   int nlocal_bonus;
 

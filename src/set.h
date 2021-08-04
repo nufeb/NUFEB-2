@@ -42,6 +42,11 @@ class Set : protected Pointers {
   int ivar1,ivar2,ivar3,ivar4;
   double *vec1,*vec2,*vec3,*vec4;
 
+  // NUFEB specific
+  double ixx,iyy,izz,ixy,ixz,iyz;
+  int poleflag;
+
+
   int discflag;
 
   void selection(int);
