@@ -25,6 +25,7 @@
 #include "update.h"
 #include "modify.h"
 #include "domain.h"
+#include "compute.h"
 #include "atom_masks.h"
 #include "random_park.h"
 
@@ -148,6 +149,9 @@ void FixDivideBacillus::compute()
 
         for (int m = 0; m < modify->nfix; m++)
           modify->fix[m]->update_arrays(i, j);
+
+        for (int m = 0; m < modify->ncompute; m++)
+          modify->compute[m]->set_arrays(j);
 
         delete[] coord;
       }

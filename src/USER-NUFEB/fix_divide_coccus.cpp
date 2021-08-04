@@ -20,6 +20,7 @@
 #include "atom_vec.h"
 #include "error.h"
 #include "lmptype.h"
+#include "compute.h"
 #include "math_const.h"
 #include "random_park.h"
 #include "update.h"
@@ -162,6 +163,9 @@ void FixDivideCoccus::compute()
 
         for (int m = 0; m < modify->nfix; m++)
           modify->fix[m]->update_arrays(i, j);
+
+        for (int m = 0; m < modify->ncompute; m++)
+          modify->compute[m]->set_arrays(j);
 
         delete[] coord;
       }
