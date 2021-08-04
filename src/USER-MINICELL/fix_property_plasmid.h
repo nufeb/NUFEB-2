@@ -23,6 +23,9 @@ FixStyle(nufeb/property/plasmid,FixPropertyPlasmid)
 #include "fix_property.h"
 #include "atom_vec_bacillus.h"
 
+//#include <iostream>
+//#include <fstream>
+
 namespace LAMMPS_NS {
 
 class FixPropertyPlasmid : public FixProperty {
@@ -32,16 +35,17 @@ class FixPropertyPlasmid : public FixProperty {
   ~FixPropertyPlasmid();
 
   void grow_arrays(int);
-  void init();
+  void init() {}
   void set_arrays(int) {};
   void update_arrays(int, int);
   void compute();
   double compute_scalar();
 
   void get_plasmid_coords(int, int, double *, double *);
+  void get_plasmid_coords(int, int, double *);
   double get_plasmid_diameter() {return dia;};
-  void delte_plasmid(int);
   void create_plasmid();
+  void delete_filament(int *, int);
 
   double memory_usage();
   void copy_arrays(int, int, int);
@@ -53,26 +57,38 @@ class FixPropertyPlasmid : public FixProperty {
   int size_restart(int);
   int maxsize_restart();
 
- protected:
-  double **xpm;
-  double **vpm;
-  double **xold;
-  double **reac_t;
-  int **filament;
+  int pmax;              // maximum # of plasmid
+  double **xpm;          // plasmid position
+  double **pre_x;        // previous cell location
+  double **nproteins;   // number of initiator proteins
+  int fmax;              // maximum # of filaments
+  int *nfilas;       // # of filaments
+  int ***fila;       // filament defined as straight line
+  double **tfila;   // filament duration
+  double ftime;
+  double alpha;
+ // std::ofstream myfile;
 
  private:
   void replication(int);
   void motility(int);
   void get_xlimit(double *, int, int);
   void set_plasmid_xpm(int, int, double *,double *);
+  void relocate_limit(int, int);
+  void get_quat(double *, double *, double *);
+  void distance_bt_pt_line(double *, double *, double *, double &);
 
-  double replicate, dia, acc, dt;
-  double dtsq;
-  int pmax, pinit;
+  double dia, diff_coef, dt;
+  int mean_protein, init_protein;
+  int pinit;              // # of initial plasmid
   int seed;
 
   class RanPark *random;
   class AtomVecBacillus *avec;
+
+  double dot(double x1, double x2, double x3, double y1, double y2, double y3) { return x1*y1 + x2*y2 + x3*y3; }
+  double norm(double x1, double x2, double x3) { return sqrt(dot(x1, x2, x3, x1, x2, x3)); }
+  double dist(double u1, double u2, double u3, double v1, double v2, double v3) { return norm(u1-v1, u2-v2, u3-v3); }
 };
 
 }
