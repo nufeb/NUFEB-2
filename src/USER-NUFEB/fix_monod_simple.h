@@ -13,38 +13,31 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/monod/cyano,FixMonodCyano)
+FixStyle(nufeb/monod/simple,FixMonodSimple)
 
 #else
 
-#ifndef LMP_FIX_MONOD_CYANO_H
-#define LMP_FIX_MONOD_CYANO_H
+#ifndef LMP_FIX_MONOD_SIMPLE_H
+#define LMP_FIX_MONOD_SIMPLE_H
 
 #include "fix_monod.h"
 
 namespace LAMMPS_NS {
 
-class FixMonodCyano: public FixMonod {
+class FixMonodSimple: public FixMonod {
  public:
-  FixMonodCyano(class LAMMPS *, int, char **);
-  virtual ~FixMonodCyano() {}
+  FixMonodSimple(class LAMMPS *, int, char **);
+  virtual ~FixMonodSimple() {}
   virtual void compute();
- protected:
-  int ilight;   // light
-  int ico2;     // co2
-  int igco2;    // gas co2
-  int isuc;     // sucrose
-  int io2;      // dissolved co2
 
-  double light_affinity;
-  double co2_affinity;
+ protected:
+  int isub;
+  double sub_affinity;
 
   double growth;
   double yield;
   double maintain;
   double decay;
-  double suc_exp;
-  double gco2_flag;
   
   class AtomVecBacillus *avec;
 
