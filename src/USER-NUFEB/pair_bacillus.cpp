@@ -177,6 +177,7 @@ void PairBacillus::compute(int eflag, int vflag)
 
       if (evflag) ev_tally_xyz(i,j,nlocal,newton_pair,evdwl,0.0,
                                facc[0],facc[1],facc[2],delx,dely,delz);
+
     }
   }
 
@@ -562,12 +563,7 @@ void PairBacillus::rod_against_rod(int i, int j, int itype, int jtype,
   contact_dist = (ibonus->diameter + jbonus->diameter)/2;
 
   int jflag = 1;
-//  printf("  line1:\n p1 = (%e %e %e);\n p2 = (%e %e %e)\n \n"
-//         "  line2:\n p1 = (%e %e %e);\n p2 = (%e %e %e)\n: "
-//         "t1 = %f; t2 = %f; r = %e\n",
-//    xi1[0], xi1[1], xi1[2], xi2[0], xi2[1], xi2[2],
-//    xpj1[0], xpj1[1], xpj1[2], xpj2[0], xpj2[1], xpj2[2],
-//    t1, t2, r);
+
   distance_bt_rods(xpj1, xpj2, xi1, xi2, h2, h1, t2, t1, r);
 
   // include the vertices for interactions
@@ -624,7 +620,6 @@ void PairBacillus::pair_force_and_torque(int i, int j,
   if (R <= 0) {
 
     // contact: accumulate normal and tangential contact force components
-
     contact_forces(i, j, pi, pj, delx, dely, delz, fx, fy, fz,
                    x, v, angmom, f, torque, facc);
   } else {
@@ -667,7 +662,7 @@ void PairBacillus::contact_forces(int i, int j, double *xi, double *xj,
   double fn[3],ft[3],vi[3],vj[3];
   double *quat, *inertia;
   AtomVecBacillus::Bonus *bonus;
-
+  //printf("i:%i j:%i pi:%e %e %e pj:%e %e %e \n",i,j,pi[0],pi[1],pi[2],pj[0],pj[1],pj[2]);
   // compute the velocity of the vertex in the space-fixed frame
 
   ibonus = atom->bacillus[i];
