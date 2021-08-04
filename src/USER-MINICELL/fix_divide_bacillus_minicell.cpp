@@ -21,12 +21,14 @@
 #include "error.h"
 #include "lmptype.h"
 #include "math_const.h"
+#include "memory.h"
 #include "update.h"
+#include "compute.h"
 #include "group.h"
 #include "modify.h"
 #include "domain.h"
 #include "atom_masks.h"
-#include "atom_vec_bacillus_ecoli.h"
+#include "atom_vec_bacillus.h"
 #include "random_park.h"
 
 #include "comm.h"
@@ -35,43 +37,93 @@ using namespace LAMMPS_NS;
 using namespace FixConst;
 using namespace MathConst;
 
+enum{SIZER,ADDER};
+enum{MASS,LENGTH};
+
 /* ---------------------------------------------------------------------- */
 
 FixDivideBacillusMinicell::FixDivideBacillusMinicell(LAMMPS *lmp, int narg, char **arg) :
-  FixDivide(lmp, narg, arg)
+  FixDivide(lmp, narg, arg), birth_length(nullptr)
 {
   avec = (AtomVecBacillus *) atom->style_match("bacillus");
   if (!avec) error->all(FLERR,"Fix nufeb/divide/bacillus/minicell requires "
       "atom style bacillus");
 
+  restart_peratom = 1;
+
   if (narg < 8)
     error->all(FLERR, "Illegal fix nufeb/divide/bacillus/minicell command");
-  
+
   imini = group->find(arg[3]);
   if (imini < 0)
     error->all(FLERR, "Can't find minicell group name");
 
   type = utils::inumeric(FLERR,arg[4],true,lmp);
 
-  maxlength = utils::numeric(FLERR,arg[5],true,lmp);
+  if (strcmp(arg[5], "sizer") == 0) {
+    divflag = SIZER;
+  } else if (strcmp(arg[5], "adder") == 0) {
+    divflag = ADDER;
+  } else {
+    error->all(FLERR, "Illegal fix nufeb/divide/bacillus/minicell command");
+  }
+
+  maxlength = utils::numeric(FLERR,arg[6],true,lmp);
   if (maxlength <= 0)
-    error->all(FLERR, "Max division length must be greater than 0");
-  prob = utils::numeric(FLERR,arg[6],true,lmp);
+    error->all(FLERR, "Critical division length cannot be negative");
+  prob = utils::numeric(FLERR,arg[7],true,lmp);
 
   if (prob < 0 || prob > 1)
-    error->all(FLERR, "Minicell division probability must be between 0-1");
-  seed = utils::numeric(FLERR,arg[7],true,lmp);
+    error->all(FLERR, "ILlegal minicell division probability value");
+  seed = utils::numeric(FLERR,arg[8],true,lmp);
 
   // Random number generator, same for all procs
   random = new RanPark(lmp, seed);
 
+  conserveflag = 0;
+  int iarg = 9;
+  var = 0.0;
+  while (iarg < narg) {
+    if (strcmp(arg[iarg], "normal") == 0) {
+      var = utils::numeric(FLERR,arg[iarg+1],true,lmp);
+      iarg += 2;
+    } if (strcmp(arg[iarg], "conserve") == 0) {
+      if (strcmp(arg[iarg+1], "mass") == 0) {
+	conserveflag = MASS;
+      } else if (strcmp(arg[iarg+1], "length") == 0) {
+	conserveflag = LENGTH;
+      } else {
+        error->all(FLERR, "Illegal fix nufeb/divide/bacillus/minicell command");
+      }
+      iarg += 2;
+    } else {
+      error->all(FLERR,"Illegal fix nufeb/divide/bacillus/minicell command");
+    }
+  }
+
   maxradius = 0.0;
+  grow_arrays(atom->nmax);
 }
 
 FixDivideBacillusMinicell::~FixDivideBacillusMinicell()
 {
   delete random;
+  memory->destroy(birth_length);
 };
+
+/* ---------------------------------------------------------------------- */
+
+void FixDivideBacillusMinicell::init()
+{
+  for (int i = 0; i < atom->nlocal; i++) {
+    if (atom->mask[i] & groupbit) {
+      int ibonus = atom->bacillus[i];
+      AtomVecBacillus::Bonus *bonus = &avec->bonus[ibonus];
+
+      birth_length[i] = bonus->length;
+    }
+  }
+}
 
 /* ---------------------------------------------------------------------- */
 
@@ -86,7 +138,12 @@ void FixDivideBacillusMinicell::compute()
       int ibonus = atom->bacillus[i];
       AtomVecBacillus::Bonus *bonus = &avec->bonus[ibonus];
 
-      if (bonus->length < maxlength) continue;
+      if (divflag == SIZER) divlength = maxlength;
+      else if (divflag == ADDER) divlength = birth_length[i] + maxlength;
+      // calculate a gaussian number with mean=maxlength, sd=var
+      if (var) divlength += var*random->gaussian();
+
+      if (bonus->length < divlength) continue;
 
       double imass, jmass;
       double ilen, jlen, xp1[3], xp2[3];
@@ -109,10 +166,17 @@ void FixDivideBacillusMinicell::compute()
       double prob_mini = random->uniform();
       // normal division
       if (prob_mini > prob) {
-        imass = atom->rmass[i]/2;
-        jmass = imass;
-        // conserve mass
-        ilen = (imass / density - vsphere) / acircle;;
+	// conserve mass
+	if (conserveflag == MASS) {
+	  imass = atom->rmass[i]/2;
+	  ilen = (imass / density - vsphere) / acircle;
+	// conserve length
+	} else {
+	  ilen = old_len/2;
+	  imass = density * (vsphere + acircle*ilen);
+	}
+
+	jmass = imass;
 
         // update parent
 	double dl = (0.5*ilen + atom->radius[i]) / (0.5*old_len);
@@ -142,7 +206,11 @@ void FixDivideBacillusMinicell::compute()
         atom->bacillus[j] = 0;
         atom->mask[j] = atom->mask[i];
         avec->set_bonus(j, bonus->pole1, bonus->diameter, bonus->quat, bonus->inertia);
-
+        double d = sqrt(bonus->pole1[0]*bonus->pole1[0] +
+			bonus->pole1[1]*bonus->pole1[1] +
+			bonus->pole1[2]*bonus->pole1[2]);
+        birth_length[j] = d*2;
+      //  printf("bl=%e \n", birth_length[j]);
         delete[] coord;
       } else {
 	// abnormal division, generate one sphere (j) and one long rod (i)
@@ -195,6 +263,7 @@ void FixDivideBacillusMinicell::compute()
 	atom->mask[j] = 1 | mini_mask;
 	pole1[0] = pole1[1] = pole1[2] = 0;
 	avec->set_bonus(j, pole1, bonus->diameter, bonus->quat, bonus->inertia);
+	birth_length[j] = 0.0;
 	delete[] coord;
       }
       // set daughter j attributes
@@ -217,8 +286,13 @@ void FixDivideBacillusMinicell::compute()
 
       modify->create_attribute(j);
 
-      for (int m = 0; m < modify->nfix; m++)
+      for (int m = 0; m < modify->nfix; m++) {
         modify->fix[m]->update_arrays(i, j);
+      }
+
+      for (int m = 0; m < modify->ncompute; m++) {
+        modify->compute[m]->set_arrays(j);
+      }
     }
   }
 
@@ -257,3 +331,52 @@ void *FixDivideBacillusMinicell::extract(const char *str, int &itype)
   }
   return NULL;
 }
+
+/* ----------------------------------------------------------------------
+   allocate local atom-based arrays
+------------------------------------------------------------------------- */
+
+void FixDivideBacillusMinicell::grow_arrays(int nmax)
+{
+  memory->grow(birth_length,nmax,"fix nufeb/divide/bacillus/minicell:birth_length");
+}
+
+/* ----------------------------------------------------------------------
+   copy values within local atom-based array
+------------------------------------------------------------------------- */
+
+void FixDivideBacillusMinicell::copy_arrays(int i, int j, int /*delflag*/)
+{
+  birth_length[j] = birth_length[i];
+}
+
+/* ----------------------------------------------------------------------
+   pack values in local atom-based array for exchange with another proc
+------------------------------------------------------------------------- */
+
+int FixDivideBacillusMinicell::pack_exchange(int i, double *buf)
+{
+  buf[0] = birth_length[i];
+
+  return 1;
+}
+
+/* ----------------------------------------------------------------------
+   unpack values in local atom-based array from exchange with another proc
+------------------------------------------------------------------------- */
+
+int FixDivideBacillusMinicell::unpack_exchange(int nlocal, double *buf)
+{
+  birth_length[nlocal] = buf[0];
+  return 1;
+}
+
+/* ----------------------------------------------------------------------
+   memory usage of local atom-based array
+------------------------------------------------------------------------- */
+double FixDivideBacillusMinicell::memory_usage()
+{
+  double bytes = atom->nmax * sizeof(double);
+  return bytes;
+}
+
