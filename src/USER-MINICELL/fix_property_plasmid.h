@@ -67,6 +67,7 @@ class FixPropertyPlasmid : public FixProperty {
   double **tfila;   // filament duration
   double ftime;
   double alpha;
+  int restart_size;
  // std::ofstream myfile;
 
  private:

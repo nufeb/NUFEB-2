@@ -67,6 +67,8 @@ FixPropertyPlasmid::FixPropertyPlasmid(LAMMPS *lmp, int narg, char **arg) :
   // Random number generator, same for all procs
   random = new RanPark(lmp, seed);
 
+  restart_size = pmax*4 + fmax*3 + 6;
+
   int iarg = 4;
   while (iarg < narg) {
     if (strcmp(arg[iarg], "replicate") == 0) {
@@ -110,7 +112,7 @@ FixPropertyPlasmid::FixPropertyPlasmid(LAMMPS *lmp, int narg, char **arg) :
     AtomVecBacillus::Bonus *bouns = &avec->bonus[atom->bacillus[i]];
     vprop[i] = pinit;
     // initialise plasmid position
-    for (int j = 0; j < (int)vprop[i]; j++) {
+    for (int j = 0; j < static_cast<int>(vprop[i]); j++) {
       double limit[6];
 
       int jx0 = j*3;
@@ -238,7 +240,7 @@ void FixPropertyPlasmid::motility(int i) {
   memory->create(dflist,fmax,"fix nufeb/property/plasmid:dlist");
 
 
-  for (int m = 0; m < (int)vprop[i]; m++) {
+  for (int m = 0; m < static_cast<int>(vprop[i]); m++) {
     double pos[3];
     double xlimit[3];
 
@@ -247,7 +249,7 @@ void FixPropertyPlasmid::motility(int i) {
     int m2 = m*3+2;
 
     // create filament between plasmids n and m if collision
-    for (int n = 0; n < (int)vprop[i]; n++) {
+    for (int n = 0; n < static_cast<int>(vprop[i]); n++) {
       if (!ftime) break;
 
       int nfila = nfilas[i];
@@ -370,10 +372,10 @@ void FixPropertyPlasmid::replication(int i) {
   double growth = grid->growth[igroup][cell][0];
 
   // update initiator proteins
-  for (int m = 0; m < (int)vprop[i]; m++)
+  for (int m = 0; m < static_cast<int>(vprop[i]); m++)
     nproteins[i][m] += alpha * growth * atom->rmass[i] * update->dt;
 
-  for (int m = 0; m < (int)vprop[i]; m++) {
+  for (int m = 0; m < static_cast<int>(vprop[i]); m++) {
     int m0 = m*3;
     int m1 = m*3+1;
     int m2 = m*3+2;
@@ -382,7 +384,7 @@ void FixPropertyPlasmid::replication(int i) {
     if (nproteins[i][m] > max && vprop[i] < pmax) {
       double ilimit[3];
 
-      int n = vprop[i];
+      int n = static_cast<int>(vprop[i]);
       int n0 = n*3;
       int n1 = n*3+1;
       int n2 = n*3+2;
@@ -618,7 +620,7 @@ void FixPropertyPlasmid::update_arrays(int i, int j)
     // plasmid transmission
     if (d > idist) {
       // move plasmid k to cell j
-      int n = (int)vprop[j];
+      int n = static_cast<int>(vprop[j]);
       dlist[m] = 1;
       tlist[m] = n;
       nproteins[j][n] = nproteins[i][m];
@@ -652,20 +654,20 @@ void FixPropertyPlasmid::update_arrays(int i, int j)
   delete_filament(dflist,i);
 
   int k = 0;
-  while (k < (int)vprop[i]) {
+  while (k < static_cast<int>(vprop[i])) {
     // remove plasmid k from i
     if (dlist[k]) {
-      copy_plasmid(i,k,(int)vprop[i]-1,1);
-      dlist[k] = dlist[(int)vprop[i]-1];
+      copy_plasmid(i,k,static_cast<int>(vprop[i])-1,1);
+      dlist[k] = dlist[static_cast<int>(vprop[i])-1];
       vprop[i]--;
     } else k++;
   }
 
-  for (int m = 0; m < (int)vprop[i]; m++) {
+  for (int m = 0; m < static_cast<int>(vprop[i]); m++) {
     relocate_limit(i,m);
   }
 
-  for (int m = 0; m < (int)vprop[j]; m++) {
+  for (int m = 0; m < static_cast<int>(vprop[j]); m++) {
     relocate_limit(j,m);
   }
 
@@ -819,6 +821,8 @@ int FixPropertyPlasmid::pack_exchange(int i, double *buf)
 {
   int m = FixProperty::pack_exchange(i,buf);
 
+  buf[m++] = vprop[i];
+
   for (int n = 0; n < pmax*3; n++) {
     buf[m++] = xpm[i][n];
   }
@@ -849,6 +853,8 @@ int FixPropertyPlasmid::unpack_exchange(int nlocal, double *buf)
 {
   int m = FixProperty::unpack_exchange(nlocal,buf);
 
+  vprop[nlocal] = buf[m++];
+
   for (int n = 0; n < pmax*3; n++) {
     xpm[nlocal][n] = buf[m++];
   }
@@ -878,13 +884,30 @@ int FixPropertyPlasmid::unpack_exchange(int nlocal, double *buf)
 int FixPropertyPlasmid::pack_restart(int i, double *buf)
 {
   int m = 0;
-  buf[m++] = pmax*3 + 1;
+  // xpm, pre_x, nproteins, fila, nfilas, tfila;
+  buf[m++] = restart_size;
   buf[m++] = vprop[i];
 
   for (int n = 0; n < pmax*3; n++)
     buf[m++] = xpm[i][n];
 
-  return pmax*3 + 1;
+  for (int n = 0; n < 3; n++)
+    buf[m++] = pre_x[i][n];
+
+  for (int n = 0; n < pmax; n++)
+    buf[m++] = nproteins[i][n];
+
+  for (int n = 0; n < fmax; n++) {
+    buf[m++] = fila[i][n][0];
+    buf[m++] = fila[i][n][1];
+  }
+
+  for (int n = 0; n < fmax; n++)
+    buf[m++] = tfila[i][n];
+
+  buf[m++] = nfilas[i];
+
+  return restart_size;
 }
 
 /* ----------------------------------------------------------------------
@@ -901,8 +924,26 @@ void FixPropertyPlasmid::unpack_restart(int nlocal, int nth)
   m++;
 
   vprop[nlocal] = extra[nlocal][m++];
+
   for (int n = 0; n < pmax*3; n++)
     xpm[nlocal][n] = extra[nlocal][m++];
+
+  for (int n = 0; n < 3; n++)
+    pre_x[nlocal][n] = extra[nlocal][m++];
+
+  for (int n = 0; n < pmax; n++)
+    nproteins[nlocal][n] = extra[nlocal][m++];
+
+  for (int n = 0; n < fmax; n++) {
+    fila[nlocal][n][0] = extra[nlocal][m++];
+    fila[nlocal][n][1] = extra[nlocal][m++];
+  }
+
+  for (int n = 0; n < fmax; n++) {
+    tfila[nlocal][n] = extra[nlocal][m++];
+  }
+
+  nfilas[nlocal] = extra[nlocal][m++];
 }
 
 /* ----------------------------------------------------------------------
@@ -911,7 +952,7 @@ void FixPropertyPlasmid::unpack_restart(int nlocal, int nth)
 
 int FixPropertyPlasmid::maxsize_restart()
 {
-  return pmax*3 + 1;
+  return restart_size;
 }
 
 /* ----------------------------------------------------------------------
@@ -920,7 +961,7 @@ int FixPropertyPlasmid::maxsize_restart()
 
 int FixPropertyPlasmid::size_restart(int /*nlocal*/)
 {
-  return pmax*3 + 1;
+  return restart_size;
 }
 
 /* ----------------------------------------------------------------------
@@ -930,8 +971,10 @@ int FixPropertyPlasmid::size_restart(int /*nlocal*/)
 double FixPropertyPlasmid::memory_usage()
 {
   double bytes;
-  bytes += atom->nmax*sizeof(double);
-  bytes += atom->nmax*pmax*sizeof(double);
+
+  bytes += atom->nmax*sizeof(double)*5;
+  bytes += atom->nmax*pmax*sizeof(double)*4;
+  bytes += atom->nmax*fmax*sizeof(double)*3;
 
   return bytes;
 }
