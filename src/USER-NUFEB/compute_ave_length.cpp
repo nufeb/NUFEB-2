@@ -22,8 +22,6 @@
 using namespace LAMMPS_NS;
 using namespace MathConst;
 
-#define FOURTHIRDSPI 4.18879020478
-
 /* ---------------------------------------------------------------------- */
 
 ComputeAveLength::ComputeAveLength(LAMMPS *lmp, int narg, char **arg) :
@@ -44,8 +42,9 @@ double ComputeAveLength::compute_scalar()
 {
   invoked_scalar = update->ntimestep;
   int *mask = atom->mask;
-  
+
   scalar = 0.0;
+
   for (int i = 0; i < atom->nlocal; i++) {
     if ((mask[i] & groupbit)) {
       if (atom->bacillus_flag) {
@@ -56,7 +55,9 @@ double ComputeAveLength::compute_scalar()
       }
     }
   }
-  scalar /= atom->nlocal;
+  if (atom->nlocal)
+    scalar /= atom->nlocal;
+
   MPI_Allreduce(MPI_IN_PLACE, &scalar, 1, MPI_DOUBLE, MPI_SUM, world); 
 
   return scalar/comm->nprocs;

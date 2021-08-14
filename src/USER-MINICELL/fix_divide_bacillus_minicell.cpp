@@ -55,6 +55,7 @@ FixDivideBacillusMinicell::FixDivideBacillusMinicell(LAMMPS *lmp, int narg, char
     error->all(FLERR, "Illegal fix nufeb/divide/bacillus/minicell command");
 
   imini = group->find(arg[3]);
+
   if (imini < 0)
     error->all(FLERR, "Can't find minicell group name");
 
@@ -102,13 +103,20 @@ FixDivideBacillusMinicell::FixDivideBacillusMinicell(LAMMPS *lmp, int narg, char
   }
 
   maxradius = 0.0;
+
+  // perform initial allocation of atom-based arrays
+  // register with atom class
+
+  peratom_flag = 1;
   grow_arrays(atom->nmax);
+  atom->add_callback(Atom::GROW);
 }
 
 FixDivideBacillusMinicell::~FixDivideBacillusMinicell()
 {
   delete random;
   memory->destroy(birth_length);
+  atom->delete_callback(id,Atom::GROW);
 };
 
 /* ---------------------------------------------------------------------- */
@@ -146,7 +154,7 @@ void FixDivideBacillusMinicell::compute()
       if (bonus->length < divlength) continue;
 
       double imass, jmass;
-      double ilen, jlen, xp1[3], xp2[3];
+      double ilen, xp1[3], xp2[3];
       int j;
 
       double vsphere = four_thirds_pi * atom->radius[i]*atom->radius[i]*atom->radius[i];
@@ -185,6 +193,7 @@ void FixDivideBacillusMinicell::compute()
 	atom->x[i][2] += (xp1[2] - oldz) * dl;
 
         atom->rmass[i] = imass;
+        birth_length[i] = ilen;
 
         bonus->pole1[0] *= ilen / old_len;
         bonus->pole1[1] *= ilen / old_len;
@@ -210,7 +219,6 @@ void FixDivideBacillusMinicell::compute()
 			bonus->pole1[1]*bonus->pole1[1] +
 			bonus->pole1[2]*bonus->pole1[2]);
         birth_length[j] = d*2;
-      //  printf("bl=%e \n", birth_length[j]);
         delete[] coord;
       } else {
 	// abnormal division, generate one sphere (j) and one long rod (i)
@@ -227,6 +235,7 @@ void FixDivideBacillusMinicell::compute()
 	jdl = (ilen + 2*atom->radius[i]) / old_len;
 
 	atom->rmass[i] = imass;
+        birth_length[i] = ilen;
 	bonus->length = ilen;
 	bonus->pole1[0] *= ilen / old_len;
 	bonus->pole1[1] *= ilen / old_len;

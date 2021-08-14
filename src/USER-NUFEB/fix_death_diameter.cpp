@@ -32,6 +32,8 @@ FixDeathDiameter::FixDeathDiameter(LAMMPS *lmp, int narg, char **arg) :
   compute_flag = 1;
   
   idead = group->find(arg[3]);
+  idead = 1 | group->bitmask[idead];
+
   if (idead < 0)
     error->all(FLERR, "Can't find group");
   diameter = utils::numeric(FLERR,arg[4],true,lmp);

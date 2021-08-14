@@ -25,6 +25,8 @@
 #include "group.h"
 #include <stdio.h>
 
+#include "comm.h"
+
 using namespace LAMMPS_NS;
 
 /* ---------------------------------------------------------------------- */
@@ -107,16 +109,16 @@ void ComputePlasmidCopy::compute_vector()
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
       for (int j = 0; j < size_vector; j++) {
-	if (cpflag[j] == 0 && (int)fix_plasmid->vprop[i] == cp[j])
+	if (cpflag[j] == 0 && static_cast<int>(fix_plasmid->vprop[i]) == cp[j])
 	  vector[j]++;
-	if (cpflag[j] == 1 && (int)fix_plasmid->vprop[i] >= cp[j])
+	if (cpflag[j] == 1 && static_cast<int>(fix_plasmid->vprop[i]) >= cp[j])
 	  vector[j]++;
-	if (cpflag[j] == 2 && (int)fix_plasmid->vprop[i] <= cp[j])
+	if (cpflag[j] == 2 && static_cast<int>(fix_plasmid->vprop[i]) <= cp[j])
 	  vector[j]++;
       }
     }
   }
 
-  MPI_Allreduce(MPI_IN_PLACE,vector,size_vector,MPI_INT,MPI_SUM,world);
+  MPI_Allreduce(MPI_IN_PLACE,vector,size_vector,MPI_DOUBLE,MPI_SUM,world);
 }
 
