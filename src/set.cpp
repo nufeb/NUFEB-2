@@ -970,11 +970,13 @@ void Set::set(int keyword)
         MathExtra::cross3(c2mc1,c3mc1,norm);
         double area = 0.5 * MathExtra::len3(norm);
         atom->rmass[i] = area * dvalue;
-      } else if (atom->bacillus_flag){
-	double r = atom->radius[i];
-	atom->rmass[i] = dvalue * (4.0*MY_PI/3.0*r*r*r +
-	      MY_PI*r*r*avec_bacillus->bonus[atom->bacillus[i]].length);
       } else atom->rmass[i] = dvalue;
+
+      if (atom->bacillus_flag){
+      	double r = atom->radius[i];
+      	atom->rmass[i] = dvalue * (4.0*MY_PI/3.0*r*r*r +
+      	      MY_PI*r*r*avec_bacillus->bonus[atom->bacillus[i]].length);
+      }
     }
 
     // set dipole moment
