@@ -39,4 +39,6 @@ action compute_plasmid_copy.cpp
 action compute_plasmid_copy.h
 action compute_plasmid_nbirth.cpp
 action compute_plasmid_nbirth.h
+action compute_plasmid_ave_plasmid.cpp
+action compute_plasmid_ave_plasmid.h
 # package files with dependencies
