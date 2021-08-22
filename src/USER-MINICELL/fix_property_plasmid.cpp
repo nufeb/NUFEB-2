@@ -22,19 +22,23 @@
 #include "error.h"
 #include "grid.h"
 #include "atom_vec_bacillus.h"
+#include "fix_divide_bacillus_minicell.h"
 #include "update.h"
 #include "math_const.h"
 #include "math_extra.h"
 #include "random_park.h"
 #include <random>
+#include "modify.h"
 
 using namespace LAMMPS_NS;
 using namespace MathConst;
 using namespace FixConst;
 
-#define FILAMENT_VEL 0.026e-6
-#define CUTOFF 3e-7
+#define CUTOFF 0.5e-6
+#define NUCLEOID_DIA_RATIO 0.65
+#define NUCLEOID_LEN_RATIO 0.65
 #define DELTA 1.005
+#define BETA 1.01
 
 /* ---------------------------------------------------------------------- */
 
@@ -47,10 +51,11 @@ FixPropertyPlasmid::FixPropertyPlasmid(LAMMPS *lmp, int narg, char **arg) :
   if (!avec) error->all(FLERR,"fix nufeb/property/plasmid requires "
       "atom style bacillus");
 
-  if (narg < 3) error->all(FLERR,"Illegal fix nufeb/property/plasmid command");
+  int ifix = modify->find_fix_by_style("^nufeb/divide/bacillus/minicell");
+  if (ifix < 0 ) error->all(FLERR,"fix nufeb/property/plasmid requires fix ^nufeb/divide/bacillus/minicell");
+  fix_div = (FixDivideBacillusMinicell *) modify->fix[ifix];
 
-  compute_flag = 1;
-  scalar_flag = 1;
+  if (narg < 3) error->all(FLERR,"Illegal fix nufeb/property/plasmid command");
 
   mean_protein = 20;
   init_protein = 0;
@@ -62,6 +67,7 @@ FixPropertyPlasmid::FixPropertyPlasmid(LAMMPS *lmp, int narg, char **arg) :
   dt = 1;
   alpha = 1.0;
   ftime = 60;
+  fvel = 0.026e-6;
 
   seed = utils::inumeric(FLERR,arg[3],true,lmp);
   // Random number generator, same for all procs
@@ -93,6 +99,9 @@ FixPropertyPlasmid::FixPropertyPlasmid(LAMMPS *lmp, int narg, char **arg) :
       iarg += 2;
     } else if (strcmp(arg[iarg], "ftime") == 0) {
       ftime = utils::numeric(FLERR,arg[iarg+1],true,lmp);
+      iarg += 2;
+    }  else if (strcmp(arg[iarg], "fvel") == 0) {
+      fvel = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       iarg += 2;
     } else {
       error->all(FLERR,"Illegal fix nufeb/property/plasmid command");
@@ -126,22 +135,13 @@ FixPropertyPlasmid::FixPropertyPlasmid(LAMMPS *lmp, int narg, char **arg) :
       std::uniform_real_distribution<double> x(limit[0], limit[1]);
       xpm[i][jx0] = x(eng);
 
-      get_xlimit(limit, i, j);
+      get_cell_boundary(limit, i, j);
 
       // assign y, z
       std::uniform_real_distribution<double> y(limit[2], limit[3]);
       std::uniform_real_distribution<double> z(limit[4], limit[5]);
       xpm[i][jx1] = y(eng);
       xpm[i][jx2] = z(eng);
-
-    //fixed positions: 2 plms
-//      if (j == 0) xpm[i][jx0] = 0.75e-6;
-//      if (j == 1) xpm[i][jx0] = -0.75e-6;
-
-      //fixed positions: 3 plms
-//      if (j == 0) xpm[i][jx0] = 1.3e-6;
-//      if (j == 1) xpm[i][jx0] = -1.2e-6;
-//      if (j == 2) xpm[i][jx0] = 0.45e-6;
 
       nproteins[i][j] = init_protein;
     }
@@ -287,8 +287,8 @@ void FixPropertyPlasmid::motility(int i) {
       }
     }
 
-    int dir = 0;
-    int con = 0;
+    int orient = 0;
+    int link = 0;
 
     // update filament attribute
     for (int f = 0; f < nfilas[i]; f++) {
@@ -296,13 +296,13 @@ void FixPropertyPlasmid::motility(int i) {
       int f1 = fila[i][f][1];
 
       if (f0 == m || f1 == m) {
-	con = 1;
+	link = 1;
 	if (tfila[i][f] > 0) {
 	  dflist[f] = 0;
 	  tfila[i][f] -= dt/2;
 
-	  if (f0 == m) dir--;
-	  else dir++;
+	  if (f0 == m) orient--;
+	  else orient++;
 	} else {
 	  dflist[f] = 1;
 	}
@@ -310,13 +310,13 @@ void FixPropertyPlasmid::motility(int i) {
     }
 
     // pushing by ParM filament
-    if (con) {
-      if (dir < 0) {
-	pos[0] = xpm[i][m0] - FILAMENT_VEL * dt;
+    if (link) {
+      if (orient < 0) {
+	pos[0] = xpm[i][m0] - fvel * dt;
 	pos[1] = xpm[i][m1];
 	pos[2] = xpm[i][m2];
-      } else if (dir > 0){
-	pos[0] = xpm[i][m0] + FILAMENT_VEL * dt;
+      } else if (orient > 0){
+	pos[0] = xpm[i][m0] + fvel * dt;
 	pos[1] = xpm[i][m1];
 	pos[2] = xpm[i][m2];
       } else {
@@ -325,17 +325,36 @@ void FixPropertyPlasmid::motility(int i) {
 	pos[2] = xpm[i][m2];
       }
     } else {
-    // Brownian motion
+      double dcx, dcy, dcz;
+      // check if plasmid xpm0 is in nucleoid area
+      int nucl = check_nucleoid(i, m, xpm[i][m0]);
+      if (nucl){
+	dcx = diff_coef*dt;
+	dcy = diff_coef*dt*0.5;
+	dcz = diff_coef*dt*0.5;
+      } else {
+	dcx = dcy = dcz = diff_coef;
+      }
+
+      // Brownian motion
       pos[0] = xpm[i][m0] + sqrt(2*diff_coef*dt)*random->gaussian();
       pos[1] = xpm[i][m1] + sqrt(2*diff_coef*dt)*random->gaussian();
       pos[2] = xpm[i][m2] + sqrt(2*diff_coef*dt)*random->gaussian();
+
+      int nucl1 = check_nucleoid(i, m, pos[0]);
+      double rsq = atom->radius[i] * atom->radius[i] * NUCLEOID_DIA_RATIO;
+
+      // check if plasmid is entering nucleoid
+      if (!nucl && nucl1 && (pos[1]*pos[1] + pos[2]*pos[2]) < rsq) {
+	pos[0] = xpm[i][m0];
+      }
     }
 
     xpm[i][m0] = pos[0];
     xpm[i][m1] = pos[1];
     xpm[i][m2] = pos[2];
 
-    relocate_limit(i,m);
+    relocate_xpm(i,m);
   }
 
   delete_filament(dflist,i);
@@ -380,7 +399,6 @@ void FixPropertyPlasmid::replication(int i) {
     int m1 = m*3+1;
     int m2 = m*3+2;
     double max = mean_protein + mean_protein*0.1*random->gaussian();
-
     if (nproteins[i][m] > max && vprop[i] < pmax) {
       double ilimit[3];
 
@@ -396,7 +414,7 @@ void FixPropertyPlasmid::replication(int i) {
       ixpm[n1] = ixpm[m1] + (dia * sin(theta) * sin(phi) * DELTA);
       ixpm[n2] = ixpm[m2] + (dia * cos(phi) * DELTA);
 
-      relocate_limit(i,m);
+      relocate_xpm(i,m);
       vprop[i]++;
 
       nproteins[i][m] = 0.0;
@@ -566,7 +584,7 @@ void FixPropertyPlasmid::set_plasmid_xpm(int i, int j, double *xp, double *x)
 /* ----------------------------------------------------------------------
    get maximum/minimum coordinate for plasmid j in bacillus i
 ------------------------------------------------------------------------- */
-void FixPropertyPlasmid::get_xlimit(double *xlimit, int i, int j)
+void FixPropertyPlasmid::get_cell_boundary(double *xlimit, int i, int j)
 {
   if (atom->bacillus[i] < 0)
     error->one(FLERR,"Assigning bacillus parameters to non-bacillus atom");
@@ -585,6 +603,42 @@ void FixPropertyPlasmid::get_xlimit(double *xlimit, int i, int j)
   // yo zli
   xlimit[2] = -xlimit[3];
   xlimit[4] = -xlimit[5];
+}
+
+
+/* ----------------------------------------------------------------------
+   check if plasmid j is in nucleoid area
+------------------------------------------------------------------------- */
+int FixPropertyPlasmid::check_nucleoid(int i, int j, double xpm0)
+{
+  if (atom->bacillus[i] < 0)
+    error->one(FLERR,"Assigning bacillus parameters to non-bacillus atom");
+
+  AtomVecBacillus::Bonus *bouns = &avec->bonus[atom->bacillus[i]];
+  double lb = fix_div->birth_length[i];
+  double l = bouns->length;
+  double ln = lb * NUCLEOID_LEN_RATIO;
+
+  if (l < 2*lb*BETA) {
+    double n1_lo = -0.5 * (l-lb+ln);
+    double n1_hi = -0.5 * (l-lb-ln);
+
+    if ((xpm0 > n1_lo && xpm0 < n1_hi) || (xpm0 > -n1_hi && xpm0 < -n1_lo))
+      return 1;
+    else
+      return 0;
+  } else {
+    double n1_lo = -0.5 * (0.5*l+ln);
+    double n1_hi = -0.5 * (0.5*l-ln);
+    double n2_lo = -0.5 * (2*lb-0.5*l+ln);
+    double n2_hi = -0.5 * (2*lb-0.5*l-ln);
+
+    if ((xpm0 > n1_lo && xpm0 < n1_hi) || (xpm0 > n2_lo && xpm0 < n2_hi) ||
+	(xpm0 > -n1_hi && xpm0 < -n1_lo) || (xpm0 > -n2_hi && xpm0 < -n2_lo))
+      return 1;
+    else
+      return 0;
+  }
 }
 
 /* ----------------------------------------------------------------------
@@ -664,11 +718,11 @@ void FixPropertyPlasmid::update_arrays(int i, int j)
   }
 
   for (int m = 0; m < static_cast<int>(vprop[i]); m++) {
-    relocate_limit(i,m);
+    relocate_xpm(i,m);
   }
 
   for (int m = 0; m < static_cast<int>(vprop[j]); m++) {
-    relocate_limit(j,m);
+    relocate_xpm(j,m);
   }
 
   memory->destroy(dlist);
@@ -679,13 +733,13 @@ void FixPropertyPlasmid::update_arrays(int i, int j)
 /* ----------------------------------------------------------------------
    reset position of plasmid j in bacillus i based on xlimit
 ------------------------------------------------------------------------- */
-void FixPropertyPlasmid::relocate_limit(int i, int j) {
+void FixPropertyPlasmid::relocate_xpm(int i, int j) {
   double limit[6];
   int j0 = j*3;
   int j1 = j*3+1;
   int j2 = j*3+2;
 
-  get_xlimit(limit, i, j);
+  get_cell_boundary(limit, i, j);
 
   if (xpm[i][j0] < limit[0])        // xlo
     xpm[i][j0] = limit[0];
@@ -738,30 +792,6 @@ void FixPropertyPlasmid::distance_bt_pt_line(double *q, double *xi1, double *xi2
   }
 
   d = dist(q[0], q[1], q[2], h[0], h[1], h[2]);
-}
-
-
-/* ----------------------------------------------------------------------
-   compute average plasmid copy number
-------------------------------------------------------------------------- */
-double FixPropertyPlasmid::compute_scalar() {
-  double result = 0.0;
-  int n = 0;
-
-  for (int i = 0; i < atom->nlocal; i++) {
-    if ((atom->mask[i] & groupbit)) {
-      result += vprop[i];
-      n++;
-    }
-  }
-
-  MPI_Allreduce(MPI_IN_PLACE, &result, 1, MPI_DOUBLE, MPI_SUM, world);
-  MPI_Allreduce(MPI_IN_PLACE, &n, 1, MPI_INT, MPI_SUM, world);
-
-  if (n > 0) result /= n;
-  else result = 0;
-
-  return result;
 }
 
 /* ----------------------------------------------------------------------

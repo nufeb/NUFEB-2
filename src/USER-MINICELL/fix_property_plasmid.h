@@ -39,7 +39,6 @@ class FixPropertyPlasmid : public FixProperty {
   void set_arrays(int) {};
   void update_arrays(int, int);
   void compute();
-  double compute_scalar();
 
   void get_plasmid_coords(int, int, double *, double *);
   void get_plasmid_coords(int, int, double *);
@@ -60,12 +59,12 @@ class FixPropertyPlasmid : public FixProperty {
   int pmax;              // maximum # of plasmid
   double **xpm;          // plasmid position
   double **pre_x;        // previous cell location
-  double **nproteins;   // number of initiator proteins
+  double **nproteins;    // number of initiator proteins
   int fmax;              // maximum # of filaments
-  int *nfilas;       // # of filaments
-  int ***fila;       // filament defined as straight line
-  double **tfila;   // filament duration
-  double ftime;
+  int *nfilas;           // # of filaments
+  int ***fila;           // filament defined as straight line
+  double **tfila;        // filament duration
+  double ftime, fvel;    // filament formation time, filament formation rate
   double alpha;
   int restart_size;
  // std::ofstream myfile;
@@ -73,9 +72,10 @@ class FixPropertyPlasmid : public FixProperty {
  private:
   void replication(int);
   void motility(int);
-  void get_xlimit(double *, int, int);
+  void get_cell_boundary(double *, int, int);
+  int check_nucleoid(int, int, double);
   void set_plasmid_xpm(int, int, double *,double *);
-  void relocate_limit(int, int);
+  void relocate_xpm(int, int);
   void get_quat(double *, double *, double *);
   void distance_bt_pt_line(double *, double *, double *, double &);
 
@@ -86,6 +86,7 @@ class FixPropertyPlasmid : public FixProperty {
 
   class RanPark *random;
   class AtomVecBacillus *avec;
+  class FixDivideBacillusMinicell *fix_div;
 
   double dot(double x1, double x2, double x3, double y1, double y2, double y3) { return x1*y1 + x2*y2 + x3*y3; }
   double norm(double x1, double x2, double x3) { return sqrt(dot(x1, x2, x3, x1, x2, x3)); }
