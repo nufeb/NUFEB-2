@@ -39,6 +39,8 @@ class FixDivideBacillusMinicell : public FixDivide {
   int pack_exchange(int, double *);
   int unpack_exchange(int, double *);
 
+  double *birth_length;
+
  private:
   int imini, type;
   double prob;
@@ -48,8 +50,6 @@ class FixDivideBacillusMinicell : public FixDivide {
   int seed;
   double maxradius;
   int divflag, conserveflag;
-
-  double *birth_length;
 
   class RanPark *random;
   class AtomVecBacillus *avec;
