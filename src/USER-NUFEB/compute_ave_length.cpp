@@ -11,11 +11,14 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
+#include <math.h>
+
 #include "compute_ave_length.h"
 #include "atom.h"
 #include "update.h"
 #include "error.h"
 #include "comm.h"
+#include "memory.h"
 #include "math_const.h"
 #include "atom_vec_bacillus.h"
 
@@ -33,32 +36,62 @@ ComputeAveLength::ComputeAveLength(LAMMPS *lmp, int narg, char **arg) :
   if (!avec) error->all(FLERR,"compute nufeb/plasmid requires "
       "atom style bacillus");
 
-  scalar_flag = 1;
+  vector_flag = 1;
+  extvector = 0;
+  size_vector = 2;
+
+  memory->create(vector,size_vector,"compute:vector");
 }
 
 /* ---------------------------------------------------------------------- */
 
-double ComputeAveLength::compute_scalar()
+ComputeAveLength::~ComputeAveLength()
 {
-  invoked_scalar = update->ntimestep;
-  int *mask = atom->mask;
+  memory->destroy(vector);
+}
 
-  scalar = 0.0;
+/* ---------------------------------------------------------------------- */
+
+void ComputeAveLength::compute_vector()
+{
+  invoked_vector = update->ntimestep;
+  int *mask = atom->mask;
+  int nbacilli = 0;
+  double sd = 0.0;
+  double ave_len = 0.0;
 
   for (int i = 0; i < atom->nlocal; i++) {
-    if ((mask[i] & groupbit)) {
+    if (mask[i] & groupbit) {
       if (atom->bacillus_flag) {
 	int ibonus = atom->bacillus[i];
 	AtomVecBacillus::Bonus *bonus = &avec->bonus[ibonus];
 
-	scalar += bonus->length;
+	ave_len += bonus->length;
+	nbacilli++;
       }
     }
   }
-  if (atom->nlocal)
-    scalar /= atom->nlocal;
 
-  MPI_Allreduce(MPI_IN_PLACE, &scalar, 1, MPI_DOUBLE, MPI_SUM, world); 
+  MPI_Allreduce(MPI_IN_PLACE, &ave_len, 1, MPI_DOUBLE, MPI_SUM, world);
+  MPI_Allreduce(MPI_IN_PLACE, &nbacilli, 1, MPI_INT, MPI_SUM, world);
 
-  return scalar/comm->nprocs;
+  if (nbacilli) ave_len /= nbacilli;
+
+  for (int i = 0; i < atom->nlocal; i++) {
+    if (mask[i] & groupbit) {
+      if (atom->bacillus_flag) {
+	int ibonus = atom->bacillus[i];
+	AtomVecBacillus::Bonus *bonus = &avec->bonus[ibonus];
+
+	sd += (bonus->length - ave_len)*(bonus->length - ave_len);
+      }
+    }
+  }
+
+  MPI_Allreduce(MPI_IN_PLACE, &sd, 1, MPI_DOUBLE, MPI_SUM, world);
+
+  if (nbacilli) sd /= nbacilli;
+
+  vector[0] = ave_len;
+  vector[1] = sqrt(sd);
 }

@@ -27,9 +27,9 @@ namespace LAMMPS_NS {
 class ComputeAveLength : public Compute {
  public:
   ComputeAveLength(class LAMMPS *, int, char **);
-  virtual ~ComputeAveLength() {}
-  virtual void init() {}
-  virtual double compute_scalar();
+  ~ComputeAveLength();
+  void init() {}
+  void compute_vector();
 
   class AtomVecBacillus *avec;
 };

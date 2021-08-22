@@ -13,7 +13,7 @@
 
 #ifdef COMPUTE_CLASS
 
-ComputeStyle(nufeb/plasmid/nbirth,ComputePlasmidNBirth)
+ComputeStyle(nufeb/plasmid/ave_nbirth,ComputePlasmidNBirth)
 
 #else
 
@@ -27,15 +27,14 @@ namespace LAMMPS_NS {
 class ComputePlasmidNBirth : public Compute {
  public:
   ComputePlasmidNBirth(class LAMMPS *, int, char **);
-  virtual ~ComputePlasmidNBirth() {}
-  virtual void init() {}
-  virtual double compute_scalar();
+  ~ComputePlasmidNBirth();
+  void init() {}
+  void compute_vector();
   void set_arrays(int);
 
-  class AtomVecBacillus *avec;
-
  protected:
-  int ncell, nplm;
+  int nbacilli, nbirth, flag;
+  double ave_nbirth;
   class FixPropertyPlasmid *fix_plasmid;
 };
 

@@ -27,7 +27,7 @@ class ComputeAveConc : public Compute {
   ComputeAveConc(class LAMMPS *, int, char **);
   ~ComputeAveConc();
   void init() {}
-  virtual void compute_vector();
+  void compute_vector();
 };
 
 }

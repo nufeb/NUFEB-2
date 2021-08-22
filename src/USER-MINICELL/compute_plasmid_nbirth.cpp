@@ -16,6 +16,7 @@
 #include <cstring>
 
 #include "atom.h"
+#include "memory.h"
 #include "update.h"
 #include "error.h"
 #include "modify.h"
@@ -33,34 +34,58 @@ ComputePlasmidNBirth::ComputePlasmidNBirth(LAMMPS *lmp, int narg, char **arg) :
   Compute(lmp, narg, arg)
 {
   if (narg < 3) error->all(FLERR,"Illegal nufeb/plasmid/nbirth command");
-  avec = nullptr;
   fix_plasmid = nullptr;;
-
-  avec = (AtomVecBacillus *) atom->style_match("bacillus");
-  if (!avec) error->all(FLERR,"compute nufeb/plasmid/nbirth requires "
-      "atom style bacillus");
 
   int ifix = modify->find_fix_by_style("^nufeb/property/plasmid");
   if (ifix < 0 ) error->all(FLERR,"Illegal nufeb/plasmid/nbirth command: requires fix nufeb/property/plasmid");
   fix_plasmid = (FixPropertyPlasmid *) modify->fix[ifix];
 
   scalar = 0.0;
-  ncell = 0;
-  nplm = 0;
+  nbacilli = 0;
+  nbirth = 0;
+  flag = 0;
 
-  scalar_flag = 1;
+  vector_flag = 1;
+  extvector = 0;
+  size_vector = 2;
+
+  memory->create(vector,size_vector,"compute:vector");
 }
 
 /* ---------------------------------------------------------------------- */
 
-double ComputePlasmidNBirth::compute_scalar()
+ComputePlasmidNBirth::~ComputePlasmidNBirth()
 {
-  invoked_scalar = update->ntimestep;
+  memory->destroy(vector);
+}
 
-  if (ncell)
-    scalar = (double)nplm/ncell;
+/* ---------------------------------------------------------------------- */
 
-  return scalar;
+void ComputePlasmidNBirth::compute_vector()
+{
+  invoked_vector = update->ntimestep;
+  double ave_nbirth = 0.0;
+  double sd = 0.0;
+
+ // MPI_Allreduce(MPI_IN_PLACE, &nbirth, 1, MPI_DOUBLE, MPI_SUM, world);
+ // MPI_Allreduce(MPI_IN_PLACE, &nbacilli, 1, MPI_INT, MPI_SUM, world);
+
+  if (nbacilli) ave_nbirth = (double)nbirth/nbacilli;
+
+  for (int i = 0; i < atom->nlocal; i++) {
+    if (atom->mask[i] & groupbit) {
+      if (flag)sd += (static_cast<int>(fix_plasmid->vprop[i]) - ave_nbirth)*
+	  (static_cast<int>(fix_plasmid->vprop[i]) - ave_nbirth);
+    }
+  }
+
+  //MPI_Allreduce(MPI_IN_PLACE, &sd, 1, MPI_DOUBLE, MPI_SUM, world);
+
+  if (nbacilli) sd /= nbacilli;
+
+  vector[0] = ave_nbirth;
+  vector[1] = sqrt(sd);
+  flag = 0;
 }
 
 /* ----------------------------------------------------------------------
@@ -69,6 +94,9 @@ double ComputePlasmidNBirth::compute_scalar()
 
 void ComputePlasmidNBirth::set_arrays(int i)
 {
-  ncell++;
-  nplm += (int)fix_plasmid->vprop[i];
+  flag = 1;
+  if (atom->mask[i] & groupbit) {
+    nbacilli++;
+    nbirth += static_cast<int>(fix_plasmid->vprop[i]);
+  }
 }
