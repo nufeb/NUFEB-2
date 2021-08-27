@@ -23,8 +23,8 @@ FixStyle(nufeb/property/plasmid,FixPropertyPlasmid)
 #include "fix_property.h"
 #include "atom_vec_bacillus.h"
 
-//#include <iostream>
-//#include <fstream>
+#include <iostream>
+#include <fstream>
 
 namespace LAMMPS_NS {
 
@@ -66,8 +66,9 @@ class FixPropertyPlasmid : public FixProperty {
   double **tfila;        // filament duration
   double ftime, fvel;    // filament formation time, filament formation rate
   double alpha;
+  int nucleoid_flag;
   int restart_size;
- // std::ofstream myfile;
+  std::ofstream myfile;
 
  private:
   void replication(int);
@@ -78,6 +79,7 @@ class FixPropertyPlasmid : public FixProperty {
   void relocate_xpm(int, int);
   void get_quat(double *, double *, double *);
   void distance_bt_pt_line(double *, double *, double *, double &);
+  void dump();
 
   double dia, diff_coef, dt;
   int mean_protein, init_protein;

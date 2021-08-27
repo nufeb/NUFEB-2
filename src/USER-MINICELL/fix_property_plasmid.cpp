@@ -68,6 +68,7 @@ FixPropertyPlasmid::FixPropertyPlasmid(LAMMPS *lmp, int narg, char **arg) :
   alpha = 1.0;
   ftime = 60;
   fvel = 0.026e-6;
+  nucleoid_flag = 1;
 
   seed = utils::inumeric(FLERR,arg[3],true,lmp);
   // Random number generator, same for all procs
@@ -102,6 +103,9 @@ FixPropertyPlasmid::FixPropertyPlasmid(LAMMPS *lmp, int narg, char **arg) :
       iarg += 2;
     }  else if (strcmp(arg[iarg], "fvel") == 0) {
       fvel = utils::numeric(FLERR,arg[iarg+1],true,lmp);
+      iarg += 2;
+    }  else if (strcmp(arg[iarg], "nflag") == 0) {
+      nucleoid_flag = utils::inumeric(FLERR,arg[iarg+1],true,lmp);
       iarg += 2;
     } else {
       error->all(FLERR,"Illegal fix nufeb/property/plasmid command");
@@ -219,15 +223,7 @@ void FixPropertyPlasmid::compute()
     pre_x[i][2] = atom->x[i][2];
   }
 
-//  myfile.open ("trace.txt", std::ios_base::app);
-//  for (int i = 0; i < atom->nlocal; i++) {
-//    // initialise plasmid position
-//    for (int j = 0; j < (int)vprop[i]; j++) {
-//	myfile << xpm[i][j*3] << ", ";
-//    }
-//    myfile << "\n";
-//  }
-//  myfile.close();
+  dump();
 }
 
 /* ----------------------------------------------------------------------
@@ -261,6 +257,12 @@ void FixPropertyPlasmid::motility(int i) {
           skip = 1;
           break;
         }
+        // one filament per plasmid
+        if (fila[i][f][0] == m || fila[i][f][1] == m ||
+            fila[i][f][0] == n || fila[i][f][1] == n) {
+	  skip = 1;
+          break;
+        }
       }
       if (skip) continue;
 
@@ -287,6 +289,7 @@ void FixPropertyPlasmid::motility(int i) {
       }
     }
 
+    // for multilinked plasmid
     int orient = 0;
     int link = 0;
 
@@ -326,27 +329,31 @@ void FixPropertyPlasmid::motility(int i) {
       }
     } else {
       double dcx, dcy, dcz;
+      int nucl;
+      dcx = dcy = dcz = diff_coef;
       // check if plasmid xpm0 is in nucleoid area
-      int nucl = check_nucleoid(i, m, xpm[i][m0]);
-      if (nucl){
-	dcx = diff_coef*dt;
-	dcy = diff_coef*dt*0.5;
-	dcz = diff_coef*dt*0.5;
-      } else {
-	dcx = dcy = dcz = diff_coef;
+      if (nucleoid_flag ) {
+	nucl = check_nucleoid(i, m, xpm[i][m0]);
+	if (nucl) {
+	  dcx = diff_coef;
+	  dcy = diff_coef * 0.1;
+	  dcz = diff_coef * 0.1;
+	}
       }
 
       // Brownian motion
-      pos[0] = xpm[i][m0] + sqrt(2*diff_coef*dt)*random->gaussian();
-      pos[1] = xpm[i][m1] + sqrt(2*diff_coef*dt)*random->gaussian();
-      pos[2] = xpm[i][m2] + sqrt(2*diff_coef*dt)*random->gaussian();
+      pos[0] = xpm[i][m0] + sqrt(2*dcx*dt)*random->gaussian();
+      pos[1] = xpm[i][m1] + sqrt(2*dcy*dt)*random->gaussian();
+      pos[2] = xpm[i][m2] + sqrt(2*dcz*dt)*random->gaussian();
 
-      int nucl1 = check_nucleoid(i, m, pos[0]);
-      double rsq = atom->radius[i] * atom->radius[i] * NUCLEOID_DIA_RATIO;
+      if (nucleoid_flag) {
+	int nucl1 = check_nucleoid(i, m, pos[0]);
+	double rsq = atom->radius[i] * atom->radius[i] * NUCLEOID_DIA_RATIO;
 
-      // check if plasmid is entering nucleoid
-      if (!nucl && nucl1 && (pos[1]*pos[1] + pos[2]*pos[2]) < rsq) {
-	pos[0] = xpm[i][m0];
+	// check if plasmid is entering nucleoid
+	if (!nucl && nucl1 && (pos[1]*pos[1] + pos[2]*pos[2]) < rsq) {
+	  pos[0] = xpm[i][m0];
+	}
       }
     }
 
@@ -615,7 +622,7 @@ int FixPropertyPlasmid::check_nucleoid(int i, int j, double xpm0)
     error->one(FLERR,"Assigning bacillus parameters to non-bacillus atom");
 
   AtomVecBacillus::Bonus *bouns = &avec->bonus[atom->bacillus[i]];
-  double lb = fix_div->birth_length[i];
+  double lb = fix_div->maxlength;
   double l = bouns->length;
   double ln = lb * NUCLEOID_LEN_RATIO;
 
@@ -1007,4 +1014,90 @@ double FixPropertyPlasmid::memory_usage()
   bytes += atom->nmax*fmax*sizeof(double)*3;
 
   return bytes;
+}
+
+
+/*------------------------------------------------------------------------- */
+
+void FixPropertyPlasmid::dump()
+{
+//  if (update->ntimestep % 600) {
+//    myfile.open ("length7.txt", std::ios_base::app);
+//    for (int i = 0; i < atom->nlocal; i=i+10) {
+//      AtomVecBacillus::Bonus *bouns = &avec->bonus[atom->bacillus[i]];
+//      if (bouns->length > 6.98e-6 && bouns->length < 7.0e-6 && (int)vprop[i]) {
+//	for (int j = 0; j < (int)vprop[i]; j++) {
+//	    myfile << xpm[i][j*3] << ", ";
+//	    myfile << xpm[i][j*3+1] << ", ";
+//	    myfile << xpm[i][j*3+2] << "";
+//	    myfile << "\n";
+//	}
+//      }
+//    }
+//    myfile.close();
+//
+//    myfile.open ("length10.5.txt", std::ios_base::app);
+//    for (int i = 0; i < atom->nlocal; i=i+10) {
+//      AtomVecBacillus::Bonus *bouns = &avec->bonus[atom->bacillus[i]];
+//      if (bouns->length > 10.48e-6 && bouns->length < 10.5e-6 && (int)vprop[i]) {
+//	for (int j = 0; j < (int)vprop[i]; j++) {
+//	    myfile << xpm[i][j*3] << ", ";
+//	    myfile << xpm[i][j*3+1] << ", ";
+//	    myfile << xpm[i][j*3+2] << "";
+//	    myfile << "\n";
+//	}
+//      }
+//    }
+//    myfile.close();
+//
+//    myfile.open ("length14.txt", std::ios_base::app);
+//    for (int i = 0; i < atom->nlocal; i=i+10) {
+//      AtomVecBacillus::Bonus *bouns = &avec->bonus[atom->bacillus[i]];
+//      if (bouns->length > 13.95e-6 && bouns->length < 14e-6 && (int)vprop[i]) {
+//	for (int j = 0; j < (int)vprop[i]; j++) {
+//	    myfile << xpm[i][j*3] << ", ";
+//	    myfile << xpm[i][j*3+1] << ", ";
+//	    myfile << xpm[i][j*3+2] << "";
+//	    myfile << "\n";
+//	}
+//      }
+//    }
+//    myfile.close();
+//  }
+
+  //for bsub-wt-mm-30/n4-std, n4-nopar, n4-nopar-nonucle
+//    if (update->ntimestep % 490) {
+//      myfile.open ("length4.4.txt", std::ios_base::app);
+//      for (int i = 0; i < atom->nlocal; i=i+10) {
+//	AtomVecBacillus::Bonus *bouns = &avec->bonus[atom->bacillus[i]];
+//	if (bouns->length > 4.39e-6 && bouns->length < 4.3999e-6 && (int)vprop[i]) {
+//	  for (int j = 0; j < (int)vprop[i]; j++) {
+//	    double limit[6];
+//	    get_cell_boundary(limit, i, j);
+//	    if(xpm[i][j*3] < limit[0] || xpm[i][j*3] > limit[1] ||
+//	       xpm[i][j*3+1] < limit[2] || xpm[i][j*3+1] > limit[3] ||
+//	       xpm[i][j*3+2] < limit[4] || xpm[i][j*3+2] > limit[5]){
+//		continue;
+//	    }
+//	    myfile << xpm[i][j*3] << ", ";
+//	    myfile << xpm[i][j*3+1] << ", ";
+//	    myfile << xpm[i][j*3+2] << "";
+//	    myfile << "\n";
+//	  }
+//	}
+//      }
+//      myfile.close();
+//    }
+
+
+  //for bsub-wt-mm-30/single-1plm and single-2plm
+//    myfile.open ("trajectory.txt", std::ios_base::app);
+//    for (int i = 0; i < atom->nlocal; i++) {
+//      // initialise plasmid position
+//      for (int j = 0; j < (int)vprop[i]; j++) {
+//  	myfile << xpm[i][j*3] << ", ";
+//      }
+//      myfile << "\n";
+//    }
+//    myfile.close();
 }
