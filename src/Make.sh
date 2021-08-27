@@ -1,4 +1,4 @@
-# Make.sh = update Makefile.lib, Makefile.shlib, Makefile.list 
+# Make.sh = update Makefile.lib, Makefile.shlib, Makefile.list
 #           or style_*.h files
 # Syntax: sh Make.sh style
 #         sh Make.sh Makefile.lib
@@ -31,7 +31,7 @@ style () {
       rm -f style_$3.h
       touch style_$3.h
       rm -f Obj_*/$4.d
-      if (test $5) then 
+      if (test $5) then
         rm -f Obj_*/$5.d
       fi
       rm -f Obj_*/lammps.d
@@ -39,14 +39,14 @@ style () {
   elif (test ! -e style_$3.h) then
     mv style_$3.tmp style_$3.h
     rm -f Obj_*/$4.d
-    if (test $5) then 
+    if (test $5) then
       rm -f Obj_*/$5.d
     fi
     rm -f Obj_*/lammps.d
   elif (test "`diff --brief style_$3.h style_$3.tmp`" != "") then
     mv style_$3.tmp style_$3.h
     rm -f Obj_*/$4.d
-    if (test $5) then 
+    if (test $5) then
       rm -f Obj_*/$5.d
     fi
     rm -f Obj_*/lammps.d
@@ -115,7 +115,7 @@ if (test $cmd = "style") || (test $cmd = "packages") then
   $cmd PAIR_CLASS      pair_       pair       force
   $cmd READER_CLASS    reader_     reader     read_dump
   $cmd REGION_CLASS    region_     region     domain
-  $cmd GRID_CLASS      grid_vec_   grid       grid
+  $cmd GRID_CLASS      grid_       grid      grid
   
 # edit Makefile.lib, for creating non-shared lib
 # called by "make makelib"

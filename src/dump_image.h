@@ -51,6 +51,7 @@ class DumpImage : public DumpCustom {
   int bodycolor;                   // what determines color of bodies
   double bodyflag1,bodyflag2;      // user-specified params for drawing bodies
   int bacillusflag;
+  int plasmidflag;
   int bacilluscolor;
   int fixflag;                     // 0/1 to draw what fix provides
   int fixcolor;                    // what determines color of fix objects
@@ -69,8 +70,8 @@ class DumpImage : public DumpCustom {
   int cxvar,cyvar,czvar;           // index to box center vars
   char *upxstr,*upystr,*upzstr;    // view up vector variables
   int upxvar,upyvar,upzvar;        // index to up vector vars
-  char *zoomstr,*perspstr;         // view zoom and perspective variables
-  int zoomvar,perspvar;            // index to zoom,persp vars
+  char *zoomstr;                   // view zoom variable name
+  int zoomvar;                     // index to zoom variable
   int boxflag,axesflag;            // 0/1 for draw box and axes
   double boxdiam,axeslen,axesdiam; // params for drawing box and axes
   int subboxflag;
@@ -139,10 +140,6 @@ E: Invalid dump image theta value
 
 Theta must be between 0.0 and 180.0 inclusive.
 
-E: Dump image persp option is not yet supported
-
-Self-explanatory.
-
 E: Dump image line requires atom style line
 
 Self-explanatory.
@@ -199,14 +196,6 @@ E: Variable for dump image zoom is invalid style
 
 Must be an equal-style variable.
 
-E: Variable name for dump image persp does not exist
-
-Self-explanatory.
-
-E: Variable for dump image persp is invalid style
-
-Must be an equal-style variable.
-
 E: Invalid dump image element name
 
 The specified element name was not in the standard list of elements.
@@ -220,10 +209,6 @@ with values in the color map.
 E: Invalid dump image zoom value
 
 Zoom value must be > 0.0.
-
-E: Invalid dump image persp value
-
-Persp value must be >= 0.0.
 
 E: Invalid color in dump_modify command
 

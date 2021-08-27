@@ -1,6 +1,6 @@
 /* ----------------------------------------------------------------------
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
-   http://lammps.sandia.gov, Sandia National Laboratories
+   https://lammps.sandia.gov/, Sandia National Laboratories
    Steve Plimpton, sjplimp@sandia.gov
 
    Copyright (2003) Sandia Corporation.  Under the terms of Contract
@@ -15,9 +15,9 @@
    Contributing author: Mike Brown (SNL)
 ------------------------------------------------------------------------- */
 
+#include "math_extra.h"
 #include <cstdio>
 #include <cstring>
-#include "math_extra.h"
 
 #define MAXJACOBI 50
 
@@ -90,6 +90,58 @@ int mldivide3(const double m[3][3], const double *v, double *ans)
   }
 
   return 0;
+}
+
+/* ----------------------------------------------------------------------
+   Richardson iteration to update quaternion from angular momentum
+   return new normalized quaternion q
+   also returns updated omega at 1/2 step
+------------------------------------------------------------------------- */
+
+void richardson(double *q, double *m, double *w, double *moments, double dtq)
+{
+  // full update from dq/dt = 1/2 w q
+
+  double wq[4];
+  MathExtra::vecquat(w,q,wq);
+
+  double qfull[4];
+  qfull[0] = q[0] + dtq * wq[0];
+  qfull[1] = q[1] + dtq * wq[1];
+  qfull[2] = q[2] + dtq * wq[2];
+  qfull[3] = q[3] + dtq * wq[3];
+  MathExtra::qnormalize(qfull);
+
+  // 1st half update from dq/dt = 1/2 w q
+
+  double qhalf[4];
+  qhalf[0] = q[0] + 0.5*dtq * wq[0];
+  qhalf[1] = q[1] + 0.5*dtq * wq[1];
+  qhalf[2] = q[2] + 0.5*dtq * wq[2];
+  qhalf[3] = q[3] + 0.5*dtq * wq[3];
+  MathExtra::qnormalize(qhalf);
+
+  // re-compute omega at 1/2 step from m at 1/2 step and q at 1/2 step
+  // recompute wq
+
+  MathExtra::mq_to_omega(m,qhalf,moments,w);
+  MathExtra::vecquat(w,qhalf,wq);
+
+  // 2nd half update from dq/dt = 1/2 w q
+
+  qhalf[0] += 0.5*dtq * wq[0];
+  qhalf[1] += 0.5*dtq * wq[1];
+  qhalf[2] += 0.5*dtq * wq[2];
+  qhalf[3] += 0.5*dtq * wq[3];
+  MathExtra::qnormalize(qhalf);
+
+  // corrected Richardson update
+
+  q[0] = 2.0*qhalf[0] - qfull[0];
+  q[1] = 2.0*qhalf[1] - qfull[1];
+  q[2] = 2.0*qhalf[2] - qfull[2];
+  q[3] = 2.0*qhalf[3] - qfull[3];
+  MathExtra::qnormalize(q);
 }
 
 /* ----------------------------------------------------------------------
@@ -175,58 +227,6 @@ void rotate(double matrix[3][3], int i, int j, int k, int l,
 }
 
 /* ----------------------------------------------------------------------
-   Richardson iteration to update quaternion from angular momentum
-   return new normalized quaternion q
-   also returns updated omega at 1/2 step
-------------------------------------------------------------------------- */
-
-void richardson(double *q, double *m, double *w, double *moments, double dtq)
-{
-  // full update from dq/dt = 1/2 w q
-
-  double wq[4];
-  MathExtra::vecquat(w,q,wq);
-
-  double qfull[4];
-  qfull[0] = q[0] + dtq * wq[0];
-  qfull[1] = q[1] + dtq * wq[1];
-  qfull[2] = q[2] + dtq * wq[2];
-  qfull[3] = q[3] + dtq * wq[3];
-  MathExtra::qnormalize(qfull);
-
-  // 1st half update from dq/dt = 1/2 w q
-
-  double qhalf[4];
-  qhalf[0] = q[0] + 0.5*dtq * wq[0];
-  qhalf[1] = q[1] + 0.5*dtq * wq[1];
-  qhalf[2] = q[2] + 0.5*dtq * wq[2];
-  qhalf[3] = q[3] + 0.5*dtq * wq[3];
-  MathExtra::qnormalize(qhalf);
-
-  // re-compute omega at 1/2 step from m at 1/2 step and q at 1/2 step
-  // recompute wq
-
-  MathExtra::mq_to_omega(m,qhalf,moments,w);
-  MathExtra::vecquat(w,qhalf,wq);
-
-  // 2nd half update from dq/dt = 1/2 w q
-
-  qhalf[0] += 0.5*dtq * wq[0];
-  qhalf[1] += 0.5*dtq * wq[1];
-  qhalf[2] += 0.5*dtq * wq[2];
-  qhalf[3] += 0.5*dtq * wq[3];
-  MathExtra::qnormalize(qhalf);
-
-  // corrected Richardson update
-
-  q[0] = 2.0*qhalf[0] - qfull[0];
-  q[1] = 2.0*qhalf[1] - qfull[1];
-  q[2] = 2.0*qhalf[2] - qfull[2];
-  q[3] = 2.0*qhalf[3] - qfull[3];
-  MathExtra::qnormalize(q);
-}
-
-/* ----------------------------------------------------------------------
    apply evolution operators to quat, quat momentum
    Miller et al., J Chem Phys. 116, 8649-8659 (2002)
 ------------------------------------------------------------------------- */
@@ -258,7 +258,7 @@ void no_squish_rotate(int k, double *p, double *q, double *inertia,
   // obtain phi, cosines and sines
 
   phi = p[0]*kq[0] + p[1]*kq[1] + p[2]*kq[2] + p[3]*kq[3];
-  if (fabs(inertia[k-1]) < 1e-6) phi *= 0.0;
+  if (inertia[k-1] == 0.0) phi = 0.0;
   else phi /= 4.0 * inertia[k-1];
   c_phi = cos(dt * phi);
   s_phi = sin(dt * phi);
@@ -537,7 +537,7 @@ void inertia_line(double length, double theta, double mass, double *inertia)
 /* ----------------------------------------------------------------------
    compute space-frame inertia tensor of a triangle
    v0,v1,v2 = 3 vertices of triangle
-   from http://en.wikipedia.org/wiki/Inertia_tensor_of_triangle
+   from https://en.wikipedia.org/wiki/List_of_moments_of_inertia
    inertia tensor = a/24 (v0^2 + v1^2 + v2^2 + (v0+v1+v2)^2) I - a Vt S V
    a = 2*area of tri = |(v1-v0) x (v2-v0)|
    I = 3x3 identity matrix
@@ -638,7 +638,7 @@ void BuildRyMatrix(double R[3][3], const double angle)
 }
 
 /* ----------------------------------------------------------------------
- Build rotation matrix for a small angle rotation around the Y axis
+ Build rotation matrix for a small angle rotation around the Z axis
  ------------------------------------------------------------------------- */
 
 void BuildRzMatrix(double R[3][3], const double angle)

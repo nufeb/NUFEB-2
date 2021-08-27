@@ -29,7 +29,6 @@ class FixMonodCyano: public FixMonod {
   FixMonodCyano(class LAMMPS *, int, char **);
   virtual ~FixMonodCyano() {}
   virtual void compute();
-
  protected:
   int ilight;   // light
   int ico2;     // co2

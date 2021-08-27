@@ -1,4 +1,4 @@
-/* ----------------------------------------------------------------------
+ /* ----------------------------------------------------------------------
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
    http://lammps.sandia.gov, Sandia National Laboratories
    Steve Plimpton, sjplimp@sandia.gov
@@ -98,7 +98,7 @@ void FixMonodEcoliWildKokkos<DeviceType>::update_atoms()
   const double third = 1.0 / 3.0;
 
   gridKK->sync(Host, GROWTH_MASK);
-  
+
   for (int i = 0; i < atom->nlocal; i++) {
     if (atom->mask[i] & groupbit) {
       const int cell = grid->cell(x[i]);

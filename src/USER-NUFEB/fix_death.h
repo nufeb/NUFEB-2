@@ -11,12 +11,6 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#ifdef FIX_CLASS
-
-FixStyle(nufeb/death,FixDeath)
-
-#else
-
 #ifndef LMP_FIX_DEATH_H
 #define LMP_FIX_DEATH_H
 
@@ -30,17 +24,14 @@ class FixDeath : public Fix {
 
   FixDeath(class LAMMPS *, int, char **);
   virtual ~FixDeath() {}
-  int setmask();
   int modify_param(int, char **);
-  void post_integrate();
-  void compute();
-  
- private:
-  int idead;
-  double diameter;
+
+  virtual void init() {};
+  virtual int setmask();
+  virtual void post_integrate();
+  virtual void compute() = 0;
 };
 
 }
 
-#endif
 #endif

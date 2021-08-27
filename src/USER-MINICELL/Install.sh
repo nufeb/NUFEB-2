@@ -31,5 +31,14 @@ action fix_divide_bacillus_minicell.cpp
 action fix_divide_bacillus_minicell.h
 action fix_property_plasmid.cpp
 action fix_property_plasmid.h
-
+action fix_death_plasmid.cpp
+action fix_death_plasmid.h
+action compute_plasmid_msd.cpp
+action compute_plasmid_msd.h
+action compute_plasmid_copy.cpp
+action compute_plasmid_copy.h
+action compute_plasmid_nbirth.cpp
+action compute_plasmid_nbirth.h
+action compute_plasmid_ave_plasmid.cpp
+action compute_plasmid_ave_plasmid.h
 # package files with dependencies

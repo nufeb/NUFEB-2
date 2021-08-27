@@ -112,6 +112,7 @@ void FixDensityKokkos<DeviceType>::compute()
 			     c[2] * grid_subbox[0] * grid_subbox[1];
 
 			   double d = d_biomass(i) * d_rmass(i) / vol;
+
 			   a_dens(0,cell) += d;
 			   for (int igroup = 0; igroup < ngroup; igroup++)
 			     if (d_mask(i) & d_bitmask(igroup))

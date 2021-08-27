@@ -11,28 +11,26 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#include <cmath>
-#include <cstdlib>
-#include <cstring>
 #include "atom_vec_coccus_kokkos.h"
+
 #include "atom_kokkos.h"
 #include "atom_masks.h"
 #include "comm_kokkos.h"
 #include "domain.h"
-#include "modify.h"
-#include "force.h"
+#include "error.h"
 #include "fix.h"
 #include "fix_adapt.h"
 #include "math_const.h"
 #include "memory.h"
-#include "error.h"
 #include "memory_kokkos.h"
+#include "modify.h"
+
+#include <cstring>
 
 using namespace LAMMPS_NS;
+using namespace MathConst;
 
 #define DELTA 10000
-
-static const double MY_PI  = 3.14159265358979323846; // pi
 
 /* ---------------------------------------------------------------------- */
 
@@ -47,7 +45,7 @@ AtomVecCoccusKokkos::AtomVecCoccusKokkos(LAMMPS *lmp) : AtomVecKokkos(lmp)
   size_reverse = 6;
   size_border = 11;
   size_velocity = 6;
-  size_data_atom = 9;
+  size_data_atom = 8;
   size_data_vel = 7;
   xcol_data = 5;
 
@@ -69,6 +67,24 @@ AtomVecCoccusKokkos::AtomVecCoccusKokkos(LAMMPS *lmp) : AtomVecKokkos(lmp)
 void AtomVecCoccusKokkos::init()
 {
   AtomVec::init();
+
+  // check if optional radvary setting should have been set to 1
+
+  for (int i = 0; i < modify->nfix; i++)
+    if (strcmp(modify->fix[i]->style,"adapt") == 0) {
+      FixAdapt *fix = (FixAdapt *) modify->fix[i];
+      if (fix->diamflag && radvary == 0)
+        error->all(FLERR,"Fix adapt changes particle radii "
+                   "but atom_style coccus is not dynamic");
+    } else if (strcmp(modify->fix[i]->style,"nufeb/monod") == 0) {
+	if (radvary == 0)
+	  error->all(FLERR,"Fix nufeb/monod changes particle radii "
+		     "but atom_style coccus is not dynamic");
+    } else if (strcmp(modify->fix[i]->style,"nufeb/divide") == 0) {
+	if (radvary == 0)
+	  error->all(FLERR,"Fix nufeb/divide changes particle radii "
+		     "but atom_style coccus is not dynamic");
+    }
 }
 
 /* ----------------------------------------------------------------------
@@ -85,38 +101,38 @@ void AtomVecCoccusKokkos::grow(int n)
   if (nmax < 0 || nmax > MAXSMALLINT)
     error->one(FLERR,"Per-processor system is too big");
 
-  sync(Device,ALL_MASK);
-  modified(Device,ALL_MASK);
+  atomKK->sync(Device,ALL_MASK);
+  atomKK->modified(Device,ALL_MASK);
 
   memoryKK->grow_kokkos(atomKK->k_tag,atomKK->tag,nmax,"atom:tag");
   memoryKK->grow_kokkos(atomKK->k_type,atomKK->type,nmax,"atom:type");
   memoryKK->grow_kokkos(atomKK->k_mask,atomKK->mask,nmax,"atom:mask");
   memoryKK->grow_kokkos(atomKK->k_image,atomKK->image,nmax,"atom:image");
 
-  memoryKK->grow_kokkos(atomKK->k_x,atomKK->x,nmax,3,"atom:x");
-  memoryKK->grow_kokkos(atomKK->k_v,atomKK->v,nmax,3,"atom:v");
-  memoryKK->grow_kokkos(atomKK->k_f,atomKK->f,nmax,3,"atom:f");
+  memoryKK->grow_kokkos(atomKK->k_x,atomKK->x,nmax,"atom:x");
+  memoryKK->grow_kokkos(atomKK->k_v,atomKK->v,nmax,"atom:v");
+  memoryKK->grow_kokkos(atomKK->k_f,atomKK->f,nmax,"atom:f");
   memoryKK->grow_kokkos(atomKK->k_radius,atomKK->radius,nmax,"atom:radius");
   memoryKK->grow_kokkos(atomKK->k_biomass,atomKK->biomass,nmax,"atom:biomass");
   memoryKK->grow_kokkos(atomKK->k_outer_mass,atomKK->outer_mass,nmax,"atom:outer_mass");
   memoryKK->grow_kokkos(atomKK->k_outer_radius,atomKK->outer_radius,nmax,"atom:outer_radius");
   memoryKK->grow_kokkos(atomKK->k_rmass,atomKK->rmass,nmax,"atom:rmass");
-  memoryKK->grow_kokkos(atomKK->k_omega,atomKK->omega,nmax,3,"atom:omega");
-  memoryKK->grow_kokkos(atomKK->k_torque,atomKK->torque,nmax,3,"atom:torque");
+  memoryKK->grow_kokkos(atomKK->k_omega,atomKK->omega,nmax,"atom:omega");
+  memoryKK->grow_kokkos(atomKK->k_torque,atomKK->torque,nmax,"atom:torque");
 
   if (atom->nextra_grow)
     for (int iextra = 0; iextra < atom->nextra_grow; iextra++)
       modify->fix[atom->extra_grow[iextra]]->grow_arrays(nmax);
 
-  grow_reset();
-  sync(Host,ALL_MASK);
+  grow_pointers();
+  atomKK->sync(Host,ALL_MASK);
 }
 
 /* ----------------------------------------------------------------------
    reset local array ptrs
 ------------------------------------------------------------------------- */
 
-void AtomVecCoccusKokkos::grow_reset()
+void AtomVecCoccusKokkos::grow_pointers()
 {
   tag = atomKK->tag;
   d_tag = atomKK->k_tag.d_view;
@@ -183,6 +199,7 @@ void AtomVecCoccusKokkos::copy(int i, int j, int delflag)
   h_v(j,0) = h_v(i,0);
   h_v(j,1) = h_v(i,1);
   h_v(j,2) = h_v(i,2);
+
   h_radius[j] = h_radius[i];
   h_rmass[j] = h_rmass[i];
   h_biomass[j] = h_biomass[i];
@@ -2171,7 +2188,7 @@ struct AtomVecCoccusKokkos_UnpackBorder {
     _mask(i+_first) = static_cast<int>  (d_ubuf(_buf(i,5)).i);
     _radius(i+_first) = _buf(i,6);
     _rmass(i+_first) = _buf(i,7);
-    _rmass(i+_first) = _buf(i,8);
+    _biomass(i+_first) = _buf(i,8);
     _oradius(i+_first) = _buf(i,9);
     _omass(i+_first) = _buf(i,10);
   }
@@ -2290,8 +2307,8 @@ struct AtomVecCoccusKokkos_UnpackBorderVel {
     _radius(i+_first) = _buf(i,6);
     _rmass(i+_first) = _buf(i,7);
     _biomass(i+_first) = _buf(i,8);
-    _radius(i+_first) = _buf(i,9);
-    _rmass(i+_first) = _buf(i,10);
+    _oradius(i+_first) = _buf(i,9);
+    _omass(i+_first) = _buf(i,10);
     _v(i+_first,0) = _buf(i,11);
     _v(i+_first,1) = _buf(i,12);
     _v(i+_first,2) = _buf(i,13);
@@ -2934,11 +2951,6 @@ void AtomVecCoccusKokkos::data_atom(double *coord, imageint imagetmp, char **val
     ((h_outer_radius[nlocal]*h_outer_radius[nlocal]*h_outer_radius[nlocal])
      -(h_radius[nlocal]*h_radius[nlocal]*h_radius[nlocal])) * 30;
 
-  double ratio = atof(values[8]);
-  if (ratio < 0 || ratio > 1)
-    error->one(FLERR,"Biomass/Mass (dry/wet weight) ratio must be between 0-1");
-  h_biomass[nlocal] = ratio;
-
   atomKK->modified(Host,ALL_MASK);
 
   atom->nlocal++;
@@ -2973,13 +2985,7 @@ int AtomVecCoccusKokkos::data_atom_hybrid(int nlocal, char **values)
     ((h_outer_radius[nlocal]*h_outer_radius[nlocal]*h_outer_radius[nlocal])
      -(h_radius[nlocal]*h_radius[nlocal]*h_radius[nlocal])) * 30;
 
-  double ratio = atof(values[3]);
-  if (ratio < 0 || ratio > 1)
-    error->one(FLERR,"Invalid biomass/Mass ratio in Atoms section of data file:"
-	"ratio < 0 or ratio > 1");
-  h_biomass[nlocal] = ratio;
-
-  atomKK->modified(Host,RADIUS_MASK|RMASS_MASK|BIOMASS_MASK|
+  atomKK->modified(Host,RADIUS_MASK|RMASS_MASK|
 		   OUTER_RADIUS_MASK|OUTER_MASS_MASK);
 
   return 4;
@@ -2992,12 +2998,12 @@ int AtomVecCoccusKokkos::data_atom_hybrid(int nlocal, char **values)
 void AtomVecCoccusKokkos::data_vel(int m, char **values)
 {
   sync(Host,V_MASK|OMEGA_MASK);
-  h_v(m,0) = atof(values[0]);
-  h_v(m,1) = atof(values[1]);
-  h_v(m,2) = atof(values[2]);
-  h_omega(m,0) = atof(values[3]);
-  h_omega(m,1) = atof(values[4]);
-  h_omega(m,2) = atof(values[5]);
+  h_v(m,0) = utils::numeric(FLERR,values[0],true,lmp);
+  h_v(m,1) = utils::numeric(FLERR,values[1],true,lmp);
+  h_v(m,2) = utils::numeric(FLERR,values[2],true,lmp);
+  h_omega(m,0) = utils::numeric(FLERR,values[3],true,lmp);
+  h_omega(m,1) = utils::numeric(FLERR,values[4],true,lmp);
+  h_omega(m,2) = utils::numeric(FLERR,values[5],true,lmp);
   modified(Host,V_MASK|OMEGA_MASK);
 }
 
@@ -3008,9 +3014,9 @@ void AtomVecCoccusKokkos::data_vel(int m, char **values)
 int AtomVecCoccusKokkos::data_vel_hybrid(int m, char **values)
 {
   sync(Host,OMEGA_MASK);
-  omega[m][0] = atof(values[0]);
-  omega[m][1] = atof(values[1]);
-  omega[m][2] = atof(values[2]);
+  omega[m][0] = utils::numeric(FLERR,values[0],true,lmp);
+  omega[m][1] = utils::numeric(FLERR,values[1],true,lmp);
+  omega[m][2] = utils::numeric(FLERR,values[2],true,lmp);
   modified(Host,OMEGA_MASK);
   return 3;
 }
@@ -3022,7 +3028,7 @@ int AtomVecCoccusKokkos::data_vel_hybrid(int m, char **values)
 void AtomVecCoccusKokkos::pack_data(double **buf)
 {
   atomKK->sync(Host,TAG_MASK|TYPE_MASK|RADIUS_MASK|RMASS_MASK|X_MASK|IMAGE_MASK|
-	       BIOMASS_MASK|OUTER_RADIUS_MASK);
+	       OUTER_RADIUS_MASK);
 
   int nlocal = atom->nlocal;
   for (int i = 0; i < nlocal; i++) {
@@ -3032,14 +3038,13 @@ void AtomVecCoccusKokkos::pack_data(double **buf)
     if (h_radius[i] == 0.0) buf[i][3] = h_rmass[i];
     else
       buf[i][3] = h_rmass[i] / (4.0*MY_PI/3.0 * h_radius[i]*h_radius[i]*h_radius[i]);
-    buf[i][7] = h_x(i,0);
-    buf[i][8] = h_x(i,1);
-    buf[i][9] = h_x(i,2);
-    buf[i][5] = h_outer_radius[i];
-    buf[i][4] = h_biomass[i];
-    buf[i][10] = ubuf((h_image[i] & IMGMASK) - IMGMAX).d;
-    buf[i][11] = ubuf((h_image[i] >> IMGBITS & IMGMASK) - IMGMAX).d;
-    buf[i][12] = ubuf((h_image[i] >> IMG2BITS) - IMGMAX).d;
+    buf[i][4] = h_x(i,0);
+    buf[i][5] = h_x(i,1);
+    buf[i][6] = h_x(i,2);
+    buf[i][7] = h_outer_radius[i];
+    buf[i][8] = ubuf((h_image[i] & IMGMASK) - IMGMAX).d;
+    buf[i][9] = ubuf((h_image[i] >> IMGBITS & IMGMASK) - IMGMAX).d;
+    buf[i][10] = ubuf((h_image[i] >> IMG2BITS) - IMGMAX).d;
   }
 }
 
@@ -3049,14 +3054,14 @@ void AtomVecCoccusKokkos::pack_data(double **buf)
 
 int AtomVecCoccusKokkos::pack_data_hybrid(int i, double *buf)
 {
-  atomKK->sync(Host,RADIUS_MASK|RMASS_MASK|BIOMASS_MASK|OUTER_RADIUS_MASK);
+  atomKK->sync(Host,RADIUS_MASK|RMASS_MASK|OUTER_RADIUS_MASK);
 
   buf[0] = 2.0*h_radius[i];
   if (h_radius[i] == 0.0) buf[1] = h_rmass[i];
   else buf[1] = h_rmass[i] / (4.0*MY_PI/3.0 * h_radius[i]*h_radius[i]*h_radius[i]);
   buf[2] = h_outer_radius[i];
-  buf[3] = h_biomass[i];
-  return 4;
+
+  return 3;
 }
 
 /* ----------------------------------------------------------------------
@@ -3067,13 +3072,13 @@ void AtomVecCoccusKokkos::write_data(FILE *fp, int n, double **buf)
 {
   for (int i = 0; i < n; i++)
     fprintf(fp,TAGINT_FORMAT
-            " %d %-1.16e %-1.16e %-1.16e %-1.16e %-1.16e %-1.16e %-1.16e %d %d %d\n",
+            " %d %-1.16e %-1.16e %-1.16e %-1.16e %-1.16e %-1.16e %d %d %d\n",
             (tagint) ubuf(buf[i][0]).i,(int) ubuf(buf[i][1]).i,
             buf[i][2],buf[i][3],
 	    buf[i][4],buf[i][5],
-            buf[i][4],buf[i][5],buf[i][6],
-            (int) ubuf(buf[i][7]).i,(int) ubuf(buf[i][8]).i,
-            (int) ubuf(buf[i][9]).i);
+            buf[i][4],buf[i][5],
+            (int) ubuf(buf[i][6]).i,(int) ubuf(buf[i][7]).i,
+            (int) ubuf(buf[i][8]).i);
 }
 
 /* ----------------------------------------------------------------------
@@ -3082,8 +3087,8 @@ void AtomVecCoccusKokkos::write_data(FILE *fp, int n, double **buf)
 
 int AtomVecCoccusKokkos::write_data_hybrid(FILE *fp, double *buf)
 {
-  fprintf(fp," %-1.16e %-1.16e %-1.16e %-1.16e",buf[0],buf[1],buf[2],buf[3]);
-  return 4;
+  fprintf(fp," %-1.16e %-1.16e %-1.16e",buf[0],buf[1],buf[2]);
+  return 3;
 }
 
 /* ----------------------------------------------------------------------
@@ -3147,9 +3152,9 @@ int AtomVecCoccusKokkos::write_vel_hybrid(FILE *fp, double *buf)
    return # of bytes of allocated memory
 ------------------------------------------------------------------------- */
 
-bigint AtomVecCoccusKokkos::memory_usage()
+double AtomVecCoccusKokkos::memory_usage()
 {
-  bigint bytes = 0;
+  double bytes = 0;
 
   if (atom->memcheck("tag")) bytes += memory->usage(tag,nmax);
   if (atom->memcheck("type")) bytes += memory->usage(type,nmax);

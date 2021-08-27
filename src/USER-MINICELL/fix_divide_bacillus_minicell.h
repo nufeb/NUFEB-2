@@ -30,14 +30,26 @@ class FixDivideBacillusMinicell : public FixDivide {
   FixDivideBacillusMinicell(class LAMMPS *, int, char **);
   virtual ~FixDivideBacillusMinicell();
   virtual void compute();
+  void init();
   void *extract(const char *, int &);
   
+  double memory_usage();
+  void grow_arrays(int);
+  void copy_arrays(int, int, int);
+  int pack_exchange(int, double *);
+  int unpack_exchange(int, double *);
+
+  double maxlength;
+  double *birth_length;
+
  private:
   int imini, type;
   double prob;
-  double maxlength;
+  double divlength;
+  double var;
   int seed;
   double maxradius;
+  int divflag, conserveflag;
 
   class RanPark *random;
   class AtomVecBacillus *avec;

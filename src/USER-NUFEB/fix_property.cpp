@@ -29,7 +29,7 @@ using namespace FixConst;
 
 FixProperty::FixProperty(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg),
-  aprop(NULL), vprop(NULL)
+  aprop(nullptr), vprop(nullptr)
 {
   compute_flag = 0;
   restart_peratom = 1;
@@ -37,8 +37,9 @@ FixProperty::FixProperty(LAMMPS *lmp, int narg, char **arg) :
   peratom_flag = 1;
   // perform initial allocation of atom-based array
   // register with Atom class
-  atom->add_callback(0);
-  atom->add_callback(1);
+
+  atom->add_callback(Atom::GROW);
+  atom->add_callback(Atom::RESTART);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -48,8 +49,8 @@ FixProperty::~FixProperty()
   if (copymode) return;
 
   // unregister callbacks to this fix from Atom class
-  atom->delete_callback(id,0);
-  atom->delete_callback(id,1);
+  atom->delete_callback(id,Atom::GROW);
+  atom->delete_callback(id,Atom::RESTART);
 
   memory->destroy(aprop);
   memory->destroy(vprop);
@@ -95,10 +96,10 @@ double FixProperty::memory_usage()
 void FixProperty::grow_arrays(int nmax)
 {
   if (size_peratom_cols > 0) {
-    memory->grow(aprop,nmax,size_peratom_cols,"fix_property/self:array");
+    memory->grow(aprop,nmax,size_peratom_cols,"fix_property:array");
     array_atom = aprop;
   } else {
-    memory->grow(vprop,nmax,"fix_property/self:vector");
+    memory->grow(vprop,nmax,"fix_property:vector");
     vector_atom = vprop;
   }
 }

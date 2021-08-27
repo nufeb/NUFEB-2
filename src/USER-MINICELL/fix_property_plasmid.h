@@ -21,6 +21,10 @@ FixStyle(nufeb/property/plasmid,FixPropertyPlasmid)
 #define LMP_FIX_PROPERTY_PLASMID_H
 
 #include "fix_property.h"
+#include "atom_vec_bacillus.h"
+
+#include <iostream>
+#include <fstream>
 
 namespace LAMMPS_NS {
 
@@ -28,20 +32,67 @@ class FixPropertyPlasmid : public FixProperty {
  public:
 
   FixPropertyPlasmid(class LAMMPS *, int, char **);
-  ~FixPropertyPlasmid() {};
+  ~FixPropertyPlasmid();
 
-  void init();
+  void grow_arrays(int);
+  void init() {}
   void set_arrays(int) {};
   void update_arrays(int, int);
   void compute();
-  double compute_scalar();
+
+  void get_plasmid_coords(int, int, double *, double *);
+  void get_plasmid_coords(int, int, double *);
+  double get_plasmid_diameter() {return dia;};
+  void create_plasmid();
+  void delete_filament(int *, int);
+
+  double memory_usage();
+  void copy_arrays(int, int, int);
+  void copy_plasmid(int, int, int, int);
+  int pack_exchange(int, double *);
+  int unpack_exchange(int, double *);
+  int pack_restart(int, double *);
+  void unpack_restart(int, int);
+  int size_restart(int);
+  int maxsize_restart();
+
+  int pmax;              // maximum # of plasmid
+  double **xpm;          // plasmid position
+  double **pre_x;        // previous cell location
+  double **nproteins;    // number of initiator proteins
+  int fmax;              // maximum # of filaments
+  int *nfilas;           // # of filaments
+  int ***fila;           // filament defined as straight line
+  double **tfila;        // filament duration
+  double ftime, fvel;    // filament formation time, filament formation rate
+  double alpha;
+  int nucleoid_flag;
+  int restart_size;
+  std::ofstream myfile;
 
  private:
-  double replication;
+  void replication(int);
+  void motility(int);
+  void get_cell_boundary(double *, int, int);
+  int check_nucleoid(int, int, double);
+  void set_plasmid_xpm(int, int, double *,double *);
+  void relocate_xpm(int, int);
+  void get_quat(double *, double *, double *);
+  void distance_bt_pt_line(double *, double *, double *, double &);
+  void dump();
+
+  double dia, diff_coef, dt;
+  int mean_protein, init_protein;
+  int pinit;              // # of initial plasmid
   int seed;
 
   class RanPark *random;
   class AtomVecBacillus *avec;
+  class FixDivideBacillusMinicell *fix_div;
+
+  double dot(double x1, double x2, double x3, double y1, double y2, double y3) { return x1*y1 + x2*y2 + x3*y3; }
+  double norm(double x1, double x2, double x3) { return sqrt(dot(x1, x2, x3, x1, x2, x3)); }
+  double dist(double u1, double u2, double u3, double v1, double v2, double v3) { return norm(u1-v1, u2-v2, u3-v3); }
 };
 
 }

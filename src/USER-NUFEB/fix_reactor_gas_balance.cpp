@@ -20,7 +20,6 @@
 #include "error.h"
 #include "grid.h"
 #include "grid_masks.h"
-#include "force.h"
 #include "update.h"
 #include "domain.h"
 #include "memory.h"
@@ -47,7 +46,7 @@ FixReactorGasBalance::FixReactorGasBalance(LAMMPS *lmp, int narg, char **arg) :
   reactor_pres = 1.0;
 
   nfix_gas_liquid = 0;
-  fix_gas_liquid = NULL;
+  fix_gas_liquid = nullptr;
 
   igas = grid->find(arg[3]);
   if (igas < 0)
@@ -56,12 +55,12 @@ FixReactorGasBalance::FixReactorGasBalance(LAMMPS *lmp, int narg, char **arg) :
   int iarg = 4;
   while (iarg < narg) {
     if (strcmp(arg[iarg], "reactor_vhead") == 0) {
-      reactor_vhead = force->numeric(FLERR, arg[iarg+1]);
+      reactor_vhead = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       if (reactor_vhead <= 0)
 	error->all(FLERR, "Reactor headspace volume (reactor_vhead) must be positive");
       iarg += 2;
     } else if (strcmp(arg[iarg], "reactor_pres") == 0) {
-      reactor_pres = force->numeric(FLERR, arg[iarg+1]);
+      reactor_pres = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       if (reactor_pres <= 0)
 	error->all(FLERR, "Reactor headspace pressure (reactor_pres) must be positive");
       iarg += 2;

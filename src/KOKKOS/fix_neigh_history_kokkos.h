@@ -2,12 +2,10 @@
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
    http://lammps.sandia.gov, Sandia National Laboratories
    Steve Plimpton, sjplimp@sandia.gov
-
    Copyright (2003) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
    certain rights in this software.  This software is distributed under
    the GNU General Public License.
-
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
@@ -24,11 +22,10 @@ FixStyle(NEIGH_HISTORY/KK/HOST,FixNeighHistoryKokkos<LMPHostType>)
 
 #include "fix_neigh_history.h"
 #include "kokkos_type.h"
-#include "kokkos_base.h"
 
 namespace LAMMPS_NS {
 template <class DeviceType>
-class FixNeighHistoryKokkos : public FixNeighHistory, public KokkosBase {
+class FixNeighHistoryKokkos : public FixNeighHistory {
  public:
   FixNeighHistoryKokkos(class LAMMPS *, int, char **);
   ~FixNeighHistoryKokkos();
@@ -52,16 +49,6 @@ class FixNeighHistoryKokkos : public FixNeighHistory, public KokkosBase {
 
   typename Kokkos::View<int**> d_firstflag;
   typename Kokkos::View<LMP_FLOAT**> d_firstvalue;
-
-  int pack_exchange_kokkos(const int &nsend,DAT::tdual_xfloat_2d &buf,
-			   DAT::tdual_int_1d k_sendlist,
-			   DAT::tdual_int_1d k_copylist,
-			   ExecutionSpace space, int dim,
-			   X_FLOAT lo, X_FLOAT hi);
-  void unpack_exchange_kokkos(DAT::tdual_xfloat_2d &k_buf,
-                              DAT::tdual_int_1d &indices,int nrecv,
-                              int nlocal,int dim,X_FLOAT lo,X_FLOAT hi,
-                              ExecutionSpace space);
 
  private:
   typename ArrayTypes<DeviceType>::tdual_int_1d k_npartner;

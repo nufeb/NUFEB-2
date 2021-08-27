@@ -79,6 +79,8 @@ action fix_adhesion_eps.cpp
 action fix_adhesion_eps.h
 action fix_death.cpp
 action fix_death.h
+action fix_death_diameter.cpp
+action fix_death_diameter.h
 action fix_density.cpp
 action fix_density.h
 action fix_diffusion_reaction.cpp
@@ -107,6 +109,8 @@ action fix_monod_cyano.cpp
 action fix_monod_cyano.h
 action fix_monod_ecoli_wild.cpp
 action fix_monod_ecoli_wild.h
+action fix_monod_simple.cpp
+action fix_monod_simple.h
 action fix_wall_adhesion.cpp
 action fix_wall_adhesion.h
 action fix_nve_bacillus.cpp

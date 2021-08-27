@@ -19,8 +19,8 @@
 #include "atom.h"
 #include "atom_vec.h"
 #include "error.h"
-#include "force.h"
 #include "lmptype.h"
+#include "compute.h"
 #include "math_const.h"
 #include "random_park.h"
 #include "update.h"
@@ -42,9 +42,9 @@ FixDivideCoccus::FixDivideCoccus(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 6)
     error->all(FLERR, "Illegal fix nufeb/divide/coccus command");
   
-  diameter = force->numeric(FLERR, arg[3]);
-  eps_density = force->numeric(FLERR, arg[4]);
-  seed = force->inumeric(FLERR, arg[5]);
+  diameter = utils::numeric(FLERR,arg[3],true,lmp);
+  eps_density = utils::numeric(FLERR,arg[4],true,lmp);
+  seed = utils::inumeric(FLERR,arg[5],true,lmp);
   
   // Random number generator, same for all procs
   random = new RanPark(lmp, seed);
@@ -73,9 +73,6 @@ void FixDivideCoccus::compute()
         double imass = atom->rmass[i] * split;
         double jmass = atom->rmass[i] - imass;
 
-        double ibiomass = atom->biomass[i];
-        double jbiomass = atom->biomass[i];
-
         double iouter_mass = atom->outer_mass[i] * split;
         double jouter_mass = atom->outer_mass[i] - iouter_mass;
 
@@ -88,7 +85,6 @@ void FixDivideCoccus::compute()
 
         // update daughter cell i
         atom->rmass[i] = imass;
-        atom->biomass[i] = ibiomass;
         atom->outer_mass[i] = iouter_mass;
         atom->radius[i] = pow(((6 * atom->rmass[i]) / (density * MY_PI)), (1.0 / 3.0)) * 0.5;
         atom->outer_radius[i] = pow((3.0 / (4.0 * MY_PI)) * ((atom->rmass[i] / density) + (iouter_mass / eps_density)), (1.0 / 3.0));
@@ -158,7 +154,7 @@ void FixDivideCoccus::compute()
 	atom->torque[j][1] = atom->torque[i][1];
 	atom->torque[j][2] = atom->torque[i][2];
         atom->rmass[j] = jmass;
-        atom->biomass[j] = jbiomass;
+        atom->biomass[j] = atom->biomass[i];
         atom->radius[j] = jradius;
         atom->outer_mass[j] = jouter_mass;
         atom->outer_radius[j] = jouter_radius;
@@ -167,6 +163,9 @@ void FixDivideCoccus::compute()
 
         for (int m = 0; m < modify->nfix; m++)
           modify->fix[m]->update_arrays(i, j);
+
+        for (int m = 0; m < modify->ncompute; m++)
+          modify->compute[m]->set_arrays(j);
 
         delete[] coord;
       }

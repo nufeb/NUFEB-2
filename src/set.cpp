@@ -1,6 +1,6 @@
 /* ----------------------------------------------------------------------
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
-   http://lammps.sandia.gov, Sandia National Laboratories
+   https://lammps.sandia.gov/, Sandia National Laboratories
    Steve Plimpton, sjplimp@sandia.gov
 
    Copyright (2003) Sandia Corporation.  Under the terms of Contract
@@ -11,45 +11,47 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#include <mpi.h>
-#include <cmath>
-#include <cstdlib>
-#include <cstring>
 #include "set.h"
+
 #include "atom.h"
 #include "atom_vec.h"
+#include "atom_vec_body.h"
 #include "atom_vec_ellipsoid.h"
 #include "atom_vec_line.h"
 #include "atom_vec_tri.h"
-#include "atom_vec_body.h"
-#include "domain.h"
-#include "region.h"
-#include "group.h"
+#include "atom_vec_bacillus.h"
 #include "comm.h"
-#include "neighbor.h"
-#include "force.h"
-#include "pair.h"
-#include "input.h"
-#include "variable.h"
-#include "random_park.h"
-#include "math_extra.h"
-#include "math_const.h"
-#include "memory.h"
+#include "domain.h"
 #include "error.h"
+#include "force.h"
+#include "group.h"
+#include "input.h"
+#include "math_const.h"
+#include "math_extra.h"
+#include "memory.h"
 #include "modify.h"
+#include "random_mars.h"
+#include "random_park.h"
+#include "region.h"
+#include "variable.h"
+
+#include <cmath>
+#include <cstring>
 
 using namespace LAMMPS_NS;
 using namespace MathConst;
 
 enum{ATOM_SELECT,MOL_SELECT,TYPE_SELECT,GROUP_SELECT,REGION_SELECT};
 
-enum{TYPE,TYPE_FRACTION,MOLECULE,X,Y,Z,CHARGE,MASS,SHAPE,LENGTH,TRI,
+enum{TYPE,TYPE_FRACTION,TYPE_RATIO,TYPE_SUBSET,
+     MOLECULE,X,Y,Z,CHARGE,MASS,SHAPE,LENGTH,TRI,
      DIPOLE,DIPOLE_RANDOM,SPIN,SPIN_RANDOM,QUAT,QUAT_RANDOM,
      THETA,THETA_RANDOM,ANGMOM,OMEGA,
      DIAMETER,DENSITY,VOLUME,IMAGE,BOND,ANGLE,DIHEDRAL,IMPROPER,
-     MESO_E,MESO_CV,MESO_RHO,EDPD_TEMP,EDPD_CV,CC,SMD_MASS_DENSITY,
+     SPH_E,SPH_CV,SPH_RHO,EDPD_TEMP,EDPD_CV,CC,SMD_MASS_DENSITY,
      SMD_CONTACT_RADIUS,DPDTHETA,INAME,DNAME,VX,VY,VZ,
-     OUTER_MASS,OUTER_DIAMETER,OUTER_DENSITY, BIOMASS};
+     OUTER_MASS,OUTER_DIAMETER,OUTER_DENSITY,BIOMASS,INERTIA_BACCILUS,
+     POLE_RANDOM,LENGTH_BACILLUS};
 
 #define BIG INT_MAX
 
@@ -75,13 +77,13 @@ void Set::command(int narg, char **arg)
   int n = strlen(arg[1]) + 1;
   id = new char[n];
   strcpy(id,arg[1]);
-  select = NULL;
+  select = nullptr;
   selection(atom->nlocal);
 
   // loop over keyword/value pairs
   // call appropriate routine to reset attributes
 
-  if (comm->me == 0 && screen) fprintf(screen,"Setting atom values ...\n");
+  if (comm->me == 0) utils::logmesg(lmp,"Setting atom values ...\n");
 
   int allcount,origarg;
 
@@ -94,15 +96,15 @@ void Set::command(int narg, char **arg)
     if (strcmp(arg[iarg],"type") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else ivalue = force->inumeric(FLERR,arg[iarg+1]);
+      else ivalue = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
       set(TYPE);
       iarg += 2;
 
     } else if (strcmp(arg[iarg],"type/fraction") == 0) {
       if (iarg+4 > narg) error->all(FLERR,"Illegal set command");
-      newtype = force->inumeric(FLERR,arg[iarg+1]);
-      fraction = force->numeric(FLERR,arg[iarg+2]);
-      ivalue = force->inumeric(FLERR,arg[iarg+3]);
+      newtype = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
+      fraction = utils::numeric(FLERR,arg[iarg+2],false,lmp);
+      ivalue = utils::inumeric(FLERR,arg[iarg+3],false,lmp);
       if (newtype <= 0 || newtype > atom->ntypes)
         error->all(FLERR,"Invalid value in set command");
       if (fraction < 0.0 || fraction > 1.0)
@@ -112,10 +114,38 @@ void Set::command(int narg, char **arg)
       setrandom(TYPE_FRACTION);
       iarg += 4;
 
+    } else if (strcmp(arg[iarg],"type/ratio") == 0) {
+      if (iarg+4 > narg) error->all(FLERR,"Illegal set command");
+      newtype = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
+      fraction = utils::numeric(FLERR,arg[iarg+2],false,lmp);
+      ivalue = utils::inumeric(FLERR,arg[iarg+3],false,lmp);
+      if (newtype <= 0 || newtype > atom->ntypes)
+        error->all(FLERR,"Invalid value in set command");
+      if (fraction < 0.0 || fraction > 1.0)
+        error->all(FLERR,"Invalid value in set command");
+      if (ivalue <= 0)
+        error->all(FLERR,"Invalid random number seed in set command");
+      setrandom(TYPE_RATIO);
+      iarg += 4;
+
+    } else if (strcmp(arg[iarg],"type/subset") == 0) {
+      if (iarg+4 > narg) error->all(FLERR,"Illegal set command");
+      newtype = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
+      nsubset = utils::bnumeric(FLERR,arg[iarg+2],false,lmp);
+      ivalue = utils::inumeric(FLERR,arg[iarg+3],false,lmp);
+      if (newtype <= 0 || newtype > atom->ntypes)
+        error->all(FLERR,"Invalid value in set command");
+      if (nsubset < 0)
+        error->all(FLERR,"Invalid value in set command");
+      if (ivalue <= 0)
+        error->all(FLERR,"Invalid random number seed in set command");
+      setrandom(TYPE_SUBSET);
+      iarg += 4;
+
     } else if (strcmp(arg[iarg],"mol") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else ivalue = force->inumeric(FLERR,arg[iarg+1]);
+      else ivalue = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
       if (!atom->molecule_flag)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       set(MOLECULE);
@@ -124,49 +154,49 @@ void Set::command(int narg, char **arg)
     } else if (strcmp(arg[iarg],"x") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       set(X);
       iarg += 2;
 
     } else if (strcmp(arg[iarg],"y") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       set(Y);
       iarg += 2;
 
     } else if (strcmp(arg[iarg],"z") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       set(Z);
       iarg += 2;
 
     } else if (strcmp(arg[iarg],"vx") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       set(VX);
       iarg += 2;
 
     } else if (strcmp(arg[iarg],"vy") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       set(VY);
       iarg += 2;
 
     } else if (strcmp(arg[iarg],"vz") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       set(VZ);
       iarg += 2;
 
     } else if (strcmp(arg[iarg],"charge") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       if (!atom->q_flag)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       set(CHARGE);
@@ -175,7 +205,7 @@ void Set::command(int narg, char **arg)
     } else if (strcmp(arg[iarg],"mass") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       if (!atom->rmass_flag)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       set(MASS);
@@ -184,11 +214,11 @@ void Set::command(int narg, char **arg)
     } else if (strcmp(arg[iarg],"shape") == 0) {
       if (iarg+4 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else xvalue = force->numeric(FLERR,arg[iarg+1]);
+      else xvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       if (strstr(arg[iarg+2],"v_") == arg[iarg+2]) varparse(arg[iarg+2],2);
-      else yvalue = force->numeric(FLERR,arg[iarg+2]);
+      else yvalue = utils::numeric(FLERR,arg[iarg+2],false,lmp);
       if (strstr(arg[iarg+3],"v_") == arg[iarg+3]) varparse(arg[iarg+3],3);
-      else zvalue = force->numeric(FLERR,arg[iarg+3]);
+      else zvalue = utils::numeric(FLERR,arg[iarg+3],false,lmp);
       if (!atom->ellipsoid_flag)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       set(SHAPE);
@@ -197,7 +227,7 @@ void Set::command(int narg, char **arg)
     } else if (strcmp(arg[iarg],"length") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       if (!atom->line_flag)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       set(LENGTH);
@@ -206,7 +236,7 @@ void Set::command(int narg, char **arg)
     } else if (strcmp(arg[iarg],"tri") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       if (!atom->tri_flag)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       set(TRI);
@@ -215,11 +245,11 @@ void Set::command(int narg, char **arg)
     } else if (strcmp(arg[iarg],"dipole") == 0) {
       if (iarg+4 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else xvalue = force->numeric(FLERR,arg[iarg+1]);
+      else xvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       if (strstr(arg[iarg+2],"v_") == arg[iarg+2]) varparse(arg[iarg+2],2);
-      else yvalue = force->numeric(FLERR,arg[iarg+2]);
+      else yvalue = utils::numeric(FLERR,arg[iarg+2],false,lmp);
       if (strstr(arg[iarg+3],"v_") == arg[iarg+3]) varparse(arg[iarg+3],3);
-      else zvalue = force->numeric(FLERR,arg[iarg+3]);
+      else zvalue = utils::numeric(FLERR,arg[iarg+3],false,lmp);
       if (!atom->mu_flag)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       set(DIPOLE);
@@ -227,8 +257,8 @@ void Set::command(int narg, char **arg)
 
     } else if (strcmp(arg[iarg],"dipole/random") == 0) {
       if (iarg+3 > narg) error->all(FLERR,"Illegal set command");
-      ivalue = force->inumeric(FLERR,arg[iarg+1]);
-      dvalue = force->numeric(FLERR,arg[iarg+2]);
+      ivalue = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
+      dvalue = utils::numeric(FLERR,arg[iarg+2],false,lmp);
       if (!atom->mu_flag)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       if (ivalue <= 0)
@@ -241,13 +271,13 @@ void Set::command(int narg, char **arg)
     } else if (strcmp(arg[iarg],"spin") == 0) {
       if (iarg+4 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       if (strstr(arg[iarg+2],"v_") == arg[iarg+2]) varparse(arg[iarg+2],2);
-      else xvalue = force->numeric(FLERR,arg[iarg+2]);
+      else xvalue = utils::numeric(FLERR,arg[iarg+2],false,lmp);
       if (strstr(arg[iarg+3],"v_") == arg[iarg+3]) varparse(arg[iarg+3],3);
-      else yvalue = force->numeric(FLERR,arg[iarg+3]);
+      else yvalue = utils::numeric(FLERR,arg[iarg+3],false,lmp);
       if (strstr(arg[iarg+4],"v_") == arg[iarg+4]) varparse(arg[iarg+4],4);
-      else zvalue = force->numeric(FLERR,arg[iarg+4]);
+      else zvalue = utils::numeric(FLERR,arg[iarg+4],false,lmp);
       if (!atom->sp_flag)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       set(SPIN);
@@ -255,8 +285,8 @@ void Set::command(int narg, char **arg)
 
     } else if (strcmp(arg[iarg],"spin/random") == 0) {
       if (iarg+3 > narg) error->all(FLERR,"Illegal set command");
-      ivalue = force->inumeric(FLERR,arg[iarg+1]);
-      dvalue = force->numeric(FLERR,arg[iarg+2]);
+      ivalue = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
+      dvalue = utils::numeric(FLERR,arg[iarg+2],false,lmp);
       if (!atom->sp_flag)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       if (ivalue <= 0)
@@ -269,13 +299,13 @@ void Set::command(int narg, char **arg)
     } else if (strcmp(arg[iarg],"quat") == 0) {
       if (iarg+5 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else xvalue = force->numeric(FLERR,arg[iarg+1]);
+      else xvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       if (strstr(arg[iarg+2],"v_") == arg[iarg+2]) varparse(arg[iarg+2],2);
-      else yvalue = force->numeric(FLERR,arg[iarg+2]);
+      else yvalue = utils::numeric(FLERR,arg[iarg+2],false,lmp);
       if (strstr(arg[iarg+3],"v_") == arg[iarg+3]) varparse(arg[iarg+3],3);
-      else zvalue = force->numeric(FLERR,arg[iarg+3]);
+      else zvalue = utils::numeric(FLERR,arg[iarg+3],false,lmp);
       if (strstr(arg[iarg+4],"v_") == arg[iarg+4]) varparse(arg[iarg+4],4);
-      else wvalue = force->numeric(FLERR,arg[iarg+4]);
+      else wvalue = utils::numeric(FLERR,arg[iarg+4],false,lmp);
       if (!atom->ellipsoid_flag && !atom->tri_flag && !atom->body_flag)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       set(QUAT);
@@ -283,7 +313,7 @@ void Set::command(int narg, char **arg)
 
     } else if (strcmp(arg[iarg],"quat/random") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
-      ivalue = force->inumeric(FLERR,arg[iarg+1]);
+      ivalue = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
       if (!atom->ellipsoid_flag && !atom->tri_flag && !atom->body_flag)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       if (ivalue <= 0)
@@ -295,7 +325,7 @@ void Set::command(int narg, char **arg)
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
       else {
-        dvalue = force->numeric(FLERR,arg[iarg+1]);
+        dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
         dvalue *= MY_PI/180.0;
       }
       if (!atom->line_flag)
@@ -305,7 +335,7 @@ void Set::command(int narg, char **arg)
 
     } else if (strcmp(arg[iarg],"theta/random") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
-      ivalue = force->inumeric(FLERR,arg[iarg+1]);
+      ivalue = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
       if (!atom->line_flag)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       if (ivalue <= 0)
@@ -316,11 +346,11 @@ void Set::command(int narg, char **arg)
     } else if (strcmp(arg[iarg],"angmom") == 0) {
       if (iarg+4 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else xvalue = force->numeric(FLERR,arg[iarg+1]);
+      else xvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       if (strstr(arg[iarg+2],"v_") == arg[iarg+2]) varparse(arg[iarg+2],2);
-      else yvalue = force->numeric(FLERR,arg[iarg+2]);
+      else yvalue = utils::numeric(FLERR,arg[iarg+2],false,lmp);
       if (strstr(arg[iarg+3],"v_") == arg[iarg+3]) varparse(arg[iarg+3],3);
-      else zvalue = force->numeric(FLERR,arg[iarg+3]);
+      else zvalue = utils::numeric(FLERR,arg[iarg+3],false,lmp);
       if (!atom->angmom_flag)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       set(ANGMOM);
@@ -329,11 +359,11 @@ void Set::command(int narg, char **arg)
     } else if (strcmp(arg[iarg],"omega") == 0) {
       if (iarg+4 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else xvalue = force->numeric(FLERR,arg[iarg+1]);
+      else xvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       if (strstr(arg[iarg+2],"v_") == arg[iarg+2]) varparse(arg[iarg+2],2);
-      else yvalue = force->numeric(FLERR,arg[iarg+2]);
+      else yvalue = utils::numeric(FLERR,arg[iarg+2],false,lmp);
       if (strstr(arg[iarg+3],"v_") == arg[iarg+3]) varparse(arg[iarg+3],3);
-      else zvalue = force->numeric(FLERR,arg[iarg+3]);
+      else zvalue = utils::numeric(FLERR,arg[iarg+3],false,lmp);
       if (!atom->omega_flag)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       set(OMEGA);
@@ -342,7 +372,7 @@ void Set::command(int narg, char **arg)
     } else if (strcmp(arg[iarg],"diameter") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       if (!atom->radius_flag)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       set(DIAMETER);
@@ -352,7 +382,7 @@ void Set::command(int narg, char **arg)
                (strcmp(arg[iarg],"density/disc") == 0)) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       if (!atom->rmass_flag)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       if (dvalue <= 0.0) error->all(FLERR,"Invalid density in set command");
@@ -368,7 +398,7 @@ void Set::command(int narg, char **arg)
     } else if (strcmp(arg[iarg],"volume") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       if (!atom->vfrac_flag)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       if (dvalue <= 0.0) error->all(FLERR,"Invalid volume in set command");
@@ -381,17 +411,17 @@ void Set::command(int narg, char **arg)
       if (strcmp(arg[iarg+1],"NULL") != 0) {
         ximageflag = 1;
         if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-        else ximage = force->inumeric(FLERR,arg[iarg+1]);
+        else ximage = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
       }
       if (strcmp(arg[iarg+2],"NULL") != 0) {
         yimageflag = 1;
         if (strstr(arg[iarg+2],"v_") == arg[iarg+2]) varparse(arg[iarg+2],2);
-        else yimage = force->inumeric(FLERR,arg[iarg+2]);
+        else yimage = utils::inumeric(FLERR,arg[iarg+2],false,lmp);
       }
       if (strcmp(arg[iarg+3],"NULL") != 0) {
         zimageflag = 1;
         if (strstr(arg[iarg+3],"v_") == arg[iarg+3]) varparse(arg[iarg+3],3);
-        else zimage = force->inumeric(FLERR,arg[iarg+3]);
+        else zimage = utils::inumeric(FLERR,arg[iarg+3],false,lmp);
       }
       if (ximageflag && ximage && !domain->xperiodic)
         error->all(FLERR,
@@ -407,7 +437,7 @@ void Set::command(int narg, char **arg)
 
     } else if (strcmp(arg[iarg],"bond") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
-      ivalue = force->inumeric(FLERR,arg[iarg+1]);
+      ivalue = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
       if (atom->avec->bonds_allow == 0)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       if (ivalue <= 0 || ivalue > atom->nbondtypes)
@@ -417,7 +447,7 @@ void Set::command(int narg, char **arg)
 
     } else if (strcmp(arg[iarg],"angle") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
-      ivalue = force->inumeric(FLERR,arg[iarg+1]);
+      ivalue = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
       if (atom->avec->angles_allow == 0)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       if (ivalue <= 0 || ivalue > atom->nangletypes)
@@ -427,7 +457,7 @@ void Set::command(int narg, char **arg)
 
     } else if (strcmp(arg[iarg],"dihedral") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
-      ivalue = force->inumeric(FLERR,arg[iarg+1]);
+      ivalue = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
       if (atom->avec->dihedrals_allow == 0)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       if (ivalue <= 0 || ivalue > atom->ndihedraltypes)
@@ -437,7 +467,7 @@ void Set::command(int narg, char **arg)
 
     } else if (strcmp(arg[iarg],"improper") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
-      ivalue = force->inumeric(FLERR,arg[iarg+1]);
+      ivalue = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
       if (atom->avec->impropers_allow == 0)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       if (ivalue <= 0 || ivalue > atom->nimpropertypes)
@@ -445,31 +475,31 @@ void Set::command(int narg, char **arg)
       topology(IMPROPER);
       iarg += 2;
 
-    } else if (strcmp(arg[iarg],"meso/e") == 0) {
+    } else if (strcmp(arg[iarg],"sph/e") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = force->numeric(FLERR,arg[iarg+1]);
-      if (!atom->e_flag)
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
+      if (!atom->esph_flag)
         error->all(FLERR,"Cannot set meso/e for this atom style");
-      set(MESO_E);
+      set(SPH_E);
       iarg += 2;
 
-    } else if (strcmp(arg[iarg],"meso/cv") == 0) {
+    } else if (strcmp(arg[iarg],"sph/cv") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       if (!atom->cv_flag)
             error->all(FLERR,"Cannot set meso/cv for this atom style");
-      set(MESO_CV);
+      set(SPH_CV);
       iarg += 2;
 
-    } else if (strcmp(arg[iarg],"meso/rho") == 0) {
+    } else if (strcmp(arg[iarg],"sph/rho") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       if (!atom->rho_flag)
         error->all(FLERR,"Cannot set meso/rho for this atom style");
-      set(MESO_RHO);
+      set(SPH_RHO);
       iarg += 2;
 
     } else if (strcmp(arg[iarg],"edpd/temp") == 0) {
@@ -477,7 +507,7 @@ void Set::command(int narg, char **arg)
       if (strcmp(arg[iarg+1],"NULL") == 0) dvalue = -1.0;
       else if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
       else {
-        dvalue = force->numeric(FLERR,arg[iarg+1]);
+        dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
         if (dvalue < 0.0) error->all(FLERR,"Illegal set command");
       }
       if (!atom->edpd_flag)
@@ -490,7 +520,7 @@ void Set::command(int narg, char **arg)
       if (strcmp(arg[iarg+1],"NULL") == 0) dvalue = -1.0;
       else if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
       else {
-        dvalue = force->numeric(FLERR,arg[iarg+1]);
+        dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
         if (dvalue < 0.0) error->all(FLERR,"Illegal set command");
       }
       if (!atom->edpd_flag)
@@ -503,8 +533,8 @@ void Set::command(int narg, char **arg)
       if (strcmp(arg[iarg+1],"NULL") == 0) dvalue = -1.0;
       else if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
       else {
-        cc_index = force->inumeric(FLERR,arg[iarg+1]);
-        dvalue = force->numeric(FLERR,arg[iarg+2]);
+        cc_index = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
+        dvalue = utils::numeric(FLERR,arg[iarg+2],false,lmp);
         if (cc_index < 1) error->all(FLERR,"Illegal set command");
       }
       if (!atom->tdpd_flag)
@@ -515,7 +545,7 @@ void Set::command(int narg, char **arg)
     } else if (strcmp(arg[iarg],"smd/mass/density") == 0) {
           if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
           if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-          else dvalue = force->numeric(FLERR,arg[iarg+1]);
+          else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
           if (!atom->smd_flag)
             error->all(FLERR,"Cannot set smd/mass/density for this atom style");
           set(SMD_MASS_DENSITY);
@@ -524,7 +554,7 @@ void Set::command(int narg, char **arg)
     } else if (strcmp(arg[iarg],"smd/contact/radius") == 0) {
           if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
           if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-          else dvalue = force->numeric(FLERR,arg[iarg+1]);
+          else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
           if (!atom->smd_flag)
             error->all(FLERR,"Cannot set smd/contact/radius "
                        "for this atom style");
@@ -536,7 +566,7 @@ void Set::command(int narg, char **arg)
       if (strcmp(arg[iarg+1],"NULL") == 0) dvalue = -1.0;
       else if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
       else {
-        dvalue = force->numeric(FLERR,arg[iarg+1]);
+        dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
         if (dvalue < 0.0) error->all(FLERR,"Illegal set command");
       }
       if (!atom->dpd_flag)
@@ -547,7 +577,7 @@ void Set::command(int narg, char **arg)
     } else if (strstr(arg[iarg],"i_") == arg[iarg]) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else ivalue = force->inumeric(FLERR,arg[iarg+1]);
+      else ivalue = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
       int flag;
       index_custom = atom->find_custom(&arg[iarg][2],flag);
       if (index_custom < 0 || flag != 0)
@@ -558,7 +588,7 @@ void Set::command(int narg, char **arg)
     } else if (strstr(arg[iarg],"d_") == arg[iarg]) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       int flag;
       index_custom = atom->find_custom(&arg[iarg][2],flag);
       if (index_custom < 0 || flag != 1)
@@ -570,7 +600,7 @@ void Set::command(int narg, char **arg)
     } else if (strcmp(arg[iarg],"outer_mass") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       if (!atom->outer_mass_flag)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       set(OUTER_MASS);
@@ -579,7 +609,7 @@ void Set::command(int narg, char **arg)
     } else if (strcmp(arg[iarg],"outer_diameter") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       if (!atom->outer_radius_flag)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       set(OUTER_DIAMETER);
@@ -588,7 +618,7 @@ void Set::command(int narg, char **arg)
     } else if (strcmp(arg[iarg],"outer_density") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       if (!atom->outer_radius_flag || !atom->outer_mass_flag)
         error->all(FLERR,"Cannot set this attribute for this atom style");
       set(OUTER_DENSITY);
@@ -597,10 +627,58 @@ void Set::command(int narg, char **arg)
     } else if (strcmp(arg[iarg],"biomass") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = force->numeric(FLERR,arg[iarg+1]);
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       if (!atom->biomass_flag)
 	error->all(FLERR,"Cannot set this attribute for this atom style");
       set(BIOMASS);
+      iarg += 2;
+
+    } else if (strcmp(arg[iarg],"bacillus/inertia") == 0) {
+      if (iarg+7 > narg) error->all(FLERR,"Illegal set command");
+      if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
+      else ixx = utils::numeric(FLERR,arg[iarg+1],false,lmp);
+      if (strstr(arg[iarg+2],"v_") == arg[iarg+2]) varparse(arg[iarg+2],2);
+      else iyy = utils::numeric(FLERR,arg[iarg+2],false,lmp);
+      if (strstr(arg[iarg+3],"v_") == arg[iarg+3]) varparse(arg[iarg+3],3);
+      else izz = utils::numeric(FLERR,arg[iarg+3],false,lmp);
+      if (strstr(arg[iarg+4],"v_") == arg[iarg+4]) varparse(arg[iarg+4],4);
+      else ixy = utils::numeric(FLERR,arg[iarg+4],false,lmp);
+      if (strstr(arg[iarg+5],"v_") == arg[iarg+5]) varparse(arg[iarg+5],5);
+      else ixz = utils::numeric(FLERR,arg[iarg+5],false,lmp);
+      if (strstr(arg[iarg+6],"v_") == arg[iarg+6]) varparse(arg[iarg+6],6);
+      else iyz = utils::numeric(FLERR,arg[iarg+6],false,lmp);
+
+      if (!atom->bacillus_flag)
+	error->all(FLERR,"Cannot set this attribute for this atom style");
+      set(INERTIA_BACCILUS);
+      iarg += 7;
+
+    } else if (strcmp(arg[iarg],"bacillus/pole/random") == 0) {
+      if (iarg+3 > narg) error->all(FLERR,"Illegal set command");
+      if (strcmp(arg[iarg+1], "x") == 0) poleflag = 1;
+      else if (strcmp(arg[iarg+1], "y") == 0) poleflag = 2;
+      else if (strcmp(arg[iarg+1], "z") == 0) poleflag = 3;
+      else if (strcmp(arg[iarg+1], "xy") == 0) poleflag = 4;
+      else if (strcmp(arg[iarg+1], "yz") == 0) poleflag = 5;
+      else if (strcmp(arg[iarg+1], "xz") == 0) poleflag = 6;
+      else if (strcmp(arg[iarg+1], "xzy") == 0) poleflag = 7;
+      else error->all(FLERR,"Invalid pole orientation");
+
+      ivalue = utils::inumeric(FLERR,arg[iarg+2],false,lmp);
+      if (ivalue <= 0)
+        error->all(FLERR,"Invalid random number seed in set command");
+      if (!atom->bacillus_flag)
+	error->all(FLERR,"Cannot set this attribute for this atom style");
+      setrandom(POLE_RANDOM);
+      iarg += 3;
+
+    }  else if (strcmp(arg[iarg],"bacillus/length") == 0) {
+      if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
+      if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
+      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
+      if (!atom->bacillus_flag)
+	error->all(FLERR,"Cannot set this attribute for this atom style");
+      set(LENGTH_BACILLUS);
       iarg += 2;
 
     } else error->all(FLERR,"Illegal set command");
@@ -611,23 +689,12 @@ void Set::command(int narg, char **arg)
     MPI_Allreduce(&count,&allcount,1,MPI_INT,MPI_SUM,world);
 
     if (comm->me == 0) {
-
-      if (screen) {
-        if (strcmp(arg[origarg],"cc") == 0)
-          fprintf(screen,"  %d settings made for %s index %s\n",
-                  allcount,arg[origarg],arg[origarg+1]);
-        else
-          fprintf(screen,"  %d settings made for %s\n",
-                  allcount,arg[origarg]);
-      }
-      if (logfile) {
-        if (strcmp(arg[origarg],"cc") == 0)
-          fprintf(logfile,"  %d settings made for %s index %s\n",
-                  allcount,arg[origarg],arg[origarg+1]);
-        else
-          fprintf(logfile,"  %d settings made for %s\n",
-                  allcount,arg[origarg]);
-      }
+      if (strcmp(arg[origarg],"cc") == 0)
+        utils::logmesg(lmp,fmt::format("  {} settings made for {} index {}\n",
+                       allcount,arg[origarg],arg[origarg+1]));
+      else
+        utils::logmesg(lmp,fmt::format("  {} settings made for {}\n",
+                       allcount,arg[origarg]));
     }
   }
 
@@ -652,7 +719,7 @@ void Set::selection(int n)
     if (atom->tag_enable == 0)
       error->all(FLERR,"Cannot use set atom with no atom IDs defined");
     bigint nlobig,nhibig;
-    force->boundsbig(FLERR,id,MAXTAGINT,nlobig,nhibig);
+    utils::bounds(FLERR,id,1,MAXTAGINT,nlobig,nhibig,error);
 
     tagint *tag = atom->tag;
     for (int i = 0; i < n; i++)
@@ -663,7 +730,7 @@ void Set::selection(int n)
     if (atom->molecule_flag == 0)
       error->all(FLERR,"Cannot use set mol with no molecule IDs defined");
     bigint nlobig,nhibig;
-    force->boundsbig(FLERR,id,MAXTAGINT,nlobig,nhibig);
+    utils::bounds(FLERR,id,1,MAXTAGINT,nlobig,nhibig,error);
 
     tagint *molecule = atom->molecule;
     for (int i = 0; i < n; i++)
@@ -671,7 +738,7 @@ void Set::selection(int n)
       else select[i] = 0;
 
   } else if (style == TYPE_SELECT) {
-    force->bounds(FLERR,id,atom->ntypes,nlo,nhi);
+    utils::bounds(FLERR,id,1,atom->ntypes,nlo,nhi,error);
 
     int *type = atom->type;
     for (int i = 0; i < n; i++)
@@ -710,7 +777,7 @@ void Set::set(int keyword)
 {
   // evaluate atom-style variable(s) if necessary
 
-  vec1 = vec2 = vec3 = vec4 = NULL;
+  vec1 = vec2 = vec3 = vec4 = nullptr;
 
   if (varflag) {
     int nlocal = atom->nlocal;
@@ -761,6 +828,7 @@ void Set::set(int keyword)
   AtomVecLine *avec_line = (AtomVecLine *) atom->style_match("line");
   AtomVecTri *avec_tri = (AtomVecTri *) atom->style_match("tri");
   AtomVecBody *avec_body = (AtomVecBody *) atom->style_match("body");
+  AtomVecBacillus *avec_bacillus = (AtomVecBacillus *) atom->style_match("bacillus");
 
   int nlocal = atom->nlocal;
   for (int i = 0; i < nlocal; i++) {
@@ -802,14 +870,18 @@ void Set::set(int keyword)
     else if (keyword == DIAMETER) {
       if (dvalue < 0.0) error->one(FLERR,"Invalid diameter in set command");
       atom->radius[i] = 0.5 * dvalue;
+      // NUFEB specific
+      if (atom->bacillus_flag) {
+	avec_bacillus->set_diameter(i,dvalue);
+      }
     }
     else if (keyword == VOLUME) {
       if (dvalue <= 0.0) error->one(FLERR,"Invalid volume in set command");
       atom->vfrac[i] = dvalue;
     }
-    else if (keyword == MESO_E) atom->e[i] = dvalue;
-    else if (keyword == MESO_CV) atom->cv[i] = dvalue;
-    else if (keyword == MESO_RHO) atom->rho[i] = dvalue;
+    else if (keyword == SPH_E) atom->esph[i] = dvalue;
+    else if (keyword == SPH_CV) atom->cv[i] = dvalue;
+    else if (keyword == SPH_RHO) atom->rho[i] = dvalue;
 
     else if (keyword == EDPD_TEMP) atom->edpd_temp[i] = dvalue;
     else if (keyword == EDPD_CV) atom->edpd_cv[i] = dvalue;
@@ -851,7 +923,7 @@ void Set::set(int keyword)
 
     else if (keyword == LENGTH) {
       if (dvalue < 0.0) error->one(FLERR,"Invalid length in set command");
-      avec_line->set_length(i,dvalue);
+      if (atom->line_flag) avec_line->set_length(i,dvalue);
     }
 
     // set corners of tri particle
@@ -899,6 +971,12 @@ void Set::set(int keyword)
         double area = 0.5 * MathExtra::len3(norm);
         atom->rmass[i] = area * dvalue;
       } else atom->rmass[i] = dvalue;
+
+      if (atom->bacillus_flag){
+      	double r = atom->radius[i];
+      	atom->rmass[i] = dvalue * (4.0*MY_PI/3.0*r*r*r +
+      	      MY_PI*r*r*avec_bacillus->bonus[atom->bacillus[i]].length);
+      }
     }
 
     // set dipole moment
@@ -928,7 +1006,7 @@ void Set::set(int keyword)
     // enforce quat rotation vector in z dir for 2d systems
 
     else if (keyword == QUAT) {
-      double *quat = NULL;
+      double *quat = nullptr;
       if (avec_ellipsoid && atom->ellipsoid[i] >= 0)
         quat = avec_ellipsoid->bonus[atom->ellipsoid[i]].quat;
       else if (avec_tri && atom->tri[i] >= 0)
@@ -1025,6 +1103,16 @@ void Set::set(int keyword)
 	   atom->radius[i]*atom->radius[i]*atom->radius[i]) * dvalue;
     }
     
+    else if (keyword == INERTIA_BACCILUS) {
+      avec_bacillus->set_quat(i,ixx,iyy,izz,ixy,ixz,iyz);
+    }
+
+    // set length of line particle
+
+    else if (keyword == LENGTH_BACILLUS) {
+      if (dvalue < 0.0) error->one(FLERR,"Invalid length in set command");
+      if (atom->bacillus_flag) avec_bacillus->set_length(i, dvalue);
+    }
     count++;
   }
 
@@ -1035,8 +1123,13 @@ void Set::set(int keyword)
                   MPI_LMP_BIGINT,MPI_SUM,world);
   }
   if (keyword == LENGTH) {
-    bigint nlocal_bonus = avec_line->nlocal_bonus;
-    MPI_Allreduce(&nlocal_bonus,&atom->nlines,1,MPI_LMP_BIGINT,MPI_SUM,world);
+    if (atom->line_flag) {
+      bigint nlocal_bonus = avec_line->nlocal_bonus;
+      MPI_Allreduce(&nlocal_bonus,&atom->nlines,1,MPI_LMP_BIGINT,MPI_SUM,world);
+    } else if (atom->bacillus_flag){
+      bigint nlocal_bonus = avec_bacillus->nlocal_bonus;
+      MPI_Allreduce(&nlocal_bonus,&atom->nbacilli,1,MPI_LMP_BIGINT,MPI_SUM,world);
+    }
   }
   if (keyword == TRI) {
     bigint nlocal_bonus = avec_tri->nlocal_bonus;
@@ -1066,23 +1159,78 @@ void Set::setrandom(int keyword)
   AtomVecLine *avec_line = (AtomVecLine *) atom->style_match("line");
   AtomVecTri *avec_tri = (AtomVecTri *) atom->style_match("tri");
   AtomVecBody *avec_body = (AtomVecBody *) atom->style_match("body");
+  AtomVecBacillus *avec_bacillus = (AtomVecBacillus *) atom->style_match("bacillus");
 
-  RanPark *random = new RanPark(lmp,1);
   double **x = atom->x;
   int seed = ivalue;
 
-  // set fraction of atom types to newtype
+  RanPark *ranpark = new RanPark(lmp,1);
+  RanMars *ranmars = new RanMars(lmp,seed + comm->me);
+
+  // set approx fraction of atom types to newtype
 
   if (keyword == TYPE_FRACTION) {
     int nlocal = atom->nlocal;
 
     for (i = 0; i < nlocal; i++)
       if (select[i]) {
-        random->reset(seed,x[i]);
-        if (random->uniform() > fraction) continue;
+        ranpark->reset(seed,x[i]);
+        if (ranpark->uniform() > fraction) continue;
         atom->type[i] = newtype;
         count++;
       }
+
+  // set exact count of atom types to newtype
+  // for TYPE_RATIO, exact = fraction out of total eligible
+  // for TYPE_SUBSET, exact = nsubset out of total eligible
+
+  } else if (keyword == TYPE_RATIO || keyword == TYPE_SUBSET) {
+    int nlocal = atom->nlocal;
+
+    // count = number of eligible atoms I own
+
+    count = 0;
+    for (i = 0; i < nlocal; i++)
+      if (select[i]) count++;
+
+    // convert specified fraction to nsubset
+
+    bigint bcount = count;
+    bigint allcount;
+    MPI_Allreduce(&bcount,&allcount,1,MPI_LMP_BIGINT,MPI_SUM,world);
+
+    if (keyword == TYPE_RATIO) {
+      nsubset = static_cast<bigint> (fraction * allcount);
+    } else if (keyword == TYPE_SUBSET) {
+      if (nsubset > allcount)
+        error->all(FLERR,"Set type/subset value exceeds eligible atoms");
+    }
+
+    // make selection
+
+    int *flag = memory->create(flag,count,"set:flag");
+    int *work = memory->create(work,count,"set:work");
+
+    ranmars->select_subset(nsubset,count,flag,work);
+
+    // change types of selected atoms
+    // flag vector from select_subset() is only for eligible atoms
+
+    count = 0;
+    int eligible = 0;
+    for (i = 0; i < nlocal; i++) {
+      if (!select[i]) continue;
+      if (flag[eligible]) {
+        atom->type[i] = newtype;
+        count++;
+      }
+      eligible++;
+    }
+
+    // clean up
+
+    memory->destroy(flag);
+    memory->destroy(work);
 
   // set dipole moments to random orientations in 3d or 2d
   // dipole length is determined by dipole type array
@@ -1096,10 +1244,10 @@ void Set::setrandom(int keyword)
     if (domain->dimension == 3) {
       for (i = 0; i < nlocal; i++)
         if (select[i]) {
-          random->reset(seed,x[i]);
-          mu[i][0] = random->uniform() - 0.5;
-          mu[i][1] = random->uniform() - 0.5;
-          mu[i][2] = random->uniform() - 0.5;
+          ranpark->reset(seed,x[i]);
+          mu[i][0] = ranpark->uniform() - 0.5;
+          mu[i][1] = ranpark->uniform() - 0.5;
+          mu[i][2] = ranpark->uniform() - 0.5;
           msq = mu[i][0]*mu[i][0] + mu[i][1]*mu[i][1] + mu[i][2]*mu[i][2];
           scale = dvalue/sqrt(msq);
           mu[i][0] *= scale;
@@ -1112,9 +1260,9 @@ void Set::setrandom(int keyword)
     } else {
       for (i = 0; i < nlocal; i++)
         if (select[i]) {
-          random->reset(seed,x[i]);
-          mu[i][0] = random->uniform() - 0.5;
-          mu[i][1] = random->uniform() - 0.5;
+          ranpark->reset(seed,x[i]);
+          mu[i][0] = ranpark->uniform() - 0.5;
+          mu[i][1] = ranpark->uniform() - 0.5;
           mu[i][2] = 0.0;
           msq = mu[i][0]*mu[i][0] + mu[i][1]*mu[i][1];
           scale = dvalue/sqrt(msq);
@@ -1138,10 +1286,10 @@ void Set::setrandom(int keyword)
     if (domain->dimension == 3) {
       for (i = 0; i < nlocal; i++)
         if (select[i]) {
-          random->reset(seed,x[i]);
-          sp[i][0] = random->uniform() - 0.5;
-          sp[i][1] = random->uniform() - 0.5;
-          sp[i][2] = random->uniform() - 0.5;
+          ranpark->reset(seed,x[i]);
+          sp[i][0] = ranpark->uniform() - 0.5;
+          sp[i][1] = ranpark->uniform() - 0.5;
+          sp[i][2] = ranpark->uniform() - 0.5;
           sp_sq = sp[i][0]*sp[i][0] + sp[i][1]*sp[i][1] + sp[i][2]*sp[i][2];
           scale = 1.0/sqrt(sp_sq);
           sp[i][0] *= scale;
@@ -1154,9 +1302,9 @@ void Set::setrandom(int keyword)
     } else {
       for (i = 0; i < nlocal; i++)
         if (select[i]) {
-          random->reset(seed,x[i]);
-          sp[i][0] = random->uniform() - 0.5;
-          sp[i][1] = random->uniform() - 0.5;
+          ranpark->reset(seed,x[i]);
+          sp[i][0] = ranpark->uniform() - 0.5;
+          sp[i][1] = ranpark->uniform() - 0.5;
           sp[i][2] = 0.0;
           sp_sq = sp[i][0]*sp[i][0] + sp[i][1]*sp[i][1];
           scale = 1.0/sqrt(sp_sq);
@@ -1186,12 +1334,12 @@ void Set::setrandom(int keyword)
           else
             error->one(FLERR,"Cannot set quaternion for atom that has none");
 
-          random->reset(seed,x[i]);
-          s = random->uniform();
+          ranpark->reset(seed,x[i]);
+          s = ranpark->uniform();
           t1 = sqrt(1.0-s);
           t2 = sqrt(s);
-          theta1 = 2.0*MY_PI*random->uniform();
-          theta2 = 2.0*MY_PI*random->uniform();
+          theta1 = 2.0*MY_PI*ranpark->uniform();
+          theta2 = 2.0*MY_PI*ranpark->uniform();
           quat[0] = cos(theta2)*t2;
           quat[1] = sin(theta1)*t1;
           quat[2] = cos(theta1)*t1;
@@ -1210,8 +1358,8 @@ void Set::setrandom(int keyword)
           else
             error->one(FLERR,"Cannot set quaternion for atom that has none");
 
-          random->reset(seed,x[i]);
-          theta2 = MY_PI*random->uniform();
+          ranpark->reset(seed,x[i]);
+          theta2 = MY_PI*ranpark->uniform();
           quat[0] = cos(theta2);
           quat[1] = 0.0;
           quat[2] = 0.0;
@@ -1228,14 +1376,26 @@ void Set::setrandom(int keyword)
       if (select[i]) {
         if (atom->line[i] < 0)
           error->one(FLERR,"Cannot set theta for atom that is not a line");
-        random->reset(seed,x[i]);
-        avec_line->bonus[atom->line[i]].theta = MY_2PI*random->uniform();
+        ranpark->reset(seed,x[i]);
+        avec_line->bonus[atom->line[i]].theta = MY_2PI*ranpark->uniform();
         count++;
+      }
+    }
+
+  // NUFEB specific
+  } else if (keyword == POLE_RANDOM) {
+    int nlocal = atom->nlocal;
+    for (i = 0; i < nlocal; i++) {
+      if (select[i]) {
+	ranpark->reset(seed,x[i]);
+	avec_bacillus->set_pole_random(i,poleflag,ranpark->uniform(),ranpark->uniform());
+	count++;
       }
     }
   }
 
-  delete random;
+  delete ranpark;
+  delete ranmars;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1246,7 +1406,7 @@ void Set::topology(int keyword)
 
   // error check
 
-  if (atom->molecular == 2)
+  if (atom->molecular == Atom::TEMPLATE)
     error->all(FLERR,"Cannot set bond topology types for atom style template");
 
   // border swap to acquire ghost atom info
@@ -1254,7 +1414,7 @@ void Set::topology(int keyword)
   // init entire system since comm->exchange is done
   // comm::init needs neighbor::init needs pair::init needs kspace::init, etc
 
-  if (comm->me == 0 && screen) fprintf(screen,"  system init for set ...\n");
+  if (comm->me == 0) utils::logmesg(lmp,"  system init for set ...\n");
   lmp->init();
 
   if (domain->triclinic) domain->x2lamda(atom->nlocal);
@@ -1343,17 +1503,10 @@ void Set::topology(int keyword)
 
 /* ---------------------------------------------------------------------- */
 
-void Set::varparse(char *name, int m)
+void Set::varparse(const char *name, int m)
 {
   varflag = 1;
-
-  name = &name[2];
-  int n = strlen(name) + 1;
-  char *str = new char[n];
-  strcpy(str,name);
-
-  int ivar = input->variable->find(str);
-  delete [] str;
+  int ivar = input->variable->find(name+2);
 
   if (ivar < 0)
     error->all(FLERR,"Variable name for set command does not exist");

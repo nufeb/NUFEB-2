@@ -15,9 +15,6 @@
 #include "fix_death.h"
 #include "atom.h"
 #include "error.h"
-#include "force.h"
-#include "group.h"
-#include "atom_masks.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -27,15 +24,7 @@ using namespace FixConst;
 FixDeath::FixDeath(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
-  if (narg < 4)
-    error->all(FLERR, "Illegal fix nufeb/death command");
-
   compute_flag = 1;
-  
-  idead = group->find(arg[3]);
-  if (idead < 0)
-    error->all(FLERR, "Can't find group");
-  diameter = force->numeric(FLERR, arg[4]);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -75,20 +64,4 @@ void FixDeath::post_integrate()
 {
   if (compute_flag)
     compute();
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixDeath::compute()
-{
-  int *mask = atom->mask;
-  double *radius = atom->radius;
-
-  for (int i = 0; i < atom->nlocal; i++) {
-    if (mask[i] & groupbit) {
-      if (radius[i] < 0.5 * diameter) {
-        mask[i] = idead;
-      }
-    }
-  }
 }
