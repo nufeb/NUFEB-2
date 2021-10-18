@@ -1,53 +1,74 @@
-This is the LAMMPS software package.
+This is the NUFEB development repository
 
-LAMMPS stands for Large-scale Atomic/Molecular Massively Parallel
-Simulator.
+NUFEB is an open source tool for modelling and simulating microbial communities.
+The tool is based on the Individual-based Modelling (IbM) approach, 
+where microbes are represented as discrete units and their
+behaviour changes over time due to a variety of processes. 
 
-Copyright (2003) Sandia Corporation.  Under the terms of Contract
-DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-certain rights in this software.  This software is distributed under
-the GNU General Public License.
+NUFEB is built on top of the molecular dynamics simulator
+LAMMPS (as a LAMMPS' user package), extended with IbM features. 
+A wide range of biological, physical and
+chemical processes are implemented to explicitly model microbial systems. 
 
-----------------------------------------------------------------------
+NUFEB is a freely-available open-source code, distributed under the terms
+of the GNU Public License.
 
-LAMMPS is a classical molecular dynamics simulation code designed to
-run efficiently on parallel computers.  It was developed at Sandia
-National Laboratories, a US Department of Energy facility, with
-funding from the DOE.  It is an open-source code, distributed freely
-under the terms of the GNU Public License (GPL).
+NUFEB development has been funded by the UK’s EPSRC EP/K039083/1 
+Newcastle University Frontiers in Engineering Biology (NUFEB) project.
 
-The primary author of the code is Steve Plimpton, who can be emailed
-at sjplimp@sandia.gov.  The LAMMPS WWW Site at lammps.sandia.gov has
-more information about the code and its uses.
+---------------------------------------------------------------------------
 
-The LAMMPS distribution includes the following files and directories:
+The NUFEB distribution includes the following files and directories:
+<pre>
+README                  this file 
+LICENSE                 the GNU General Public License (GPL)
+install.sh              script for building NUFEB 
+uninstall.sh            script for uninstalling NUFEB 
+doc                     user manual and other documentation 
+examples                test problems and cases used in publications 
+lib                     libraries NUFEB can be linked with 
+lammps                  LAMMPS source code
+src                     source files 
+thirdparty              thirdparty tools
+</pre>
 
-README                     this file
-LICENSE                    the GNU General Public License (GPL)
-bench                      benchmark problems
-cmake                      CMake build files
-doc                        documentation
-examples                   simple test problems
-fortran                    Fortran wrapper for LAMMPS
-lib                        additional provided or external libraries
-potentials                 interatomic potential files
-python                     Python wrappers for LAMMPS
-src                        source files
-tools                      pre- and post-processing tools
+NUFEB requires cmake, git, gcc/g++, openmpi, png-dev and ffmpeg for a successful build.
+You can run the following commands to install the packages, 
 
-Point your browser at any of these files to get started:
+On Ubuntu:
+<pre>
+sudo apt update
+sudo apt-get install cmake git-core g++ openmpi-bin openmpi-common libopenmpi-dev libpng-dev ffmpeg
+</pre>
 
-https://lammps.sandia.gov/doc/Manual.html         LAMMPS user manual
-https://lammps.sandia.gov/doc/Intro.html          hi-level introduction
-https://lammps.sandia.gov/doc/Build.html          how to build LAMMPS
-https://lammps.sandia.gov/doc/Run_head.html       how to run LAMMPS
-https://lammps.sandia.gov/doc/Commands_all.html   Table of available commands
-https://lammps.sandia.gov/doc/pg_library.html     LAMMPS programmer guide
-https://lammps.sandia.gov/doc/Modify.html         how to modify and extend LAMMPS
-https://lammps.sandia.gov/doc/pg_developer.html   LAMMPS developer guide
+On CentOS:
+<pre>
+sudo yum update
+sudo yum install cmake git gcc-c++ openmpi openmpi-devel libpng-dev ffmpeg
+</pre>
 
-You can also create these doc pages locally:
+### Getting source
+Get NUFEB source code and submodules for its thirdparty libraries:
+<pre>
+git clone https://github.com/nufeb/NUFEB --recursive
+</pre>
 
-% cd doc
-% make html                # creates HTML pages in doc/html
-% make pdf                 # creates Manual.pdf
+Build NUFEB:
+<pre>
+./install.sh
+</pre>
+
+### Running
+Run a case in /examples after building NUFEB, for example:
+<pre>
+cd examples/biofilm-het
+mpirun -np 4 ../../lammps/src/lmp_nufeb -in Inputscript.lammps
+</pre>
+
+---------------------------------------------------------------------------
+Developers:
+
+Bowen Li: bowen.li2@newcastle.ac.uk
+
+Denis Taniguchi: denis.taniguchi@newcastle.ac.uk
+
