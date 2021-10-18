@@ -23,7 +23,6 @@
 #include "atom_vec_tri.h"
 #include "atom_vec_body.h"
 #include "atom_vec_bacillus.h"
-#include "fix_property_plasmid.h"
 #include "body.h"
 #include "molecule.h"
 #include "domain.h"
@@ -37,6 +36,10 @@
 #include "math_extra.h"
 #include "error.h"
 #include "memory.h"
+
+#ifdef LMP_USER_PLASMID
+#include "fix_property_plasmid.h"
+#endif
 
 
 using namespace LAMMPS_NS;
@@ -868,6 +871,7 @@ void DumpImage::create_image()
       } else{
 	int ifix = modify->find_fix_by_style("^nufeb/property/plasmid");
 	if (ifix < 0 ) error->all(FLERR,"Illegal dump_modify command: keyword plasmid requires fix nufeb/property/plasmid");
+#ifdef LMP_USER_PLASMID
 	FixPropertyPlasmid *fix = (FixPropertyPlasmid *) modify->fix[ifix];
 
 	double xplasmid[3];
@@ -885,6 +889,7 @@ void DumpImage::create_image()
 	  fix->get_plasmid_coords(i,p2,xfilament2);
 	  image->draw_cylinder(xfilament1,xfilament2,image->color2rgb("red"),5e-8,0);
 	}
+#endif
       }
     }
   }

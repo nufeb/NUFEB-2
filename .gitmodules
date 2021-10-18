@@ -1,3 +1,9 @@
 [submodule "lammps"]
 	path = lammps
 	url = https://github.com/lammps/lammps
+[submodule "thirdparty/vtk-v8.0.0"]
+	path = thirdparty/vtk-v8.0.0
+	url = https://github.com/Kitware/VTK
+[submodule "thirdparty/hdf5-1_10_5"]
+	path = thirdparty/hdf5-1_10_5
+	url = https://github.com/HDFGroup/hdf5

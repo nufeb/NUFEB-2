@@ -19,7 +19,6 @@
 
 #include "atom_vec_bacillus.h"
 #include "fix_monod_simple.h"
-#include "fix_property_plasmid.h"
 #include "grid.h"
 #include "group.h"
 #include "modify.h"
