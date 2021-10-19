@@ -1,20 +1,10 @@
 This is the NUFEB development repository
 
-NUFEB is an open source tool for modelling and simulating microbial communities.
-The tool is based on the Individual-based Modelling (IbM) approach, 
-where microbes are represented as discrete units and their
-behaviour changes over time due to a variety of processes. 
+NUFEB (Newcastle University Frontier in Engineering Biology) is an open source tool for 3D individual-based simulation of microbial communities.
 
-NUFEB is built on top of the molecular dynamics simulator
-LAMMPS (as a LAMMPS' user package), extended with IbM features. 
-A wide range of biological, physical and
-chemical processes are implemented to explicitly model microbial systems. 
+NUFEB is built on top of the molecular dynamic simulator [LAMMPS](https://lammps.sandia.gov), and extended with features for microbial modelling. As a result, NUFEB has the realistic explicit models of biological, chemical and physical processes, including individual microbes in different shapes. The current implementation takes full advantage of the LAMMPS parallel infrastructure, allowing for massive parallel simulations on both CPU- and GPU-based systems.
 
-NUFEB is a freely-available open-source code, distributed under the terms
-of the GNU Public License.
-
-NUFEB development has been funded by the UK’s EPSRC EP/K039083/1 
-Newcastle University Frontiers in Engineering Biology (NUFEB) project.
+NUFEB is distributed under the terms of the GNU Public License. The development has been funded by the UK’s EPSRC EP/K039083/1 Frontiers in Engineering Biology project.
 
 ---------------------------------------------------------------------------
 
