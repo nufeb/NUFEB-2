@@ -20,13 +20,13 @@
 # -- Project information -----------------------------------------------------
 
 project = 'NUFEB-manual'
-copyright = '2021, Bowen Li'
-author = 'Bowen Li'
+copyright = '2021, Newcastle University'
+author = ''
 
 # The short X.Y version
-version = ''
+version = '0.0.1'
 # The full version, including alpha/beta/rc tags
-release = '1.0.0'
+release = ''
 
 
 # -- General configuration ---------------------------------------------------
