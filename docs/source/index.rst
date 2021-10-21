@@ -20,13 +20,10 @@ allowing for massive parallel simulations on both CPU- and GPU-based systems.
 NUFEB is distributed under the terms of the GNU Public License. 
 The development has been funded by the UK’s EPSRC EP/K039083/1 Frontiers in Engineering Biology project.
 
-Development team:
-
-Bowen Li, bowen.li2@newcastle.ac.uk
-
-Denis Taniguchi: denis.taniguchi@newcastle.ac.uk
-
-Joe Weaver: joe.weaver@newcastle.ac.uk
+| Development team:
+| Bowen Li, bowen.li2@newcastle.ac.uk
+| Denis Taniguchi: denis.taniguchi@newcastle.ac.uk
+| Joe Weaver: joe.weaver@newcastle.ac.uk
 
 ----------
 
@@ -36,14 +33,11 @@ send an email to the developers.
 
 ----------
 
-************
-User Guide
-************
-
 .. _user_documentation:
 .. toctree::
    :maxdepth: 2
    :numbered: 3
+   :caption: User Guide
    :name: userdoc
    :includehidden:
    
@@ -51,15 +45,40 @@ User Guide
    install
    commands
    packages
+   
 
+.. _programmer_documentation:
+.. toctree::
+   :maxdepth: 2
+   :numbered: 3
+   :caption: Programmer Guide
+   :name: progdoc
+   :includehidden:
+
+   dev_new_growth
+
+
+.. _command_reference:
+.. toctree::
+   :name: reference
+   :maxdepth: 1
+   :caption: Command Reference
+
+   list_general
+   list_microbe
+   list_biology
+   list_physics
+   list_chemsitry
+   list_compute
+   list_post
+   list_lammps
+   
+   
 ******************
-Programmer Guide
-******************
-
-
 Indices and tables
-==================
+******************
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. only:: html
+
+   * :ref:`genindex`
+   * :ref:`search`
