@@ -126,7 +126,7 @@ Compute
 +--------------------------------------------+-----------------------------------------------------------------+
 | :doc:`compute nufeb/volume <compute_volume>`: total microbe volume                                           |
 +--------------------------------------------+-----------------------------------------------------------------+
-| :doc:`compute nufeb/plasmid/ave_copy <compute_ave_plasmid>`: average plasmid copy number                     |
+| :doc:`compute nufeb/plasmid/ave_copy <compute_ave_copy>`: average plasmid copy number                        |
 +--------------------------------------------+-----------------------------------------------------------------+
 | :doc:`compute nufeb/plasmid/ave_nbirth <compute_plasmid_nbirth>`: average plasmid copy number at cell birth  |
 +--------------------------------------------+-----------------------------------------------------------------+

@@ -8,22 +8,11 @@ NUFEB Documentation
 
 NUFEB (Newcastle University Frontier in Engineering Biology) 
 is an open source tool for 3D individual-based simulation of microbial communities. 
+The tool is distributed under the terms of the GNU Public License (GPL). 
 
-NUFEB is built on top of the molecular dynamic simulator `LAMMPS <https://lammps.sandia.gov/>`_ (version: stable_29Oct2020), 
-and extended
-with features for microbial modelling. 
-As a result, NUFEB has the realistic explicit models of biological, chemical and
-physical processes, including individual microbes in different shapes. 
-The current implementation takes full advantage of the LAMMPS parallel infrastructure,
-allowing for massive parallel simulations on both CPU- and GPU-based systems.
-
-NUFEB is distributed under the terms of the GNU Public License. 
-The development has been funded by the UK’s EPSRC EP/K039083/1 Frontiers in Engineering Biology project.
-
-| Development team:
-| Bowen Li, bowen.li2@newcastle.ac.uk
-| Denis Taniguchi: denis.taniguchi@newcastle.ac.uk
-| Joe Weaver: joe.weaver@newcastle.ac.uk
+NUFEB is built on top of the molecular dynamic simulator LAMMPS (version: stable_29Oct2020), 
+and extended with features for microbial modelling. LAMMPS is an open-source code, distributed under the terms of the
+GPL. For more information about LAMMPS look at `LAMMPS homepage <https://lammps.sandia.gov/>`_.
 
 ----------
 
@@ -31,7 +20,13 @@ This site contains user and programmer documentation for the NUFEB use. If you f
 errors or omissions in the manual or have suggestions for useful information to add, please
 send an email to the developers.
 
+| NUFEB Development team:
+| Bowen Li, bowen.li2@newcastle.ac.uk
+| Denis Taniguchi: denis.taniguchi@newcastle.ac.uk
+| Joseph E. Weaver: joe.weaver@newcastle.ac.uk
+
 ----------
+
 
 .. _user_documentation:
 .. toctree::
