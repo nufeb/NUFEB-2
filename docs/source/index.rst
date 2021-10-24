@@ -38,6 +38,8 @@ send an email to the developers.
    
    intro
    install
+   install_win
+   inputscript
    commands
    packages
    

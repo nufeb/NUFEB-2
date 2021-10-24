@@ -2,7 +2,7 @@ Introduction
 ============
 
 This section gives a brief overview of the NUFEB software and model,
-provides NUFEB key features, 
+introduces NUFEB key features, 
 and acknowledges people who
 have contributed to NUFEB software and model developments.
 
@@ -100,7 +100,7 @@ NUFEB is developed at Newcastle University, UK.
 | * Prashant Gupta 
 | * `Curtis Madsen <https://sites.bu.edu/ckmadsen//>`_
 
-| Special thank to the following people who contributed to the NUFEB (Ib) model development:
+| Special thanks to the following people who contributed to the NUFEB (Ib) model development:
 | * `Jayathilake Pahala Gedara <https://www.oncology.ox.ac.uk/team/jayathilake-pahala-gedara>`_
 | * `Valentina Gogulancea <https://www.ulster.ac.uk/staff/v-gogulancea>`_
 | * Rebeca Gonzalez-Cabaleiro 
