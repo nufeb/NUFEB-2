@@ -298,16 +298,16 @@ void FixDiffusionReaction::compute_final()
 void FixDiffusionReaction::closed_system_init()
 {
   if (!closed_system) return;
-  double sum = 0;
+  double ave_conc = 0;
   for (int i = 0; i < grid->ncells; i++) {
     if (!(grid->mask[i] & GHOST_MASK)) {
-      sum += grid->conc[isub][i];
+      ave_conc += grid->conc[isub][i];
     }
   }
-  MPI_Allreduce(MPI_IN_PLACE, &sum, 1, MPI_DOUBLE, MPI_SUM, world);
-  sum /= (grid->box[0] * grid->box[1] * grid->box[2]);
+  MPI_Allreduce(MPI_IN_PLACE, &ave_conc, 1, MPI_DOUBLE, MPI_SUM, world);
+  ave_conc /= (grid->box[0] * grid->box[1] * grid->box[2]);
   for (int i = 0; i < grid->ncells; i++) {
-    grid->conc[isub][i] = sum;
+    grid->conc[isub][i] = ave_conc;
   }
 }
 

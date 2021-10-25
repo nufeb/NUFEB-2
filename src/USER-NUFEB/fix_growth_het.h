@@ -13,21 +13,21 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/monod/het,FixMonodHET)
+FixStyle(nufeb/growth/het,FixGrowthHET)
 
 #else
 
-#ifndef LMP_FIX_MONOD_HET_H
-#define LMP_FIX_MONOD_HET_H
+#ifndef LMP_FIX_GROWTH_HET_H
+#define LMP_FIX_GROWTH_HET_H
 
-#include "fix_monod.h"
+#include "fix_growth.h"
 
 namespace LAMMPS_NS {
 
-class FixMonodHET: public FixMonod {
+class FixGrowthHET: public FixGrowth {
  public:
-  FixMonodHET(class LAMMPS *, int, char **);
-  virtual ~FixMonodHET() {}
+  FixGrowthHET(class LAMMPS *, int, char **);
+  virtual ~FixGrowthHET() {}
   virtual void compute();
 
   template <int, int> void update_cells();

@@ -18,7 +18,7 @@
 #include "error.h"
 
 #include "atom_vec_bacillus.h"
-#include "fix_monod_simple.h"
+#include "fix_growth_monod.h"
 #include "grid.h"
 #include "group.h"
 #include "modify.h"
@@ -31,11 +31,11 @@ using namespace MathConst;
 
 /* ---------------------------------------------------------------------- */
 
-FixMonodSimple::FixMonodSimple(LAMMPS *lmp, int narg, char **arg) :
-  FixMonod(lmp, narg, arg)
+FixGrowthMonod::FixGrowthMonod(LAMMPS *lmp, int narg, char **arg) :
+  FixGrowth(lmp, narg, arg)
 {
   if (narg < 5)
-    error->all(FLERR, "Illegal fix nufeb/monod/minicell command");
+    error->all(FLERR, "Illegal fix nufeb/growth/monod command");
 
   dynamic_group_allow = 1;
 
@@ -72,7 +72,7 @@ FixMonodSimple::FixMonodSimple(LAMMPS *lmp, int narg, char **arg) :
       decay = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       iarg += 2;
     } else {
-      error->all(FLERR, "Illegal fix nufeb/monod/minicell command");
+      error->all(FLERR, "Illegal fix nufeb/growth/simple command");
     }
   }
   avec = (AtomVecBacillus *) atom->style_match("bacillus");
@@ -80,7 +80,7 @@ FixMonodSimple::FixMonodSimple(LAMMPS *lmp, int narg, char **arg) :
 
 /* ---------------------------------------------------------------------- */
 
-void FixMonodSimple::compute()
+void FixGrowthMonod::compute()
 {
   if (reaction_flag && growth_flag) {
     update_cells<1, 1>();
@@ -96,7 +96,7 @@ void FixMonodSimple::compute()
 /* ---------------------------------------------------------------------- */
 
 template <int Reaction, int Growth>
-void FixMonodSimple::update_cells()
+void FixGrowthMonod::update_cells()
 {
   double **conc = grid->conc;
   double **reac = grid->reac;
@@ -119,7 +119,7 @@ void FixMonodSimple::update_cells()
 
 /* ---------------------------------------------------------------------- */
 
-void FixMonodSimple::update_atoms()
+void FixGrowthMonod::update_atoms()
 {
   if (atom->coccus_flag) {
     update_atoms_coccus();

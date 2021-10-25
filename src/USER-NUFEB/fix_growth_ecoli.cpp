@@ -11,13 +11,14 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
+#include "fix_growth_ecoli.h"
+
 #include <cstdio>
 #include <cstring>
 #include <cmath>
 #include "atom.h"
 #include "error.h"
 
-#include "fix_monod_ecoli_wild.h"
 #include "atom_vec_bacillus.h"
 #include "grid.h"
 #include "group.h"
@@ -30,11 +31,11 @@ using namespace MathConst;
 
 /* ---------------------------------------------------------------------- */
 
-FixMonodEcoliWild::FixMonodEcoliWild(LAMMPS *lmp, int narg, char **arg) :
-  FixMonod(lmp, narg, arg)
+FixGrowthEcoli::FixGrowthEcoli(LAMMPS *lmp, int narg, char **arg) :
+  FixGrowth(lmp, narg, arg)
 {
   if (narg < 8)
-    error->all(FLERR, "Illegal fix nufeb/monod/ecoliw command");
+    error->all(FLERR, "Illegal fix nufeb/growth/ecoli command");
 
   dynamic_group_allow = 1;
 
@@ -85,7 +86,7 @@ FixMonodEcoliWild::FixMonodEcoliWild(LAMMPS *lmp, int narg, char **arg) :
       decay = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       iarg += 2;
     } else {
-      error->all(FLERR, "Illegal fix nufeb/monod/ecoliw command");
+      error->all(FLERR, "Illegal fix nufeb/growth/ecoli command");
     }
   }
 
@@ -94,7 +95,7 @@ FixMonodEcoliWild::FixMonodEcoliWild(LAMMPS *lmp, int narg, char **arg) :
 
 /* ---------------------------------------------------------------------- */
 
-void FixMonodEcoliWild::compute()
+void FixGrowthEcoli::compute()
 {
   if (reaction_flag && growth_flag) {
     update_cells<1, 1>();
@@ -110,7 +111,7 @@ void FixMonodEcoliWild::compute()
 /* ---------------------------------------------------------------------- */
 
 template <int Reaction, int Growth>
-void FixMonodEcoliWild::update_cells()
+void FixGrowthEcoli::update_cells()
 {
   double **conc = grid->conc;
   double **reac = grid->reac;
@@ -137,7 +138,7 @@ void FixMonodEcoliWild::update_cells()
 
 /* ---------------------------------------------------------------------- */
 
-void FixMonodEcoliWild::update_atoms()
+void FixGrowthEcoli::update_atoms()
 {
   if (atom->coccus_flag) {
     update_atoms_coccus();

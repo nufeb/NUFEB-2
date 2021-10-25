@@ -11,10 +11,11 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
+#include "fix_growth_nob.h"
+
 #include <cstdio>
 #include <cstring>
 #include <cmath>
-#include "fix_monod_nob.h"
 #include "atom.h"
 #include "error.h"
 #include "grid.h"
@@ -28,11 +29,11 @@ using namespace MathConst;
 
 /* ---------------------------------------------------------------------- */
 
-FixMonodNOB::FixMonodNOB(LAMMPS *lmp, int narg, char **arg) :
-  FixMonod(lmp, narg, arg)
+FixGrowthNOB::FixGrowthNOB(LAMMPS *lmp, int narg, char **arg) :
+  FixGrowth(lmp, narg, arg)
 {
   if (narg < 8)
-    error->all(FLERR, "Illegal fix nufeb/monod/aob command");
+    error->all(FLERR, "Illegal fix nufeb/growth/aob command");
 
   dynamic_group_allow = 1;
 
@@ -77,14 +78,14 @@ FixMonodNOB::FixMonodNOB(LAMMPS *lmp, int narg, char **arg) :
       decay = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       iarg += 2;
     } else {
-      error->all(FLERR, "Illegal fix nufeb/monod/nob command");
+      error->all(FLERR, "Illegal fix nufeb/growth/nob command");
     }
   }
 }
 
 /* ---------------------------------------------------------------------- */
 
-void FixMonodNOB::compute()
+void FixGrowthNOB::compute()
 {
   if (reaction_flag && growth_flag) {
     update_cells<1, 1>();
@@ -100,7 +101,7 @@ void FixMonodNOB::compute()
 /* ---------------------------------------------------------------------- */
 
 template <int Reaction, int Growth>
-void FixMonodNOB::update_cells()
+void FixGrowthNOB::update_cells()
 {
   double **conc = grid->conc;
   double **reac = grid->reac;
@@ -124,7 +125,7 @@ void FixMonodNOB::update_cells()
 
 /* ---------------------------------------------------------------------- */
 
-void FixMonodNOB::update_atoms()
+void FixGrowthNOB::update_atoms()
 {
   update_atoms_coccus();
 }

@@ -11,10 +11,11 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
+#include "fix_growth_cyano.h"
+
 #include <cstdio>
 #include <cstring>
 #include <cmath>
-#include "fix_monod_cyano.h"
 #include "atom_vec_bacillus.h"
 #include "atom.h"
 #include "error.h"
@@ -29,14 +30,14 @@ using namespace MathConst;
 
 /* ---------------------------------------------------------------------- */
 
-FixMonodCyano::FixMonodCyano(LAMMPS *lmp, int narg, char **arg) :
-  FixMonod(lmp, narg, arg)
+FixGrowthCyano::FixGrowthCyano(LAMMPS *lmp, int narg, char **arg) :
+  FixGrowth(lmp, narg, arg)
 {
   avec = nullptr;
   avec = (AtomVecBacillus *) atom->style_match("bacillus");
 
   if (narg < 10)
-    error->all(FLERR, "Illegal fix nufeb/monod/cyano command");
+    error->all(FLERR, "Illegal fix nufeb/growth/cyano command");
 
   dynamic_group_allow = 1;
 
@@ -104,14 +105,14 @@ FixMonodCyano::FixMonodCyano(LAMMPS *lmp, int narg, char **arg) :
       gco2_flag = utils::inumeric(FLERR,arg[iarg+1],true,lmp);
       iarg += 2;
     } else {
-      error->all(FLERR, "Illegal fix nufeb/monod/cyano command");
+      error->all(FLERR, "Illegal fix nufeb/growth/cyano command");
     }
   }
 }
 
 /* ---------------------------------------------------------------------- */
 
-void FixMonodCyano::compute()
+void FixGrowthCyano::compute()
 {
   if (reaction_flag && growth_flag) {
     update_cells<1, 1>();
@@ -127,7 +128,7 @@ void FixMonodCyano::compute()
 /* ---------------------------------------------------------------------- */
 
 template <int Reaction, int Growth>
-void FixMonodCyano::update_cells()
+void FixGrowthCyano::update_cells()
 {
   double **conc = grid->conc;
   double **reac = grid->reac;
@@ -162,7 +163,7 @@ void FixMonodCyano::update_cells()
 
 /* ---------------------------------------------------------------------- */
 
-void FixMonodCyano::update_atoms()
+void FixGrowthCyano::update_atoms()
 {
   if (atom->coccus_flag) {
     update_atoms_coccus();

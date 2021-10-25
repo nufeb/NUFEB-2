@@ -11,10 +11,11 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
+#include "fix_growth_eps.h"
+
 #include <cstdio>
 #include <cstring>
 #include <cmath>
-#include "fix_monod_eps.h"
 #include "atom.h"
 #include "error.h"
 #include "grid.h"
@@ -28,11 +29,11 @@ using namespace MathConst;
 
 /* ---------------------------------------------------------------------- */
 
-FixMonodEPS::FixMonodEPS(LAMMPS *lmp, int narg, char **arg) :
-  FixMonod(lmp, narg, arg)
+FixGrowthEPS::FixGrowthEPS(LAMMPS *lmp, int narg, char **arg) :
+  FixGrowth(lmp, narg, arg)
 {
   if (narg < 4)
-    error->all(FLERR, "Illegal fix nufeb/monod/aob command");
+    error->all(FLERR, "Illegal fix nufeb/growth/aob command");
 
   dynamic_group_allow = 1;
 
@@ -49,14 +50,14 @@ FixMonodEPS::FixMonodEPS(LAMMPS *lmp, int narg, char **arg) :
       decay = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       iarg += 2;
     } else {
-      error->all(FLERR, "Illegal fix nufeb/monod/eps command");
+      error->all(FLERR, "Illegal fix nufeb/growth/eps command");
     }
   }
 }
 
 /* ---------------------------------------------------------------------- */
 
-void FixMonodEPS::compute()
+void FixGrowthEPS::compute()
 {
   if (reaction_flag && growth_flag) {
     update_cells<1, 1>();
@@ -72,7 +73,7 @@ void FixMonodEPS::compute()
 /* ---------------------------------------------------------------------- */
 
 template <int Reaction, int Growth>
-void FixMonodEPS::update_cells()
+void FixGrowthEPS::update_cells()
 {
   double **reac = grid->reac;
   double **dens = grid->dens;
@@ -90,7 +91,7 @@ void FixMonodEPS::update_cells()
 
 /* ---------------------------------------------------------------------- */
 
-void FixMonodEPS::update_atoms()
+void FixGrowthEPS::update_atoms()
 {
   update_atoms_coccus();
 }

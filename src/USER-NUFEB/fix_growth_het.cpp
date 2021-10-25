@@ -11,10 +11,11 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
+#include "fix_growth_het.h"
+
 #include <cstdio>
 #include <cstring>
 #include <cmath>
-#include "fix_monod_het.h"
 #include "atom.h"
 #include "error.h"
 #include "grid.h"
@@ -29,11 +30,11 @@ using namespace MathConst;
 
 /* ---------------------------------------------------------------------- */
 
-FixMonodHET::FixMonodHET(LAMMPS *lmp, int narg, char **arg) :
-  FixMonod(lmp, narg, arg)
+FixGrowthHET::FixGrowthHET(LAMMPS *lmp, int narg, char **arg) :
+  FixGrowth(lmp, narg, arg)
 {
   if (narg < 11)
-    error->all(FLERR, "Illegal fix nufeb/monod/het command");
+    error->all(FLERR, "Illegal fix nufeb/growth/het command");
   
   dynamic_group_allow = 1;
 
@@ -99,14 +100,14 @@ FixMonodHET::FixMonodHET(LAMMPS *lmp, int narg, char **arg) :
       eps_dens = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       iarg += 2;
     } else {
-      error->all(FLERR, "Illegal fix nufeb/monod/het command");
+      error->all(FLERR, "Illegal fix nufeb/growth/het command");
     }
   }
 }
 
 /* ---------------------------------------------------------------------- */
 
-void FixMonodHET::compute()
+void FixGrowthHET::compute()
 { 
   if (reaction_flag && growth_flag) {
     update_cells<1, 1>();
@@ -122,7 +123,7 @@ void FixMonodHET::compute()
 /* ---------------------------------------------------------------------- */
 
 template <int Reaction, int Growth>
-void FixMonodHET::update_cells()
+void FixGrowthHET::update_cells()
 {
   double **conc = grid->conc;
   double **reac = grid->reac;
@@ -153,7 +154,7 @@ void FixMonodHET::update_cells()
 
 /* ---------------------------------------------------------------------- */
 
-void FixMonodHET::update_atoms()
+void FixGrowthHET::update_atoms()
 {
   double **x = atom->x;
   double *radius = atom->radius;

@@ -19,14 +19,14 @@
 
 namespace LAMMPS_NS {
 
-class FixMonod : public Fix {
+class FixGrowth : public Fix {
  public:
   int compute_flag;
   int reaction_flag;
   int growth_flag;
 
-  FixMonod(class LAMMPS *, int, char **);
-  virtual ~FixMonod() {}
+  FixGrowth(class LAMMPS *, int, char **);
+  virtual ~FixGrowth() {}
   int modify_param(int, char **);
   void update_atom();
   virtual void init();

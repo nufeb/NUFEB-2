@@ -13,21 +13,21 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/monod/cyano,FixMonodCyano)
+FixStyle(nufeb/growth/cyano,FixGrowthCyano)
 
 #else
 
-#ifndef LMP_FIX_MONOD_CYANO_H
-#define LMP_FIX_MONOD_CYANO_H
+#ifndef LMP_FIX_GROWTH_CYANO_H
+#define LMP_FIX_GROWTH_CYANO_H
 
-#include "fix_monod.h"
+#include "fix_growth.h"
 
 namespace LAMMPS_NS {
 
-class FixMonodCyano: public FixMonod {
+class FixGrowthCyano: public FixGrowth {
  public:
-  FixMonodCyano(class LAMMPS *, int, char **);
-  virtual ~FixMonodCyano() {}
+  FixGrowthCyano(class LAMMPS *, int, char **);
+  virtual ~FixGrowthCyano() {}
   virtual void compute();
  protected:
   int ilight;   // light

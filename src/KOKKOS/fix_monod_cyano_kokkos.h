@@ -22,7 +22,7 @@ FixStyle(nufeb/monod/cyano/kk/host,FixMonodCyanoKokkos<LMPHostType>)
 #ifndef LMP_FIX_MONOD_CYANO_KOKKOS_H
 #define LMP_FIX_MONOD_CYANO_KOKKOS_H
 
-#include "fix_monod_cyano.h"
+#include "../USER-NUFEB/fix_growth_cyano.h"
 #include "kokkos_type.h"
 
 namespace LAMMPS_NS {

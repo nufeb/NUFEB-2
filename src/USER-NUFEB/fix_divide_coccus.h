@@ -13,7 +13,7 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/divide/coccus,FixDivideCoccus)
+FixStyle(nufeb/division/coccus,FixDivideCoccus)
 
 #else
 

@@ -22,7 +22,7 @@ FixStyle(nufeb/monod/het/kk/host,FixMonodHETKokkos<LMPHostType>)
 #ifndef LMP_FIX_MONOD_HET_KOKKOS_H
 #define LMP_FIX_MONOD_HET_KOKKOS_H
 
-#include "fix_monod_het.h"
+#include "../USER-NUFEB/fix_growth_het.h"
 #include "kokkos_type.h"
 
 namespace LAMMPS_NS {

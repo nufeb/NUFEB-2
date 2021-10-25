@@ -47,9 +47,9 @@ class NufebRunKokkos : public NufebRun {
   DAT::t_f_array f_merge_copy,f;
 
   void force_clear();
-  void growth();
-  void reactor();
-  int diffusion();
+  void bio_process();
+  void reactor_process();
+  int chem_process();
   void disable_sync(class Fix *fix);
 };
 

@@ -13,21 +13,21 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/monod/eps,FixMonodEPS)
+FixStyle(nufeb/growth/eps,FixGrowthEPS)
 
 #else
 
-#ifndef LMP_FIX_MONOD_EPS_H
-#define LMP_FIX_MONOD_EPS_H
+#ifndef LMP_FIX_GROWTH_EPS_H
+#define LMP_FIX_GROWTH_EPS_H
 
-#include "fix_monod.h"
+#include "fix_growth.h"
 
 namespace LAMMPS_NS {
 
-class FixMonodEPS: public FixMonod {
+class FixGrowthEPS: public FixGrowth {
  public:
-  FixMonodEPS(class LAMMPS *, int, char **);
-  virtual ~FixMonodEPS() {}
+  FixGrowthEPS(class LAMMPS *, int, char **);
+  virtual ~FixGrowthEPS() {}
   virtual void compute();
 
  protected:

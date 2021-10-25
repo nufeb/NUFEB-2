@@ -2,7 +2,7 @@ Introduction
 ============
 
 This section gives a brief overview of the NUFEB software and model,
-introduces NUFEB key features, 
+lists NUFEB key features, 
 and acknowledges people who
 have contributed to NUFEB software and model developments.
 

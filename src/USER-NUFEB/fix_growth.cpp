@@ -15,13 +15,13 @@
 #include <cstring>
 #include <cmath>
 
-#include "fix_monod.h"
 #include "error.h"
 #include "update.h"
 #include "atom.h"
 #include "grid.h"
 #include "math_const.h"
 #include "atom_vec_bacillus.h"
+#include "fix_growth.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -29,7 +29,7 @@ using namespace MathConst;
 
 /* ---------------------------------------------------------------------- */
 
-FixMonod::FixMonod(LAMMPS *lmp, int narg, char **arg) :
+FixGrowth::FixGrowth(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
   compute_flag = 1;
@@ -40,7 +40,7 @@ FixMonod::FixMonod(LAMMPS *lmp, int narg, char **arg) :
 
 /* ---------------------------------------------------------------------- */
 
-int FixMonod::modify_param(int narg, char **arg)
+int FixGrowth::modify_param(int narg, char **arg)
 {
   int iarg = 0;
   while (iarg < narg) {
@@ -80,21 +80,21 @@ int FixMonod::modify_param(int narg, char **arg)
 
 /* ---------------------------------------------------------------------- */
 
-void FixMonod::init()
+void FixGrowth::init()
 {
   dt = update->dt;
 }
 
 /* ---------------------------------------------------------------------- */
 
-void FixMonod::reset_dt()
+void FixGrowth::reset_dt()
 {
   dt = update->dt;
 }
 
 /* ---------------------------------------------------------------------- */
 
-int FixMonod::setmask()
+int FixGrowth::setmask()
 {
   int mask = 0;
   mask |= POST_INTEGRATE;
@@ -103,7 +103,7 @@ int FixMonod::setmask()
 
 /* ---------------------------------------------------------------------- */
 
-void FixMonod::post_integrate()
+void FixGrowth::post_integrate()
 {
   if (compute_flag)
     compute();
@@ -112,7 +112,7 @@ void FixMonod::post_integrate()
 
 /* ---------------------------------------------------------------------- */
 
-void FixMonod::update_atoms_coccus()
+void FixGrowth::update_atoms_coccus()
 {
   double **x = atom->x;
   double *radius = atom->radius;
@@ -142,7 +142,7 @@ void FixMonod::update_atoms_coccus()
 
 /* ---------------------------------------------------------------------- */
 
-void FixMonod::update_atoms_bacillus(AtomVecBacillus *&avec)
+void FixGrowth::update_atoms_bacillus(AtomVecBacillus *&avec)
 {
   double **x = atom->x;
   double *radius = atom->radius;

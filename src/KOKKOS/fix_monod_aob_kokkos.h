@@ -22,7 +22,7 @@ FixStyle(nufeb/monod/aob/kk/host,FixMonodAOBKokkos<LMPHostType>)
 #ifndef LMP_FIX_MONOD_AOB_KOKKOS_H
 #define LMP_FIX_MONOD_AOB_KOKKOS_H
 
-#include "fix_monod_aob.h"
+#include "../USER-NUFEB/fix_growth_aob.h"
 #include "kokkos_type.h"
 
 namespace LAMMPS_NS {

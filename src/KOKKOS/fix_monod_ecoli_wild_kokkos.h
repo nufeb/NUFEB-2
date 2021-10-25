@@ -22,7 +22,7 @@ FixStyle(nufeb/monod/ecoli/wild/kk/host,FixMonodEcoliWildKokkos<LMPHostType>)
 #ifndef LMP_FIX_MONOD_ECOLI_WILD_KOKKOS_H
 #define LMP_FIX_MONOD_ECOLI_WILD_KOKKOS_H
 
-#include "fix_monod_ecoli_wild.h"
+#include "../USER-NUFEB/fix_growth_ecoli.h"
 #include "kokkos_type.h"
 
 namespace LAMMPS_NS {

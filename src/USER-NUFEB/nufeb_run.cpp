@@ -52,7 +52,8 @@
 #include "comm_grid.h"
 #include "fix_density.h"
 #include "fix_diffusion_reaction.h"
-#include "fix_monod.h"
+#include "fix_mass_transport.h"
+#include "fix_growth.h"
 #include "fix_eps_extract.h"
 #include "fix_divide.h"
 #include "fix_death.h"
@@ -81,7 +82,7 @@ NufebRun::NufebRun(LAMMPS *lmp, int narg, char **arg) :
   pairtol = 1.0;
   pairmax = -1;
   
-  nfix_monod = 0;
+  nfix_growth = 0;
   nfix_diffusion = 0;
   nfix_eps_extract = 0;
   nfix_divide = 0;
@@ -89,10 +90,12 @@ NufebRun::NufebRun(LAMMPS *lmp, int narg, char **arg) :
   nfix_gas_liquid = 0;
   nfix_reactor = 0;
   nfix_property = 0;
+  nfix_transport = 0;
   
   fix_density = nullptr;
-  fix_monod = nullptr;
+  fix_growth = nullptr;
   fix_diffusion = nullptr;
+  fix_transport = nullptr;
   comp_pressure = nullptr;
   comp_ke = nullptr;
   comp_volume = nullptr;
@@ -155,8 +158,9 @@ NufebRun::~NufebRun()
   if (profile)
     fclose(profile);
   
-  delete [] fix_monod;
+  delete [] fix_growth;
   delete [] fix_diffusion;
+  delete [] fix_transport;
   delete [] fix_eps_extract;
   delete [] fix_divide;
   delete [] fix_death;
@@ -186,7 +190,7 @@ void NufebRun::init()
   fix_density = (FixDensity *)modify->fix[modify->nfix-1];
 
   // allocate space for storing fixes
-  fix_monod = new FixMonod*[modify->nfix];
+  fix_growth = new FixGrowth*[modify->nfix];
   fix_diffusion = new FixDiffusionReaction*[modify->nfix];
   fix_eps_extract = new FixEPSExtract*[modify->nfix];
   fix_divide = new FixDivide*[modify->nfix];
@@ -197,10 +201,12 @@ void NufebRun::init()
   
   // find fixes
   for (int i = 0; i < modify->nfix; i++) {
-    if (strstr(modify->fix[i]->style, "nufeb/monod")) {
-      fix_monod[nfix_monod++] = (FixMonod *)modify->fix[i];
+    if (strstr(modify->fix[i]->style, "nufeb/growth")) {
+      fix_growth[nfix_growth++] = (FixGrowth *)modify->fix[i];
     } else if (strstr(modify->fix[i]->style, "nufeb/diffusion_reaction")) {
       fix_diffusion[nfix_diffusion++] = (FixDiffusionReaction *)modify->fix[i];
+    } else if (strstr(modify->fix[i]->style, "nufeb/mass_transport")) {
+      fix_transport[nfix_transport++] = (FixMassTransport *)modify->fix[i];
     } else if (strstr(modify->fix[i]->style, "nufeb/eps_extract")) {
       fix_eps_extract[nfix_eps_extract++] = (FixEPSExtract *)modify->fix[i];
     } else if (strstr(modify->fix[i]->style, "nufeb/divide")) {
@@ -363,12 +369,14 @@ void NufebRun::setup(int flag)
 
   biodt = update->dt;
   
-  // disable all fixes that will be called directly
+  // disable all fixes that will be called in chemical and biological processes
   fix_density->compute_flag = 0;
-  for (int i = 0; i < nfix_monod; i++)
-    fix_monod[i]->compute_flag = 0;
+  for (int i = 0; i < nfix_growth; i++)
+    fix_growth[i]->compute_flag = 0;
   for (int i = 0; i < nfix_diffusion; i++)
     fix_diffusion[i]->compute_flag = 0;
+  for (int i = 0; i < nfix_transport; i++)
+    fix_transport[i]->compute_flag = 0;
   for (int i = 0; i < nfix_eps_extract; i++)
     fix_eps_extract[i]->compute_flag = 0;
   for (int i = 0; i < nfix_divide; i++)
@@ -387,7 +395,7 @@ void NufebRun::setup(int flag)
   
   // run diffusion until it reaches steady state
   if (init_diff_flag) {
-    int niter = diffusion();
+    int niter = chem_process();
     if (comm->me == 0)
       fprintf(screen, "Initial diffusion reaction converged in %d steps\n", niter);
   } else {
@@ -492,10 +500,10 @@ void NufebRun::run(int n)
     comp_pressure->addstep(ntimestep);
 
     ev_set(ntimestep);
-
     timer->stamp();
     double t = get_time();
-    growth();
+    // run biological processes
+    bio_process();
     if (profile)
       fprintf(profile, "%d %e ", update->ntimestep, get_time()-t);
     
@@ -628,14 +636,14 @@ void NufebRun::run(int n)
       fprintf(profile, "%e ", get_time()-t);
     timer->stamp(Timer::MODIFY);
 
-    // run diffusion until it reaches steady state
+    // run chemical processes
     t = get_time();
-    ndiff = diffusion();
+    ndiff = chem_process();
     if (profile)
       fprintf(profile, "%d %e\n", ndiff, get_time()-t);
     if (info && comm->me == 0) fprintf(screen, "diffusion: %d steps\n", ndiff);
     
-    reactor();
+    reactor_process();
 
     // all output
 
@@ -718,24 +726,24 @@ void NufebRun::force_clear()
 
 /* ---------------------------------------------------------------------- */
 
-void NufebRun::growth()
+void NufebRun::bio_process()
 {
   // set biological dt
 
   update->dt = biodt;
   reset_dt();
 
-  // setup monod growth fixes for growth
+  // setup growth fixes
 
-  for (int i = 0; i < nfix_monod; i++) {
-    fix_monod[i]->reaction_flag = 0;
-    fix_monod[i]->growth_flag = 1;
+  for (int i = 0; i < nfix_growth; i++) {
+    fix_growth[i]->reaction_flag = 0;
+    fix_growth[i]->growth_flag = 1;
   }
 
   // grow atoms
 
-  for (int i = 0; i < nfix_monod; i++) {
-    fix_monod[i]->compute();
+  for (int i = 0; i < nfix_growth; i++) {
+    fix_growth[i]->compute();
   }
 
   for (int i = 0; i < nfix_eps_extract; i++) {
@@ -757,12 +765,12 @@ void NufebRun::growth()
 
 /* ---------------------------------------------------------------------- */
 
-int NufebRun::diffusion()
+int NufebRun::chem_process()
 {
-  // setup monod growth fixes for diffusion
-  for (int i = 0; i < nfix_monod; i++) {
-    fix_monod[i]->reaction_flag = 1;
-    fix_monod[i]->growth_flag = 0;
+  // setup growth fixes for diffusion
+  for (int i = 0; i < nfix_growth; i++) {
+    fix_growth[i]->reaction_flag = 1;
+    fix_growth[i]->growth_flag = 0;
   }
 
   // set diffusion dt
@@ -789,8 +797,11 @@ int NufebRun::diffusion()
       if (!converge[i])
 	fix_diffusion[i]->compute_initial();
     }
-    for (int i = 0; i < nfix_monod; i++) {
-      fix_monod[i]->compute();
+    for (int i = 0; i < nfix_growth; i++) {
+      fix_growth[i]->compute();
+    }
+    for (int i = 0; i < nfix_transport; i++) {
+      fix_transport[i]->compute();
     }
     for (int i = 0; i < nfix_gas_liquid; i++) {
       fix_gas_liquid[i]->compute();
@@ -820,7 +831,7 @@ int NufebRun::diffusion()
 
 /* ---------------------------------------------------------------------- */
 
-void NufebRun::reactor()
+void NufebRun::reactor_process()
 {
   // set biological dt
 
