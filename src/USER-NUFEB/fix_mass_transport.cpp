@@ -33,9 +33,6 @@ FixMassTransport::FixMassTransport(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 4)
     error->all(FLERR,"Illegal fix nufeb/gas_liquid command");
 
-  if (!grid->reactor_flag)
-    error->all(FLERR,"Fix reactor requires nufeb/reactor grid style");
-
   compute_flag = 1;
 
   isub = -1;

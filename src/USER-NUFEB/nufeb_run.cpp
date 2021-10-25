@@ -192,6 +192,7 @@ void NufebRun::init()
   // allocate space for storing fixes
   fix_growth = new FixGrowth*[modify->nfix];
   fix_diffusion = new FixDiffusionReaction*[modify->nfix];
+  fix_transport = new FixMassTransport*[modify->nfix];
   fix_eps_extract = new FixEPSExtract*[modify->nfix];
   fix_divide = new FixDivide*[modify->nfix];
   fix_death = new FixDeath*[modify->nfix];
