@@ -1,4 +1,4 @@
-# jpeg = default MPI compiler, default MPI, JPEG support
+# png = default MPI compiler, default MPI, PNG support
 
 SHELL = /bin/sh
 
@@ -7,7 +7,7 @@ SHELL = /bin/sh
 # specify flags and libraries needed for your compiler
 
 CC =		mpicxx
-CCFLAGS =	-g -O0
+CCFLAGS =	-g -O3 
 SHFLAGS =	-fPIC
 DEPFLAGS =	-M
 
@@ -28,7 +28,7 @@ SHLIBFLAGS =	-shared
 # LAMMPS ifdef settings
 # see possible settings in Section 3.5 of the manual
 
-LMP_INC =	-DLAMMPS_GZIP -DLAMMPS_JPEG -DLAMMPS_FFMPEG
+LMP_INC =	-DLAMMPS_GZIP -DLAMMPS_JPNG -DLAMMPS_FFMPEG
 
 # MPI library
 # see discussion in Section 3.4 of the manual
@@ -63,7 +63,7 @@ FFT_LIB =
 
 JPG_INC =       -I/usr/include
 JPG_PATH = 	-L/usr/lib
-JPG_LIB =	-ljpeg
+JPG_LIB =	-lpng
 
 # ---------------------------------------------------------------------
 # build rules and dependencies

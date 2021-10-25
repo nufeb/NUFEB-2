@@ -30,6 +30,9 @@ do
        vtk_hdf=$((vtk_hdf+1))
     elif [ $var == "--enable-misc" ]; then continue
     elif [ $var == "--enable-plasmid" ]; then continue
+    elif [ $var == "--enable-kokkos" ]; then continue
+    elif [ $var == "--enable-png" ]; then continue
+    elif [ $var == "--enable-jpeg" ]; then continue
     elif [ $var == "--static" ]; then continue
     elif [ $var == "--shared" ]; then continue
     elif [ $var == "--serial" ]; then continue
@@ -61,6 +64,8 @@ do
 	make yes-misc
     elif [ $var == "--enable-plasmid" ]; then
 	make yes-user-plasmid
+    elif [ $var == "--enable-kokkos" ]; then
+	make yes-kokkos
     fi
 done
 
@@ -72,27 +77,30 @@ do
         make
         cd .. || exit 1;
         make -j4 serial
-        write_path
+        mv lmp_serial $rootDir/lmp_nufeb
         exit 1
+    elif [ $var == "--static" ]; then   
+        make -j4 mpi mode=lib
+        exit 1
+    elif [ $var == "--shared" ]; then   
+        make -j4 mpi mode=shlib
+        exit 1
+    elif [ $var == "--enable-png" ]; then   
+        make -j4 png
+        mv lmp_png $rootDir/lmp_nufeb
+        exit 1
+    elif [ $var == "--enable-jpeg" ]; then   
+        make -j4 jpeg
+        mv lmp_jpeg $rootDir/lmp_nufeb
+        exit 1
+    elif [ $var == "--enable-kokkos" ]; then   
+        make -j4 kokkos_cuda_mpi
+        mv lmp_kokkos_omp $rootDir/
+        exit 1 
    fi
 done
 
-for var in "$@"
-do 
-    if [ $var == "--static" ]; then
-        make -j4 mpi mode=lib
-        exit 1
-    fi
-done
-
-for var in "$@"
-do 
-    if [ $var == "--shared" ]; then
-        make -j4 mpi mode=shlib
-        exit 1
-    fi
-done
-
 make -j4 nufeb
+mv lmp_nufeb $rootDir/
 exit 1
 
