@@ -39,7 +39,7 @@ Individual-based Model (IbM) is a computational model for
 simulating the actions and interactions of autonomous individuals,
 which, in our case, are the microbes.
 
-IbM has ability to precisely capture how the heterogeneity of 
+IbMs precisely capture how the heterogeneity of 
 individual organisms and local interactions influence emergent behaviours, 
 such as bacterial colony morphology.
 
