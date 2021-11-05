@@ -114,7 +114,7 @@ fix diff_no2 all nufeb/diffusion_reaction no2 1.85e-9  pp pp nd 1e-4
 fix diff_no3 all nufeb/diffusion_reaction no3 1.85e-9 pp pp nd  1e-4
 
 # biological model fixes
-fix div all nufeb/divide/coccus 1.36e-6 30 1234
+fix div all nufeb/division/coccus 1.36e-6 30 1234
 fix eps_ext het nufeb/eps_extract 4 eps 1.1 30 5678
 fix death alive nufeb/death dead 5e-7
 

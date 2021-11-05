@@ -58,7 +58,7 @@ fix monod_eps eps nufeb/growth/eps sub decay 0
 fix diff_sub all nufeb/diffusion_reaction sub 1.6e-9 pp pp nd 1e-4
 
 # biological model fixes
-fix div all nufeb/divide 1.36e-6 30 1234
+fix div all nufeb/division/coccus 1.36e-6 30 1234
 fix eps_ext het nufeb/eps_extract 2 eps 1.3 30 5678
 fix death het nufeb/death dead 5e-7
 
