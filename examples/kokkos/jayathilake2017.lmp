@@ -1,7 +1,7 @@
 # NUFEB simulation with HETs and AOBs
 
 units si                                   # using si units
-atom_style      nufeb                      # using nufeb atom style
+atom_style      coccus                      # using nufeb atom style
 atom_modify     map array sort 1000 1e-6   # map array: find atoms using indices
 		                           # sort 1000 5.0e-6: sort every 1000
 					   #   steps with 5.0e-6 binsize
@@ -84,7 +84,7 @@ fix diff_sub all nufeb/diffusion_reaction sub 1.6e-9 1e-4
 # biological model fixes
 fix div all nufeb/division/coccus 1.36e-6 30 1234
 fix eps_ext het nufeb/eps_extract 2 eps 1.1 30 5678
-fix death het nufeb/death dead 5e-7
+fix death het nufeb/death/diameter dead 5e-7
 
 # mechanical model fixes
 fix wall all wall/gran hooke/history 1e-3 NULL 1e-4 NULL 0 0 zplane 0.0 8e-5

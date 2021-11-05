@@ -116,7 +116,7 @@ fix diff_no3 all nufeb/diffusion_reaction no3 1.85e-9 pp pp nd  1e-4
 # biological model fixes
 fix div all nufeb/division/coccus 1.36e-6 30 1234
 fix eps_ext het nufeb/eps_extract 4 eps 1.1 30 5678
-fix death alive nufeb/death dead 5e-7
+fix death alive nufeb/death/diameter dead 5e-7
 
 # mechanical model fixes
 fix wall all wall/gran hooke/history 1e-4 NULL 1e-5 NULL 0 0 zplane 0.0 4e-5

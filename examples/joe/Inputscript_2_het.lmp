@@ -63,8 +63,8 @@ fix diff_sub all nufeb/diffusion_reaction sub 1.6e-9 pp pp nd 1e-4
 fix div all nufeb/division/coccus 1.36e-6 30 1234
 fix eps_ext_1 het_1 nufeb/eps_extract 2 eps 1.3 30 5678
 fix eps_ext_2 het_2 nufeb/eps_extract 2 eps 1.3 30 5678
-fix death_1 het_1 nufeb/death dead 5e-7
-fix death_2 het_2 nufeb/death dead 5e-7
+fix death_1 het_1 nufeb/death/diameter dead 5e-7
+fix death_2 het_2 nufeb/death/diameter dead 5e-7
 
 # mechanical model fixes
 fix wall all wall/gran hooke/history 1e-3 NULL 1e-4 NULL 0 0 zplane 0.0 8e-5
