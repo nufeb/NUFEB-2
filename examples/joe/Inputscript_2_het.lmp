@@ -52,9 +52,9 @@ fix nve all nve/limit 1e-8
 
 # monod reaction fixes
 #   should consider using read_data's fix keyword
-fix monod_het_1 het_1 nufeb/monod/het sub 3.5e-5 o2 0 no2 0 no3 0 growth 0.00028 yield 0.61 decay 0.0 epsyield 0.18 anoxic 0.0 epsdens 30
-fix monod_het_2 het_2 nufeb/monod/het sub 3.5e-5 o2 0 no2 0 no3 0 growth 0.00028 yield 0.61 decay 0.0 epsyield 0.18 anoxic 0.0 epsdens 30
-fix monod_eps eps nufeb/monod/eps sub decay 0
+fix monod_het_1 het_1 nufeb/growth/het sub 3.5e-5 o2 0 no2 0 no3 0 growth 0.00028 yield 0.61 decay 0.0 epsyield 0.18 anoxic 0.0 epsdens 30
+fix monod_het_2 het_2 nufeb/growth/het sub 3.5e-5 o2 0 no2 0 no3 0 growth 0.00028 yield 0.61 decay 0.0 epsyield 0.18 anoxic 0.0 epsdens 30
+fix monod_eps eps nufeb/growth/eps sub decay 0
 
 # diffusion reaction fixes
 fix diff_sub all nufeb/diffusion_reaction sub 1.6e-9 pp pp nd 1e-4
