@@ -14,11 +14,13 @@
 #include <cstdio>
 #include <cstring>
 #include <cmath>
-#include "fix_monod_het_kokkos.h"
 #include "atom_kokkos.h"
+#include "atom_masks.h"
+#include "fix_growth_het_kokkos.h"
 #include "grid_kokkos.h"
 #include "grid_masks.h"
 #include "math_const.h"
+#include "domain.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -27,17 +29,21 @@ using namespace MathConst;
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-FixMonodHETKokkos<DeviceType>::FixMonodHETKokkos(LAMMPS *lmp, int narg, char **arg) :
-  FixMonodHET(lmp, narg, arg)
+FixGrowthHETKokkos<DeviceType>::FixGrowthHETKokkos(LAMMPS *lmp, int narg, char **arg) :
+  FixGrowthHET(lmp, narg, arg)
 {
   kokkosable = 1;
+  atomKK = (AtomKokkos *)atom;
   execution_space = ExecutionSpaceFromDevice<DeviceType>::space;
+
+  datamask_read = X_MASK | MASK_MASK | RMASS_MASK | RADIUS_MASK | OUTER_MASS_MASK | OUTER_RADIUS_MASK;
+  datamask_modify = RMASS_MASK | RADIUS_MASK | OUTER_MASS_MASK | OUTER_RADIUS_MASK;
 }
 
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-void FixMonodHETKokkos<DeviceType>::compute()
+void FixGrowthHETKokkos<DeviceType>::compute()
 { 
   if (reaction_flag && growth_flag) {
     update_cells<1, 1>();
@@ -54,7 +60,7 @@ void FixMonodHETKokkos<DeviceType>::compute()
 
 template <class DeviceType>
 template <int Reaction, int Growth>
-void FixMonodHETKokkos<DeviceType>::update_cells()
+void FixGrowthHETKokkos<DeviceType>::update_cells()
 {
   d_mask = gridKK->k_mask.template view<DeviceType>();
   d_conc = gridKK->k_conc.template view<DeviceType>();
@@ -68,11 +74,11 @@ void FixMonodHETKokkos<DeviceType>::update_cells()
     gridKK->sync(execution_space, GMASK_MASK | CONC_MASK);
 
   copymode = 1;
-  Functor f(this);
+  FunctorCells f(this);
   Kokkos::parallel_for(
     Kokkos::RangePolicy<
     DeviceType,
-    FixMonodHETCellsTag<Reaction, Growth> >(0, grid->ncells), f);
+    FixGrowthHETCellsTag<Reaction, Growth> >(0, grid->ncells), f);
   copymode = 0;
 
   if (Growth)
@@ -84,44 +90,43 @@ void FixMonodHETKokkos<DeviceType>::update_cells()
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-void FixMonodHETKokkos<DeviceType>::update_atoms()
+void FixGrowthHETKokkos<DeviceType>::update_atoms()
 {
-  double **x = atom->x;
-  double *radius = atom->radius;
-  double *rmass = atom->rmass;
-  double *outer_radius = atom->outer_radius;
-  double *outer_mass = atom->outer_mass;
-  double ***growth = grid->growth;
-
-  const double three_quarters_pi = (3.0 / (4.0 * MY_PI));
-  const double four_thirds_pi = 4.0 * MY_PI / 3.0;
-  const double third = 1.0 / 3.0;
-
-  gridKK->sync(Host, GROWTH_MASK);
-
-  for (int i = 0; i < atom->nlocal; i++) {
-    if (atom->mask[i] & groupbit) {
-      const int cell = grid->cell(x[i]);
-      const double density = rmass[i] /
-	(four_thirds_pi * radius[i] * radius[i] * radius[i]);
-
-      rmass[i] = rmass[i] * (1 + growth[igroup][cell][0] * dt);
-      outer_mass[i] = four_thirds_pi *
-	(outer_radius[i] * outer_radius[i] * outer_radius[i] -
-	 radius[i] * radius[i] * radius[i]) *
-	eps_dens + growth[igroup][cell][1] * rmass[i] * dt;
-      radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
-      outer_radius[i] = pow(three_quarters_pi *
-			    (rmass[i] / density + outer_mass[i] / eps_dens),
-			    third);
-    }
+  for (int i = 0; i < 3; i++) {
+    boxlo[i] = domain->boxlo[i];
+    grid_sublo[i] = grid->sublo[i];
+    grid_subbox[i] = grid->subbox[i];
   }
+
+  d_x = atomKK->k_x.view<DeviceType>();
+  d_mask = atomKK->k_mask.view<DeviceType>();
+  d_rmass = atomKK->k_rmass.view<DeviceType>();
+  d_radius = atomKK->k_radius.view<DeviceType>();
+  d_outer_mass = atomKK->k_outer_mass.view<DeviceType>();
+  d_outer_radius = atomKK->k_outer_radius.view<DeviceType>();
+  d_growth = gridKK->k_growth.template view<DeviceType>();
+
+  cell_size = grid->cell_size;
+  vol = cell_size * cell_size * cell_size;
+
+  gridKK->sync(execution_space, GROWTH_MASK);
+  atomKK->sync(execution_space,datamask_read);
+
+  copymode = 1;
+  FunctorAtoms f(this);
+  Kokkos::parallel_for(
+    Kokkos::RangePolicy<
+    DeviceType,
+    FixGrowthHETAtomsTag >(0, atomKK->nlocal), f);
+  copymode = 0;
+
+  atomKK->modified(execution_space,datamask_modify);
 }
 
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-FixMonodHETKokkos<DeviceType>::Functor::Functor(FixMonodHETKokkos<DeviceType> *ptr):
+FixGrowthHETKokkos<DeviceType>::FunctorCells::FunctorCells(FixGrowthHETKokkos<DeviceType> *ptr):
   igroup(ptr->igroup),
   isub(ptr->isub), io2(ptr->io2), ino2(ptr->ino2), ino3(ptr->ino3),
   sub_affinity(ptr->sub_affinity), o2_affinity(ptr->o2_affinity),
@@ -130,14 +135,32 @@ FixMonodHETKokkos<DeviceType>::Functor::Functor(FixMonodHETKokkos<DeviceType> *p
   maintain(ptr->maintain), decay(ptr->decay),
   eps_yield(ptr->eps_yield), anoxic(ptr->anoxic), eps_dens(ptr->eps_dens),
   d_mask(ptr->d_mask), d_conc(ptr->d_conc), d_reac(ptr->d_reac),
-  d_dens(ptr->d_dens), d_growth(ptr->d_growth) {}
+  d_dens(ptr->d_dens), d_growth(ptr->d_growth){}
+
+/* ---------------------------------------------------------------------- */
+
+template <class DeviceType>
+FixGrowthHETKokkos<DeviceType>::FunctorAtoms::FunctorAtoms(FixGrowthHETKokkos<DeviceType> *ptr):
+  igroup(ptr->igroup), eps_dens(ptr->eps_dens),
+  d_mask(ptr->d_mask), d_growth(ptr->d_growth),
+  groupbit(ptr->groupbit), d_x(ptr->d_x), d_rmass(ptr->d_rmass),
+  d_radius(ptr->d_radius), d_outer_mass(ptr->d_outer_mass),
+  d_outer_radius(ptr->d_outer_radius), vol(ptr->vol),
+  cell_size(ptr->cell_size), dt(ptr->dt)
+{
+  for (int i = 0; i < 3; i++) {
+    boxlo[i] = ptr->boxlo[i];
+    grid_sublo[i] = ptr->grid_sublo[i];
+    grid_subbox[i] = ptr->grid_subbox[i];
+  }
+}
 
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
 template <int Reaction, int Growth>
 KOKKOS_INLINE_FUNCTION
-void FixMonodHETKokkos<DeviceType>::Functor::operator()(FixMonodHETCellsTag<Reaction, Growth>, int i) const
+void FixGrowthHETKokkos<DeviceType>::FunctorCells::operator()(FixGrowthHETCellsTag<Reaction, Growth>, int i) const
 {
   double tmp1 = growth * d_conc(isub, i) / (sub_affinity + d_conc(isub, i)) * d_conc(io2, i) / (o2_affinity + d_conc(io2, i));
   double tmp2 = anoxic * growth * d_conc(isub, i) / (sub_affinity + d_conc(isub, i)) * d_conc(ino3, i) / (no3_affinity + d_conc(ino3, i)) * o2_affinity / (o2_affinity + d_conc(io2, i));
@@ -152,8 +175,8 @@ void FixMonodHETKokkos<DeviceType>::Functor::operator()(FixMonodHETCellsTag<Reac
     d_reac(ino2, i) -= (1 - yield - eps_yield) / (1.17 * yield) * tmp3 * d_dens(igroup, i) + tmp6 * d_dens(igroup, i);
     d_reac(ino3, i) -= (1 - yield - eps_yield) / (2.86 * yield) * tmp2 * d_dens(igroup, i) + tmp5 * d_dens(igroup, i);
   }
-  
-  if (Growth) {
+
+  if (Growth && !(d_mask(i) & GHOST_MASK)) {
     d_growth(igroup, i, 0) = tmp1 + tmp2 + tmp3 - tmp4 - tmp5 - tmp6 - decay;
     d_growth(igroup, i, 1) = (eps_yield / yield) * (tmp1 + tmp2 + tmp3);
   }
@@ -161,9 +184,47 @@ void FixMonodHETKokkos<DeviceType>::Functor::operator()(FixMonodHETCellsTag<Reac
 
 /* ---------------------------------------------------------------------- */
 
+template <class DeviceType>
+KOKKOS_INLINE_FUNCTION
+void FixGrowthHETKokkos<DeviceType>::FunctorAtoms::operator()(FixGrowthHETAtomsTag, int i) const
+{
+  if (d_mask[i] & groupbit) {
+    // can't do:
+    // int cell = grid->cell(d_x[i]);
+    // hence copying the code here
+    int c[3];
+    const double small = 1e-12;
+
+    for (int j = 0; j < 3; j++) {
+      c[j] = static_cast<int>((d_x(i,j) - boxlo[j]) /
+ 			     cell_size + small) - grid_sublo[j];
+    }
+
+    int cell = c[0] + c[1] * grid_subbox[0] +
+      c[2] * grid_subbox[0] * grid_subbox[1];
+
+    static const double MY_PI  = 3.14159265358979323846; // pi
+    const double density = d_rmass(i) /
+      (4.0 * MY_PI / 3.0 * d_radius(i) * d_radius(i) * d_radius(i));
+
+    d_rmass(i) = d_rmass(i) * (1 + d_growth(igroup, cell, 0) * dt);
+    d_outer_mass(i) = 4.0 * MY_PI / 3.0 *
+      (d_outer_radius(i) * d_outer_radius(i) * d_outer_radius(i) -
+       d_radius(i) * d_radius(i) * d_radius(i)) *
+      eps_dens + d_growth(igroup, cell, 1) * d_rmass(i) * dt;
+
+    d_radius(i) = pow((3.0 / (4.0 * MY_PI)) * (d_rmass(i) / density), 1.0 / 3.0);
+    d_outer_radius(i) = pow((3.0 / (4.0 * MY_PI)) *
+			  (d_rmass(i) / density + d_outer_mass(i) / eps_dens),
+			  1.0 / 3.0);
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
 namespace LAMMPS_NS {
-template class FixMonodHETKokkos<LMPDeviceType>;
+template class FixGrowthHETKokkos<LMPDeviceType>;
 #ifdef KOKKOS_ENABLE_CUDA
-template class FixMonodHETKokkos<LMPHostType>;
+template class FixGrowthHETKokkos<LMPHostType>;
 #endif
 }

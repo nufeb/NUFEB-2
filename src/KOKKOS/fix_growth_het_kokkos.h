@@ -13,42 +13,42 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/monod/het/kk,FixMonodHETKokkos<LMPDeviceType>)
-FixStyle(nufeb/monod/het/kk/device,FixMonodHETKokkos<LMPDeviceType>)
-FixStyle(nufeb/monod/het/kk/host,FixMonodHETKokkos<LMPHostType>)
+FixStyle(nufeb/growth/het/kk,FixGrowthHETKokkos<LMPDeviceType>)
+FixStyle(nufeb/growth/het/kk/device,FixGrowthHETKokkos<LMPDeviceType>)
+FixStyle(nufeb/growth/het/kk/host,FixGrowthHETKokkos<LMPHostType>)
 
 #else
 
-#ifndef LMP_FIX_MONOD_HET_KOKKOS_H
-#define LMP_FIX_MONOD_HET_KOKKOS_H
+#ifndef LMP_FIX_GROWTH_HET_KOKKOS_H
+#define LMP_FIX_GROWTH_HET_KOKKOS_H
 
-#include "../USER-NUFEB/fix_growth_het.h"
+#include "fix_growth_het.h"
 #include "kokkos_type.h"
 
 namespace LAMMPS_NS {
 
 template <int, int>
-struct FixMonodHETCellsTag {};
-struct FixMonodHETAtomsTag {};
+struct FixGrowthHETCellsTag {};
+struct FixGrowthHETAtomsTag {};
 
 template <class DeviceType>
-class FixMonodHETKokkos: public FixMonodHET {
+class FixGrowthHETKokkos: public FixGrowthHET {
  public:
-  FixMonodHETKokkos(class LAMMPS *, int, char **);
-  virtual ~FixMonodHETKokkos() {}
+  FixGrowthHETKokkos(class LAMMPS *, int, char **);
+  virtual ~FixGrowthHETKokkos() {}
   virtual void compute();
 
   template <int, int> void update_cells();
   void update_atoms();
 
-  struct Functor
+  struct FunctorCells
   {
     int igroup;
     int isub;
     int io2;
     int ino2;
     int ino3;
-    
+
     double sub_affinity;
     double o2_affinity;
     double no2_affinity;
@@ -69,14 +69,48 @@ class FixMonodHETKokkos: public FixMonodHET {
     typename AT::t_float_2d d_dens;
     typename AT::t_float_3d d_growth;
 
-    Functor(FixMonodHETKokkos *ptr);
+    FunctorCells(FixGrowthHETKokkos *ptr);
     
     template <int Reaction, int Growth>
     KOKKOS_INLINE_FUNCTION
-    void operator()(FixMonodHETCellsTag<Reaction, Growth>, int) const;
+    void operator()(FixGrowthHETCellsTag<Reaction, Growth>, int) const;
   };
 
- protected:
+  struct FunctorAtoms
+  {
+    int groupbit;
+    int igroup;
+    double dt;
+    double eps_dens;
+
+    double boxlo[3];
+    int grid_sublo[3];
+    int grid_subbox[3];
+    double cell_size;
+    double vol;
+
+    typedef ArrayTypes<DeviceType> AT;
+    typename AT::t_int_1d d_mask;
+    typename AT::t_float_3d d_growth;
+    typename AT::t_x_array d_x;
+    typename AT::t_float_1d d_rmass;
+    typename AT::t_float_1d d_radius;
+    typename AT::t_float_1d d_outer_mass;
+    typename AT::t_float_1d d_outer_radius;
+
+    FunctorAtoms(FixGrowthHETKokkos *ptr);
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(FixGrowthHETAtomsTag, int) const;
+  };
+
+ private:
+  double boxlo[3];
+  int grid_sublo[3];
+  int grid_subbox[3];
+  double cell_size;
+  double vol;
+
   typedef ArrayTypes<DeviceType> AT;
 
   typename AT::t_int_1d d_mask;
@@ -84,6 +118,12 @@ class FixMonodHETKokkos: public FixMonodHET {
   typename AT::t_float_2d d_reac;
   typename AT::t_float_2d d_dens;
   typename AT::t_float_3d d_growth;
+
+  typename AT::t_x_array d_x;
+  typename AT::t_float_1d d_rmass;
+  typename AT::t_float_1d d_radius;
+  typename AT::t_float_1d d_outer_mass;
+  typename AT::t_float_1d d_outer_radius;
 };
 
 }
