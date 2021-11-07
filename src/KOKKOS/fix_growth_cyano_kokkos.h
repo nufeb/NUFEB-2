@@ -13,29 +13,29 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/monod/cyano/kk,FixMonodCyanoKokkos<LMPDeviceType>)
-FixStyle(nufeb/monod/cyano/kk/device,FixMonodCyanoKokkos<LMPDeviceType>)
-FixStyle(nufeb/monod/cyano/kk/host,FixMonodCyanoKokkos<LMPHostType>)
+FixStyle(nufeb/growth/cyano/kk,FixGrowthCyanoKokkos<LMPDeviceType>)
+FixStyle(nufeb/growth/cyano/kk/device,FixGrowthCyanoKokkos<LMPDeviceType>)
+FixStyle(nufeb/growth/cyano/kk/host,FixGrowthCyanoKokkos<LMPHostType>)
 
 #else
 
-#ifndef LMP_FIX_MONOD_CYANO_KOKKOS_H
-#define LMP_FIX_MONOD_CYANO_KOKKOS_H
+#ifndef LMP_FIX_GROWTH_CYANO_KOKKOS_H
+#define LMP_FIX_GROWTH_CYANO_KOKKOS_H
 
-#include "../USER-NUFEB/fix_growth_cyano.h"
+#include "fix_growth_cyano.h"
 #include "kokkos_type.h"
 
 namespace LAMMPS_NS {
 
 template <int, int>
-struct FixMonodCyanoCellsTag {};
-struct FixMonodCyanoAtomsTag {};
+struct FixGrowthCyanoCellsTag {};
+struct FixGrowthCyanoAtomsTag {};
 
 template <class DeviceType>
-class FixMonodCyanoKokkos: public FixMonodCyano {
+class FixGrowthCyanoKokkos: public FixGrowthCyano {
  public:
-  FixMonodCyanoKokkos(class LAMMPS *, int, char **);
-  virtual ~FixMonodCyanoKokkos() {}
+  FixGrowthCyanoKokkos(class LAMMPS *, int, char **);
+  virtual ~FixGrowthCyanoKokkos() {}
   virtual void compute();
 
   template <int, int> void update_cells();
@@ -67,11 +67,11 @@ class FixMonodCyanoKokkos: public FixMonodCyano {
     typename AT::t_float_2d d_dens;
     typename AT::t_float_3d d_growth;
 
-    Functor(FixMonodCyanoKokkos *ptr);
+    Functor(FixGrowthCyanoKokkos *ptr);
     
     template <int Reaction, int Growth>
     KOKKOS_INLINE_FUNCTION
-    void operator()(FixMonodCyanoCellsTag<Reaction, Growth>, int) const;
+    void operator()(FixGrowthCyanoCellsTag<Reaction, Growth>, int) const;
   };
 
  protected:

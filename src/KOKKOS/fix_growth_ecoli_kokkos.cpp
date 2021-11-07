@@ -14,8 +14,8 @@
 #include <cstdio>
 #include <cstring>
 #include <cmath>
-#include "fix_monod_ecoli_wild_kokkos.h"
 #include "atom_kokkos.h"
+#include "fix_growth_ecoli_kokkos.h"
 #include "grid_kokkos.h"
 #include "grid_masks.h"
 #include "math_const.h"
@@ -27,8 +27,8 @@ using namespace MathConst;
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-FixMonodEcoliWildKokkos<DeviceType>::FixMonodEcoliWildKokkos(LAMMPS *lmp, int narg, char **arg) :
-  FixMonodEcoliWild(lmp, narg, arg)
+FixGrowthEcoliKokkos<DeviceType>::FixGrowthEcoliKokkos(LAMMPS *lmp, int narg, char **arg) :
+  FixGrowthEcoli(lmp, narg, arg)
 {
   kokkosable = 1;
   execution_space = ExecutionSpaceFromDevice<DeviceType>::space;
@@ -37,7 +37,7 @@ FixMonodEcoliWildKokkos<DeviceType>::FixMonodEcoliWildKokkos(LAMMPS *lmp, int na
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-void FixMonodEcoliWildKokkos<DeviceType>::compute()
+void FixGrowthEcoliKokkos<DeviceType>::compute()
 { 
   if (reaction_flag && growth_flag) {
     update_cells<1, 1>();
@@ -54,7 +54,7 @@ void FixMonodEcoliWildKokkos<DeviceType>::compute()
 
 template <class DeviceType>
 template <int Reaction, int Growth>
-void FixMonodEcoliWildKokkos<DeviceType>::update_cells()
+void FixGrowthEcoliKokkos<DeviceType>::update_cells()
 {
   d_mask = gridKK->k_mask.template view<DeviceType>();
   d_conc = gridKK->k_conc.template view<DeviceType>();
@@ -72,7 +72,7 @@ void FixMonodEcoliWildKokkos<DeviceType>::update_cells()
   Kokkos::parallel_for(
     Kokkos::RangePolicy<
     DeviceType,
-    FixMonodEcoliWildCellsTag<Reaction, Growth> >(0, grid->ncells), f);
+    FixGrowthEcoliCellsTag<Reaction, Growth> >(0, grid->ncells), f);
   copymode = 0;
 
   if (Growth)
@@ -84,7 +84,7 @@ void FixMonodEcoliWildKokkos<DeviceType>::update_cells()
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-void FixMonodEcoliWildKokkos<DeviceType>::update_atoms()
+void FixGrowthEcoliKokkos<DeviceType>::update_atoms()
 {
   double **x = atom->x;
   double *radius = atom->radius;
@@ -116,7 +116,7 @@ void FixMonodEcoliWildKokkos<DeviceType>::update_atoms()
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-FixMonodEcoliWildKokkos<DeviceType>::Functor::Functor(FixMonodEcoliWildKokkos<DeviceType> *ptr):
+FixGrowthEcoliKokkos<DeviceType>::Functor::Functor(FixGrowthEcoliKokkos<DeviceType> *ptr):
   igroup(ptr->igroup),
   isuc(ptr->isuc), io2(ptr->io2), ico2(ptr->ico2),
   suc_affinity(ptr->suc_affinity), o2_affinity(ptr->o2_affinity),
@@ -130,7 +130,7 @@ FixMonodEcoliWildKokkos<DeviceType>::Functor::Functor(FixMonodEcoliWildKokkos<De
 template <class DeviceType>
 template <int Reaction, int Growth>
 KOKKOS_INLINE_FUNCTION
-void FixMonodEcoliWildKokkos<DeviceType>::Functor::operator()(FixMonodEcoliWildCellsTag<Reaction, Growth>, int i) const
+void FixGrowthEcoliKokkos<DeviceType>::Functor::operator()(FixGrowthEcoliCellsTag<Reaction, Growth>, int i) const
 {
   double tmp1 = growth * d_conc(isuc, i) / (suc_affinity + d_conc(isuc, i)) * d_conc(io2, i) / (o2_affinity + d_conc(io2, i));
   double tmp2 = maintain * d_conc(io2, i) / (o2_affinity + d_conc(io2, i));
@@ -149,8 +149,8 @@ void FixMonodEcoliWildKokkos<DeviceType>::Functor::operator()(FixMonodEcoliWildC
 /* ---------------------------------------------------------------------- */
 
 namespace LAMMPS_NS {
-template class FixMonodEcoliWildKokkos<LMPDeviceType>;
+template class FixGrowthEcoliKokkos<LMPDeviceType>;
 #ifdef KOKKOS_ENABLE_CUDA
-template class FixMonodEcoliWildKokkos<LMPHostType>;
+template class FixGrowthEcoliKokkos<LMPHostType>;
 #endif
 }

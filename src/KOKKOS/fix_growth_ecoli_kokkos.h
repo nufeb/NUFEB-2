@@ -13,29 +13,29 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/monod/ecoli/wild/kk,FixMonodEcoliWildKokkos<LMPDeviceType>)
-FixStyle(nufeb/monod/ecoli/wild/kk/device,FixMonodEcoliWildKokkos<LMPDeviceType>)
-FixStyle(nufeb/monod/ecoli/wild/kk/host,FixMonodEcoliWildKokkos<LMPHostType>)
+FixStyle(nufeb/growth/ecoli/kk,FixGrowthEcoliKokkos<LMPDeviceType>)
+FixStyle(nufeb/growth/ecoli/kk/device,FixGrowthEcoliKokkos<LMPDeviceType>)
+FixStyle(nufeb/growth/ecoli/kk/host,FixGrowthEcoliKokkos<LMPHostType>)
 
 #else
 
-#ifndef LMP_FIX_MONOD_ECOLI_WILD_KOKKOS_H
-#define LMP_FIX_MONOD_ECOLI_WILD_KOKKOS_H
+#ifndef LMP_FIX_GROWTH_ECOLI_KOKKOS_H
+#define LMP_FIX_GROWTH_ECOLI_KOKKOS_H
 
-#include "../USER-NUFEB/fix_growth_ecoli.h"
+#include "fix_growth_ecoli.h"
 #include "kokkos_type.h"
 
 namespace LAMMPS_NS {
 
 template <int, int>
-struct FixMonodEcoliWildCellsTag {};
-struct FixMonodEcoliWildAtomsTag {};
+struct FixGrowthEcoliCellsTag {};
+struct FixGrowthEcoliAtomsTag {};
 
 template <class DeviceType>
-class FixMonodEcoliWildKokkos: public FixMonodEcoliWild {
+class FixGrowthEcoliKokkos: public FixGrowthEcoli {
  public:
-  FixMonodEcoliWildKokkos(class LAMMPS *, int, char **);
-  virtual ~FixMonodEcoliWildKokkos() {}
+  FixGrowthEcoliKokkos(class LAMMPS *, int, char **);
+  virtual ~FixGrowthEcoliKokkos() {}
   virtual void compute();
 
   template <int, int> void update_cells();
@@ -63,11 +63,11 @@ class FixMonodEcoliWildKokkos: public FixMonodEcoliWild {
     typename AT::t_float_2d d_dens;
     typename AT::t_float_3d d_growth;
 
-    Functor(FixMonodEcoliWildKokkos *ptr);
+    Functor(FixGrowthEcoliKokkos *ptr);
     
     template <int Reaction, int Growth>
     KOKKOS_INLINE_FUNCTION
-    void operator()(FixMonodEcoliWildCellsTag<Reaction, Growth>, int) const;
+    void operator()(FixGrowthEcoliCellsTag<Reaction, Growth>, int) const;
   };
 
  protected:

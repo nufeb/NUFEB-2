@@ -13,29 +13,29 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/monod/aob/kk,FixMonodAOBKokkos<LMPDeviceType>)
-FixStyle(nufeb/monod/aob/kk/device,FixMonodAOBKokkos<LMPDeviceType>)
-FixStyle(nufeb/monod/aob/kk/host,FixMonodAOBKokkos<LMPHostType>)
+FixStyle(nufeb/growth/aob/kk,FixGrowthAOBKokkos<LMPDeviceType>)
+FixStyle(nufeb/growth/aob/kk/device,FixGrowthAOBKokkos<LMPDeviceType>)
+FixStyle(nufeb/growth/aob/kk/host,FixGrowthAOBKokkos<LMPHostType>)
 
 #else
 
-#ifndef LMP_FIX_MONOD_AOB_KOKKOS_H
-#define LMP_FIX_MONOD_AOB_KOKKOS_H
+#ifndef LMP_FIX_GROWTH_AOB_KOKKOS_H
+#define LMP_FIX_GROWTH_AOB_KOKKOS_H
 
-#include "../USER-NUFEB/fix_growth_aob.h"
+#include "fix_growth_aob.h"
 #include "kokkos_type.h"
 
 namespace LAMMPS_NS {
 
 template <int, int>
-struct FixMonodAOBCellsTag {};
-struct FixMonodAOBAtomsTag {};
+struct FixGrowthAOBCellsTag {};
+struct FixGrowthAOBAtomsTag {};
 
 template <class DeviceType>
-class FixMonodAOBKokkos: public FixMonodAOB {
+class FixGrowthAOBKokkos: public FixGrowthAOB {
  public:
-  FixMonodAOBKokkos(class LAMMPS *, int, char **);
-  virtual ~FixMonodAOBKokkos() {}
+  FixGrowthAOBKokkos(class LAMMPS *, int, char **);
+  virtual ~FixGrowthAOBKokkos() {}
   virtual void compute();
 
   template <int, int> void update_cells();
@@ -63,11 +63,11 @@ class FixMonodAOBKokkos: public FixMonodAOB {
     typename AT::t_float_2d d_dens;
     typename AT::t_float_3d d_growth;
 
-    Functor(FixMonodAOBKokkos *ptr);
+    Functor(FixGrowthAOBKokkos *ptr);
     
     template <int Reaction, int Growth>
     KOKKOS_INLINE_FUNCTION
-    void operator()(FixMonodAOBCellsTag<Reaction, Growth>, int) const;
+    void operator()(FixGrowthAOBCellsTag<Reaction, Growth>, int) const;
   };
 
  protected:
