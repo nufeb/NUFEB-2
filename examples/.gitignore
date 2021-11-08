@@ -4,4 +4,9 @@ phototroph-bacillus/
 bacillus/
 biofilm-het-hpc/
 phototroph-hpc/
-
+*.vti
+*.vtr
+*.vtu
+*.png
+*.jpeg
+*.jpg

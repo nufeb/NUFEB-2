@@ -101,10 +101,10 @@ fix nve all nve/limit 1e-7
 
 # monod reaction fixes
 #   should consider using read_data's fix keyword
-fix monod_het het nufeb/monod/het sub 0.01 o2 0.81 no2 0.0003 no3 0.0003 growth 6.94446e-5 yield 0.61 decay 0.462964e-5 epsyield 0.18 anoxic 0.6 epsdens 30
-fix monod_aob aob nufeb/monod/aob nh4 1e-3 o2 5e-4 no2 growth 0.8796316e-5 yield 0.33 decay 0.1273151e-5
-fix monod_nob nob nufeb/monod/nob o2 6.8e-4 no2 1.3e-3 no3 growth 0.9375021e-5 yield 0.083 decay 0.1273151e-5
-fix monod_eps eps nufeb/monod/eps sub decay 0.1967597e-5
+fix monod_het het nufeb/growth/het sub 0.01 o2 0.81 no2 0.0003 no3 0.0003 growth 6.94446e-5 yield 0.61 decay 0.462964e-5 epsyield 0.18 anoxic 0.6 epsdens 30
+fix monod_aob aob nufeb/growth/aob nh4 1e-3 o2 5e-4 no2 growth 0.8796316e-5 yield 0.33 decay 0.1273151e-5
+fix monod_nob nob nufeb/growth/nob o2 6.8e-4 no2 1.3e-3 no3 growth 0.9375021e-5 yield 0.083 decay 0.1273151e-5
+fix monod_eps eps nufeb/growth/eps sub decay 0.1967597e-5
 
 # diffusion reaction fixes
 fix diff_sub all nufeb/diffusion_reaction sub 1.1574e-9 pp pp nd 5e-3
@@ -114,9 +114,9 @@ fix diff_no2 all nufeb/diffusion_reaction no2 1.85e-9  pp pp nd 1e-4
 fix diff_no3 all nufeb/diffusion_reaction no3 1.85e-9 pp pp nd  1e-4
 
 # biological model fixes
-fix div all nufeb/divide/coccus 1.36e-6 30 1234
+fix div all nufeb/division/coccus 1.36e-6 30 1234
 fix eps_ext het nufeb/eps_extract 4 eps 1.1 30 5678
-fix death alive nufeb/death dead 5e-7
+fix death alive nufeb/death/diameter dead 5e-7
 
 # mechanical model fixes
 fix wall all wall/gran hooke/history 1e-4 NULL 1e-5 NULL 0 0 zplane 0.0 4e-5
