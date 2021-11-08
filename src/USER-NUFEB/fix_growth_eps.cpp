@@ -33,7 +33,7 @@ FixGrowthEPS::FixGrowthEPS(LAMMPS *lmp, int narg, char **arg) :
   FixGrowth(lmp, narg, arg)
 {
   if (narg < 4)
-    error->all(FLERR, "Illegal fix nufeb/growth/aob command");
+    error->all(FLERR, "Illegal fix nufeb/growth/eps command");
 
   dynamic_group_allow = 1;
 

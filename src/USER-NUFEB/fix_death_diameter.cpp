@@ -27,7 +27,7 @@ FixDeathDiameter::FixDeathDiameter(LAMMPS *lmp, int narg, char **arg) :
   FixDeath(lmp, narg, arg)
 {
   if (narg < 4)
-    error->all(FLERR, "Illegal fix nufeb/death command");
+    error->all(FLERR, "Illegal fix nufeb/death/diameter command");
 
   compute_flag = 1;
   

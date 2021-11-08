@@ -40,7 +40,7 @@ FixDivideCoccus::FixDivideCoccus(LAMMPS *lmp, int narg, char **arg) :
   FixDivide(lmp, narg, arg)
 {
   if (narg < 6)
-    error->all(FLERR, "Illegal fix nufeb/divide/coccus command");
+    error->all(FLERR, "Illegal fix nufeb/division/coccus command");
   
   diameter = utils::numeric(FLERR,arg[3],true,lmp);
   eps_density = utils::numeric(FLERR,arg[4],true,lmp);

@@ -41,7 +41,7 @@ FixDivideBacillus::FixDivideBacillus(LAMMPS *lmp, int narg, char **arg) :
   FixDivide(lmp, narg, arg)
 {
   avec = (AtomVecBacillus *) atom->style_match("bacillus");
-  if (!avec) error->all(FLERR,"Fix nufeb/divide/bacillus requires "
+  if (!avec) error->all(FLERR,"Fix nufeb/division/bacillus requires "
       "atom style bacillus");
 
   if (narg < 5)

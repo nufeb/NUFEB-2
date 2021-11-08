@@ -72,7 +72,7 @@ FixGrowthMonod::FixGrowthMonod(LAMMPS *lmp, int narg, char **arg) :
       decay = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       iarg += 2;
     } else {
-      error->all(FLERR, "Illegal fix nufeb/growth/simple command");
+      error->all(FLERR, "Illegal fix nufeb/growth/monod command");
     }
   }
   avec = (AtomVecBacillus *) atom->style_match("bacillus");
