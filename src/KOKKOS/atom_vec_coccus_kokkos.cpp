@@ -76,9 +76,9 @@ void AtomVecCoccusKokkos::init()
       if (fix->diamflag && radvary == 0)
         error->all(FLERR,"Fix adapt changes particle radii "
                    "but atom_style coccus is not dynamic");
-    } else if (strcmp(modify->fix[i]->style,"nufeb/monod") == 0) {
+    } else if (strcmp(modify->fix[i]->style,"nufeb/growth") == 0) {
 	if (radvary == 0)
-	  error->all(FLERR,"Fix nufeb/monod changes particle radii "
+	  error->all(FLERR,"Fix nufeb/growth changes particle radii "
 		     "but atom_style coccus is not dynamic");
     } else if (strcmp(modify->fix[i]->style,"nufeb/divide") == 0) {
 	if (radvary == 0)
@@ -186,7 +186,7 @@ void AtomVecCoccusKokkos::grow_pointers()
 
 void AtomVecCoccusKokkos::copy(int i, int j, int delflag)
 {
-  sync(Host,X_MASK|V_MASK|TAG_MASK|TYPE_MASK|MASK_MASK|IMAGE_MASK|
+  atomKK->sync(Host,X_MASK|V_MASK|TAG_MASK|TYPE_MASK|MASK_MASK|IMAGE_MASK|
        RADIUS_MASK|RMASS_MASK|BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK|OMEGA_MASK);
 
   h_tag[j] = h_tag[i];
@@ -213,7 +213,7 @@ void AtomVecCoccusKokkos::copy(int i, int j, int delflag)
     for (int iextra = 0; iextra < atom->nextra_grow; iextra++)
       modify->fix[atom->extra_grow[iextra]]->copy_arrays(i,j,delflag);
 
-  modified(Host,X_MASK|V_MASK|TAG_MASK|TYPE_MASK|MASK_MASK|IMAGE_MASK|
+  atomKK->modified(Host,X_MASK|V_MASK|TAG_MASK|TYPE_MASK|MASK_MASK|IMAGE_MASK|
 	   RADIUS_MASK|RMASS_MASK|BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK|OMEGA_MASK);
 }
 
@@ -303,7 +303,7 @@ int AtomVecCoccusKokkos::pack_comm_kokkos(
   // Check whether to always run forward communication on the host
   // Choose correct forward PackComm kernel
   if(commKK->forward_comm_on_host) {
-    sync(Host,X_MASK|RADIUS_MASK|RMASS_MASK|BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK);
+    atomKK->sync(Host,X_MASK|RADIUS_MASK|RMASS_MASK|BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK);
     if(pbc_flag) {
       if(domain->triclinic) {
         struct AtomVecCoccusKokkos_PackComm<LMPHostType,1,1> f(
@@ -350,7 +350,7 @@ int AtomVecCoccusKokkos::pack_comm_kokkos(
       }
     }
   } else {
-    sync(Device,X_MASK|RADIUS_MASK|RMASS_MASK|BIOMASS_MASK|
+    atomKK->sync(Device,X_MASK|RADIUS_MASK|RMASS_MASK|BIOMASS_MASK|
 	 OUTER_RADIUS_MASK|OUTER_MASS_MASK);
     if(pbc_flag) {
       if(domain->triclinic) {
@@ -518,7 +518,7 @@ int AtomVecCoccusKokkos::pack_comm_vel_kokkos(
   const int* const pbc)
 {
   if(commKK->forward_comm_on_host) {
-    sync(Host,X_MASK|RADIUS_MASK|RMASS_MASK|BIOMASS_MASK|
+    atomKK->sync(Host,X_MASK|RADIUS_MASK|RMASS_MASK|BIOMASS_MASK|
 	 OUTER_RADIUS_MASK|OUTER_MASS_MASK|V_MASK|OMEGA_MASK);
     if(pbc_flag) {
       if(deform_vremap) {
@@ -674,7 +674,7 @@ int AtomVecCoccusKokkos::pack_comm_vel_kokkos(
       }
     }
   } else {
-    sync(Device,X_MASK|RADIUS_MASK|RMASS_MASK|BIOMASS_MASK|
+    atomKK->sync(Device,X_MASK|RADIUS_MASK|RMASS_MASK|BIOMASS_MASK|
 	 OUTER_RADIUS_MASK|OUTER_MASS_MASK|V_MASK|OMEGA_MASK);
     if(pbc_flag) {
       if(deform_vremap) {
@@ -910,9 +910,9 @@ int AtomVecCoccusKokkos::pack_comm_self(
   if (radvary == 0)
     return AtomVecKokkos::pack_comm_self(n,list,iswap,nfirst,pbc_flag,pbc);
   if(commKK->forward_comm_on_host) {
-    sync(Host,X_MASK|RADIUS_MASK|RMASS_MASK|
+    atomKK->sync(Host,X_MASK|RADIUS_MASK|RMASS_MASK|
 	 BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK);
-    modified(Host,X_MASK|RADIUS_MASK|RMASS_MASK|
+    atomKK->modified(Host,X_MASK|RADIUS_MASK|RMASS_MASK|
 	     BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK);
     if(pbc_flag) {
       if(domain->triclinic) {
@@ -960,9 +960,9 @@ int AtomVecCoccusKokkos::pack_comm_self(
       }
     }
   } else {
-    sync(Device,X_MASK|RADIUS_MASK|RMASS_MASK|
+    atomKK->sync(Device,X_MASK|RADIUS_MASK|RMASS_MASK|
 	 BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK);
-    modified(Device,X_MASK|RADIUS_MASK|RMASS_MASK|
+    atomKK->modified(Device,X_MASK|RADIUS_MASK|RMASS_MASK|
 	     BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK);
     if(pbc_flag) {
       if(domain->triclinic) {
@@ -1072,7 +1072,7 @@ void AtomVecCoccusKokkos::unpack_comm_kokkos(
     return;
   }
   if(commKK->forward_comm_on_host) {
-    modified(Host,X_MASK|RADIUS_MASK|RMASS_MASK|
+    atomKK->modified(Host,X_MASK|RADIUS_MASK|RMASS_MASK|
 	     BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK);
     struct AtomVecCoccusKokkos_UnpackComm<LMPHostType> f(
       atomKK->k_x,
@@ -1082,7 +1082,7 @@ void AtomVecCoccusKokkos::unpack_comm_kokkos(
       buf,first);
     Kokkos::parallel_for(n,f);
   } else {
-    modified(Device,X_MASK|RADIUS_MASK|RMASS_MASK|
+    atomKK->modified(Device,X_MASK|RADIUS_MASK|RMASS_MASK|
 	     BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK);
     struct AtomVecCoccusKokkos_UnpackComm<LMPDeviceType> f(
       atomKK->k_x,
@@ -1161,7 +1161,7 @@ void AtomVecCoccusKokkos::unpack_comm_vel_kokkos(
   const int &n, const int &first,
   const DAT::tdual_xfloat_2d &buf ) {
   if(commKK->forward_comm_on_host) {
-    modified(Host,X_MASK|RADIUS_MASK|RMASS_MASK|
+    atomKK->modified(Host,X_MASK|RADIUS_MASK|RMASS_MASK|
 	     BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK|V_MASK|OMEGA_MASK);
     if (radvary == 0) {
       struct AtomVecCoccusKokkos_UnpackCommVel<LMPHostType,0> f(
@@ -1183,7 +1183,7 @@ void AtomVecCoccusKokkos::unpack_comm_vel_kokkos(
       Kokkos::parallel_for(n,f);
     }
   } else {
-    modified(Device,X_MASK|RADIUS_MASK|RMASS_MASK|
+    atomKK->modified(Device,X_MASK|RADIUS_MASK|RMASS_MASK|
 	     BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK|V_MASK|OMEGA_MASK);
     if (radvary == 0) {
       struct AtomVecCoccusKokkos_UnpackCommVel<LMPDeviceType,0> f(
@@ -1217,7 +1217,7 @@ int AtomVecCoccusKokkos::pack_comm(int n, int *list, double *buf,
 
   if (radvary == 0) {
     // Not sure if we need to call sync for X here
-    sync(Host,X_MASK);
+    atomKK->sync(Host,X_MASK);
     m = 0;
     if (pbc_flag == 0) {
       for (i = 0; i < n; i++) {
@@ -1244,7 +1244,7 @@ int AtomVecCoccusKokkos::pack_comm(int n, int *list, double *buf,
       }
     }
   } else {
-    sync(Host,X_MASK|RADIUS_MASK|RMASS_MASK|
+    atomKK->sync(Host,X_MASK|RADIUS_MASK|RMASS_MASK|
 	 BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK);
     m = 0;
     if (pbc_flag == 0) {
@@ -1295,7 +1295,7 @@ int AtomVecCoccusKokkos::pack_comm_vel(int n, int *list, double *buf,
   double dx,dy,dz,dvx,dvy,dvz;
 
   if (radvary == 0) {
-    sync(Host,X_MASK|V_MASK|OMEGA_MASK);
+    atomKK->sync(Host,X_MASK|V_MASK|OMEGA_MASK);
     m = 0;
     if (pbc_flag == 0) {
       for (i = 0; i < n; i++) {
@@ -1358,7 +1358,7 @@ int AtomVecCoccusKokkos::pack_comm_vel(int n, int *list, double *buf,
       }
     }
   } else {
-    sync(Host,X_MASK|RADIUS_MASK|RMASS_MASK|
+    atomKK->sync(Host,X_MASK|RADIUS_MASK|RMASS_MASK|
 	 BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK|V_MASK|OMEGA_MASK);
     m = 0;
     if (pbc_flag == 0) {
@@ -1447,7 +1447,7 @@ int AtomVecCoccusKokkos::pack_comm_hybrid(int n, int *list, double *buf)
 {
   if (radvary == 0) return 0;
 
-  sync(Host,RADIUS_MASK|RMASS_MASK|
+  atomKK->sync(Host,RADIUS_MASK|RMASS_MASK|
        BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK);
 
   int m = 0;
@@ -1474,7 +1474,7 @@ void AtomVecCoccusKokkos::unpack_comm(int n, int first, double *buf)
       h_x(i,1) = buf[m++];
       h_x(i,2) = buf[m++];
     }
-    modified(Host,X_MASK);
+    atomKK->modified(Host,X_MASK);
   } else {
     int m = 0;
     const int last = first + n;
@@ -1488,7 +1488,7 @@ void AtomVecCoccusKokkos::unpack_comm(int n, int first, double *buf)
       h_outer_radius[i] = buf[m++];
       h_outer_mass[i] = buf[m++];
     }
-    modified(Host,X_MASK|RADIUS_MASK|RMASS_MASK|
+    atomKK->modified(Host,X_MASK|RADIUS_MASK|RMASS_MASK|
 	     BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK);
   }
 }
@@ -1511,7 +1511,7 @@ void AtomVecCoccusKokkos::unpack_comm_vel(int n, int first, double *buf)
       h_omega(i,1) = buf[m++];
       h_omega(i,2) = buf[m++];
     }
-    modified(Host,X_MASK|V_MASK|OMEGA_MASK);
+    atomKK->modified(Host,X_MASK|V_MASK|OMEGA_MASK);
   } else {
     int m = 0;
     const int last = first + n;
@@ -1531,7 +1531,7 @@ void AtomVecCoccusKokkos::unpack_comm_vel(int n, int first, double *buf)
       h_omega(i,1) = buf[m++];
       h_omega(i,2) = buf[m++];
     }
-    modified(Host,X_MASK|RADIUS_MASK|RMASS_MASK|
+    atomKK->modified(Host,X_MASK|RADIUS_MASK|RMASS_MASK|
 	     BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK|V_MASK|OMEGA_MASK);
   }
 }
@@ -1551,7 +1551,7 @@ int AtomVecCoccusKokkos::unpack_comm_hybrid(int n, int first, double *buf)
     h_outer_radius[i] = buf[m++];
     h_outer_mass[i] = buf[m++];
   }
-  modified(Host,RADIUS_MASK|RMASS_MASK|
+  atomKK->modified(Host,RADIUS_MASK|RMASS_MASK|
 	   BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK);
   return m;
 }
@@ -1561,7 +1561,7 @@ int AtomVecCoccusKokkos::unpack_comm_hybrid(int n, int first, double *buf)
 int AtomVecCoccusKokkos::pack_reverse(int n, int first, double *buf)
 {
   if(n > 0)
-    sync(Host,F_MASK|TORQUE_MASK);
+    atomKK->sync(Host,F_MASK|TORQUE_MASK);
 
   int m = 0;
   const int last = first + n;
@@ -1581,7 +1581,7 @@ int AtomVecCoccusKokkos::pack_reverse(int n, int first, double *buf)
 int AtomVecCoccusKokkos::pack_reverse_hybrid(int n, int first, double *buf)
 {
   if(n > 0)
-    sync(Host,TORQUE_MASK);
+    atomKK->sync(Host,TORQUE_MASK);
 
   int m = 0;
   const int last = first + n;
@@ -1598,7 +1598,7 @@ int AtomVecCoccusKokkos::pack_reverse_hybrid(int n, int first, double *buf)
 void AtomVecCoccusKokkos::unpack_reverse(int n, int *list, double *buf)
 {
   if(n > 0) {
-    modified(Host,F_MASK|TORQUE_MASK);
+    atomKK->modified(Host,F_MASK|TORQUE_MASK);
   }
 
   int m = 0;
@@ -1618,7 +1618,7 @@ void AtomVecCoccusKokkos::unpack_reverse(int n, int *list, double *buf)
 int AtomVecCoccusKokkos::unpack_reverse_hybrid(int n, int *list, double *buf)
 {
   if(n > 0) {
-    modified(Host,TORQUE_MASK);
+    atomKK->modified(Host,TORQUE_MASK);
   }
 
   int m = 0;
@@ -1707,7 +1707,7 @@ int AtomVecCoccusKokkos::pack_border_kokkos(
   X_FLOAT dx,dy,dz;
 
   // This was in atom_vec_dpd_kokkos but doesn't appear in any other atom_vec
-  sync(space,ALL_MASK);
+  atomKK->sync(space,ALL_MASK);
 
   if (pbc_flag != 0) {
     if (domain->triclinic == 0) {
@@ -1772,7 +1772,7 @@ int AtomVecCoccusKokkos::pack_border(
   int i,j,m;
   double dx,dy,dz;
 
-  sync(Host,ALL_MASK);
+  atomKK->sync(Host,ALL_MASK);
 
   m = 0;
   if (pbc_flag == 0) {
@@ -1924,7 +1924,7 @@ int AtomVecCoccusKokkos::pack_border_vel_kokkos(
   X_FLOAT dvx=0,dvy=0,dvz=0;
 
   // This was in atom_vec_dpd_kokkos but doesn't appear in any other atom_vec
-  sync(space,ALL_MASK);
+  atomKK->sync(space,ALL_MASK);
 
   if (pbc_flag != 0) {
     if (domain->triclinic == 0) {
@@ -2026,7 +2026,7 @@ int AtomVecCoccusKokkos::pack_border_vel(int n, int *list, double *buf,
   int i,j,m;
   double dx,dy,dz,dvx,dvy,dvz;
 
-  sync(Host,ALL_MASK);
+  atomKK->sync(Host,ALL_MASK);
 
   m = 0;
   if (pbc_flag == 0) {
@@ -2217,7 +2217,7 @@ void AtomVecCoccusKokkos::unpack_border_kokkos(const int &n, const int &first,
     Kokkos::parallel_for(n,f);
   }
 
-  modified(space,X_MASK|TAG_MASK|TYPE_MASK|MASK_MASK|
+  atomKK->modified(space,X_MASK|TAG_MASK|TYPE_MASK|MASK_MASK|
 	   RADIUS_MASK|RMASS_MASK|BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK);
 }
 
@@ -2247,7 +2247,7 @@ void AtomVecCoccusKokkos::unpack_border(int n, int first, double *buf)
       m += modify->fix[atom->extra_border[iextra]]->
         unpack_border(n,first,&buf[m]);
 
-  modified(Host,X_MASK|TAG_MASK|TYPE_MASK|MASK_MASK|RADIUS_MASK|RMASS_MASK|
+  atomKK->modified(Host,X_MASK|TAG_MASK|TYPE_MASK|MASK_MASK|RADIUS_MASK|RMASS_MASK|
 	   BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK);
 }
 
@@ -2344,7 +2344,7 @@ void AtomVecCoccusKokkos::unpack_border_vel_kokkos(
     Kokkos::parallel_for(n,f);
   }
 
-  modified(space,X_MASK|TAG_MASK|TYPE_MASK|MASK_MASK|
+  atomKK->modified(space,X_MASK|TAG_MASK|TYPE_MASK|MASK_MASK|
 	   RADIUS_MASK|RMASS_MASK|
 	   BIOMASS_MASK|
 	   OUTER_RADIUS_MASK|OUTER_MASS_MASK|
@@ -2383,7 +2383,7 @@ void AtomVecCoccusKokkos::unpack_border_vel(int n, int first, double *buf)
       m += modify->fix[atom->extra_border[iextra]]->
         unpack_border(n,first,&buf[m]);
 
-  modified(Host,X_MASK|TAG_MASK|TYPE_MASK|MASK_MASK|
+  atomKK->modified(Host,X_MASK|TAG_MASK|TYPE_MASK|MASK_MASK|
 	   RADIUS_MASK|RMASS_MASK|
 	   BIOMASS_MASK|
 	   OUTER_RADIUS_MASK|OUTER_MASS_MASK|
@@ -2403,7 +2403,7 @@ int AtomVecCoccusKokkos::unpack_border_hybrid(int n, int first, double *buf)
     h_outer_radius[i] = buf[m++];
     h_outer_mass[i] = buf[m++];
   }
-  modified(Host,RADIUS_MASK|RMASS_MASK|
+  atomKK->modified(Host,RADIUS_MASK|RMASS_MASK|
 	   BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK);
   return m;
 }
@@ -2561,7 +2561,7 @@ int AtomVecCoccusKokkos::pack_exchange_kokkos(
 
 int AtomVecCoccusKokkos::pack_exchange(int i, double *buf)
 {
-  sync(Host,X_MASK|V_MASK|TAG_MASK|TYPE_MASK|MASK_MASK|IMAGE_MASK|
+  atomKK->sync(Host,X_MASK|V_MASK|TAG_MASK|TYPE_MASK|MASK_MASK|IMAGE_MASK|
        RADIUS_MASK|RMASS_MASK|BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK|OMEGA_MASK);
 
   int m = 1;
@@ -2705,7 +2705,7 @@ int AtomVecCoccusKokkos::unpack_exchange_kokkos(
     k_count.sync<LMPHostType>();
   }
 
-  modified(space,X_MASK|V_MASK|TAG_MASK|TYPE_MASK|MASK_MASK|IMAGE_MASK|
+  atomKK->modified(space,X_MASK|V_MASK|TAG_MASK|TYPE_MASK|MASK_MASK|IMAGE_MASK|
 	   RADIUS_MASK|RMASS_MASK|BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK|OMEGA_MASK);
 
   return k_count.h_view(0);
@@ -2752,7 +2752,7 @@ int AtomVecCoccusKokkos::unpack_exchange(double *buf)
       m += modify->fix[atom->extra_grow[iextra]]->
         unpack_exchange(nlocal,&buf[m]);
 
-  modified(Host,X_MASK|V_MASK|TAG_MASK|TYPE_MASK|MASK_MASK|IMAGE_MASK|
+  atomKK->modified(Host,X_MASK|V_MASK|TAG_MASK|TYPE_MASK|MASK_MASK|IMAGE_MASK|
 	   RADIUS_MASK|RMASS_MASK|BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK|OMEGA_MASK);
 
   atom->nlocal++;
@@ -2787,7 +2787,7 @@ int AtomVecCoccusKokkos::size_restart()
 
 int AtomVecCoccusKokkos::pack_restart(int i, double *buf)
 {
-  sync(Host,X_MASK|TAG_MASK|TYPE_MASK|MASK_MASK|IMAGE_MASK|V_MASK|
+  atomKK->sync(Host,X_MASK|TAG_MASK|TYPE_MASK|MASK_MASK|IMAGE_MASK|V_MASK|
        RADIUS_MASK|RMASS_MASK|BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK|OMEGA_MASK);
 
   int m = 1;
@@ -2857,7 +2857,7 @@ int AtomVecCoccusKokkos::unpack_restart(double *buf)
     for (int i = 0; i < size; i++) extra[nlocal][i] = buf[m++];
   }
 
-  modified(Host,X_MASK|TAG_MASK|TYPE_MASK|MASK_MASK|IMAGE_MASK|V_MASK|
+  atomKK->modified(Host,X_MASK|TAG_MASK|TYPE_MASK|MASK_MASK|IMAGE_MASK|V_MASK|
 	   RADIUS_MASK|RMASS_MASK|BIOMASS_MASK|OUTER_RADIUS_MASK|OUTER_MASS_MASK|OMEGA_MASK);
 
   atom->nlocal++;
@@ -2911,45 +2911,46 @@ void AtomVecCoccusKokkos::data_atom(double *coord, imageint imagetmp, char **val
   int nlocal = atom->nlocal;
   if (nlocal == nmax) grow(0);
 
-  h_tag[nlocal] = ATOTAGINT(values[0]);
-  h_type[nlocal] = atoi(values[1]);
-  if (h_type[nlocal] <= 0 || h_type[nlocal] > atom->ntypes)
+  tag[nlocal] = utils::tnumeric(FLERR,values[0],true,lmp);
+  type[nlocal] = utils::inumeric(FLERR,values[1],true,lmp);
+  if (type[nlocal] <= 0 || type[nlocal] > atom->ntypes)
     error->one(FLERR,"Invalid atom type in Atoms section of data file");
 
-  h_radius[nlocal] = 0.5 * atof(values[2]);
-  if (h_radius[nlocal] < 0.0)
+  radius[nlocal] = 0.5 * utils::numeric(FLERR,values[2],true,lmp);
+  if (radius[nlocal] < 0.0)
     error->one(FLERR,"Invalid diameter in Atoms section of data file");
 
-  double density = atof(values[3]);
+  double density = utils::numeric(FLERR,values[3],true,lmp);
   if (density <= 0.0)
     error->one(FLERR,"Invalid density in Atoms section of data file");
 
-  if (h_radius[nlocal] == 0.0) h_rmass[nlocal] = density;
+  if (radius[nlocal] == 0.0) rmass[nlocal] = density;
   else
-    h_rmass[nlocal] = 4.0*MY_PI/3.0 *
-      h_radius[nlocal]*h_radius[nlocal]*h_radius[nlocal] * density;
+    rmass[nlocal] = 4.0*MY_PI/3.0 *
+      radius[nlocal]*radius[nlocal]*radius[nlocal] * density;
 
-  h_x(nlocal,0) = coord[0];
-  h_x(nlocal,1) = coord[1];
-  h_x(nlocal,2) = coord[2];
+  x[nlocal][0] = coord[0];
+  x[nlocal][1] = coord[1];
+  x[nlocal][2] = coord[2];
 
-  h_image[nlocal] = imagetmp;
+  image[nlocal] = imagetmp;
 
-  h_mask[nlocal] = 1;
-  h_v(nlocal,0) = 0.0;
-  h_v(nlocal,1) = 0.0;
-  h_v(nlocal,2) = 0.0;
-  h_omega(nlocal,0) = 0.0;
-  h_omega(nlocal,1) = 0.0;
-  h_omega(nlocal,2) = 0.0;
+  mask[nlocal] = 1;
+  v[nlocal][0] = 0.0;
+  v[nlocal][1] = 0.0;
+  v[nlocal][2] = 0.0;
+  omega[nlocal][0] = 0.0;
+  omega[nlocal][1] = 0.0;
+  omega[nlocal][2] = 0.0;
+  biomass[nlocal] = 1.0;
 
-  h_outer_radius[nlocal] = 0.5 * atof(values[7]);
-  if (h_outer_radius[nlocal] < h_radius[nlocal]) {
+  outer_radius[nlocal] = 0.5 * utils::numeric(FLERR,values[7],true,lmp);
+  if (outer_radius[nlocal] < radius[nlocal]) {
     error->one(FLERR,"Outer radius must be greater than or equal to radius");
   }
-  h_outer_mass[nlocal] = (4.0*MY_PI/3.0)*
-    ((h_outer_radius[nlocal]*h_outer_radius[nlocal]*h_outer_radius[nlocal])
-     -(h_radius[nlocal]*h_radius[nlocal]*h_radius[nlocal])) * 30;
+  outer_mass[nlocal] = (4.0*MY_PI/3.0)*
+    ((outer_radius[nlocal]*outer_radius[nlocal]*outer_radius[nlocal])
+     -(radius[nlocal]*radius[nlocal]*radius[nlocal])) * 30;
 
   atomKK->modified(Host,ALL_MASK);
 
@@ -2963,27 +2964,27 @@ void AtomVecCoccusKokkos::data_atom(double *coord, imageint imagetmp, char **val
 
 int AtomVecCoccusKokkos::data_atom_hybrid(int nlocal, char **values)
 {
-  h_radius[nlocal] = 0.5 * atof(values[0]);
-  if (h_radius[nlocal] < 0.0)
+  radius[nlocal] = 0.5 * utils::numeric(FLERR,values[0],true,lmp);
+  if (radius[nlocal] < 0.0)
     error->one(FLERR,"Invalid radius in Atoms section of data file: radius < 0");
 
-  double density = atof(values[1]);
+  double density = utils::numeric(FLERR,values[1],true,lmp);
   if (density <= 0.0)
     error->one(FLERR,"Invalid density in Atoms section of data file: density <= 0");
 
-  if (h_radius[nlocal] == 0.0) h_rmass[nlocal] = density;
+  if (radius[nlocal] == 0.0) rmass[nlocal] = density;
   else
-    h_rmass[nlocal] = 4.0*MY_PI/3.0 *
-      h_radius[nlocal]*h_radius[nlocal]*h_radius[nlocal] * density;
+    rmass[nlocal] = 4.0*MY_PI/3.0 *
+    radius[nlocal]*radius[nlocal]*radius[nlocal] * density;
 
-  h_outer_radius[nlocal] = 0.5 * atof(values[2]);
-  if (h_outer_radius[nlocal] < h_radius[nlocal]) {
+  outer_radius[nlocal] = 0.5 * utils::numeric(FLERR,values[2],true,lmp);
+  if (outer_radius[nlocal] < radius[nlocal]) {
     error->one(FLERR,"Invalid outer radius in Atoms section of data file:"
 	"outer_radius < radius");
   }
-  h_outer_mass[nlocal] = (4.0*MY_PI/3.0)*
-    ((h_outer_radius[nlocal]*h_outer_radius[nlocal]*h_outer_radius[nlocal])
-     -(h_radius[nlocal]*h_radius[nlocal]*h_radius[nlocal])) * 30;
+  outer_mass[nlocal] = (4.0*MY_PI/3.0)*
+    ((outer_radius[nlocal]*outer_radius[nlocal]*outer_radius[nlocal])
+     -(radius[nlocal]*radius[nlocal]*radius[nlocal])) * 30;
 
   atomKK->modified(Host,RADIUS_MASK|RMASS_MASK|
 		   OUTER_RADIUS_MASK|OUTER_MASS_MASK);
@@ -2997,14 +2998,14 @@ int AtomVecCoccusKokkos::data_atom_hybrid(int nlocal, char **values)
 
 void AtomVecCoccusKokkos::data_vel(int m, char **values)
 {
-  sync(Host,V_MASK|OMEGA_MASK);
+  atomKK->sync(Host,V_MASK|OMEGA_MASK);
   h_v(m,0) = utils::numeric(FLERR,values[0],true,lmp);
   h_v(m,1) = utils::numeric(FLERR,values[1],true,lmp);
   h_v(m,2) = utils::numeric(FLERR,values[2],true,lmp);
   h_omega(m,0) = utils::numeric(FLERR,values[3],true,lmp);
   h_omega(m,1) = utils::numeric(FLERR,values[4],true,lmp);
   h_omega(m,2) = utils::numeric(FLERR,values[5],true,lmp);
-  modified(Host,V_MASK|OMEGA_MASK);
+  atomKK->modified(Host,V_MASK|OMEGA_MASK);
 }
 
 /* ----------------------------------------------------------------------
@@ -3013,11 +3014,11 @@ void AtomVecCoccusKokkos::data_vel(int m, char **values)
 
 int AtomVecCoccusKokkos::data_vel_hybrid(int m, char **values)
 {
-  sync(Host,OMEGA_MASK);
+  atomKK->sync(Host,OMEGA_MASK);
   omega[m][0] = utils::numeric(FLERR,values[0],true,lmp);
   omega[m][1] = utils::numeric(FLERR,values[1],true,lmp);
   omega[m][2] = utils::numeric(FLERR,values[2],true,lmp);
-  modified(Host,OMEGA_MASK);
+  atomKK->modified(Host,OMEGA_MASK);
   return 3;
 }
 
@@ -3097,7 +3098,7 @@ int AtomVecCoccusKokkos::write_data_hybrid(FILE *fp, double *buf)
 
 void AtomVecCoccusKokkos::pack_vel(double **buf)
 {
-  sync(Host,TAG_MASK|V_MASK|OMEGA_MASK);
+  atomKK->sync(Host,TAG_MASK|V_MASK|OMEGA_MASK);
 
   int nlocal = atom->nlocal;
   for (int i = 0; i < nlocal; i++) {
@@ -3117,7 +3118,7 @@ void AtomVecCoccusKokkos::pack_vel(double **buf)
 
 int AtomVecCoccusKokkos::pack_vel_hybrid(int i, double *buf)
 {
-  sync(Host,OMEGA_MASK);
+  atomKK->sync(Host,OMEGA_MASK);
 
   buf[0] = h_omega(i,0);
   buf[1] = h_omega(i,1);
