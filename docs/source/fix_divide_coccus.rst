@@ -1,4 +1,4 @@
-.. index:: fix nufeb/divide/coccus
+.. index:: fix nufeb/division/coccus
 
-fix nufeb/divide/coccus command
+fix nufeb/division/coccus command
 ==================================

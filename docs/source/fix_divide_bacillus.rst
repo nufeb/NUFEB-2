@@ -1,4 +1,4 @@
-.. index:: fix nufeb/divide/bacillus
+.. index:: fix nufeb/division/bacillus
 
-fix nufeb/divide/bacillus command
+fix nufeb/division/bacillus command
 ==================================
