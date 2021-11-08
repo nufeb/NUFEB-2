@@ -36,7 +36,7 @@
 #include "memory_kokkos.h"
 #include "error.h"
 
-#include "../USER-NUFEB/fix_growth.h"
+#include "fix_growth.h"
 #include "kokkos.h"
 #include "compute_pressure.h"
 #include "compute_ke.h"
@@ -122,7 +122,7 @@ void NufebRunKokkos::init()
 
   // find fixes
   for (int i = 0; i < modify->nfix; i++) {
-    if (strstr(modify->fix[i]->style, "nufeb/monod")) {
+    if (strstr(modify->fix[i]->style, "nufeb/growth")) {
       fix_growth[nfix_growth++] = (FixGrowth *)modify->fix[i];
     } else if (strstr(modify->fix[i]->style, "nufeb/diffusion_reaction")) {
       fix_diffusion[nfix_diffusion++] = (FixDiffusionReaction *)modify->fix[i];
@@ -503,14 +503,11 @@ void NufebRunKokkos::run(int n)
     ev_set(ntimestep);
 
     double t = get_time();
-    gridKK->sync(Host,ALL_MASK);
-    atomKK->sync(Host,ALL_MASK);
     bio_process();
-    atomKK->modified(Host,ALL_MASK);
-    atomKK->sync(Device,ALL_MASK);
+
     if (profile)
       fprintf(profile, "%d %e ", update->ntimestep, get_time()-t);
-    
+
     update->dt = pairdt;
     reset_dt();
     
@@ -758,12 +755,11 @@ void NufebRunKokkos::run(int n)
     if (comm->me == 0) fprintf(screen, "pair interaction: %d steps (pressure %e N/m2)\n", npair, press);
 
     // update densities
-
     t = get_time();
     fix_density->compute();
+
     if (profile)
       fprintf(profile, "%e ", get_time()-t);
-
 
     // run diffusion until it reaches steady state
 
@@ -850,7 +846,7 @@ void NufebRunKokkos::bio_process()
   update->dt = biodt;
   reset_dt();
 
-  // setup monod growth fixes for growth
+  // setup growth fixes
 
   for (int i = 0; i < nfix_growth; i++) {
     fix_growth[i]->reaction_flag = 0;
@@ -858,19 +854,19 @@ void NufebRunKokkos::bio_process()
   }
 
   // grow atoms
-
   for (int i = 0; i < nfix_growth; i++) {
     fix_growth[i]->compute();
   }
-
+  atomKK->sync(Host,ALL_MASK);
   for (int i = 0; i < nfix_eps_extract; i++) {
     fix_eps_extract[i]->compute();
   }
-
+  atomKK->modified(Host,ALL_MASK);
+  atomKK->sync(Host,ALL_MASK);
   for (int i = 0; i < nfix_divide; i++) {
     fix_divide[i]->compute();
   }
-
+  atomKK->modified(Host,ALL_MASK);
   for (int i = 0; i < nfix_death; i++) {
     fix_death[i]->compute();
   }
@@ -884,8 +880,7 @@ void NufebRunKokkos::bio_process()
 
 int NufebRunKokkos::chem_process()
 {
-  // setup monod growth fixes for diffusion
-
+  // setup growth fixes for diffusion
   for (int i = 0; i < nfix_growth; i++) {
     fix_growth[i]->reaction_flag = 1;
     fix_growth[i]->growth_flag = 0;
@@ -895,7 +890,7 @@ int NufebRunKokkos::chem_process()
 
   update->dt = diffdt;
   reset_dt();
-  
+
   for (int i = 0; i < nfix_diffusion; i++) {
     fix_diffusion[i]->closed_system_init();
   }
