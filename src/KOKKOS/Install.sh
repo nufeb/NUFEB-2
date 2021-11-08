@@ -130,18 +130,18 @@ action fix_gravity_kokkos.cpp
 action fix_gravity_kokkos.h
 action fix_langevin_kokkos.cpp
 action fix_langevin_kokkos.h
-action fix_monod_aob_kokkos.cpp fix_monod_aob.cpp
-action fix_monod_aob_kokkos.h fix_monod_aob.h
-action fix_monod_eps_kokkos.cpp fix_monod_eps.cpp
-action fix_monod_eps_kokkos.h fix_monod_eps.h
-action fix_monod_het_kokkos.cpp fix_monod_het.cpp
-action fix_monod_het_kokkos.h fix_monod_het.h
-action fix_monod_nob_kokkos.cpp fix_monod_nob.cpp
-action fix_monod_nob_kokkos.h fix_monod_nob.h
-action fix_monod_cyano_kokkos.cpp fix_monod_cyano.cpp
-action fix_monod_cyano_kokkos.h fix_monod_cyano.h
-action fix_monod_ecoli_wild_kokkos.cpp fix_monod_ecoli_wild.cpp
-action fix_monod_ecoli_wild_kokkos.h fix_monod_ecoli_wild.h
+action fix_growth_aob_kokkos.cpp fix_growth_aob.cpp
+action fix_growth_aob_kokkos.h fix_growth_aob.h
+action fix_growth_eps_kokkos.cpp fix_growth_eps.cpp
+action fix_growth_eps_kokkos.h fix_growth_eps.h
+action fix_growth_het_kokkos.cpp fix_growth_het.cpp
+action fix_growth_het_kokkos.h fix_growth_het.h
+action fix_growth_nob_kokkos.cpp fix_growth_nob.cpp
+action fix_growth_nob_kokkos.h fix_growth_nob.h
+action fix_growth_cyano_kokkos.cpp fix_growth_cyano.cpp
+action fix_growth_cyano_kokkos.h fix_growth_cyano.h
+action fix_growth_ecoli_kokkos.cpp fix_growth_ecoli.cpp
+action fix_growth_ecoli_kokkos.h fix_growth_ecoli.h
 action fix_minimize_kokkos.cpp
 action fix_minimize_kokkos.h
 action fix_neigh_history_kokkos.cpp
@@ -180,8 +180,8 @@ action fix_wall_lj93_kokkos.cpp
 action fix_wall_lj93_kokkos.h
 action fix_wall_reflect_kokkos.cpp
 action fix_wall_reflect_kokkos.h
-action fix_wall_gran_kokkos.cpp
-action fix_wall_gran_kokkos.h
+#action fix_wall_gran_kokkos.cpp
+#action fix_wall_gran_kokkos.h 
 action fix_dpd_energy_kokkos.cpp fix_dpd_energy.cpp
 action fix_dpd_energy_kokkos.h fix_dpd_energy.h
 action fix_rx_kokkos.cpp fix_rx.cpp

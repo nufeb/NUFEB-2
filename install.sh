@@ -95,7 +95,7 @@ do
         exit 1
     elif [ $var == "--enable-kokkos" ]; then   
         make -j4 kokkos_cuda_mpi
-        mv lmp_kokkos_omp $rootDir/
+        mv lmp_kokkos_cuda_mpi $rootDir/
         exit 1 
    fi
 done

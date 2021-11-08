@@ -58,14 +58,14 @@ fix monod_eps eps nufeb/growth/eps sub decay 0
 fix diff_sub all nufeb/diffusion_reaction sub 1.6e-9 pp pp nd 1e-4
 
 # biological model fixes
-fix div all nufeb/divide/coccus 1.36e-6 30 1234
+fix div all nufeb/division/coccus 1.36e-6 30 12345
 fix eps_ext het nufeb/eps_extract 2 eps 1.3 30 5678
 fix death het nufeb/death/diameter dead 5e-7
 
 # mechanical model fixes
 fix wall all wall/gran hooke/history 1e-3 NULL 1e-4 NULL 0 0 zplane 0.0 8e-5
 #fix_modify wall virial yes
-fix eps_adh all nufeb/adhesion/eps eps 1e6
+#fix eps_adh all nufeb/adhesion/eps eps 1e6
 #fix_modify eps_adh virial yes
 
 #fix f_adh all nufeb/adhesion 0 1e-6
@@ -81,16 +81,19 @@ compute press all pressure NULL pair vol v_one
 variable press equal "(c_ke + c_press) / (3.0 * c_vol)" 
 variable mass equal "mass(all)"
 
-compute mycon all nufeb/ave_conc
+#compute mycon all nufeb/ave_conc
 
 shell mkdir vtk
 # file output
-dump du1 all vtk 10 vtk/dump*.vtu id type diameter
-dump du2 all grid/vtk 10 vtk/dump_%_*.vti con rea den gro
+#dump du0 all image 10 image.*png type diameter size 1280 720
+#dump_modify du0 acolor 1 green acolor 2 red
+#dump du1 all vtk 10 vtk/dump*.vtu id type diameter
+#dump du2 all grid/vtk 10 vtk/dump_%_*.vti con rea den gro
 #dump du3 all nufeb/hdf5 10 dump.h5 id type x y z vx vy vz fx fy fz radius conc reac 
 
 # thermo output
-thermo_style custom step cpu atoms v_press v_mass
+#thermo_style custom step cpu atoms v_press v_mass
+thermo_style custom step cpu atoms v_mass
 thermo 1
 
 # issue run command

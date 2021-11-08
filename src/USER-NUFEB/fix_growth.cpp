@@ -117,7 +117,6 @@ void FixGrowth::update_atoms_coccus()
   double **x = atom->x;
   double *radius = atom->radius;
   double *rmass = atom->rmass;
-  double *biomass = atom->biomass;
   double *outer_radius = atom->outer_radius;
   double *outer_mass = atom->outer_mass;
 
@@ -145,9 +144,7 @@ void FixGrowth::update_atoms_coccus()
 void FixGrowth::update_atoms_bacillus(AtomVecBacillus *&avec)
 {
   double **x = atom->x;
-  double *radius = atom->radius;
   double *rmass = atom->rmass;
-  double *biomass = atom->biomass;
 
   const double four_thirds_pi = 4.0 * MY_PI / 3.0;
 
