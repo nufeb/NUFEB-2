@@ -35,7 +35,7 @@ do
     elif [ $var == "--shared" ]; then continue
     elif [ $var == "--serial" ]; then continue
     else
-       echo "Unknown parameter"
+       echo "Unknown parameter: $var"
        exit 1
     fi
 done
