@@ -19,8 +19,8 @@ FixStyle(nve/limit/kk/host,FixNVELimitKokkos<LMPHostType>)
 
 #else
 
-#ifndef LMP_FIX_NVE_KOKKOS_LIMIT_H
-#define LMP_FIX_NVE_KOKKOS_LIMIT_H
+#ifndef LMP_FIX_NVE_LIMIT_KOKKOS_H
+#define LMP_FIX_NVE_LIMIT_KOKKOS_H
 
 #include "fix_nve_limit.h"
 #include "kokkos_type.h"

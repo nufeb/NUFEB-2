@@ -31,8 +31,6 @@ do
     elif [ $var == "--enable-misc" ]; then continue
     elif [ $var == "--enable-plasmid" ]; then continue
     elif [ $var == "--enable-kokkos" ]; then continue
-    elif [ $var == "--enable-png" ]; then continue
-    elif [ $var == "--enable-jpeg" ]; then continue
     elif [ $var == "--static" ]; then continue
     elif [ $var == "--shared" ]; then continue
     elif [ $var == "--serial" ]; then continue
@@ -77,7 +75,7 @@ do
         make
         cd .. || exit 1;
         make -j4 serial
-        mv lmp_serial $rootDir/lmp_nufeb
+        mv lmp_serial $rootDir/nufeb_serial
         exit 1
     elif [ $var == "--static" ]; then   
         make -j4 mpi mode=lib
@@ -85,22 +83,14 @@ do
     elif [ $var == "--shared" ]; then   
         make -j4 mpi mode=shlib
         exit 1
-    elif [ $var == "--enable-png" ]; then   
-        make -j4 png
-        mv lmp_png $rootDir/lmp_nufeb
-        exit 1
-    elif [ $var == "--enable-jpeg" ]; then   
-        make -j4 jpeg
-        mv lmp_jpeg $rootDir/lmp_nufeb
-        exit 1
     elif [ $var == "--enable-kokkos" ]; then   
         make -j4 kokkos_cuda_mpi
-        mv lmp_kokkos_cuda_mpi $rootDir/
+        mv lmp_kokkos_cuda_mpi $rootDir/nufeb_gpu
         exit 1 
    fi
 done
 
-make -j4 nufeb
-mv lmp_nufeb $rootDir/
+make -j4 mpi
+mv lmp_mpi $rootDir/nufeb_mpi
 exit 1
 
