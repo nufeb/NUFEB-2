@@ -30,7 +30,7 @@ do
        vtk_hdf=$((vtk_hdf+1))
     elif [ $var == "--enable-misc" ]; then continue
     elif [ $var == "--enable-plasmid" ]; then continue
-    elif [ $var == "--enable-kokkos" ]; then continue
+    elif [ $var == "--gpu" ]; then continue
     elif [ $var == "--static" ]; then continue
     elif [ $var == "--shared" ]; then continue
     elif [ $var == "--serial" ]; then continue
@@ -62,10 +62,19 @@ do
 	make yes-misc
     elif [ $var == "--enable-plasmid" ]; then
 	make yes-user-plasmid
-    elif [ $var == "--enable-kokkos" ]; then
+    elif [ $var == "--gpu" ]; then
 	make yes-kokkos
     fi
 done
+
+#### Write path to .bashrc#####
+if grep -q  "export PATH=\$PATH:$rootDir" ~/.bashrc; then
+   echo -n
+else
+   echo "Writing NUFEB root path to .bashrc"
+   echo "export PATH=\$PATH:$rootDir" >> ~/.bashrc
+fi
+
 
 echo "Building NUFEB.."
 for var in "$@"
@@ -83,7 +92,7 @@ do
     elif [ $var == "--shared" ]; then   
         make -j4 mpi mode=shlib
         exit 1
-    elif [ $var == "--enable-kokkos" ]; then   
+    elif [ $var == "--gpu" ]; then   
         make -j4 kokkos_cuda_mpi
         mv lmp_kokkos_cuda_mpi $rootDir/nufeb_gpu
         exit 1 

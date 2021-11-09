@@ -56,8 +56,8 @@ MPI_LIB =
 # PATH = path for FFT library
 # LIB = name of FFT library
 
-FFT_INC = -DFFT_CUFFT I/usr/local/include 		
-FFT_PATH = -L/usr/lib 
+FFT_INC = -DFFT_CUFFT -I/usr/local/include		
+FFT_PATH = -L/usr/lib
 FFT_LIB = -lcufft
 
 # JPEG and/or PNG library
