@@ -131,6 +131,8 @@ action fix_reactor_solute_balance.cpp
 action fix_reactor_solute_balance.h
 action fix_reactor_gas_balance.cpp
 action fix_reactor_gas_balance.h
+action fix_shear.cpp
+action fix_shear.h
 action grid_vec_monod.cpp
 action grid_vec_monod.h
 action grid_vec_reactor.cpp
