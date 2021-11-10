@@ -11,9 +11,9 @@ Syntax
      fix ID group nufeb/death/diameter dead-group diameter
 
 * ID = the user-assigned name for the fix
-* group = the user-assigned group of atoms/cells to which the fix is applied
-* dead-group = user-assigned group denoting dead atoms/cells
-* diameter = threshold diameter (meters) at which cells are marked as dead
+* group = the user-assigned group of atoms to which the fix is applied
+* dead-group = user-assigned group denoting dead atoms
+* diameter = threshold diameter (meters) below which atoms are marked as dead
 
 Examples
 """"""""
@@ -25,4 +25,4 @@ Examples
 Description
 """""""""""
 
-Cells below the threshold diameter are assigned to the *dead-dead* group and no longer part of *group*.
+Atoms below the threshold diameter are assigned to the *dead-dead* group and no longer part of *group*.
