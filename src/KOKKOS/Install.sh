@@ -180,8 +180,8 @@ action fix_wall_lj93_kokkos.cpp
 action fix_wall_lj93_kokkos.h
 action fix_wall_reflect_kokkos.cpp
 action fix_wall_reflect_kokkos.h
-#action fix_wall_gran_kokkos.cpp
-#action fix_wall_gran_kokkos.h 
+action fix_wall_gran_kokkos.cpp fix_wall_gran.cpp
+action fix_wall_gran_kokkos.h fix_wall_gran.h
 action fix_dpd_energy_kokkos.cpp fix_dpd_energy.cpp
 action fix_dpd_energy_kokkos.h fix_dpd_energy.h
 action fix_rx_kokkos.cpp fix_rx.cpp
