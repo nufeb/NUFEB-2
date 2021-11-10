@@ -10,7 +10,7 @@ KOKKOS_ABSOLUTE_PATH = $(shell cd $(KOKKOS_PATH); pwd)
 export MPICH_CXX = $(KOKKOS_ABSOLUTE_PATH)/bin/nvcc_wrapper
 export OMPI_CXX = $(KOKKOS_ABSOLUTE_PATH)/bin/nvcc_wrapper
 CC =		mpicxx
-CCFLAGS =	-g -O3 
+CCFLAGS =	-g -O3 -std=c++1y 
 SHFLAGS =	-fPIC
 DEPFLAGS =	-M
 
