@@ -97,6 +97,8 @@ action fix_gas_liquid.cpp
 action fix_gas_liquid.h
 action fix_growth.cpp
 action fix_growth.h
+action fix_growth_anammox.cpp
+action fix_growth_anammox.h
 action fix_growth_aob.cpp
 action fix_growth_aob.h
 action fix_growth_eps.cpp
