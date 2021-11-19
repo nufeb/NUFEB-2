@@ -38,6 +38,12 @@ class FixBoundaryLayer : public Fix {
  protected:
   int xyl_flag, xyh_flag, yzl_flag, yzh_flag, xzl_flag, xzh_flag;
   int nlayers;
+  double height;
+
+  int layerhi[3], layerlo[3];
+  int sublayerhi[3], sublayerlo[3];
+
+  void compute_extremumx(double *, double *);
 };
 
 }

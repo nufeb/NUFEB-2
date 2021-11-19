@@ -60,6 +60,7 @@
 #include "fix_reactor.h"
 #include "fix_gas_liquid.h"
 #include "fix_property.h"
+#include "fix_boundary_layer.h"
 #include "compute_volume.h"
 
 using namespace LAMMPS_NS;
@@ -87,7 +88,6 @@ NufebRun::NufebRun(LAMMPS *lmp, int narg, char **arg) :
   nfix_eps_extract = 0;
   nfix_divide = 0;
   nfix_death = 0;
-  nfix_gas_liquid = 0;
   nfix_reactor = 0;
   nfix_property = 0;
   nfix_transport = 0;
@@ -103,6 +103,8 @@ NufebRun::NufebRun(LAMMPS *lmp, int narg, char **arg) :
   fix_divide = nullptr;
   fix_death = nullptr;
   fix_property = nullptr;
+  fix_blayer = nullptr;
+  fix_gas_liquid = nullptr;
 
   profile = NULL;
   
@@ -164,7 +166,6 @@ NufebRun::~NufebRun()
   delete [] fix_eps_extract;
   delete [] fix_divide;
   delete [] fix_death;
-  delete [] fix_gas_liquid;
   delete [] fix_reactor;
   delete [] fix_property;
 }
@@ -197,7 +198,6 @@ void NufebRun::init()
   fix_divide = new FixDivide*[modify->nfix];
   fix_death = new FixDeath*[modify->nfix];
   fix_reactor = new FixReactor*[modify->nfix];
-  fix_gas_liquid = new FixGasLiquid*[modify->nfix];
   fix_property = new FixProperty*[modify->nfix];
   
   // find fixes
@@ -217,9 +217,11 @@ void NufebRun::init()
     } else if (strstr(modify->fix[i]->style, "nufeb/reactor")) {
       fix_reactor[nfix_reactor++] = (FixReactor *)modify->fix[i];
     } else if (strstr(modify->fix[i]->style, "nufeb/gas_liquid")) {
-      fix_gas_liquid[nfix_gas_liquid++] = (FixGasLiquid *)modify->fix[i];
+      fix_gas_liquid = (FixGasLiquid *) modify->fix[i];
     } else if (strstr(modify->fix[i]->style, "nufeb/property")) {
       fix_property[nfix_property++] = (FixProperty *)modify->fix[i];
+    } else if (strstr(modify->fix[i]->style, "nufeb/boundary_layer")) {
+      fix_blayer = (FixBoundaryLayer *) modify->fix[i];
     }
   }
   
@@ -372,6 +374,10 @@ void NufebRun::setup(int flag)
   
   // disable all fixes that will be called in chemical and biological processes
   fix_density->compute_flag = 0;
+  if (fix_blayer != nullptr)
+    fix_blayer->compute_flag = 0;
+  if (fix_gas_liquid != nullptr)
+    fix_gas_liquid->compute_flag = 0;
   for (int i = 0; i < nfix_growth; i++)
     fix_growth[i]->compute_flag = 0;
   for (int i = 0; i < nfix_diffusion; i++)
@@ -386,14 +392,16 @@ void NufebRun::setup(int flag)
     fix_death[i]->compute_flag = 0;
   for (int i = 0; i < nfix_reactor; i++)
     fix_reactor[i]->compute_flag = 0;
-  for (int i = 0; i < nfix_gas_liquid; i++)
-    fix_gas_liquid[i]->compute_flag = 0;
   for (int i = 0; i < nfix_property; i++)
     fix_property[i]->compute_flag = 0;
 
   // compute density
   fix_density->compute();
   
+  // update boundary layer
+  if (fix_blayer != nullptr)
+    fix_blayer->compute();
+
   // run diffusion until it reaches steady state
   if (init_diff_flag) {
     int niter = chem_process();
@@ -637,6 +645,10 @@ void NufebRun::run(int n)
       fprintf(profile, "%e ", get_time()-t);
     timer->stamp(Timer::MODIFY);
 
+    // update boundary layer
+    if (fix_blayer != nullptr)
+      fix_blayer->compute();
+
     // run chemical processes
     t = get_time();
     ndiff = chem_process();
@@ -644,6 +656,7 @@ void NufebRun::run(int n)
       fprintf(profile, "%d %e\n", ndiff, get_time()-t);
     if (info && comm->me == 0) fprintf(screen, "diffusion: %d steps\n", ndiff);
     
+    // run reactor processes
     reactor_process();
 
     // all output
@@ -804,9 +817,10 @@ int NufebRun::chem_process()
     for (int i = 0; i < nfix_transport; i++) {
       fix_transport[i]->compute();
     }
-    for (int i = 0; i < nfix_gas_liquid; i++) {
-      fix_gas_liquid[i]->compute();
+    if (fix_gas_liquid != nullptr) {
+      fix_gas_liquid->compute();
     }
+
     for (int i = 0; i < nfix_diffusion; i++) {
       if (!converge[i]) {
 	fix_diffusion[i]->compute_final();
