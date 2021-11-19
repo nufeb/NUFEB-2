@@ -34,39 +34,14 @@ FixBoundaryLayer::FixBoundaryLayer(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 4)
     error->all(FLERR,"Illegal fix nufeb/boundary_layer command");
 
-  xyl_flag = xyh_flag = yzl_flag = yzh_flag = xzl_flag = xzh_flag = 0;
-
   compute_flag = 1;
 
-  height = utils::numeric(FLERR,arg[3],true,lmp);
+  boundary = nullptr;
+
+  isub = grid->find(arg[3]);
+
+  height = utils::numeric(FLERR,arg[4],true,lmp);
   if (height < 0) error->all(FLERR, "Illegal fix nufeb/boundary_layer command");
-
-  int iarg = 4;
-  while (iarg < narg) {
-    if (strcmp(arg[iarg], "xyl") == 0) {
-      xyl_flag = 1;
-      iarg++;
-    } else if (strcmp(arg[iarg], "xyh") == 0) {
-      xyh_flag = 1;
-      iarg++;
-    } else if (strcmp(arg[iarg], "xzl") == 0) {
-      xzl_flag = 1;
-      iarg++;
-    } else if (strcmp(arg[iarg], "xzh") == 0) {
-      xzh_flag = 1;
-      iarg++;
-    } else if (strcmp(arg[iarg], "yzl") == 0) {
-      yzl_flag = 1;
-      iarg++;
-    } else if (strcmp(arg[iarg], "yzh") == 0) {
-      yzh_flag = 1;
-      iarg++;
-    } else {
-      error->all(FLERR, "Illegal fix nufeb/boundary_layer command");
-    }
-  }
-
-  nlayers = iarg-3;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -96,6 +71,12 @@ int FixBoundaryLayer::modify_param(int narg, char **arg)
     }
   }
   return iarg;
+}
+
+/* ---------------------------------------------------------------------- */
+void FixBoundaryLayer::init()
+{
+  boundary = grid->boundary[isub];
 }
 
 /* ---------------------------------------------------------------------- */
@@ -133,20 +114,23 @@ void FixBoundaryLayer::compute()
 	if (grid->mask[i] & CORNER_MASK)
 	  m |= CORNER_MASK;
 	else {
-	  if ((grid->sublo[0] < 0 && x == 0) || (yzh_flag && x <= sublayerlo[0]))
+	  if ((grid->sublo[0] < 0 && x == 0) ||
+	      (boundary[0] == DIRICHLET && x <= sublayerlo[0]))
 	    m |= X_NB_MASK;
 	  if ((grid->subhi[0] > grid->box[0] && x == grid->subbox[0] - 1) ||
-	      (yzl_flag && x >= sublayerhi[0]))
+	      (boundary[1] == DIRICHLET && x >= sublayerhi[0]))
 	    m |= X_PB_MASK;
-	  if ((grid->sublo[1] < 0 && y == 0) || (xzh_flag && y <= sublayerlo[1]))
+	  if ((grid->sublo[1] < 0 && y == 0) ||
+	      (boundary[2] == DIRICHLET && y <= sublayerlo[1]))
 	    m |= Y_NB_MASK;
 	  if ((grid->subhi[1] > grid->box[1] && y == grid->subbox[1] - 1) ||
-	      (xzh_flag && y >= sublayerhi[1]))
+	      (boundary[3] == DIRICHLET && y >= sublayerhi[1]))
 	    m |= Y_PB_MASK;
-	  if ((grid->sublo[2] < 0 && z == 0) || (xyh_flag && z <= sublayerlo[2]))
+	  if ((grid->sublo[2] < 0 && z == 0) ||
+	      (boundary[4] == DIRICHLET && z <= sublayerlo[2]))
 	    m |= Z_NB_MASK;
 	  if ((grid->subhi[2] > grid->box[2] && z == grid->subbox[2] - 1) ||
-	      (xyl_flag && z >= sublayerhi[2]))
+	      (boundary[5] == DIRICHLET && z >= sublayerhi[2]))
 	    m |= Z_PB_MASK;
 	}
 	mask[i] = m;
@@ -173,17 +157,17 @@ void FixBoundaryLayer::compute_extremumx(double *maximumx, double *minimumx) {
 
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
-      if (yzl_flag && x[i][0] > maximumx_local[0])
+      if (boundary[1] == DIRICHLET && x[i][0] > maximumx_local[0])
 	maximumx_local[0] = x[i][0];
-      if (xzl_flag && x[i][1] > maximumx_local[1])
+      if (boundary[3] == DIRICHLET && x[i][1] > maximumx_local[1])
 	maximumx_local[1] = x[i][1];
-      if (xyl_flag && x[i][2] > maximumx_local[2])
+      if (boundary[5] == DIRICHLET && x[i][2] > maximumx_local[2])
 	maximumx_local[2] = x[i][2];
-      if (yzh_flag && x[i][0] < minimumx_local[0])
+      if (boundary[0] == DIRICHLET && x[i][0] < minimumx_local[0])
 	minimumx_local[0] = x[i][0];
-      if (xzh_flag && x[i][1] < minimumx_local[1])
+      if (boundary[2] == DIRICHLET && x[i][1] < minimumx_local[1])
 	minimumx_local[1] = x[i][1] - radius[i];
-      if (xyh_flag && x[i][2] < minimumx_local[2])
+      if (boundary[4] == DIRICHLET && x[i][2] < minimumx_local[2])
 	minimumx_local[2] = x[i][2];
     }
   }
