@@ -32,8 +32,8 @@ FixGasLiquid::FixGasLiquid(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 5)
     error->all(FLERR,"Illegal fix nufeb/gas_liquid command");
 
-  if (!grid->reactor_flag)
-    error->all(FLERR,"Fix reactor requires nufeb/reactor grid style");
+  if (!grid->chemostat_flag)
+    error->all(FLERR,"Fix reactor requires nufeb/chemostat grid style");
 
   compute_flag = 1;
 

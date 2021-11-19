@@ -26,8 +26,8 @@ using namespace FixConst;
 FixReactor::FixReactor(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
-  if (!grid->reactor_flag)
-    error->all(FLERR,"Fix reactor requires nufeb/reactor grid style");
+  if (!grid->chemostat_flag)
+    error->all(FLERR,"Fix reactor requires nufeb/chemostat grid style");
 
   compute_flag = 1;
   scalar_flag = 1;

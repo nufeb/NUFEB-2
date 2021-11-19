@@ -22,8 +22,6 @@
 
 using namespace LAMMPS_NS;
 
-enum{DIRICHLET,NEUMANN,PERIODIC};
-
 /* ---------------------------------------------------------------------- */
 
 GridVec::GridVec(LAMMPS *lmp) : Pointers(lmp)

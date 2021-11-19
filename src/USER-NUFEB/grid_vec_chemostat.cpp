@@ -11,7 +11,8 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#include "grid_vec_reactor.h"
+#include "grid_vec_chemostat.h"
+
 #include "grid.h"
 #include "force.h"
 #include "error.h"
@@ -25,7 +26,7 @@ using namespace LAMMPS_NS;
 
 /* ---------------------------------------------------------------------- */
 
-GridVecReactor::GridVecReactor(LAMMPS *lmp) : GridVec(lmp)
+GridVecChemostat::GridVecChemostat(LAMMPS *lmp) : GridVec(lmp)
 {
   mask = nullptr;
   conc = nullptr;
@@ -33,12 +34,13 @@ GridVecReactor::GridVecReactor(LAMMPS *lmp) : GridVec(lmp)
   dens = nullptr;
   growth = nullptr;
   bulk = nullptr;
-  grid->reactor_flag = 1;
+  boundary = nullptr;
+  grid->chemostat_flag = 1;
 }
 
 /* ---------------------------------------------------------------------- */
 
-void GridVecReactor::init()
+void GridVecChemostat::init()
 {
   GridVec::init();
 
@@ -48,18 +50,20 @@ void GridVecReactor::init()
 
 /* ---------------------------------------------------------------------- */
 
-void GridVecReactor::grow(int n)
+void GridVecChemostat::grow(int n)
 {
   if (n < 0 || n > MAXSMALLINT)
     error->one(FLERR,"Per-processor system is too big");
 
   if (n > nmax) {
-    mask = memory->grow(grid->mask, n, "nufeb/reactor:mask");
-    conc = memory->grow(grid->conc, grid->nsubs, n, "nufeb/reactor:conc");
-    reac = memory->grow(grid->reac, grid->nsubs, n, "nufeb/reactor:reac");
-    dens = memory->grow(grid->dens, group->ngroup, n, "nufeb/reactor:dens");
-    growth = memory->grow(grid->growth, group->ngroup, n, 2, "nufeb/reactor:grow");
-    bulk  = memory->grow(grid->bulk, grid->nsubs, "nufeb/reactor:bulk");
+    mask = memory->grow(grid->mask, n, "nufeb/monod:mask");
+    conc = memory->grow(grid->conc, grid->nsubs, n, "nufeb/chemostat:conc");
+    reac = memory->grow(grid->reac, grid->nsubs, n, "nufeb/chemostat:reac");
+    dens = memory->grow(grid->dens, group->ngroup, n, "nufeb/chemostat:dens");
+    growth = memory->grow(grid->growth, group->ngroup, n, 2, "nufeb/chemostat:grow");
+    bulk = memory->grow(grid->bulk, grid->nsubs, "nufeb/chemostat:bulk");
+    boundary = memory->grow(grid->boundary, grid->nsubs, 6, "nufeb/chemostat:boundary");
+
     nmax = n;
     grid->nmax = nmax;
 
@@ -69,12 +73,13 @@ void GridVecReactor::grow(int n)
     grid->dens = dens;
     grid->growth = growth;
     grid->bulk = bulk;
+    grid->boundary = boundary;
   }
 }
 
 /* ---------------------------------------------------------------------- */
 
-int GridVecReactor::pack_comm(int n, int *cells, double *buf)
+int GridVecChemostat::pack_comm(int n, int *cells, double *buf)
 {
   int m = 0;
   for (int s = 0; s < grid->nsubs; s++) {
@@ -87,7 +92,7 @@ int GridVecReactor::pack_comm(int n, int *cells, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-void GridVecReactor::unpack_comm(int n, int *cells, double *buf)
+void GridVecChemostat::unpack_comm(int n, int *cells, double *buf)
 {
   int m = 0;
   for (int s = 0; s < grid->nsubs; s++) {
@@ -99,7 +104,7 @@ void GridVecReactor::unpack_comm(int n, int *cells, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-int GridVecReactor::pack_exchange(int n, int *cells, double *buf)
+int GridVecChemostat::pack_exchange(int n, int *cells, double *buf)
 {
   int m = 0;
   for (int s = 0; s < grid->nsubs; s++) {
@@ -112,7 +117,7 @@ int GridVecReactor::pack_exchange(int n, int *cells, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-void GridVecReactor::unpack_exchange(int n, int *cells, double *buf)
+void GridVecChemostat::unpack_exchange(int n, int *cells, double *buf)
 {
   int m = 0;
   for (int s = 0; s < grid->nsubs; s++) {
@@ -124,23 +129,58 @@ void GridVecReactor::unpack_exchange(int n, int *cells, double *buf)
 
 /* ---------------------------------------------------------------------- */
 
-void GridVecReactor::set(int narg, char **arg)
+void GridVecChemostat::set(int narg, char **arg)
 {
-  if (narg != 4) error->all(FLERR, "Invalid grid_modify set command");
+  if (narg != 7) error->all(FLERR, "Invalid grid_modify set command");
   int isub = grid->find(arg[1]);
   if (isub < 0) error->all(FLERR,"Cannot find substrate name");
-  set_reactor(isub, utils::numeric(FLERR,arg[2],true,lmp), utils::numeric(FLERR,arg[3],true,lmp));
+
+  for (int i = 0; i < 3; i++) {
+    if ((arg[2+i][0] == 'p' && arg[2+i][1] != 'p') ||
+	(arg[2+i][1] == 'p' && arg[2+i][0] != 'p'))
+      error->all(FLERR, "Illegal boundary condition: unpaired periodic BC");
+
+    for (int j = 0; j < 2; j++) {
+      if (arg[2+i][j] == 'p') {
+	boundary[isub][2*i+j] = PERIODIC;
+	grid->periodic[i] = 1;
+      } else if (arg[2+i][j] == 'n') {
+	boundary[isub][2*i+j] = NEUMANN;
+      } else if (arg[2+i][j] == 'd') {
+	boundary[isub][2*i+j] = DIRICHLET;
+      } else {
+	error->all(FLERR, "Illegal boundary condition: unknown keyword");
+      }
+    }
+  }
+
+  double domain = utils::numeric(FLERR,arg[5],true,lmp);
+  if (domain < 0) error->all(FLERR, "Illegal initial substrate concentration");
+
+  bulk[isub] = utils::numeric(FLERR,arg[6],true,lmp);
+  if (bulk[isub] < 0) error->all(FLERR, "Illegal initial bulk concentration");
+
+  set_grid(isub, domain, bulk[isub]);
 }
+
 
 /* ---------------------------------------------------------------------- */
 
-void GridVecReactor::set_reactor(int isub, double domain, double cbulk)
+void GridVecChemostat::set_grid(int isub, double domain, double bulk)
 {
   for (int i = 0; i < grid->ncells; i++) {
     if (!(mask[i] & CORNER_MASK)) {
-      conc[isub][i] = domain;
+      if (((mask[i] & X_NB_MASK) && (boundary[isub][0] == DIRICHLET)) ||
+	  ((mask[i] & X_PB_MASK) && (boundary[isub][1] == DIRICHLET)) ||
+	  ((mask[i] & Y_NB_MASK) && (boundary[isub][2] == DIRICHLET)) ||
+	  ((mask[i] & Y_PB_MASK) && (boundary[isub][3] == DIRICHLET)) ||
+	  ((mask[i] & Z_NB_MASK) && (boundary[isub][4] == DIRICHLET)) ||
+	  ((mask[i] & Z_PB_MASK) && (boundary[isub][5] == DIRICHLET))) {
+	conc[isub][i] = bulk;
+      } else {
+	conc[isub][i] = domain;
+      }
     }
     grid->reac[isub][i] = 0.0;
   }
-  bulk[isub] = cbulk;
 }

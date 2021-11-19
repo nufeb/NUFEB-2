@@ -17,6 +17,8 @@
 #include "pointers.h"
 #include <map>
 
+enum{DIRICHLET,NEUMANN,PERIODIC};
+
 namespace LAMMPS_NS {
 
 class Grid : protected Pointers {
@@ -52,16 +54,14 @@ class Grid : protected Pointers {
   
   int *mask;
 
-  // nufeb/monod
-  int monod_flag;
+  // nufeb/chemostat
+  int chemostat_flag;
   double **conc;    // concentration
   double **reac;    // reaction rate
   double **dens;    // density
   double ***growth; // growth rate
-  
-  // nufeb/reactor
-  int reactor_flag;
-  double *bulk;    // bulk concentration
+  double *bulk;     // bulk concentration
+  int **boundary;   // boundary conditions (-x, +x, -y, +y, -z, +z)
 
 private:
   template <typename T> static GridVec *gvec_creator(LAMMPS *);

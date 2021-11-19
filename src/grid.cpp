@@ -57,8 +57,9 @@ Grid::Grid(LAMMPS *lmp) : Pointers(lmp)
   dens = NULL;
   growth = NULL;
   bulk = NULL;
+  boundary = NULL;
 
-  monod_flag = reactor_flag = 0;
+  chemostat_flag = 0;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -75,6 +76,7 @@ Grid::~Grid()
   memory->destroy(reac);
   memory->destroy(growth);
   memory->destroy(bulk);
+  memory->destroy(boundary);
 }
 
 /* ---------------------------------------------------------------------- */

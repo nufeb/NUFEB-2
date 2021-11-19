@@ -13,21 +13,21 @@
 
 #ifdef GRID_CLASS
 
-GridStyle(nufeb/monod,GridVecMonod)
+GridStyle(nufeb/chemostat,GridVecChemostat)
 
 #else
 
-#ifndef LMP_GRID_VEC_MONOD_H
-#define LMP_GRID_VEC_MONOD_H
+#ifndef LMP_GRID_VEC_CHEMOSTAT_H
+#define LMP_GRID_VEC_CHEMOSTAT_H
 
 #include "grid_vec.h"
 
 namespace LAMMPS_NS {
 
-class GridVecMonod : public GridVec {
+class GridVecChemostat : public GridVec {
  public:
-  GridVecMonod(class LAMMPS *);
-  ~GridVecMonod() {}
+  GridVecChemostat(class LAMMPS *);
+  ~GridVecChemostat() {}
   void init();
   void grow(int);
 
@@ -39,14 +39,15 @@ class GridVecMonod : public GridVec {
   void set(int, char **);
 
  private:
-  void set_monod(int, double);
-  void set_monod(int, double, double, double, double, double, double, double);
+  void set_grid(int, double, double);
 
   int *mask;
   double **conc;    // concentration
   double **reac;    // reaction rate
   double **dens;    // density
   double ***growth; // growth rate
+  double *bulk;     // bulk concentration
+  int **boundary;   // boundary conditions (-x, +x, -y, +y, -z, +z)
 };
 
 }
