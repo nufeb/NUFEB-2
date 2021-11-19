@@ -10,7 +10,7 @@ boundary        pp pp ff                   # periodic boundaries in x and y
 newton          off                        # forces between local and ghost
                                            #   atoms are computed in each
 					   #   processor without communication
-#processors      4 4 1                      # processor grid
+processors      * 1 1                      # processor grid
 
 comm_modify     vel yes                    # communicate velocities for ghost
                                            # atoms
@@ -30,17 +30,17 @@ neigh_modify    check yes               # rebuild neighbour list if any atom
 					#   distance
 
 # select grid style
-grid_style      nufeb/monod 4 sub o2 no2 no3 4e-6
+grid_style      nufeb/chemostat 4 sub o2 no2 no3 4e-6
 
 # test grid comm
 #run_style       test/comm_grid
 #run             0
 
 # set substrates initial concentration
-grid_modify     set sub    1e-4
-grid_modify     set o2     1e-4
-grid_modify     set no2    1e-4
-grid_modify     set no3    1e-4
+grid_modify     set sub  pp pp nd  1e-4 1e-4
+grid_modify     set o2   pp pp nd  1e-4 1e-4
+grid_modify     set no2  pp pp nd  1e-4 1e-4
+grid_modify     set no3  pp pp nd  1e-4 1e-4
 
 # define pair style
 pair_style  gran/hooke/history 1e-4 NULL 1e-5 NULL 0.0 1
@@ -55,7 +55,7 @@ fix monod_het het nufeb/growth/het sub 3.5e-5 o2 0 no2 0 no3 0 growth 0.00028 yi
 fix monod_eps eps nufeb/growth/eps sub decay 0
 
 # diffusion reaction fixes
-fix diff_sub all nufeb/diffusion_reaction sub 1.6e-9 pp pp nd 1e-4
+fix diff_sub all nufeb/diffusion_reaction sub 1.6e-9 
 
 # biological model fixes
 fix div all nufeb/division/coccus 1.36e-6 30 1234
