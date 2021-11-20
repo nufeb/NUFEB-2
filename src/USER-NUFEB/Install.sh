@@ -113,6 +113,8 @@ action fix_growth_ecoli.cpp
 action fix_growth_ecoli.h
 action fix_growth_monod.cpp
 action fix_growth_monod.h
+action fix_growth_simple.cpp
+action fix_growth_simple.h
 action fix_wall_adhesion.cpp
 action fix_wall_adhesion.h
 action fix_mass_transport.cpp
@@ -137,8 +139,8 @@ action fix_shear.cpp
 action fix_shear.h
 action grid_vec_chemostat.cpp
 action grid_vec_chemostat.h
-action grid_vec_reactor.cpp
-action grid_vec_reactor.h
+action grid_vec_simple.cpp
+action grid_vec_simple.h
 action nufeb_run.cpp
 action nufeb_run.h
 action pair_bacillus.h

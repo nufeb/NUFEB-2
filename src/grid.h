@@ -54,9 +54,12 @@ class Grid : protected Pointers {
   
   int *mask;
 
+  // nufeb/simple
+  int simple_flag;
+  double **conc;    // concentration
+
   // nufeb/chemostat
   int chemostat_flag;
-  double **conc;    // concentration
   double **reac;    // reaction rate
   double **dens;    // density
   double ***growth; // growth rate

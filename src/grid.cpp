@@ -59,6 +59,7 @@ Grid::Grid(LAMMPS *lmp) : Pointers(lmp)
   bulk = NULL;
   boundary = NULL;
 
+  simple_flag = 0;
   chemostat_flag = 0;
 }
 
