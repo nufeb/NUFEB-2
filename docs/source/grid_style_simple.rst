@@ -1,4 +1,4 @@
-.. index:: grid_style reactor
+.. index:: grid_style simple
 
-grid_style reactor command
+grid_style simple command
 ==========================

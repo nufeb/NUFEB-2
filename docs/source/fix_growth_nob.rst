@@ -1,4 +1,4 @@
-.. index:: fix nufeb/monod/nob
+.. index:: fix nufeb/growth/nob
 
-fix nufeb/monod/nob command
+fix nufeb/growth/nob command
 ==============================

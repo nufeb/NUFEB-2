@@ -1,4 +1,4 @@
-.. index:: fix nufeb/monod/cyano
+.. index:: fix nufeb/growth/cyano
 
-fix nufeb/monod/cyano command
+fix nufeb/growth/cyano command
 ==============================

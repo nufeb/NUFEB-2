@@ -1,4 +1,4 @@
-.. index:: grid_style monod
+.. index:: grid_style chemostat
 
-grid_style monod command
-========================
+grid_style chemostat command
+============================

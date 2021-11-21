@@ -8,11 +8,11 @@ Syntax
 
 .. parsed-literal::
     
-     fix ID group nufeb/death/diameter dead-group diameter
+     fix ID group-ID nufeb/death/diameter dead-group-ID diameter
 
 * ID = the user-assigned name for the fix
-* group = the user-assigned group of atoms to which the fix is applied
-* dead-group = user-assigned group denoting dead atoms
+* group-ID = the user-assigned group ID of atoms to which the fix is applied
+* dead-group-ID = user-assigned group ID denoting dead atoms
 * diameter = threshold diameter (meters) below which atoms are marked as dead
 
 Examples
@@ -20,9 +20,12 @@ Examples
 
 .. code-block:: 
 
+    group het type 1
+    group dead type 2  
+    
     fix death het nufeb/death/diameter dead 5e-7
 
 Description
 """""""""""
 
-Atoms below the threshold diameter are assigned to the *dead-dead* group and no longer part of *group*.
+Atoms below the threshold diameter are assigned to the *dead* group and no longer part of *group*.

@@ -24,11 +24,13 @@ was included when building NUFEB.
 General settings
 -------------------------------------------
 
-+--------------------------------------------+---------------------------------------+
-| :doc:`grid_style monod <grid_style_monod>`: grid style for Monod-based growth      |
-+--------------------------------------------+---------------------------------------+
-| :doc:`grid_style reactor <grid_style_reactor>`: grid style for reactor coupling    |
-+--------------------------------------------+---------------------------------------+
++----------------------------------------------------+---------------------------------------+
+| :doc:`grid_style chemostat <grid_style_chemostat>`: grid style for chemostat coupling      |
++----------------------------------------------------+---------------------------------------+
+| :doc:`grid_style simple <grid_style_simple>`: simple grid style                            |
++----------------------------------------------------+---------------------------------------+
+| :doc:`run_style nufeb <run_style_nufeb>`: time integrator for NUFEB simulation             |
++----------------------------------------------------+---------------------------------------+
 
 Microbe
 -------------------------------------------
@@ -49,35 +51,37 @@ Microbe
 Biological processes
 -------------------------------------------
 
-+--------------------------------------------+---------------------------------------------------+
-| :doc:`fix nufeb/monod/simple <fix_monod_simple>`: Monod-based growth model                     |
-+--------------------------------------------+---------------------------------------------------+
-| :doc:`fix nufeb/monod/anammox <fix_monod_anammox>`: Monod-based growth for ANAMMOX             |
-+--------------------------------------------+---------------------------------------------------+
-| :doc:`fix nufeb/monod/aob <fix_monod_aob>`: Monod-based growth for ammonia-oxidizing bacteria  |
-+--------------------------------------------+---------------------------------------------------+
-| :doc:`fix nufeb/monod/cyano <fix_monod_cyano>`: Monod-based growth for cyanobacteria           |
-+--------------------------------------------+---------------------------------------------------+
-| :doc:`fix nufeb/monod/ecoli/wild <fix_monod_ecoli_wild>`: Monod-based growth for ecoli (WT)    |
-+--------------------------------------------+---------------------------------------------------+
-| :doc:`fix nufeb/monod/eps <fix_monod_eps>`: Monod-based growth for EPS                         |
-+--------------------------------------------+---------------------------------------------------+
-| :doc:`fix nufeb/monod/het <fix_monod_het>`: Monod-based growth for heterotroph                 |
-+--------------------------------------------+---------------------------------------------------+
-| :doc:`fix nufeb/monod/nob <fix_monod_nob>`: Monod-based growth for nitrite-oxidizing bacteria  |
-+--------------------------------------------+---------------------------------------------------+
-| :doc:`fix nufeb/divide/coccus <fix_divide_coccus>`: microbe division for coccus                |
-+--------------------------------------------+---------------------------------------------------+
-| :doc:`fix nufeb/divide/bacillus <fix_divide_bacillus>`: microbe division for bacillus          |
-+--------------------------------------------+---------------------------------------------------+
-| :doc:`fix nufeb/divide/bacillus/minicell <fix_divide_minicell>`: abnormal division for bacillus|
-+--------------------------------------------+---------------------------------------------------+
-| :doc:`fix nufeb/eps_excretion <fix_eps_excretion>`: EPS excretion from heterotroph             |
-+--------------------------------------------+---------------------------------------------------+
-| :doc:`fix nufeb/death/diameter <fix_death_diameter>`: microbe death (critical diameter)        |
-+--------------------------------------------+---------------------------------------------------+
-| :doc:`fix nufeb/death/plasmid <fix_death_plasmid>`: microbe death (critical # of plasmids)     |
-+--------------------------------------------+---------------------------------------------------+
++--------------------------------------------+-------------------------------------------------------+
+| :doc:`fix nufeb/growth/anammox <fix_growth_anammox>`: growth for anammox bacteria                  |
++--------------------------------------------+-------------------------------------------------------+
+| :doc:`fix nufeb/growth/aob <fix_growth_aob>`: growth for ammonia-oxidizing bacteria                |
++--------------------------------------------+-------------------------------------------------------+
+| :doc:`fix nufeb/growth/cyano <fix_growth_cyano>`: growth for cyanobacteria                         |
++--------------------------------------------+-------------------------------------------------------+
+| :doc:`fix nufeb/growth/ecoli <fix_growth_ecoli>`: growth for E.coli                                |
++--------------------------------------------+-------------------------------------------------------+
+| :doc:`fix nufeb/growth/eps <fix_growth_eps>`: extracellular polymeric substances decay             |
++--------------------------------------------+-------------------------------------------------------+
+| :doc:`fix nufeb/growth/het <fix_growth_het>`: growth for heterotroph                               |
++--------------------------------------------+-------------------------------------------------------+
+| :doc:`fix nufeb/growth/monod <fix_growth_monod>`: monod-based growth                               |
++--------------------------------------------+-------------------------------------------------------+
+| :doc:`fix nufeb/growth/nob <fix_growth_nob>`: growth for nitrite-oxidizing bacteria                |
++--------------------------------------------+-------------------------------------------------------+
+| :doc:`fix nufeb/growth/simple <fix_growth_simple>`: simple linear growth                           |
++--------------------------------------------+-------------------------------------------------------+
+| :doc:`fix nufeb/division/coccus <fix_divide_coccus>`: microbe division for coccus                  |
++--------------------------------------------+-------------------------------------------------------+
+| :doc:`fix nufeb/division/bacillus <fix_divide_bacillus>`: microbe division for bacillus            |
++--------------------------------------------+-------------------------------------------------------+
+| :doc:`fix nufeb/division/bacillus/minicell <fix_divide_minicell>`: abnormal division for bacillus  |
++--------------------------------------------+-------------------------------------------------------+
+| :doc:`fix nufeb/eps_excretion <fix_eps_excretion>`: EPS excretion from heterotroph                 |
++--------------------------------------------+-------------------------------------------------------+
+| :doc:`fix nufeb/death/diameter <fix_death_diameter>`: microbe death (critical diameter)            |
++--------------------------------------------+-------------------------------------------------------+
+| :doc:`fix nufeb/death/plasmid <fix_death_plasmid>`: microbe death (critical # of plasmids)         |
++--------------------------------------------+-------------------------------------------------------+
 
 
 Physical processes

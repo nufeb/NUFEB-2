@@ -1,4 +1,4 @@
-.. index:: nufeb/monod/anammox
+.. index:: nufeb/growth/anammox
 
-fix nufeb/monod/anammox command
+fix nufeb/growth/anammox command
 ================================

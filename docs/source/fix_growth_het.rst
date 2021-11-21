@@ -1,4 +1,4 @@
-.. index:: fix nufeb/monod/het
+.. index:: fix nufeb/growth/het
 
-fix nufeb/monod/het command
+fix nufeb/growth/het command
 ============================

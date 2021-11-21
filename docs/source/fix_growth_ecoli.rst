@@ -1,4 +1,4 @@
-.. index:: fix nufeb/monod/ecoli/wild
+.. index:: fix nufeb/growth/ecoli/wild
 
-fix nufeb/monod/ecoli/wild command
-==================================
+fix nufeb/growth/ecoli/wild command
+====================================
