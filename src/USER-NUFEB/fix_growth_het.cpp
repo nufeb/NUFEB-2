@@ -36,6 +36,9 @@ FixGrowthHET::FixGrowthHET(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 11)
     error->all(FLERR, "Illegal fix nufeb/growth/het command");
   
+  if (!grid->chemostat_flag)
+    error->all(FLERR, "fix nufeb/growth/het requires grid_style nufeb/chemostat");
+
   dynamic_group_allow = 1;
 
   isub = -1;

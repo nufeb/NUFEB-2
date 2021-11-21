@@ -37,6 +37,9 @@ FixGrowthEcoli::FixGrowthEcoli(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 8)
     error->all(FLERR, "Illegal fix nufeb/growth/ecoli command");
 
+  if (!grid->chemostat_flag)
+    error->all(FLERR, "fix nufeb/growth/ecoli requires grid_style nufeb/chemostat");
+
   dynamic_group_allow = 1;
 
   isuc = -1;

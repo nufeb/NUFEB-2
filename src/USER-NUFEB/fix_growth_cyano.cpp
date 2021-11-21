@@ -39,6 +39,9 @@ FixGrowthCyano::FixGrowthCyano(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 10)
     error->all(FLERR, "Illegal fix nufeb/growth/cyano command");
 
+  if (!grid->chemostat_flag)
+    error->all(FLERR, "fix nufeb/growth/cyano requires grid_style nufeb/chemostat");
+
   dynamic_group_allow = 1;
 
   ilight = -1;

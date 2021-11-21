@@ -35,6 +35,9 @@ FixGrowthEPS::FixGrowthEPS(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 4)
     error->all(FLERR, "Illegal fix nufeb/growth/eps command");
 
+  if (!grid->chemostat_flag)
+    error->all(FLERR, "fix nufeb/growth/eps requires grid_style nufeb/chemostat");
+
   dynamic_group_allow = 1;
 
   isub = -1;

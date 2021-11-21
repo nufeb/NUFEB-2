@@ -37,7 +37,7 @@ FixShear::FixShear(LAMMPS *lmp, int narg, char **arg) :
 
   if (strcmp(arg[5], "+x") == 0) {
     xflag = 1;
-  } else if (strcmp(arg[5], "x-") == 0) {
+  } else if (strcmp(arg[5], "-x") == 0) {
     xflag = 0;
   } else if (strcmp(arg[5], "+y") == 0) {
     yflag = 1;

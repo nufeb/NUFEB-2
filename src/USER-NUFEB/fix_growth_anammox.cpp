@@ -35,6 +35,9 @@ FixGrowthAnammox::FixGrowthAnammox(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 9)
     error->all(FLERR, "Illegal fix nufeb/growth/anammox command");
 
+  if (!grid->chemostat_flag)
+    error->all(FLERR, "fix nufeb/growth/anammox requires grid_style nufeb/chemostat");
+
   dynamic_group_allow = 1;
 
   inh4 = -1;
