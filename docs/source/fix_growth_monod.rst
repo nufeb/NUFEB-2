@@ -8,11 +8,11 @@ Syntax
 
 .. parsed-literal::
     
-     fix ID group-ID nufeb/growth/monod sub-ID Ks keyword value ...
+     fix ID group-ID nufeb/growth/monod sub-ID sub-Ks keyword value ...
 
 * ID = user-assigned name for the fix
 * group-ID = ID of the group atoms to apply the fix to
-* sub-ID = ID of the substrate which is utilized by the group of atoms
+* sub-ID = ID of the substrate for atom growth
 * sub-Ks = half-velocity constant (Ks) of the substrate
 * keyword = *growth* or *yield* or *decay* 
 
@@ -38,7 +38,7 @@ Description
 """""""""""
 Perfrom microbial growth (or decay) to the atoms defined in *group-ID*. The fix is called in each biological step (see :doc:`run_style nufeb <run_style_nufeb>`)
 to update atom and grid properties.
-The following forward Euler method is implemented to update the mass of each atom in the group:
+The following forward Euler method is implemented to update the mass (*m*) of each atom in the group:
 
 .. math::
 
@@ -62,7 +62,7 @@ its diameter changes accordingly. For a bacillus-style atom, the update is along
 the length of the atom while the variations in its width (diameter) are neglible.
 
 If :doc:`fix nufeb/diffusion_reaction <fix_diffusion>` is
-applied, the fix also update substrate utilization (reaction) rate for all the affected grid cells. 
+applied, the fix also update substrate utilization (reaction) rate in all the affected grid cells. 
 The rate is related to the specific growth rate as follows:
 
 .. math::
