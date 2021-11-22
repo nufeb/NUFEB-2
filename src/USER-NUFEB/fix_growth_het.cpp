@@ -39,6 +39,9 @@ FixGrowthHET::FixGrowthHET(LAMMPS *lmp, int narg, char **arg) :
   if (!grid->chemostat_flag)
     error->all(FLERR, "fix nufeb/growth/het requires grid_style nufeb/chemostat");
 
+  if (!atom->coccus_flag)
+    error->all(FLERR, "fix nufeb/growth/het requires atom_style coccus");
+
   dynamic_group_allow = 1;
 
   isub = -1;
