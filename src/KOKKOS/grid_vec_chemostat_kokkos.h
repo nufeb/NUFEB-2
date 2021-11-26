@@ -13,23 +13,23 @@
 
 #ifdef GRID_CLASS
 
-GridStyle(nufeb/monod/kk,GridVecMonodKokkos)
-GridStyle(nufeb/monod/kk/device,GridVecMonodKokkos)
-GridStyle(nufeb/monod/kk/host,GridVecMonodKokkos)
+GridStyle(nufeb/chemostat/kk,GridVecChemostatKokkos)
+GridStyle(nufeb/chemostat/kk/device,GridVecChemostatKokkos)
+GridStyle(nufeb/chemostat/kk/host,GridVecChemostatKokkos)
 
 #else
 
-#ifndef LMP_GRID_VEC_MONOD_KOKKOS_H
-#define LMP_GRID_VEC_MONOD_KOKKOS_H
+#ifndef LMP_GRID_VEC_CHEMOSTAT_KOKKOS_H
+#define LMP_GRID_VEC_CHEMOSTAT_KOKKOS_H
 
 #include "grid_vec_kokkos.h"
 
 namespace LAMMPS_NS {
 
-class GridVecMonodKokkos : public GridVecKokkos {
+class GridVecChemostatKokkos : public GridVecKokkos {
  public:
-  GridVecMonodKokkos(class LAMMPS *);
-  ~GridVecMonodKokkos() {}
+  GridVecChemostatKokkos(class LAMMPS *);
+  ~GridVecChemostatKokkos() {}
   void init();
   void grow(int);
 
@@ -44,8 +44,7 @@ class GridVecMonodKokkos : public GridVecKokkos {
   void unpack_exchange_kokkos(int, int, const DAT::tdual_int_1d &, const DAT::tdual_xfloat_1d &);
 
   void set(int, char **);
-  void set_monod(int, double);
-  void set_monod(int, double, double, double, double, double, double, double);
+  void set_grid(int, double, double);
 
   void sync(ExecutionSpace, unsigned int);
   void modified(ExecutionSpace, unsigned int);
@@ -53,21 +52,28 @@ class GridVecMonodKokkos : public GridVecKokkos {
 
  private:
   int *mask;
+  double *bulk;     // bulk concentration
   double **conc;    // concentration
   double **reac;    // reaction rate
   double **dens;    // density
+  int **boundary;   // boundary conditions (-x, +x, -y, +y, -z, +z)
   double ***growth; // growth rate
 
   DAT::t_int_1d d_mask;
   HAT::t_int_1d h_mask;
+  DAT::t_float_1d d_bulk;
+  HAT::t_float_1d h_bulk;
   DAT::t_float_2d d_conc;
   HAT::t_float_2d h_conc;
   DAT::t_float_2d d_reac;
   HAT::t_float_2d h_reac;
   DAT::t_float_2d d_dens;
   HAT::t_float_2d h_dens;
+  DAT::t_int_2d d_boundary;
+  HAT::t_int_2d h_boundary;
   DAT::t_float_3d d_growth;
   HAT::t_float_3d h_growth;
+
 };
 
 }

@@ -17,7 +17,6 @@
 #define EMPTY_MASK     0x00000000
 #define ALL_MASK       0xffffffff
 
-#define BOUNDARY_MASK  0x000000ff
 #define X_NB_MASK      0x00000001 // X negative boundary
 #define X_PB_MASK      0x00000002 // X positive boundary
 #define Y_NB_MASK      0x00000004 // Y negative boundary
@@ -29,12 +28,14 @@
 
 #define GMASK_MASK     0x00001000
 
-// Monod
+// chemostat
 
 #define CONC_MASK      0x00010000
 #define REAC_MASK      0x00020000
 #define DENS_MASK      0x00040000
 #define GROWTH_MASK    0x00080000
+#define BULK_MASK      0x00100000
+#define BOUNDARY_MASK  0x00200000
 
 #endif
 

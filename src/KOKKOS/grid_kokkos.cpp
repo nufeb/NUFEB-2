@@ -32,9 +32,11 @@ GridKokkos::GridKokkos(LAMMPS *lmp) : Grid(lmp)
 GridKokkos::~GridKokkos()
 {
   memoryKK->destroy_kokkos(k_mask, mask);
+  memoryKK->destroy_kokkos(k_bulk, bulk);
   memoryKK->destroy_kokkos(k_conc, conc);
   memoryKK->destroy_kokkos(k_reac, reac);
   memoryKK->destroy_kokkos(k_dens, dens);
+  memoryKK->destroy_kokkos(k_boundary, boundary);
   memoryKK->destroy_kokkos(k_growth, growth);
 }
 

@@ -23,8 +23,6 @@
 using namespace LAMMPS_NS;
 using namespace FixConst;
 
-enum{DIRICHLET,NEUMANN,PERIODIC};
-
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
@@ -105,21 +103,18 @@ double FixDiffusionReactionKokkos<DeviceType>::compute_scalar()
 template <class DeviceType>
 void FixDiffusionReactionKokkos<DeviceType>::compute_initial()
 {
-  for (int i = 0; i < 6; i++) {
-    boundary[i] = FixDiffusionReaction::boundary[i];
-    dirichlet[i] = FixDiffusionReaction::dirichlet[i];
-  }
-
   d_mask = gridKK->k_mask.template view<DeviceType>();
   d_conc = gridKK->k_conc.template view<DeviceType>();
   d_reac = gridKK->k_reac.template view<DeviceType>();
+  d_boundary = gridKK->k_boundary.template view<DeviceType>();
+  d_bulk = gridKK->k_bulk.template view<DeviceType>();
   
   if (ncells < grid->ncells) {
     grow_arrays(grid->ncells);
     ncells = grid->ncells;
   }
 
-  gridKK->sync(execution_space, GMASK_MASK | CONC_MASK);
+  gridKK->sync(execution_space, GMASK_MASK | CONC_MASK | BULK_MASK | BOUNDARY_MASK);
   
   copymode = 1;
   Functor f(this);
@@ -141,15 +136,13 @@ void FixDiffusionReactionKokkos<DeviceType>::compute_final()
   for (int i = 0; i < 3; i++)
     subbox[i] = grid->subbox[i];
 
-  for (int i = 0; i < 6; i++)
-    boundary[i] = FixDiffusionReaction::boundary[i];
-
   d_mask = gridKK->k_mask.template view<DeviceType>();
   d_conc = gridKK->k_conc.template view<DeviceType>();
   d_reac = gridKK->k_reac.template view<DeviceType>();
   
   gridKK->sync(execution_space, GMASK_MASK);
   gridKK->sync(execution_space, REAC_MASK);
+  gridKK->sync(execution_space, BOUNDARY_MASK);
   
   copymode = 1;
   Functor f(this);
@@ -223,17 +216,14 @@ void FixDiffusionReactionKokkos<DeviceType>::closed_system_scaleup(double biodt)
 
 template <class DeviceType>
 FixDiffusionReactionKokkos<DeviceType>::Functor::Functor(FixDiffusionReactionKokkos<DeviceType> *ptr):
-  d_prev(ptr->d_prev), d_conc(ptr->d_conc),
-  d_reac(ptr->d_reac), d_mask(ptr->d_mask), d_penult(ptr->d_penult),
-  cell_size(ptr->cell_size), diff_coef(ptr->diff_coef), dt(ptr->dt),
-  isub(ptr->isub), closed_system(ptr->closed_system)
+  d_prev(ptr->d_prev), d_conc(ptr->d_conc), d_reac(ptr->d_reac),
+  d_mask(ptr->d_mask), d_penult(ptr->d_penult), cell_size(ptr->cell_size),
+  diff_coef(ptr->diff_coef), dt(ptr->dt), isub(ptr->isub),
+  closed_system(ptr->closed_system), d_bulk(ptr->d_bulk),
+  d_boundary(ptr->d_boundary)
 {
   for (int i = 0; i < 3; i++)
     subbox[i] = ptr->subbox[i];
-  for (int i = 0; i < 6; i++) {
-    boundary[i] = ptr->boundary[i];
-    dirichlet[i] = ptr->dirichlet[i];
-  }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -243,18 +233,18 @@ KOKKOS_INLINE_FUNCTION
 void FixDiffusionReactionKokkos<DeviceType>::Functor::operator()(FixDiffusionReactionInitialTag, int i) const
 {
   // Dirichlet boundary conditions
-  if (d_mask(i) & X_NB_MASK && boundary[0] == DIRICHLET) {
-    d_conc(isub, i) = dirichlet[0];
-  } else if (d_mask(i) & X_PB_MASK && boundary[1] == DIRICHLET) {
-    d_conc(isub, i) = dirichlet[1];
-  } else if (d_mask(i) & Y_NB_MASK && boundary[2] == DIRICHLET) {
-    d_conc(isub, i) = dirichlet[2];
-  } else if (d_mask(i) & Y_PB_MASK && boundary[3] == DIRICHLET) {
-    d_conc(isub, i) = dirichlet[3];
-  } else if (d_mask(i) & Z_NB_MASK && boundary[4] == DIRICHLET) {
-    d_conc(isub, i) = dirichlet[4];
-  } else if (d_mask(i) & Z_PB_MASK && boundary[5] == DIRICHLET) {
-    d_conc(isub, i) = dirichlet[5];
+  if (d_mask(i) & X_NB_MASK && d_boundary(isub, 0) == DIRICHLET) {
+    d_conc(isub, i) = d_bulk(isub);
+  } else if (d_mask(i) & X_PB_MASK && d_boundary(isub, 1) == DIRICHLET) {
+    d_conc(isub, i) = d_bulk(isub);
+  } else if (d_mask(i) & Y_NB_MASK && d_boundary(isub, 2) == DIRICHLET) {
+    d_conc(isub, i) = d_bulk(isub);
+  } else if (d_mask(i) & Y_PB_MASK && d_boundary(isub, 3) == DIRICHLET) {
+    d_conc(isub, i) = d_bulk(isub);
+  } else if (d_mask(i) & Z_NB_MASK && d_boundary(isub, 4) == DIRICHLET) {
+    d_conc(isub, i) = d_bulk(isub);
+  } else if (d_mask(i) & Z_PB_MASK && d_boundary(isub, 5) == DIRICHLET) {
+    d_conc(isub, i) = d_bulk(isub);
   }
   d_reac(isub, i) = 0.0;
 }
@@ -268,20 +258,20 @@ void FixDiffusionReactionKokkos<DeviceType>::Functor::operator()(FixDiffusionRea
   int nx = subbox[0];
   int nxy = subbox[0] * subbox[1];
   // Neumann boundary conditions
-  if (d_mask(i) & X_NB_MASK && boundary[0] == NEUMANN) {
+  if (d_mask(i) & X_NB_MASK && d_boundary(isub, 0) == NEUMANN) {
     d_conc(isub, i) = d_conc(isub, i+1);
-  } else if (d_mask(i) & X_PB_MASK && boundary[1] == NEUMANN) {
+  } else if (d_mask(i) & X_PB_MASK && d_boundary(isub, 1) == NEUMANN) {
     d_conc(isub, i) = d_conc(isub, i-1);
-  } else if (d_mask(i) & Y_NB_MASK && boundary[2] == NEUMANN) {
+  } else if (d_mask(i) & Y_NB_MASK && d_boundary(isub, 2) == NEUMANN) {
     int py = i + nx;
     d_conc(isub, i) = d_conc(isub, py);
-  } else if (d_mask(i) & Y_PB_MASK && boundary[3] == NEUMANN) {
+  } else if (d_mask(i) & Y_PB_MASK && d_boundary(isub, 3) == NEUMANN) {
     int py = i - nx;
     d_conc(isub, i) = d_conc(isub, py);
-  } else if (d_mask(i) & Z_NB_MASK && boundary[4] == NEUMANN) {
+  } else if (d_mask(i) & Z_NB_MASK && d_boundary(isub, 4) == NEUMANN) {
     int pz = i + nxy;
     d_conc(isub, i) = d_conc(isub, pz);
-  } else if (d_mask(i) & Z_PB_MASK && boundary[5] == NEUMANN) {
+  } else if (d_mask(i) & Z_PB_MASK && d_boundary(isub, 5) == NEUMANN) {
     int pz = i - nxy;
     d_conc(isub, i) = d_conc(isub, pz);
   }

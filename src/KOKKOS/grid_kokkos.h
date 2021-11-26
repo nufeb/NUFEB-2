@@ -22,9 +22,11 @@ namespace LAMMPS_NS {
 class GridKokkos : public Grid {
  public:
   DAT::tdual_int_1d k_mask;
+  DAT::tdual_float_1d k_bulk;
   DAT::tdual_float_2d k_conc;
   DAT::tdual_float_2d k_reac;
   DAT::tdual_float_2d k_dens;
+  DAT::tdual_int_2d k_boundary;
   DAT::tdual_float_3d k_growth;
 
   GridKokkos(class LAMMPS *);

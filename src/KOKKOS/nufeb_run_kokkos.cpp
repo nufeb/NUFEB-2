@@ -117,7 +117,6 @@ void NufebRunKokkos::init()
   fix_divide = new FixDivide*[modify->nfix];
   fix_death = new FixDeath*[modify->nfix];
   fix_reactor = new FixReactor*[modify->nfix];
-  fix_gas_liquid = new FixGasLiquid*[modify->nfix];
   fix_property = new FixProperty*[modify->nfix];
 
   // find fixes
@@ -135,7 +134,7 @@ void NufebRunKokkos::init()
     } else if (strstr(modify->fix[i]->style, "nufeb/reactor")) {
       fix_reactor[nfix_reactor++] = (FixReactor *)modify->fix[i];
     } else if (strstr(modify->fix[i]->style, "nufeb/gas_liquid")) {
-      fix_gas_liquid[nfix_gas_liquid++] = (FixGasLiquid *)modify->fix[i];
+      fix_gas_liquid = (FixGasLiquid *)modify->fix[i];
     } else if (strstr(modify->fix[i]->style, "nufeb/property")) {
       fix_property[nfix_property++] = (FixProperty *)modify->fix[i];
     }
@@ -340,10 +339,12 @@ void NufebRunKokkos::setup(int flag)
   }
   for (int i = 0; i < nfix_reactor; i++)
     fix_reactor[i]->compute_flag = 0;
-  for (int i = 0; i < nfix_gas_liquid; i++)
-    fix_gas_liquid[i]->compute_flag = 0;
+
   for (int i = 0; i < nfix_property; i++)
     fix_property[i]->compute_flag = 0;
+
+  if (fix_gas_liquid != nullptr)
+    fix_gas_liquid->compute_flag = 0;
 
   // compute density
   fix_density->compute();
@@ -915,8 +916,8 @@ int NufebRunKokkos::chem_process()
       fix_growth[i]->compute();
     }
 
-    for (int i = 0; i < nfix_gas_liquid; i++) {
-      fix_gas_liquid[i]->compute();
+    if (fix_gas_liquid != nullptr) {
+      fix_gas_liquid->compute();
     }
 
     for (int i = 0; i < nfix_diffusion; i++) {

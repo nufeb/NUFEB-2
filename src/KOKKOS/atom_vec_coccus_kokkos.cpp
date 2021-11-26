@@ -49,6 +49,7 @@ AtomVecCoccusKokkos::AtomVecCoccusKokkos(LAMMPS *lmp) : AtomVecKokkos(lmp)
   size_data_vel = 7;
   xcol_data = 5;
 
+  atom->coccus_flag = 1;
   atom->sphere_flag = 1;
   atom->radius_flag = atom->rmass_flag = atom->omega_flag =
     atom->torque_flag = atom->biomass_flag = atom->outer_radius_flag =
