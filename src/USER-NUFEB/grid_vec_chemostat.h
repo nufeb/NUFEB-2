@@ -37,10 +37,9 @@ class GridVecChemostat : public GridVec {
   void unpack_exchange(int, int *, double *);
 
   void set(int, char **);
-
- private:
   void set_grid(int, double, double);
 
+ private:
   int *mask;
   double **conc;    // concentration
   double **reac;    // reaction rate

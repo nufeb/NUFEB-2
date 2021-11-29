@@ -41,8 +41,8 @@ class FixBoundaryLayer : public Fix {
   double height;
   int *boundary;
 
-  int layerhi[3], layerlo[3];
-  int sublayerhi[3], sublayerlo[3];
+  int layerhi[3], layerlo[3];           // boundary layer in xlo xhi ylo yhi zlo zhi
+  int sublayerhi[3], sublayerlo[3];     // local boundary layer
 
   void compute_extremumx(double *, double *);
 };

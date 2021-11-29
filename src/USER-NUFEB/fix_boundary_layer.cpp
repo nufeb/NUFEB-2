@@ -97,11 +97,12 @@ void FixBoundaryLayer::compute()
 
   for (int i = 0; i < 3; i++) {
     layerhi[i] = static_cast<int>((height + maximum[i]) / grid->cell_size) + 1;
-    layerlo[i] = static_cast<int>((minimum[i] - height) / grid->cell_size) - 1;
+    layerlo[i] = static_cast<int>((minimum[i] - height) / grid->cell_size);
     sublayerhi[i] = layerhi[i] - (grid->sublo[i] + 1);
     sublayerlo[i] = layerlo[i] - (grid->sublo[i] + 1);
   }
-
+//  printf("box0 = %i box1=%i box2=%i \n",grid->subbox[0],grid->subbox[1],grid->subbox[2] );
+//  printf("xlo = %i xhi = %i ylo = %i yhi = %i zlo = %i zhi = %i \n ", sublayerlo[0],sublayerhi[0],sublayerlo[1],sublayerhi[1],sublayerlo[2],sublayerhi[2]);
   // update mask
   int *mask = grid->mask;
   for (int z = 0; z < grid->subbox[2]; z++) {
@@ -141,14 +142,14 @@ void FixBoundaryLayer::compute()
 
 
 /* ----------------------------------------------------------------------
- taking the plane as substratum, get the maximum and minimum height of atoms
+ compute maximum and minimum atom position in the system
+  w.r.t, 6 surfaces
  ------------------------------------------------------------------------- */
 void FixBoundaryLayer::compute_extremumx(double *maximumx, double *minimumx) {
   double maximumx_local[3], minimumx_local[3];
   int nlocal = atom->nlocal;
   int *mask = atom->mask;
   double **x = atom->x;
-  double *radius = atom->radius;
 
   minimumx_local[0] = domain->prd[0];
   minimumx_local[1] = domain->prd[1];
@@ -166,7 +167,7 @@ void FixBoundaryLayer::compute_extremumx(double *maximumx, double *minimumx) {
       if (boundary[0] == DIRICHLET && x[i][0] < minimumx_local[0])
 	minimumx_local[0] = x[i][0];
       if (boundary[2] == DIRICHLET && x[i][1] < minimumx_local[1])
-	minimumx_local[1] = x[i][1] - radius[i];
+	minimumx_local[1] = x[i][1];
       if (boundary[4] == DIRICHLET && x[i][2] < minimumx_local[2])
 	minimumx_local[2] = x[i][2];
     }
