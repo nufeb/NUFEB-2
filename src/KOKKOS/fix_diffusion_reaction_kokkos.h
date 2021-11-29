@@ -78,7 +78,6 @@ class FixDiffusionReactionKokkos : public FixDiffusionReaction {
  protected:
   double cell_size;
   int subbox[3];
-  int closed_system;
   
   typedef ArrayTypes<DeviceType> AT;
   

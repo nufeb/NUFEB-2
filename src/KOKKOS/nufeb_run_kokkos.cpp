@@ -54,6 +54,7 @@
 #include "fix_reactor.h"
 #include "fix_gas_liquid.h"
 #include "fix_property.h"
+#include "fix_boundary_layer.h"
 #include "compute_volume.h"
 
 using namespace LAMMPS_NS;
@@ -137,6 +138,8 @@ void NufebRunKokkos::init()
       fix_gas_liquid = (FixGasLiquid *)modify->fix[i];
     } else if (strstr(modify->fix[i]->style, "nufeb/property")) {
       fix_property[nfix_property++] = (FixProperty *)modify->fix[i];
+    } else if (strstr(modify->fix[i]->style, "nufeb/boundary_layer")) {
+      fix_blayer = (FixBoundaryLayer *) modify->fix[i];
     }
   }
 
@@ -346,8 +349,15 @@ void NufebRunKokkos::setup(int flag)
   if (fix_gas_liquid != nullptr)
     fix_gas_liquid->compute_flag = 0;
 
+  if (fix_blayer != nullptr)
+    fix_blayer->compute_flag = 0;
+
   // compute density
   fix_density->compute();
+
+  // update boundary layer
+  if (fix_blayer != nullptr)
+    fix_blayer->compute();
 
   // run diffusion until it reaches steady state
   if (init_diff_flag) {
@@ -761,6 +771,10 @@ void NufebRunKokkos::run(int n)
 
     if (profile)
       fprintf(profile, "%e ", get_time()-t);
+
+    // update boundary layer
+    if (fix_blayer != nullptr)
+      fix_blayer->compute();
 
     // run diffusion until it reaches steady state
 
