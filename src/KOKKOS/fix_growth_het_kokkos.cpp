@@ -62,7 +62,7 @@ template <class DeviceType>
 template <int Reaction, int Growth>
 void FixGrowthHETKokkos<DeviceType>::update_cells()
 {
-  d_mask = gridKK->k_mask.template view<DeviceType>();
+  d_gmask = gridKK->k_mask.template view<DeviceType>();
   d_conc = gridKK->k_conc.template view<DeviceType>();
   d_reac = gridKK->k_reac.template view<DeviceType>();
   d_dens = gridKK->k_dens.template view<DeviceType>();
@@ -134,7 +134,7 @@ FixGrowthHETKokkos<DeviceType>::FunctorCells::FunctorCells(FixGrowthHETKokkos<De
   growth(ptr->growth), yield(ptr->yield),
   maintain(ptr->maintain), decay(ptr->decay),
   eps_yield(ptr->eps_yield), anoxic(ptr->anoxic), eps_dens(ptr->eps_dens),
-  d_mask(ptr->d_mask), d_conc(ptr->d_conc), d_reac(ptr->d_reac),
+  d_gmask(ptr->d_gmask), d_conc(ptr->d_conc), d_reac(ptr->d_reac),
   d_dens(ptr->d_dens), d_growth(ptr->d_growth){}
 
 /* ---------------------------------------------------------------------- */
@@ -169,14 +169,14 @@ void FixGrowthHETKokkos<DeviceType>::FunctorCells::operator()(FixGrowthHETCellsT
   double tmp5 = 1 / 2.86 * maintain * anoxic * d_conc(ino3, i) / (no3_affinity + d_conc(ino3, i)) * o2_affinity / (o2_affinity + d_conc(io2, i));
   double tmp6 = 1 / 1.17 * maintain * anoxic * d_conc(ino2, i) / (no2_affinity + d_conc(ino2, i)) * o2_affinity / (o2_affinity + d_conc(io2, i));
 
-  if (Reaction && !(d_mask(i) & GHOST_MASK)) {
+  if (Reaction && !(d_gmask(i) & GHOST_MASK)) {
     d_reac(isub, i) -= 1 / yield * (tmp1 + tmp2 + tmp3) * d_dens(igroup, i);
     d_reac(io2, i) -= (1 - yield - eps_yield) / yield * tmp1 * d_dens(igroup, i) + tmp4 * d_dens(igroup, i);
     d_reac(ino2, i) -= (1 - yield - eps_yield) / (1.17 * yield) * tmp3 * d_dens(igroup, i) + tmp6 * d_dens(igroup, i);
     d_reac(ino3, i) -= (1 - yield - eps_yield) / (2.86 * yield) * tmp2 * d_dens(igroup, i) + tmp5 * d_dens(igroup, i);
   }
 
-  if (Growth && !(d_mask(i) & GHOST_MASK)) {
+  if (Growth && !(d_gmask(i) & GHOST_MASK)) {
     d_growth(igroup, i, 0) = tmp1 + tmp2 + tmp3 - tmp4 - tmp5 - tmp6 - decay;
     d_growth(igroup, i, 1) = (eps_yield / yield) * (tmp1 + tmp2 + tmp3);
   }

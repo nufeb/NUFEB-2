@@ -63,7 +63,7 @@ class FixGrowthHETKokkos: public FixGrowthHET {
     double eps_dens;
 
     typedef ArrayTypes<DeviceType> AT;
-    typename AT::t_int_1d d_mask;
+    typename AT::t_int_1d d_gmask;
     typename AT::t_float_2d d_conc;
     typename AT::t_float_2d d_reac;
     typename AT::t_float_2d d_dens;
@@ -114,6 +114,7 @@ class FixGrowthHETKokkos: public FixGrowthHET {
   typedef ArrayTypes<DeviceType> AT;
 
   typename AT::t_int_1d d_mask;
+  typename AT::t_int_1d d_gmask;
   typename AT::t_float_2d d_conc;
   typename AT::t_float_2d d_reac;
   typename AT::t_float_2d d_dens;
