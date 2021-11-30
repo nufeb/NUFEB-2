@@ -116,7 +116,7 @@ void FixGrowthAOB::update_cells()
 
     if (Reaction &&  !(grid->mask[i] & GHOST_MASK)) {
       reac[inh4][i] -= 1 / yield * tmp1 * dens[igroup][i];
-      reac[io2][i] -= (4.57 - yield) / yield * tmp1 * dens[igroup][i] + tmp2 * dens[igroup][i];
+      reac[io2][i] -= (3.42 - yield) / yield * tmp1 * dens[igroup][i] + tmp2 * dens[igroup][i];
       reac[ino2][i] += 1 / yield * tmp1 * dens[igroup][i];
     }
 

@@ -137,7 +137,7 @@ void FixGrowthAOBKokkos<DeviceType>::Functor::operator()(FixGrowthAOBCellsTag<Re
 
   if (Reaction &&  !(d_mask(i) & GHOST_MASK)) {
     d_reac(inh4, i) -= 1 / yield * tmp1 * d_dens(igroup, i);
-    d_reac(io2, i) -= (4.57 - yield) / yield * tmp1 * d_dens(igroup, i) + tmp2 * d_dens(igroup, i);
+    d_reac(io2, i) -= (3.42 - yield) / yield * tmp1 * d_dens(igroup, i) + tmp2 * d_dens(igroup, i);
     d_reac(ino2, i) += 1 / yield * tmp1 * d_dens(igroup, i);
   }
 
