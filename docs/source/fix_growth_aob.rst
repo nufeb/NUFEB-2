@@ -34,12 +34,12 @@ Examples
    group aob type 1
    grid_style nufeb/chemostat 3 nh4 o2 no2 4e-6
    
-   fix f_gaob aob nufeb/growth/aob nh4 1e-3 o2 6.8e-4 no2 growth 2.3727e-5 yield 0.15 maintain 1.505e-6 decay 9.17e-7
+   fix f_gaob aob nufeb/growth/aob nh4 1e-3 o2 5.4e-4 no2 growth 2.3727e-5 yield 0.15 maintain 1.505e-6 decay 1.27e-7
    
    
 Description
 """""""""""
-Perfrom microbial growth to the atoms defined in *group-ID*. 
+Perform microbial growth to the atoms defined in *group-ID*. 
 The affected atoms are considered as ammonia-oxidizing bacteria (AOB), 
 in spherical shape without outer mass and outer diameter
 (see :doc:`atom_style coccus <atom_vec_coccus>`).
@@ -55,7 +55,7 @@ The following forward Euler method is implemented to update the mass
   m' & = m + \mu \Delta t
   
 The specific growth rates :math:`\mu` is 
-calcualted based on the equations described in :ref:`(Ofiteru, I.D., et al, 2013) <ofiteru13>`: 
+calculated based on the equations described in :ref:`(Ofiteru, I.D., et al, 2013) <ofiteru13>`: 
 
 .. math::
   \mu & = r1 + r2 - b_{decay}
@@ -69,7 +69,7 @@ where:
 * :math:`b_{decay}` is the decay rate of the atoms (*decay*)
 * :math:`\mu_{max}` is the maximum growth rate of the atoms (*growth*)
 * :math:`S_{nh4}, S_{o2}` are the local concentrations of ammonium and oxygen at the grid cell in which atom resides, respectively
-* :math:`Ks_{nh4}, Ks_{o2}` are the half-velocity constants of ammonium (*nh4-Ks*) and oxygen, respectively
+* :math:`Ks_{nh4}, Ks_{o2}` are the half-velocity constants of ammonium (*nh4-Ks*) and oxygen (*o2-Ks*), respectively
 * :math:`b_{maint}` is the maintenance coefficient of the atoms (*maintain*)
   
 The new mass is then used to update diameter of the atom. 
@@ -102,7 +102,7 @@ This fix is not compatible with the following commands:
 
 .. _ofiteru13:
 
-**(Ofiteru, I.D., et al 2013)** Ofiteru, I.D., et al., Multi-scale modelling of bioreactoreseparator system for wastewater
+**(Ofiteru, I.D., et al 2013)** Ofiteru, I.D., et al., Multi-scale modelling of bioreactor-separator system for wastewater
 treatment with two-dimensional activated sludge floc dynamics, Water Research (2013)
    
   

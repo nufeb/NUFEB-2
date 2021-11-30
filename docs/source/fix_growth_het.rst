@@ -51,7 +51,7 @@ Examples
    
 Description
 """""""""""
-Perfrom microbial growth (or decay) to the atoms defined in *group-ID*. 
+Perform microbial growth (or decay) to the atoms defined in *group-ID*. 
 The affected atoms are considered as heterotrophic bacteria, 
 in spherical shape
 with outer mass and outer diameter for representing their EPS shells
@@ -71,7 +71,7 @@ The following forward Euler method is implemented to update the mass
   om' & = om + \mu_{EPS} \Delta t
   
 The specific growth rates :math:`\mu` and EPS secretion rate :math:`\mu_{EPS}` are
-calcualted based on the equations described in :ref:`(Ofiteru, I.D., et al, 2013) <ofiteru13>`: 
+calculated based on the equations described in :ref:`(Ofiteru, I.D., et al, 2013) <ofiteru13>`: 
 
 .. math::
   \mu & = r1 + r2 + r3 - r4 - r5 - r6 - b_{decay}
@@ -135,6 +135,6 @@ This fix is not compatible with the following commands:
 
 .. _ofiteru13:
 
-**(Ofiteru, I.D., et al 2013)** Ofiteru, I.D., et al., Multi-scale modelling of bioreactoreseparator system for wastewater
+**(Ofiteru, I.D., et al 2013)** Ofiteru, I.D., et al., Multi-scale modelling of bioreactor-separator system for wastewater
 treatment with two-dimensional activated sludge floc dynamics, Water Research (2013)
 

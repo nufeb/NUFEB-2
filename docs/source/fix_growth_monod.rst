@@ -36,7 +36,7 @@ Examples
 
 Description
 """""""""""
-Perfrom microbial growth (or decay) to the atoms defined in *group-ID*. The fix is called in each biological step (see :doc:`run_style nufeb <run_style_nufeb>`)
+Perform microbial growth (or decay) to the atoms defined in *group-ID*. The fix is called in each biological step (see :doc:`run_style nufeb <run_style_nufeb>`)
 to update atom and grid properties.
 The following forward Euler method is implemented to update the mass (*m*) of each atom in the group:
 
@@ -44,7 +44,7 @@ The following forward Euler method is implemented to update the mass (*m*) of ea
 
   m'= m + \mu \Delta t
   
-The specific growth rate :math:`\mu` is calcualted based on the Monod equation:
+The specific growth rate :math:`\mu` is calculated based on the Monod equation:
 
 .. math::
 
