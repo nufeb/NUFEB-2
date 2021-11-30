@@ -12,13 +12,13 @@ Syntax
 
 * ID = user-assigned name for the fix
 * group-ID = ID of the group atoms to apply the fix to
-* sub-ID = ID of the substrate for atom growth
+* sub-ID = ID of the (organic) substrate for atom growth
 * sub-Ks = half-velocity constant (Ks) of the substrate
-* o2-ID = ID of the oxygen for aerobic growth
+* o2-ID = ID of the substrate (oxygen) for aerobic growth
 * o2-Ks = half-velocity constant (Ks) of oxygen
-* no2-ID = ID of the nitrite for anaerobic growth
+* no2-ID = ID of the substrate (nitrite) for anaerobic growth
 * no2-Ks = half-velocity constant (Ks) of nitrite
-* no3-ID = ID of the nitrate for anaerobic growth
+* no3-ID = ID of the substrate (nitrate) for anaerobic growth
 * no3-Ks = half-velocity constant (Ks) of nitrate
 * keyword = *growth* or *yield* or *decay* or *maintain* 
 
@@ -40,12 +40,12 @@ Examples
    group het type 1
    grid_style nufeb/chemostat 4 sub o2 no2 no3 4e-6
    
-   fix f_ghet het nufeb/growth/monod sub 4e-3 o2 2e-4 no2 3e-4 no3 3e-4 growth 6.9e-5 yield 0.61
+   fix f_ghet het nufeb/growth/het sub 4e-3 o2 2e-4 no2 3e-4 no3 3e-4 growth 6.9e-5 yield 0.61
    
-   fix f_ghet het nufeb/growth/monod sub 4e-3 o2 2e-4 no2 3e-4 no3 3e-4 & 
+   fix f_ghet het nufeb/growth/het sub 4e-3 o2 2e-4 no2 3e-4 no3 3e-4 & 
    growth 6.9e-5 yield 0.61 epsyield 0.18 epsdens 30
       
-   fix f_ghet het nufeb/growth/monod sub 4e-3 o2 2e-4 no2 3e-4 no3 3e-4 & 
+   fix f_ghet het nufeb/growth/het sub 4e-3 o2 2e-4 no2 3e-4 no3 3e-4 & 
    growth 6.9e-5 yield 0.61 decay 9.2e-7 maintain 3.7e-6 epsyield 0.18 anoxic 0.6 epsdens 30
    
    
@@ -53,8 +53,9 @@ Description
 """""""""""
 Perfrom microbial growth (or decay) to the atoms defined in *group-ID*. 
 The affected atoms are considered as heterotrophic bacteria, 
-which are coccus (see :doc:`atom_style coccus <atom_vec_coccus>`)
-with outer mass and outer diameter for representing their EPS shells.
+in spherical shape
+with outer mass and outer diameter for representing their EPS shells
+(see :doc:`atom_style coccus <atom_vec_coccus>`).
 The model assumes heterotrophs grow by consuming organic substrate in 
 oxygenated conditions or nitrate in anoxic denitrifying conditions.
 
@@ -118,7 +119,7 @@ The rates are related to the specific growth rate and yield as follows:
   
 where:
 
-* :math:`r_{sub}, r_{o2}, r_{no2}, r_{no3}` are the utilization rates of org substrate, oxygen, nitrite and nitrate in the affected grid cells, respectively
+* :math:`r_{sub}, r_{o2}, r_{no2}, r_{no3}` are the utilization rates of organic substrate, oxygen, nitrite and nitrate in the affected grid cells, respectively
 * :math:`X` is the biomass density in grid cell 
 
 

@@ -1,7 +1,7 @@
 Extend NUFEB with new growth model 
 ===================================
 
-This tutorial provides a guidance on developing your own microbial system with new species types and their catabolic models. 
+This tutorial provides guidance on developing your own microbial system with new species types and their catabolic models. 
 This requires some coding works to implement their unique growth equations into the NUFEB codebase. 
 Before doing, make sure none of the growth model provided in NUFEB (fix nufeb/growth/\*) can be used in your system.
 
@@ -24,9 +24,9 @@ The corresponding ODEs are as follow:
   
 where
 
-* :math:`\mu_{max1}` and :math:`\mu_{max1}` are the maximum growth rates of spec1 and spec2, repectively
-* :math:`S_{nut}` and :math:`S_{anti}` are the concentrations of the nutrient and antibiotics, repectively
-* :math:`Ks_{nut}` and :math:`Ks_{anti}` are the half-velocity constants of the nutrient and antibiotics, repectively
+* :math:`\mu_{max1}` and :math:`\mu_{max1}` are the maximum growth rates of spec1 and spec2, respectively
+* :math:`S_{nut}` and :math:`S_{anti}` are the concentrations of the nutrient and antibiotics, respectively
+* :math:`Ks_{nut}` and :math:`Ks_{anti}` are the half-velocity constants of the nutrient and antibiotics, respectively
 * :math:`Y_{spec1}` and :math:`Y_{spec2}` are the yield coefficients of the two species
 
 Prepare input files

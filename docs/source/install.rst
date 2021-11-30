@@ -128,8 +128,8 @@ When the installation finished, you should have an executable ``nufeb_mpi`` or
 will be automatically added to the system (.bashrc).
 
  .. note::
-   For the sake of convenience, the executables built from install.sh are limited to mpi, gpu (cuda + mpi), and serial versions.
-   More building options can be achieved by using traditional makefiles, see `LAMMPS user manual <https://docs.lammps.org/Build.html/>`_. 
+   For convenience, the executables built from install.sh are limited to mpi, gpu (cuda + mpi), and serial versions.
+   More building options can be achieved by using traditional makefiles, see `LAMMPS user manual <https://docs.lammps.org/Build.html/>`_
    for the details.
    
    
