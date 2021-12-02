@@ -43,7 +43,8 @@ Perform microbial growth to the atoms defined in *group-ID*.
 The affected atoms are considered as nitrite-oxidizing bacteria (NOB), 
 in spherical shape without outer mass and outer diameter
 (see :doc:`atom_style coccus <atom_vec_coccus>`).
-The model assumes NOBs can oxidize nitrite to nitrate for their growth.
+The model assumes NOBs can oxidize nitrite to nitrate for their growth,
+and it takes also into account the related decay and endogenous respiration processes.
 
 The fix is called in each biological step (see :doc:`run_style nufeb <run_style_nufeb>`)
 to update atom and grid properties.

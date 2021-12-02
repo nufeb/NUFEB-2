@@ -57,7 +57,8 @@ in spherical shape
 with outer mass and outer diameter for representing their EPS shells
 (see :doc:`atom_style coccus <atom_vec_coccus>`).
 The model assumes heterotrophs grow by consuming organic substrate in 
-oxygenated conditions or nitrate in anoxic denitrifying conditions.
+oxygenated conditions or nitrate in anoxic denitrifying conditions,
+and takes also into account the related decay and endogenous respiration processes.
 
 The fix is called in each biological step (see :doc:`run_style nufeb <run_style_nufeb>`)
 to update atom and grid properties.
