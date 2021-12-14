@@ -38,8 +38,9 @@ Examples
    
    fix f_gana ana nufeb/growth/anammox nh4 7e-5 o2 1e-5 no2 5e-5 no3 growth 9.26e-7 yield 0.159 maintain 3.5e-8 decay 3e-8
    
- Description
-"""""""""""
+Description
+""""""""""""""
+
 Perform microbial growth to the atoms defined in *group-ID*. 
 The affected atoms are considered as anaerobic ammonia-oxidizing bacteria (anammox), 
 in spherical shape without outer mass and outer diameter
@@ -52,6 +53,7 @@ to update atom and grid properties.
 The following forward Euler method is implemented to update the mass 
 (*m*) of each atom in the group:
  
+.. math::
   m' & = m + \mu \Delta t
   
 The specific growth rates :math:`\mu` is 
