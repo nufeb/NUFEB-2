@@ -27,15 +27,14 @@ namespace LAMMPS_NS {
 class FixGrowthEPS: public FixGrowth {
  public:
   FixGrowthEPS(class LAMMPS *, int, char **);
-  virtual ~FixGrowthEPS() {}
-  virtual void compute();
+  ~FixGrowthEPS() {}
+
+  void update_atoms();
+  void update_cells();
 
  protected:
   int isub;
   double decay;
-  
-  template <int, int> void update_cells();
-  virtual void update_atoms();
 };
 
 }

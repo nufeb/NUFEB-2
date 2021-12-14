@@ -83,22 +83,6 @@ FixGrowthMonod::FixGrowthMonod(LAMMPS *lmp, int narg, char **arg) :
 
 /* ---------------------------------------------------------------------- */
 
-void FixGrowthMonod::compute()
-{
-  if (reaction_flag && growth_flag) {
-    update_cells<1, 1>();
-    update_atoms();
-  } else if (reaction_flag && !growth_flag) {
-    update_cells<1, 0>();
-  } else if (!reaction_flag && growth_flag) {
-    update_cells<0, 1>();
-    update_atoms();
-  }
-}
-
-/* ---------------------------------------------------------------------- */
-
-template <int Reaction, int Growth>
 void FixGrowthMonod::update_cells()
 {
   double **conc = grid->conc;
@@ -108,13 +92,9 @@ void FixGrowthMonod::update_cells()
   for (int i = 0; i < grid->ncells; i++) {
     double tmp1 = growth * conc[isub][i] / (sub_affinity + conc[isub][i]);
 
-    if (Reaction && !(grid->mask[i] & GHOST_MASK)) {
+    if (!(grid->mask[i] & GHOST_MASK)) {
       // nutrient utilization
       reac[isub][i] -= 1 / yield * tmp1 * dens[igroup][i];
-    }
-
-    if (Growth) {
-      grid->growth[igroup][i][0] = tmp1 - decay;
     }
   }
 }
@@ -123,6 +103,14 @@ void FixGrowthMonod::update_cells()
 
 void FixGrowthMonod::update_atoms()
 {
+  double **conc = grid->conc;
+
+  for (int i = 0; i < grid->ncells; i++) {
+    double tmp1 = growth * conc[isub][i] / (sub_affinity + conc[isub][i]);
+
+    grid->growth[igroup][i][0] = tmp1 - decay;
+  }
+
   if (atom->coccus_flag) {
     update_atoms_coccus();
   } else {

@@ -52,15 +52,6 @@
 #include "comm_grid.h"
 #include "fix_density.h"
 #include "fix_diffusion_reaction.h"
-#include "fix_mass_transport.h"
-#include "fix_growth.h"
-#include "fix_eps_extract.h"
-#include "fix_divide.h"
-#include "fix_death.h"
-#include "fix_reactor.h"
-#include "fix_gas_liquid.h"
-#include "fix_property.h"
-#include "fix_boundary_layer.h"
 #include "compute_volume.h"
 
 using namespace LAMMPS_NS;
@@ -82,31 +73,16 @@ NufebRun::NufebRun(LAMMPS *lmp, int narg, char **arg) :
   pairdt = 1.0;
   pairtol = 1.0;
   pairmax = -1;
-  
-  nfix_growth = 0;
+
   nfix_diffusion = 0;
-  nfix_eps_extract = 0;
-  nfix_divide = 0;
-  nfix_death = 0;
-  nfix_reactor = 0;
-  nfix_property = 0;
-  nfix_transport = 0;
-  
+
   fix_density = nullptr;
-  fix_growth = nullptr;
   fix_diffusion = nullptr;
-  fix_transport = nullptr;
   comp_pressure = nullptr;
   comp_ke = nullptr;
   comp_volume = nullptr;
-  fix_eps_extract = nullptr;
-  fix_divide = nullptr;
-  fix_death = nullptr;
-  fix_property = nullptr;
-  fix_blayer = nullptr;
-  fix_gas_liquid = nullptr;
 
-  profile = NULL;
+  profile = nullptr;
   
   int iarg = 0;
   while (iarg < narg) {
@@ -160,14 +136,7 @@ NufebRun::~NufebRun()
   if (profile)
     fclose(profile);
   
-  delete [] fix_growth;
   delete [] fix_diffusion;
-  delete [] fix_transport;
-  delete [] fix_eps_extract;
-  delete [] fix_divide;
-  delete [] fix_death;
-  delete [] fix_reactor;
-  delete [] fix_property;
 }
 
 /* ----------------------------------------------------------------------
@@ -181,6 +150,16 @@ void NufebRun::init()
   update->integrate_style = new char[13];
   strcpy(update->integrate_style, "verlet/nufeb\0");
 
+  // allocate space for storing fix diffusion
+  fix_diffusion = new FixDiffusionReaction*[modify->nfix];
+  
+  for (int i = 0; i < modify->nfix; i++) {
+    // find nufeb fixes
+    if (strstr(modify->fix[i]->style, "nufeb/diffusion_reaction")) {
+      fix_diffusion[nfix_diffusion++] = (FixDiffusionReaction *)modify->fix[i];
+    }
+  }
+
   // create fix nufeb/density
   char **fixarg = new char*[3];
   fixarg[0] = (char *)"nufeb_density";
@@ -190,41 +169,6 @@ void NufebRun::init()
   delete [] fixarg;
   fix_density = (FixDensity *)modify->fix[modify->nfix-1];
 
-  // allocate space for storing fixes
-  fix_growth = new FixGrowth*[modify->nfix];
-  fix_diffusion = new FixDiffusionReaction*[modify->nfix];
-  fix_transport = new FixMassTransport*[modify->nfix];
-  fix_eps_extract = new FixEPSExtract*[modify->nfix];
-  fix_divide = new FixDivide*[modify->nfix];
-  fix_death = new FixDeath*[modify->nfix];
-  fix_reactor = new FixReactor*[modify->nfix];
-  fix_property = new FixProperty*[modify->nfix];
-  
-  // find fixes
-  for (int i = 0; i < modify->nfix; i++) {
-    if (strstr(modify->fix[i]->style, "nufeb/growth")) {
-      fix_growth[nfix_growth++] = (FixGrowth *)modify->fix[i];
-    } else if (strstr(modify->fix[i]->style, "nufeb/diffusion_reaction")) {
-      fix_diffusion[nfix_diffusion++] = (FixDiffusionReaction *)modify->fix[i];
-    } else if (strstr(modify->fix[i]->style, "nufeb/mass_transport")) {
-      fix_transport[nfix_transport++] = (FixMassTransport *)modify->fix[i];
-    } else if (strstr(modify->fix[i]->style, "nufeb/eps_extract")) {
-      fix_eps_extract[nfix_eps_extract++] = (FixEPSExtract *)modify->fix[i];
-    } else if (strstr(modify->fix[i]->style, "nufeb/divide")) {
-      fix_divide[nfix_divide++] = (FixDivide *)modify->fix[i];
-    } else if (strstr(modify->fix[i]->style, "nufeb/death")) {
-      fix_death[nfix_death++] = (FixDeath *)modify->fix[i];
-    } else if (strstr(modify->fix[i]->style, "nufeb/reactor")) {
-      fix_reactor[nfix_reactor++] = (FixReactor *)modify->fix[i];
-    } else if (strstr(modify->fix[i]->style, "nufeb/gas_liquid")) {
-      fix_gas_liquid = (FixGasLiquid *) modify->fix[i];
-    } else if (strstr(modify->fix[i]->style, "nufeb/property")) {
-      fix_property[nfix_property++] = (FixProperty *)modify->fix[i];
-    } else if (strstr(modify->fix[i]->style, "nufeb/boundary_layer")) {
-      fix_blayer = (FixBoundaryLayer *) modify->fix[i];
-    }
-  }
-  
   // create compute volume
   char **volarg = new char*[3];
   volarg[0] = (char *)"nufeb_volume";
@@ -368,43 +312,16 @@ void NufebRun::setup(int flag)
   output->setup(flag);
   update->setupflag = 0;
 
-  // NUFEB specific
+  // set timestep to biological dt
 
   biodt = update->dt;
-  
-  // disable all fixes that will be called in chemical and biological processes
-  fix_density->compute_flag = 0;
-  if (fix_blayer != nullptr)
-    fix_blayer->compute_flag = 0;
-  if (fix_gas_liquid != nullptr)
-    fix_gas_liquid->compute_flag = 0;
-  for (int i = 0; i < nfix_growth; i++)
-    fix_growth[i]->compute_flag = 0;
-  for (int i = 0; i < nfix_diffusion; i++)
-    fix_diffusion[i]->compute_flag = 0;
-  for (int i = 0; i < nfix_transport; i++)
-    fix_transport[i]->compute_flag = 0;
-  for (int i = 0; i < nfix_eps_extract; i++)
-    fix_eps_extract[i]->compute_flag = 0;
-  for (int i = 0; i < nfix_divide; i++)
-    fix_divide[i]->compute_flag = 0;
-  for (int i = 0; i < nfix_death; i++)
-    fix_death[i]->compute_flag = 0;
-  for (int i = 0; i < nfix_reactor; i++)
-    fix_reactor[i]->compute_flag = 0;
-  for (int i = 0; i < nfix_property; i++)
-    fix_property[i]->compute_flag = 0;
 
   // compute density
   fix_density->compute();
-  
-  // update boundary layer
-  if (fix_blayer != nullptr)
-    fix_blayer->compute();
 
   // run diffusion until it reaches steady state
   if (init_diff_flag) {
-    int niter = chem_process();
+    int niter = module_chemsitry();
     if (comm->me == 0)
       fprintf(screen, "Initial diffusion reaction converged in %d steps\n", niter);
   } else {
@@ -481,19 +398,6 @@ void NufebRun::setup_minimal(int flag)
 void NufebRun::run(int n)
 {
   bigint ntimestep;
-  int nflag,sortflag;
-
-  int n_post_integrate = modify->n_post_integrate;
-  int n_pre_exchange = modify->n_pre_exchange;
-  int n_pre_neighbor = modify->n_pre_neighbor;
-  int n_post_neighbor = modify->n_post_neighbor;
-  int n_pre_force = modify->n_pre_force;
-  int n_pre_reverse = modify->n_pre_reverse;
-  int n_post_force = modify->n_post_force;
-  int n_end_of_step = modify->n_end_of_step;
-
-  if (atom->sortfreq > 0) sortflag = 1;
-  else sortflag = 0;
 
   for (int i = 0; i < n; i++) {
     double step_start = get_time();
@@ -510,157 +414,57 @@ void NufebRun::run(int n)
 
     ev_set(ntimestep);
     timer->stamp();
+
+    // run biology module
     double t = get_time();
-    // run biological processes
-    bio_process();
+    module_biology();
     if (profile)
       fprintf(profile, "%d %e ", update->ntimestep, get_time()-t);
     
-    update->dt = pairdt;
-    reset_dt();
-    
-    double vol = comp_volume->compute_scalar();
-    timer->stamp(Timer::MODIFY);
-
+    // run physics module
     t = get_time();
-    npair = 0;
-    double press = 0.0;
-    do {
-      // initial time integration
-
-      timer->stamp();
-      modify->initial_integrate(vflag);
-      if (n_post_integrate) modify->post_integrate();
-      timer->stamp(Timer::MODIFY);
-
-      // regular communication vs neighbor list rebuild
-
-      nflag = neighbor->decide();
-
-      if (nflag == 0) {
-    	timer->stamp();
-    	comm->forward_comm();
-    	timer->stamp(Timer::COMM);
-      } else {
-    	if (n_pre_exchange) {
-    	  timer->stamp();
-    	  modify->pre_exchange();
-    	  timer->stamp(Timer::MODIFY);
-    	}
-    	if (triclinic) domain->x2lamda(atom->nlocal);
-    	domain->pbc();
-    	if (domain->box_change) {
-    	  domain->reset_box();
-    	  comm->setup();
-    	  if (neighbor->style) neighbor->setup_bins();
-    	}
-    	timer->stamp();
-    	comm->exchange();
-    	if (sortflag && ntimestep >= atom->nextsort) atom->sort();
-    	comm->borders();
-    	if (triclinic) domain->lamda2x(atom->nlocal+atom->nghost);
-    	timer->stamp(Timer::COMM);
-    	if (n_pre_neighbor) {
-    	  modify->pre_neighbor();
-    	  timer->stamp(Timer::MODIFY);
-    	}
-    	neighbor->build(1);
-    	timer->stamp(Timer::NEIGH);
-    	if (n_post_neighbor) {
-    	  modify->post_neighbor();
-    	  timer->stamp(Timer::MODIFY);
-    	}
-      }
-
-      // force computations
-      // important for pair to come before bonded contributions
-      // since some bonded potentials tally pairwise energy/virial
-      // and Pair:ev_tally() needs to be called before any tallying
-
-      force_clear();
-
-      timer->stamp();
-
-      if (n_pre_force) {
-    	modify->pre_force(vflag);
-    	timer->stamp(Timer::MODIFY);
-      }
-
-      if (pair_compute_flag) {
-    	force->pair->compute(eflag,vflag);
-    	timer->stamp(Timer::PAIR);
-      }
-    
-      if (atom->molecular) {
-    	if (force->bond) force->bond->compute(eflag,vflag);
-    	if (force->angle) force->angle->compute(eflag,vflag);
-    	if (force->dihedral) force->dihedral->compute(eflag,vflag);
-    	if (force->improper) force->improper->compute(eflag,vflag);
-    	timer->stamp(Timer::BOND);
-      }
-
-      if (kspace_compute_flag) {
-    	force->kspace->compute(eflag,vflag);
-    	timer->stamp(Timer::KSPACE);
-      }
-
-      if (n_pre_reverse) {
-    	modify->pre_reverse(eflag,vflag);
-    	timer->stamp(Timer::MODIFY);
-      }
-
-      // reverse communication of forces
-
-      if (force->newton) {
-    	comm->reverse_comm();
-    	timer->stamp(Timer::COMM);
-      }
-
-      // force modifications, final time integration, diagnostics
-
-      if (n_post_force) modify->post_force(vflag);
-      modify->final_integrate();
-      if (n_end_of_step) modify->end_of_step();
-      timer->stamp(Timer::MODIFY);
-
-      ++npair;
-
-      press = comp_pressure->compute_scalar() * domain->xprd * domain->yprd * domain->zprd;
-      press += comp_ke->compute_scalar();
-      press /= 3.0 * vol;
-
-      timer->stamp(Timer::MODIFY);
-
-    } while(fabs(press) > pairtol && ((pairmax > 0) ? npair < pairmax : true));
+    double press;
+    press = module_physics();
     if (profile)
       fprintf(profile, "%d %e ", npair, get_time()-t);
     if (info && comm->me == 0) fprintf(screen, "pair interaction: %d steps (pressure %e N/m2)\n", npair, press);
 
-    // update densities
+    // reset to biological timestep
+    update->dt = biodt;
+    reset_dt();
 
-    timer->stamp();
+    // call all fixes implementing post_physcis()
+    if (modify->n_post_physics_nufeb) {
+      timer->stamp();
+      modify->post_physics_nufeb();
+      timer->stamp(Timer::MODIFY);
+    }
+
+    // run chemistry module
     t = get_time();
-    fix_density->compute();
+    ndiff = module_chemsitry();
     if (profile)
-      fprintf(profile, "%e ", get_time()-t);
-    timer->stamp(Timer::MODIFY);
-
-    // update boundary layer
-    if (fix_blayer != nullptr)
-      fix_blayer->compute();
-
-    // run chemical processes
-    t = get_time();
-    ndiff = chem_process();
-    if (profile)
-      fprintf(profile, "%d %e\n", ndiff, get_time()-t);
+      fprintf(profile, "%d %e ", ndiff, get_time()-t);
     if (info && comm->me == 0) fprintf(screen, "diffusion: %d steps\n", ndiff);
     
-    // run reactor processes
-    reactor_process();
+    // reset to biological timestep
+    update->dt = biodt;
+    reset_dt();
+
+    // call all fixes implementing post_chemistry_nufeb()
+    if (modify->n_post_chemistry_nufeb) {
+      timer->stamp();
+      modify->post_chemistry_nufeb();
+      timer->stamp(Timer::MODIFY);
+    }
+
+    // run reactor module
+    t = get_time();
+    module_reactor();
+    if (profile)
+      fprintf(profile, "%e\n", get_time()-t);
 
     // all output
-
     if (ntimestep == output->next) {
       timer->stamp();
       output->write(ntimestep);
@@ -740,54 +544,28 @@ void NufebRun::force_clear()
 
 /* ---------------------------------------------------------------------- */
 
-void NufebRun::bio_process()
+void NufebRun::module_biology()
 {
-  // set biological dt
+  // reset to biological timestep
 
   update->dt = biodt;
   reset_dt();
 
-  // setup growth fixes
+  // call all fixes implementing biology_nufeb()
 
-  for (int i = 0; i < nfix_growth; i++) {
-    fix_growth[i]->reaction_flag = 0;
-    fix_growth[i]->growth_flag = 1;
-  }
-
-  // grow atoms
-
-  for (int i = 0; i < nfix_growth; i++) {
-    fix_growth[i]->compute();
-  }
-
-  for (int i = 0; i < nfix_eps_extract; i++) {
-    fix_eps_extract[i]->compute();
-  }
-
-  for (int i = 0; i < nfix_divide; i++) {
-    fix_divide[i]->compute();
-  }
-
-  for (int i = 0; i < nfix_death; i++) {
-    fix_death[i]->compute();
-  }
-
-  for (int i = 0; i < nfix_property; i++) {
-    fix_property[i]->compute();
+  if (modify->n_biology_nufeb) {
+    timer->stamp();
+    modify->biology_nufeb();
+    timer->stamp(Timer::MODIFY);
   }
 }
 
 /* ---------------------------------------------------------------------- */
 
-int NufebRun::chem_process()
+int NufebRun::module_chemsitry()
 {
-  // setup growth fixes for diffusion
-  for (int i = 0; i < nfix_growth; i++) {
-    fix_growth[i]->reaction_flag = 1;
-    fix_growth[i]->growth_flag = 0;
-  }
+  // reset to diffusion timestep
 
-  // set diffusion dt
   update->dt = diffdt;
   reset_dt();
   
@@ -811,14 +589,12 @@ int NufebRun::chem_process()
       if (!converge[i])
 	fix_diffusion[i]->compute_initial();
     }
-    for (int i = 0; i < nfix_growth; i++) {
-      fix_growth[i]->compute();
-    }
-    for (int i = 0; i < nfix_transport; i++) {
-      fix_transport[i]->compute();
-    }
-    if (fix_gas_liquid != nullptr) {
-      fix_gas_liquid->compute();
+
+    // call all fixes implementing chemistry_nufebs()
+    if (modify->n_chemistry_nufeb) {
+      timer->stamp();
+      modify->chemistry_nufeb();
+      timer->stamp(Timer::MODIFY);
     }
 
     for (int i = 0; i < nfix_diffusion; i++) {
@@ -846,17 +622,159 @@ int NufebRun::chem_process()
 
 /* ---------------------------------------------------------------------- */
 
-void NufebRun::reactor_process()
+double NufebRun::module_physics()
 {
-  // set biological dt
+  bigint ntimestep;
+  int nflag,sortflag;
+
+  if (atom->sortfreq > 0) sortflag = 1;
+  else sortflag = 0;
+
+  int n_post_integrate = modify->n_post_integrate;
+  int n_pre_exchange = modify->n_pre_exchange;
+  int n_pre_neighbor = modify->n_pre_neighbor;
+  int n_post_neighbor = modify->n_post_neighbor;
+  int n_pre_force = modify->n_pre_force;
+  int n_pre_reverse = modify->n_pre_reverse;
+  int n_post_force = modify->n_post_force;
+  int n_end_of_step = modify->n_end_of_step;
+
+  // reset to DEM timestep
+
+  update->dt = pairdt;
+  reset_dt();
+
+  double vol = comp_volume->compute_scalar();
+  timer->stamp(Timer::MODIFY);
+
+  npair = 0;
+  double press = 0.0;
+  do {
+    // initial time integration
+
+    timer->stamp();
+    modify->initial_integrate(vflag);
+    if (n_post_integrate) modify->post_integrate();
+    timer->stamp(Timer::MODIFY);
+
+    // regular communication vs neighbor list rebuild
+
+    nflag = neighbor->decide();
+
+    if (nflag == 0) {
+  	timer->stamp();
+  	comm->forward_comm();
+  	timer->stamp(Timer::COMM);
+    } else {
+  	if (n_pre_exchange) {
+  	  timer->stamp();
+  	  modify->pre_exchange();
+  	  timer->stamp(Timer::MODIFY);
+  	}
+  	if (triclinic) domain->x2lamda(atom->nlocal);
+  	domain->pbc();
+  	if (domain->box_change) {
+  	  domain->reset_box();
+  	  comm->setup();
+  	  if (neighbor->style) neighbor->setup_bins();
+  	}
+  	timer->stamp();
+  	comm->exchange();
+  	if (sortflag && ntimestep >= atom->nextsort) atom->sort();
+  	comm->borders();
+  	if (triclinic) domain->lamda2x(atom->nlocal+atom->nghost);
+  	timer->stamp(Timer::COMM);
+  	if (n_pre_neighbor) {
+  	  modify->pre_neighbor();
+  	  timer->stamp(Timer::MODIFY);
+  	}
+  	neighbor->build(1);
+  	timer->stamp(Timer::NEIGH);
+  	if (n_post_neighbor) {
+  	  modify->post_neighbor();
+  	  timer->stamp(Timer::MODIFY);
+  	}
+    }
+
+    // force computations
+    // important for pair to come before bonded contributions
+    // since some bonded potentials tally pairwise energy/virial
+    // and Pair:ev_tally() needs to be called before any tallying
+
+    force_clear();
+
+    timer->stamp();
+
+    if (n_pre_force) {
+  	modify->pre_force(vflag);
+  	timer->stamp(Timer::MODIFY);
+    }
+
+    if (pair_compute_flag) {
+  	force->pair->compute(eflag,vflag);
+  	timer->stamp(Timer::PAIR);
+    }
+
+    if (atom->molecular) {
+  	if (force->bond) force->bond->compute(eflag,vflag);
+  	if (force->angle) force->angle->compute(eflag,vflag);
+  	if (force->dihedral) force->dihedral->compute(eflag,vflag);
+  	if (force->improper) force->improper->compute(eflag,vflag);
+  	timer->stamp(Timer::BOND);
+    }
+
+    if (kspace_compute_flag) {
+  	force->kspace->compute(eflag,vflag);
+  	timer->stamp(Timer::KSPACE);
+    }
+
+    if (n_pre_reverse) {
+  	modify->pre_reverse(eflag,vflag);
+  	timer->stamp(Timer::MODIFY);
+    }
+
+    // reverse communication of forces
+
+    if (force->newton) {
+  	comm->reverse_comm();
+  	timer->stamp(Timer::COMM);
+    }
+
+    // force modifications, final time integration, diagnostics
+
+    if (n_post_force) modify->post_force(vflag);
+    modify->final_integrate();
+    if (n_end_of_step) modify->end_of_step();
+    timer->stamp(Timer::MODIFY);
+
+    ++npair;
+
+    press = comp_pressure->compute_scalar() * domain->xprd * domain->yprd * domain->zprd;
+    press += comp_ke->compute_scalar();
+    press /= 3.0 * vol;
+
+    timer->stamp(Timer::MODIFY);
+
+  } while(fabs(press) > pairtol && ((pairmax > 0) ? npair < pairmax : true));
+
+  return press;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void NufebRun::module_reactor()
+{
+  // reset to biological timestep
 
   update->dt = biodt;
   reset_dt();
 
-  // update reactor attributes
+  // call all fixes implementing reactor_nufeb()
 
-  for (int i = 0; i < nfix_reactor; i++) {
-    fix_reactor[i]->compute();
+  if (modify->n_reactor_nufeb) {
+    timer->stamp();
+    modify->reactor_nufeb();
+    timer->stamp(Timer::MODIFY);
   }
 }
 

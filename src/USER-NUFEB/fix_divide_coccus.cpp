@@ -23,7 +23,6 @@
 #include "compute.h"
 #include "math_const.h"
 #include "random_park.h"
-#include "update.h"
 #include "modify.h"
 #include "domain.h"
 #include "atom_masks.h"

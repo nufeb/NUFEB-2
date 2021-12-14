@@ -86,6 +86,13 @@ int FixWallAdhesion::setmask()
 
 void FixWallAdhesion::post_force(int vflag)
 {
+  compute();
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixWallAdhesion::compute()
+{
   double dx,dy,dz,del1,del2,delxy,delr,rsq;
 
   double wlo = lo;
@@ -102,7 +109,7 @@ void FixWallAdhesion::post_force(int vflag)
   double eps_mass;
   double delta;
   double r, rinv, ccel, ccelx, ccely, ccelz;
-  
+
   for (int i = 0; i < nlocal; i++) {
     if (atom->mask[i] & eps_mask) {
       eps_mass = rmass[i];

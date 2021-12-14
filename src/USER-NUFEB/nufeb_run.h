@@ -52,37 +52,20 @@ class NufebRun : public Integrate {
   double pairdt;
   double pairtol;
   int pairmax;
-  
-  int nfix_growth;
   int nfix_diffusion;
-  int nfix_transport;
-  int nfix_eps_extract;
-  int nfix_divide;
-  int nfix_death;
-  int nfix_reactor;
-  int nfix_property;
-  
-  class FixDensity *fix_density;
-  class FixGasLiquid *fix_gas_liquid;
-  class FixBoundaryLayer *fix_blayer;
 
-  class FixGrowth **fix_growth;
+  class FixDensity *fix_density;
   class FixDiffusionReaction **fix_diffusion;
-  class FixMassTransport **fix_transport;
   class ComputePressure *comp_pressure;
   class ComputeKE *comp_ke;
   class ComputeVolume *comp_volume;
-  class FixEPSExtract **fix_eps_extract;
-  class FixDivide **fix_divide;
-  class FixDeath **fix_death;
-  class FixReactor **fix_reactor;
-  class FixProperty **fix_property;
 
   FILE *profile;
   
-  virtual void bio_process();
-  virtual int chem_process();
-  virtual void reactor_process();
+  virtual void module_biology();
+  virtual int module_chemsitry();
+  virtual double module_physics();
+  virtual void module_reactor();
   double get_time();
 };
 

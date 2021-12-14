@@ -11,8 +11,8 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#ifndef LMP_FIX_MONOD_H
-#define LMP_FIX_MONOD_H
+#ifndef LMP_FIX_GROWTH_H
+#define LMP_FIX_GROWTH_H
 
 #include "fix.h"
 #include "atom_vec_bacillus.h"
@@ -21,24 +21,22 @@ namespace LAMMPS_NS {
 
 class FixGrowth : public Fix {
  public:
-  int compute_flag;
-  int reaction_flag;
-  int growth_flag;
-
   FixGrowth(class LAMMPS *, int, char **);
   virtual ~FixGrowth() {}
   int modify_param(int, char **);
-  void update_atom();
+
+  void chemistry_nufeb();
+  void biology_nufeb();
+
+  int setmask();
   virtual void init();
   virtual void reset_dt();
-  virtual int setmask();
-  virtual void post_integrate();
-  virtual void compute() = 0;
+  virtual void update_atoms() = 0;
+  virtual void update_cells() = 0;
   
  protected:
   double dt;
 
-  virtual void update_atoms() = 0;
   void update_atoms_coccus();
   void update_atoms_bacillus(AtomVecBacillus *&avec);
 };

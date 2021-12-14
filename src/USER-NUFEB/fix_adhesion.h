@@ -41,7 +41,7 @@ class FixAdhesion : public Fix {
   int allocated;
 
   template <int DISP>
-  void compute(int);
+  void compute();
 };
 
 }

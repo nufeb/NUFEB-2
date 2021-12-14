@@ -21,6 +21,7 @@
 #include "domain.h"
 #include "comm.h"
 #include "group.h"
+#include "update.h"
 #include "grid_masks.h"
 
 using namespace LAMMPS_NS;
@@ -33,8 +34,6 @@ FixBoundaryLayer::FixBoundaryLayer(LAMMPS *lmp, int narg, char **arg) :
 {
   if (narg < 4)
     error->all(FLERR,"Illegal fix nufeb/boundary_layer command");
-
-  compute_flag = 1;
 
   boundary = nullptr;
 
@@ -49,7 +48,7 @@ FixBoundaryLayer::FixBoundaryLayer(LAMMPS *lmp, int narg, char **arg) :
 int FixBoundaryLayer::setmask()
 {
   int mask = 0;
-  mask |= POST_INTEGRATE;
+  mask |= POST_CHEMISTRY_NUFEB;
   return mask;
 }
 
@@ -59,15 +58,12 @@ int FixBoundaryLayer::modify_param(int narg, char **arg)
 {
   int iarg = 0;
   while (iarg < narg) {
-    if (strcmp(arg[iarg], "compute") == 0) {
-      if (strcmp(arg[iarg+1], "yes") == 0) {
-	compute_flag = 1;
-      } else if (strcmp(arg[iarg+1], "no") == 0) {
-	compute_flag = 0;
-      } else {
-	error->all(FLERR, "Illegal fix_modify command");
-      }
+    if (strcmp(arg[iarg], "nevery") == 0) {
+      nevery = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
+      if (nevery <= 0) error->all(FLERR,"Illegal fix_modify command");
       iarg += 2;
+    } else {
+      error->all(FLERR, "Illegal fix_modify command");
     }
   }
   return iarg;
@@ -81,10 +77,10 @@ void FixBoundaryLayer::init()
 
 /* ---------------------------------------------------------------------- */
 
-void FixBoundaryLayer::post_integrate()
+void FixBoundaryLayer::post_chemistry_nufeb()
 {
-  if (compute_flag)
-    compute();
+  if (update->ntimestep % nevery) return;
+  compute();
 }
 
 /* ---------------------------------------------------------------------- */

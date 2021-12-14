@@ -194,8 +194,8 @@ action grid_kokkos.cpp grid.cpp
 action grid_kokkos.h grid.h
 action grid_vec_kokkos.cpp grid_vec.cpp
 action grid_vec_kokkos.h grid_vec.h
-action grid_vec_monod_kokkos.cpp grid_vec_monod.cpp
-action grid_vec_monod_kokkos.h grid_vec_monod.h
+action grid_vec_chemostat_kokkos.cpp grid_vec_chemostat.cpp
+action grid_vec_chemostat_kokkos.h grid_vec_chemostat.h
 action improper_class2_kokkos.cpp improper_class2.cpp 
 action improper_class2_kokkos.h improper_class2.h
 action improper_harmonic_kokkos.cpp improper_harmonic.cpp

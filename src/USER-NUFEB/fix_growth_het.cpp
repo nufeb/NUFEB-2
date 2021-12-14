@@ -42,8 +42,6 @@ FixGrowthHET::FixGrowthHET(LAMMPS *lmp, int narg, char **arg) :
   if (!atom->coccus_flag)
     error->all(FLERR, "fix nufeb/growth/het requires atom_style coccus");
 
-  dynamic_group_allow = 1;
-
   isub = -1;
   io2 = -1;
   ino2 = -1;
@@ -113,22 +111,6 @@ FixGrowthHET::FixGrowthHET(LAMMPS *lmp, int narg, char **arg) :
 
 /* ---------------------------------------------------------------------- */
 
-void FixGrowthHET::compute()
-{ 
-  if (reaction_flag && growth_flag) {
-    update_cells<1, 1>();
-    update_atoms();
-  } else if (reaction_flag && !growth_flag) {
-    update_cells<1, 0>();
-  } else if (!reaction_flag && growth_flag) {
-    update_cells<0, 1>();
-    update_atoms();
-  }
-}
-
-/* ---------------------------------------------------------------------- */
-
-template <int Reaction, int Growth>
 void FixGrowthHET::update_cells()
 {
   double **conc = grid->conc;
@@ -143,17 +125,11 @@ void FixGrowthHET::update_cells()
     double tmp5 = 1 / 2.86 * maintain * anoxic * conc[ino3][i] / (no3_affinity + conc[ino3][i]) * o2_affinity / (o2_affinity + conc[io2][i]);
     double tmp6 = 1 / 1.17 * maintain * anoxic * conc[ino2][i] / (no2_affinity + conc[ino2][i]) * o2_affinity / (o2_affinity + conc[io2][i]);
 
-    if (Reaction && !(grid->mask[i] & GHOST_MASK)) {
+    if (!(grid->mask[i] & GHOST_MASK)) {
       reac[isub][i] -= 1 / yield * (tmp1 + tmp2 + tmp3) * dens[igroup][i];
       reac[io2][i] -= (1 - yield - eps_yield) / yield * tmp1 * dens[igroup][i] + tmp4 * dens[igroup][i];
       reac[ino2][i] -= (1 - yield - eps_yield) / (1.17 * yield) * tmp3 * dens[igroup][i] + tmp6 * dens[igroup][i];
       reac[ino3][i] -= (1 - yield - eps_yield) / (2.86 * yield) * tmp2 * dens[igroup][i] + tmp5 * dens[igroup][i];
-    }
-  
-    if (Growth) {
-      double ***grow = grid->growth;
-      grow[igroup][i][0] = tmp1 + tmp2 + tmp3 - tmp4 - tmp5 - tmp6 - decay;
-      grow[igroup][i][1] = (eps_yield / yield) * (tmp1 + tmp2 + tmp3);
     }
   }
 }
@@ -168,11 +144,23 @@ void FixGrowthHET::update_atoms()
   double *biomass = atom->biomass;
   double *outer_radius = atom->outer_radius;
   double *outer_mass = atom->outer_mass;
-  double ***growth = grid->growth;
+  double **conc = grid->conc;
 
   const double three_quarters_pi = (3.0 / (4.0 * MY_PI));
   const double four_thirds_pi = 4.0 * MY_PI / 3.0;
   const double third = 1.0 / 3.0;
+
+  for (int i = 0; i < grid->ncells; i++) {
+    double tmp1 = growth * conc[isub][i] / (sub_affinity + conc[isub][i]) * conc[io2][i] / (o2_affinity + conc[io2][i]);
+    double tmp2 = anoxic * growth * conc[isub][i] / (sub_affinity + conc[isub][i]) * conc[ino3][i] / (no3_affinity + conc[ino3][i]) * o2_affinity / (o2_affinity + conc[io2][i]);
+    double tmp3 = anoxic * growth * conc[isub][i] / (sub_affinity + conc[isub][i]) * conc[ino2][i] / (no2_affinity + conc[ino2][i]) * o2_affinity / (o2_affinity + conc[io2][i]);
+    double tmp4 = maintain * conc[io2][i] / (o2_affinity + conc[io2][i]);
+    double tmp5 = 1 / 2.86 * maintain * anoxic * conc[ino3][i] / (no3_affinity + conc[ino3][i]) * o2_affinity / (o2_affinity + conc[io2][i]);
+    double tmp6 = 1 / 1.17 * maintain * anoxic * conc[ino2][i] / (no2_affinity + conc[ino2][i]) * o2_affinity / (o2_affinity + conc[io2][i]);
+
+    grid->growth[igroup][i][0] = tmp1 + tmp2 + tmp3 - tmp4 - tmp5 - tmp6 - decay;
+    grid->growth[igroup][i][1] = (eps_yield / yield) * (tmp1 + tmp2 + tmp3);
+  }
 
   for (int i = 0; i < atom->nlocal; i++) {
     if (atom->mask[i] & groupbit) {
@@ -180,11 +168,11 @@ void FixGrowthHET::update_atoms()
       const double density = rmass[i] /
 	(four_thirds_pi * radius[i] * radius[i] * radius[i]);
       // forward Euler to update biomass and rmass
-      rmass[i] = rmass[i] * (1 + growth[igroup][cell][0] * dt);
+      rmass[i] = rmass[i] * (1 + grid->growth[igroup][cell][0] * dt);
       outer_mass[i] = four_thirds_pi *
 	(outer_radius[i] * outer_radius[i] * outer_radius[i] -
 	 radius[i] * radius[i] * radius[i]) *
-	eps_dens + growth[igroup][cell][1] * rmass[i] * dt;
+	eps_dens + grid->growth[igroup][cell][1] * rmass[i] * dt;
       radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
       outer_radius[i] = pow(three_quarters_pi *
 			    (rmass[i] / density + outer_mass[i] / eps_dens),

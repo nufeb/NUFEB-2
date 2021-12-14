@@ -35,12 +35,10 @@ FixDiffusionReaction::FixDiffusionReaction(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 3)
     error->all(FLERR,"Illegal fix nufeb/diffusion_reaction command");
 
-  compute_flag = 1;
   dynamic_group_allow = 1;
   scalar_flag = 1;
 
   closed_system = 0;
-
   ncells = 0;
   dt = 1.0;
   prev = nullptr;
@@ -58,20 +56,9 @@ FixDiffusionReaction::FixDiffusionReaction(LAMMPS *lmp, int narg, char **arg) :
 
 FixDiffusionReaction::~FixDiffusionReaction()
 {
-
   if (copymode) return;
   memory->destroy(prev);
   if (closed_system) memory->destroy(penult);
-}
-
-/* ---------------------------------------------------------------------- */
-
-int FixDiffusionReaction::setmask()
-{
-  int mask = 0;
-  mask |= PRE_FORCE;
-  mask |= FINAL_INTEGRATE;
-  return mask;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -80,15 +67,12 @@ int FixDiffusionReaction::modify_param(int narg, char **arg)
 {
   int iarg = 0;
   while (iarg < narg) {
-    if (strcmp(arg[iarg], "compute") == 0) {
-      if (strcmp(arg[iarg+1], "yes") == 0) {
-	compute_flag = 1;
-      } else if (strcmp(arg[iarg+1], "no") == 0) {
-	compute_flag = 0;
-      } else {
-	error->all(FLERR, "Illegal fix_modify command");
-      }
+    if (strcmp(arg[iarg], "nevery") == 0) {
+      nevery = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
+      if (nevery <= 0) error->all(FLERR,"Illegal fix_modify command");
       iarg += 2;
+    } else {
+      error->all(FLERR, "Illegal fix_modify command");
     }
   }
   return iarg;
@@ -120,22 +104,6 @@ void FixDiffusionReaction::init()
   }
   dt = update->dt;
 
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixDiffusionReaction::pre_force(int)
-{
-  if (compute_flag)
-    compute_initial();
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixDiffusionReaction::final_integrate()
-{
-  if (compute_flag)
-    compute_final();
 }
 
 /* ---------------------------------------------------------------------- */

@@ -30,6 +30,7 @@ class FixWallAdhesion : public Fix {
   virtual ~FixWallAdhesion() {}
   int setmask();
   void post_force(int);
+  void compute();
 
  protected:
   double kn;

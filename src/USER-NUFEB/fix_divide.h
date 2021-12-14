@@ -20,13 +20,11 @@ namespace LAMMPS_NS {
 
 class FixDivide : public Fix {
  public:
-  int compute_flag;
-  
   FixDivide(class LAMMPS *, int, char **);
   virtual ~FixDivide() {};
   int modify_param(int, char **);
   int setmask();
-  void post_integrate();
+  void biology_nufeb();
   void post_neighbor();
   virtual void compute() = 0;
 };

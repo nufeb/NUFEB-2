@@ -20,17 +20,20 @@ FixStyle(nufeb/reactor/solute_balance,FixReactorSoluteBalance)
 #ifndef LMP_FIX_REACTOR_SOLUTE_BALANCE_H
 #define LMP_FIX_REACTOR_SOLUTE_BALANCE_H
 
-#include "fix_reactor.h"
+#include "fix.h"
 
 namespace LAMMPS_NS {
 
-class FixReactorSoluteBalance : public FixReactor {
+class FixReactorSoluteBalance : public Fix {
  public:
   FixReactorSoluteBalance(class LAMMPS *, int, char **);
   virtual ~FixReactorSoluteBalance() {}
+
+  int setmask();
+  void init();
   double compute_scalar();
-  virtual void init();
-  virtual void compute();
+  void reactor_nufeb();
+  void compute();
 
  protected:
   int iliq;

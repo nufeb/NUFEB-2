@@ -30,7 +30,7 @@ using namespace FixConst;
 /* ---------------------------------------------------------------------- */
 
 FixReactorSoluteBalance::FixReactorSoluteBalance(LAMMPS *lmp, int narg, char **arg) :
-  FixReactor(lmp, narg, arg)
+  Fix(lmp, narg, arg)
 {
   if (narg < 4)
     error->all(FLERR,"Illegal fix nufeb/reactor/solute_balance command");
@@ -74,6 +74,17 @@ FixReactorSoluteBalance::FixReactorSoluteBalance(LAMMPS *lmp, int narg, char **a
       iarg += 2;
     }
   }
+
+  scalar_flag = 1;
+}
+
+/* ---------------------------------------------------------------------- */
+
+int FixReactorSoluteBalance::setmask()
+{
+  int mask = 0;
+  mask |= REACTOR_NUFEB;
+  return mask;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -90,6 +101,14 @@ void FixReactorSoluteBalance::init()
 double FixReactorSoluteBalance::compute_scalar()
 {
   return grid->bulk[iliq];
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixReactorSoluteBalance::reactor_nufeb()
+{
+  if (update->ntimestep % nevery) return;
+  compute();
 }
 
 /* ----------------------------------------------------------------------

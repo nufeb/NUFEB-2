@@ -361,7 +361,7 @@ void NufebRunKokkos::setup(int flag)
 
   // run diffusion until it reaches steady state
   if (init_diff_flag) {
-    int niter = chem_process();
+    int niter = module_chemsitry();
     if (comm->me == 0)
       fprintf(screen, "Initial diffusion reaction converged in %d steps\n", niter);
   } else {
@@ -514,7 +514,7 @@ void NufebRunKokkos::run(int n)
     ev_set(ntimestep);
 
     double t = get_time();
-    bio_process();
+    module_biology();
 
     if (profile)
       fprintf(profile, "%d %e ", update->ntimestep, get_time()-t);
@@ -779,7 +779,7 @@ void NufebRunKokkos::run(int n)
     // run diffusion until it reaches steady state
 
     t = get_time();
-    ndiff = chem_process();
+    ndiff = module_chemsitry();
     if (profile)
       fprintf(profile, "%d %e\n", ndiff, get_time()-t);
     if (comm->me == 0) fprintf(screen, "diffusion: %d steps\n", ndiff);
@@ -854,7 +854,7 @@ void NufebRunKokkos::force_clear()
 
 /* ---------------------------------------------------------------------- */
 
-void NufebRunKokkos::bio_process()
+void NufebRunKokkos::module_biology()
 {
   // set biological dt
 
@@ -893,7 +893,7 @@ void NufebRunKokkos::bio_process()
 
 /* ---------------------------------------------------------------------- */
 
-int NufebRunKokkos::chem_process()
+int NufebRunKokkos::module_chemsitry()
 {
   // setup growth fixes for diffusion
   for (int i = 0; i < nfix_growth; i++) {
@@ -960,7 +960,7 @@ int NufebRunKokkos::chem_process()
 
 /* ---------------------------------------------------------------------- */
 
-void NufebRunKokkos::reactor_process()
+void NufebRunKokkos::module_reactor()
 {
   // set biological dt
 

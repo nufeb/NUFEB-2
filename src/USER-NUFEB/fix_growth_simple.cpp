@@ -37,10 +37,7 @@ FixGrowthSimple::FixGrowthSimple(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 4)
     error->all(FLERR, "Illegal fix nufeb/growth/monod command");
 
-  dynamic_group_allow = 1;
-
   isub = -1;
-
   growth = 0.0;
 
   avec = nullptr;
@@ -63,39 +60,16 @@ FixGrowthSimple::FixGrowthSimple(LAMMPS *lmp, int narg, char **arg) :
 
 /* ---------------------------------------------------------------------- */
 
-void FixGrowthSimple::compute()
-{
-  if (reaction_flag && growth_flag) {
-    update_cells<1, 1>();
-    update_atoms();
-  } else if (reaction_flag && !growth_flag) {
-    update_cells<1, 0>();
-  } else if (!reaction_flag && growth_flag) {
-    update_cells<0, 1>();
-    update_atoms();
-  }
-}
-
-/* ---------------------------------------------------------------------- */
-
-template <int Reaction, int Growth>
-void FixGrowthSimple::update_cells()
+void FixGrowthSimple::update_atoms()
 {
   double **conc = grid->conc;
   double **reac = grid->reac;
   double **dens = grid->dens;
 
   for (int i = 0; i < grid->ncells; i++) {
-    if (Growth) {
-      grid->growth[igroup][i][0] = growth;
-    }
+    grid->growth[igroup][i][0] = growth;
   }
-}
 
-/* ---------------------------------------------------------------------- */
-
-void FixGrowthSimple::update_atoms()
-{
   if (atom->coccus_flag) {
     update_atoms_coccus();
   } else {

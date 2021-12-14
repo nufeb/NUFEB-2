@@ -77,8 +77,6 @@ action fix_adhesion.cpp
 action fix_adhesion.h
 action fix_adhesion_eps.cpp
 action fix_adhesion_eps.h
-action fix_death.cpp
-action fix_death.h
 action fix_death_diameter.cpp
 action fix_death_diameter.h
 action fix_density.cpp
@@ -129,8 +127,6 @@ action fix_property_cycletime.h
 action fix_property_cycletime.cpp
 action fix_property_generation.h
 action fix_property_generation.cpp
-action fix_reactor.cpp
-action fix_reactor.h
 action fix_reactor_solute_balance.cpp
 action fix_reactor_solute_balance.h
 action fix_reactor_gas_balance.cpp

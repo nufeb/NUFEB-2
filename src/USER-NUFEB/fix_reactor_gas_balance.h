@@ -20,18 +20,21 @@ FixStyle(nufeb/reactor/gas_balance,FixReactorGasBalance)
 #ifndef LMP_FIX_REACTOR_GAS_BALANCE_H
 #define LMP_FIX_REACTOR_GAS_BALANCE_H
 
-#include "fix_reactor.h"
+#include "fix.h"
 
 namespace LAMMPS_NS {
 
-class FixReactorGasBalance : public FixReactor {
+class FixReactorGasBalance : public Fix {
  public:
 
   FixReactorGasBalance(class LAMMPS *, int, char **);
   ~FixReactorGasBalance();
+
+  int setmask();
+  void init();
   double compute_scalar();
-  virtual void init();
-  virtual void compute();
+  void reactor_nufeb();
+  void compute();
 
  protected:
   int igas;

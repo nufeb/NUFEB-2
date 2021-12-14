@@ -20,22 +20,19 @@ namespace LAMMPS_NS {
 
 class FixProperty : public Fix {
  public:
-  int compute_flag;
-
   double **aprop;
   double *vprop;
 
   FixProperty(class LAMMPS *, int, char **);
   ~FixProperty();
 
+  int modify_param(int, char **);
   void grow_arrays(int);
   virtual void init() {}
   virtual void set_arrays(int) {}
   virtual void update_arrays(int, int) {}
 
-  int setmask();
-  void post_integrate();
-  virtual void compute() = 0;
+  virtual int setmask() = 0;
 
   void copy_arrays(int, int, int);
   int pack_exchange(int, double *);

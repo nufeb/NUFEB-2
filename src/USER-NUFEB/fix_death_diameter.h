@@ -20,18 +20,20 @@ FixStyle(nufeb/death/diameter,FixDeathDiameter)
 #ifndef LMP_FIX_DEATH_DIAMETER_H
 #define LMP_FIX_DEATH_DIAMETER_H
 
-#include "fix_death.h"
+#include "fix.h"
 
 namespace LAMMPS_NS {
 
-class FixDeathDiameter : public FixDeath {
+class FixDeathDiameter : public Fix {
  public:
-  int compute_flag;
-
   FixDeathDiameter(class LAMMPS *, int, char **);
-  virtual ~FixDeathDiameter() {}
-  virtual void init() {}
-  virtual void compute();
+  ~FixDeathDiameter() {}
+  int modify_param(int, char **);
+
+  void init() {}
+  int setmask();
+  void biology_nufeb();
+  void compute();
   
  private:
   int idead;

@@ -128,13 +128,13 @@ void FixAdhesion::post_force(int vflag)
   if (vflag) v_setup(vflag);
   else evflag = 0;
 
-  compute<0>(vflag);
+  compute<0>();
 }
 
 /* ---------------------------------------------------------------------- */
 
 template <int DISP>
-void FixAdhesion::compute(int vflag)
+void FixAdhesion::compute()
 {
   int nlocal = atom->nlocal;
   int *type = atom->type;

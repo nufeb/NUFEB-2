@@ -75,6 +75,13 @@ int FixShear::setmask()
 
 void FixShear::post_force(int /*vflag*/)
 {
+  compute();
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixShear::compute()
+{
   double **f = atom->f;
   double **x = atom->x;
   double **v = atom->v;

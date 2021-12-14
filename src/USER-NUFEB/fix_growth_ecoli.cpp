@@ -40,8 +40,6 @@ FixGrowthEcoli::FixGrowthEcoli(LAMMPS *lmp, int narg, char **arg) :
   if (!grid->chemostat_flag)
     error->all(FLERR, "fix nufeb/growth/ecoli requires grid_style nufeb/chemostat");
 
-  dynamic_group_allow = 1;
-
   isuc = -1;
   io2 = -1;
   ico2 = -1;
@@ -98,22 +96,6 @@ FixGrowthEcoli::FixGrowthEcoli(LAMMPS *lmp, int narg, char **arg) :
 
 /* ---------------------------------------------------------------------- */
 
-void FixGrowthEcoli::compute()
-{
-  if (reaction_flag && growth_flag) {
-    update_cells<1, 1>();
-    update_atoms();
-  } else if (reaction_flag && !growth_flag) {
-    update_cells<1, 0>();
-  } else if (!reaction_flag && growth_flag) {
-    update_cells<0, 1>();
-    update_atoms();
-  }
-}
-
-/* ---------------------------------------------------------------------- */
-
-template <int Reaction, int Growth>
 void FixGrowthEcoli::update_cells()
 {
   double **conc = grid->conc;
@@ -126,15 +108,11 @@ void FixGrowthEcoli::update_cells()
     // sucrose export-induced growth reduction
     double tmp2 = maintain * conc[io2][i] / (o2_affinity + conc[io2][i]);
 
-    if (Reaction && !(grid->mask[i] & GHOST_MASK)) {
+    if (!(grid->mask[i] & GHOST_MASK)) {
       // nutrient utilization
       reac[isuc][i] -= 1 / yield * tmp1 * dens[igroup][i];
       reac[io2][i] -= 0.399 * (tmp1 + tmp2) * dens[igroup][i];
       reac[ico2][i] += 0.2 * (tmp1 + tmp2) * dens[igroup][i];
-    }
-
-    if (Growth) {
-      grid->growth[igroup][i][0] = tmp1 - tmp2 - decay;
     }
   }
 }
@@ -143,6 +121,17 @@ void FixGrowthEcoli::update_cells()
 
 void FixGrowthEcoli::update_atoms()
 {
+  double **conc = grid->conc;
+
+  for (int i = 0; i < grid->ncells; i++) {
+    // cyanobacterial growth rate based on light(sub) and co2
+    double tmp1 = growth * conc[isuc][i] / (suc_affinity + conc[isuc][i]) * conc[io2][i] / (o2_affinity + conc[io2][i]);
+    // sucrose export-induced growth reduction
+    double tmp2 = maintain * conc[io2][i] / (o2_affinity + conc[io2][i]);
+
+    grid->growth[igroup][i][0] = tmp1 - tmp2 - decay;
+  }
+
   if (atom->coccus_flag) {
     update_atoms_coccus();
   } else {

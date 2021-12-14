@@ -26,7 +26,6 @@ using namespace FixConst;
 FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
-  compute_flag = 1;
   force_reneighbor = 1;
 }
 
@@ -36,7 +35,7 @@ FixDivide::FixDivide(LAMMPS *lmp, int narg, char **arg) :
 int FixDivide::setmask()
 {
   int mask = 0;
-  mask |= POST_INTEGRATE;
+  mask |= BIOLOGY_NUFEB;
   mask |= POST_NEIGHBOR;
   return mask;
 }
@@ -47,14 +46,9 @@ int FixDivide::modify_param(int narg, char **arg)
 {
   int iarg = 0;
   while (iarg < narg) {
-    if (strcmp(arg[iarg], "compute") == 0) {
-      if (strcmp(arg[iarg+1], "yes") == 0) {
-	compute_flag = 1;
-      } else if (strcmp(arg[iarg+1], "no") == 0) {
-	compute_flag = 0;
-      } else {
-	error->all(FLERR, "Illegal fix_modify command");
-      }
+    if (strcmp(arg[iarg], "nevery") == 0) {
+      nevery = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
+      if (nevery <= 0) error->all(FLERR,"Illegal fix_modify command");
       iarg += 2;
     } else {
       error->all(FLERR, "Illegal fix_modify command");
@@ -65,11 +59,10 @@ int FixDivide::modify_param(int narg, char **arg)
 
 /* ---------------------------------------------------------------------- */
 
-void FixDivide::post_integrate()
+void FixDivide::biology_nufeb()
 {
-  if (compute_flag) {
-    compute();
-  }
+  if (update->ntimestep % nevery) return;
+  compute();
   // trigger immediate reneighboring
   next_reneighbor = update->ntimestep;
 }

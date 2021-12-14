@@ -84,16 +84,16 @@ void FixEPSAdhesion::post_force(int vflag)
   else evflag = 0;
 
   if (disp == DEFAULT) {
-    compute<0>(vflag);
+    compute<0>();
   } else if (disp == SQUARE) {
-    compute<1>(vflag);
+    compute<1>();
   }
 }
 
 /* ---------------------------------------------------------------------- */
 
 template <int DISP>
-void FixEPSAdhesion::compute(int vflag)
+void FixEPSAdhesion::compute()
 {
   int nlocal = atom->nlocal;
   int *mask = atom->mask;

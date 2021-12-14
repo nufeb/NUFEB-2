@@ -31,7 +31,6 @@ FixProperty::FixProperty(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg),
   aprop(nullptr), vprop(nullptr)
 {
-  compute_flag = 0;
   restart_peratom = 1;
   // this fix produces either a per-atom vector or array
   peratom_flag = 1;
@@ -58,20 +57,19 @@ FixProperty::~FixProperty()
 
 /* ---------------------------------------------------------------------- */
 
-int FixProperty::setmask()
+int FixProperty::modify_param(int narg, char **arg)
 {
-  int mask = 0;
-  mask |= POST_INTEGRATE;
-  return mask;
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixProperty::post_integrate()
-{
-  if (compute_flag) {
-    compute();
+  int iarg = 0;
+  while (iarg < narg) {
+    if (strcmp(arg[iarg], "nevery") == 0) {
+      nevery = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
+      if (nevery <= 0) error->all(FLERR,"Illegal fix_modify command");
+      iarg += 2;
+    } else {
+      error->all(FLERR, "Illegal fix_modify command");
+    }
   }
+  return iarg;
 }
 
 /* ----------------------------------------------------------------------

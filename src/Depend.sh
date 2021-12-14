@@ -71,7 +71,6 @@ fi
 if (test $1 = "GRANULAR") then
   depend KOKKOS
   depend USER-OMP
-  depend USER-NUFEB
 fi
 
 if (test $1 = "KSPACE") then

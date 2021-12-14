@@ -26,13 +26,11 @@ namespace LAMMPS_NS {
 
 class FixMassTransport : public Fix {
  public:
-  int compute_flag;
-
   FixMassTransport(class LAMMPS *, int, char **);
   ~FixMassTransport() {}
-  int modify_param(int, char **);
+
   int setmask();
-  void post_integrate();
+  void chemistry_nufeb();
   void compute();
 
  protected:

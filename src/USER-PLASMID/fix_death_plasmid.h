@@ -20,18 +20,20 @@ FixStyle(nufeb/death/plasmid,FixDeathPlasmid)
 #ifndef LMP_FIX_DEATH_PLASMID_H
 #define LMP_FIX_DEATH_PLASMID_H
 
-#include "fix_death.h"
+#include "fix.h"
 
 namespace LAMMPS_NS {
 
-class FixDeathPlasmid : public FixDeath {
+class FixDeathPlasmid : public Fix {
  public:
-  int compute_flag;
-
   FixDeathPlasmid(class LAMMPS *, int, char **);
-  virtual ~FixDeathPlasmid() {}
-  virtual void init() {}
-  virtual void compute();
+  ~FixDeathPlasmid() {}
+  int modify_param(int, char **);
+
+  void init() {}
+  int setmask();
+  void biology_nufeb();
+  void compute();
 
  private:
   int idead;

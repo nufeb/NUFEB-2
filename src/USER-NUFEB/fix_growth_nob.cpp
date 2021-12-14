@@ -38,8 +38,6 @@ FixGrowthNOB::FixGrowthNOB(LAMMPS *lmp, int narg, char **arg) :
   if (!grid->chemostat_flag)
     error->all(FLERR, "fix nufeb/growth/nob requires grid_style nufeb/chemostat");
 
-  dynamic_group_allow = 1;
-
   io2 = -1;
   ino2 = -1;
   ino3 = -1;
@@ -88,22 +86,6 @@ FixGrowthNOB::FixGrowthNOB(LAMMPS *lmp, int narg, char **arg) :
 
 /* ---------------------------------------------------------------------- */
 
-void FixGrowthNOB::compute()
-{
-  if (reaction_flag && growth_flag) {
-    update_cells<1, 1>();
-    update_atoms();
-  } else if (reaction_flag && !growth_flag) {
-    update_cells<1, 0>();
-  } else if (!reaction_flag && growth_flag) {
-    update_cells<0, 1>();
-    update_atoms();
-  }
-}
-
-/* ---------------------------------------------------------------------- */
-
-template <int Reaction, int Growth>
 void FixGrowthNOB::update_cells()
 {
   double **conc = grid->conc;
@@ -114,14 +96,10 @@ void FixGrowthNOB::update_cells()
     double tmp1 = growth * conc[ino2][i] / (no2_affinity + conc[ino2][i]) * conc[io2][i] / (o2_affinity + conc[io2][i]);
     double tmp2 = maintain * conc[io2][i] / (o2_affinity + conc[io2][i]);
 
-    if (Reaction && !(grid->mask[i] & GHOST_MASK)) {
+    if (!(grid->mask[i] & GHOST_MASK)) {
       reac[ino2][i] -= 1 / yield * tmp1 * dens[igroup][i];
       reac[io2][i] -= (1.15 - yield) / yield * tmp1 * dens[igroup][i] + tmp2 * dens[igroup][i];
       reac[ino3][i] += 1 / yield * tmp1 * dens[igroup][i];
-    }
-
-    if (Growth) {
-      grid->growth[igroup][i][0] = tmp1 - tmp2 - decay;
     }
   }
 }
@@ -130,5 +108,14 @@ void FixGrowthNOB::update_cells()
 
 void FixGrowthNOB::update_atoms()
 {
+  double **conc = grid->conc;
+
+  for (int i = 0; i < grid->ncells; i++) {
+    double tmp1 = growth * conc[ino2][i] / (no2_affinity + conc[ino2][i]) * conc[io2][i] / (o2_affinity + conc[io2][i]);
+    double tmp2 = maintain * conc[io2][i] / (o2_affinity + conc[io2][i]);
+
+    grid->growth[igroup][i][0] = tmp1 - tmp2 - decay;
+  }
+
   update_atoms_coccus();
 }

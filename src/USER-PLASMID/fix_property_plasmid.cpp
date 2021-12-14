@@ -195,6 +195,25 @@ void FixPropertyPlasmid::grow_arrays(int nmax)
   memory->grow(tfila,nmax,fmax,"fix_nufeb/property/plasmid:tfila");
 }
 
+/* ---------------------------------------------------------------------- */
+
+int FixPropertyPlasmid::setmask()
+{
+  int mask = 0;
+  mask |= BIOLOGY_NUFEB;
+  return mask;
+}
+
+/* ----------------------------------------------------------------------
+   update cell age
+------------------------------------------------------------------------- */
+
+void FixPropertyPlasmid::biology_nufeb()
+{
+  if (update->ntimestep % nevery) return;
+  compute();
+}
+
 /* ----------------------------------------------------------------------
    update plasmid copy number
 ------------------------------------------------------------------------- */

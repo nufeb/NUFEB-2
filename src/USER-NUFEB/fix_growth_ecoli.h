@@ -28,7 +28,9 @@ class FixGrowthEcoli: public FixGrowth {
  public:
   FixGrowthEcoli(class LAMMPS *, int, char **);
   virtual ~FixGrowthEcoli() {}
-  virtual void compute();
+
+  void update_atoms();
+  void update_cells();
 
  protected:
   int isuc;	// sucrose
@@ -44,9 +46,6 @@ class FixGrowthEcoli: public FixGrowth {
   double decay;
   
   class AtomVecBacillus *avec;
-
-  template <int, int> void update_cells();
-  virtual void update_atoms();
 };
 
 }

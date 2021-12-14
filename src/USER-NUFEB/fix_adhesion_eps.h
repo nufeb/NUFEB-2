@@ -37,7 +37,7 @@ class FixEPSAdhesion : public Fix {
   int disp;
 
   template <int DISP>
-  void compute(int);
+  void compute();
 };
 
 }

@@ -35,6 +35,7 @@ FixPropertyGeneration::FixPropertyGeneration(LAMMPS *lmp, int narg, char **arg) 
   grow_arrays(atom->nmax);
 }
 
+
 /* ---------------------------------------------------------------------- */
 
 void FixPropertyGeneration::init()
@@ -42,6 +43,13 @@ void FixPropertyGeneration::init()
   for (int i = 0; i < atom->nlocal; i++) {
     vprop[i] = 0.0;
   }
+}
+
+/* ---------------------------------------------------------------------- */
+
+int FixPropertyGeneration::setmask()
+{
+  return 0;
 }
 
 /* ----------------------------------------------------------------------

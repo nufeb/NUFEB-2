@@ -35,7 +35,7 @@ using namespace FixConst;
 /* ---------------------------------------------------------------------- */
 
 FixReactorGasBalance::FixReactorGasBalance(LAMMPS *lmp, int narg, char **arg) :
-  FixReactor(lmp, narg, arg)
+  Fix(lmp, narg, arg)
 {
   if (narg < 4)
     error->all(FLERR,"Illegal fix nufeb/reactor/gas_balance command");
@@ -68,6 +68,8 @@ FixReactorGasBalance::FixReactorGasBalance(LAMMPS *lmp, int narg, char **arg) :
       error->all(FLERR, "Illegal fix nufeb/reactor/gas_balance command");
     }
   }
+
+  scalar_flag = 1;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -75,6 +77,15 @@ FixReactorGasBalance::FixReactorGasBalance(LAMMPS *lmp, int narg, char **arg) :
 FixReactorGasBalance::~FixReactorGasBalance()
 {
   delete [] fix_gas_liquid;
+}
+
+/* ---------------------------------------------------------------------- */
+
+int FixReactorGasBalance::setmask()
+{
+  int mask = 0;
+  mask |= REACTOR_NUFEB;
+  return mask;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -99,6 +110,14 @@ void FixReactorGasBalance::init()
 double FixReactorGasBalance::compute_scalar()
 {
   return grid->bulk[igas];
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixReactorGasBalance::reactor_nufeb()
+{
+  if (update->ntimestep % nevery) return;
+  compute();
 }
 
 /* ----------------------------------------------------------------------

@@ -20,6 +20,7 @@
 #include "grid.h"
 #include "domain.h"
 #include "group.h"
+#include "update.h"
 #include "atom_masks.h"
 
 using namespace LAMMPS_NS;
@@ -34,7 +35,6 @@ FixDensity::FixDensity(LAMMPS *lmp, int narg, char **arg) :
     error->all(FLERR,"Illegal fix nufeb/density command");
 
   dynamic_group_allow = 1;
-  compute_flag = 1;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -42,7 +42,7 @@ FixDensity::FixDensity(LAMMPS *lmp, int narg, char **arg) :
 int FixDensity::setmask()
 {
   int mask = 0;
-  mask |= POST_INTEGRATE;
+  mask |= POST_PHYSICS_NUFEB;
   return mask;
 }
 
@@ -52,15 +52,12 @@ int FixDensity::modify_param(int narg, char **arg)
 {
   int iarg = 0;
   while (iarg < narg) {
-    if (strcmp(arg[iarg], "compute") == 0) {
-      if (strcmp(arg[iarg+1], "yes") == 0) {
-	compute_flag = 1;
-      } else if (strcmp(arg[iarg+1], "no") == 0) {
-	compute_flag = 0;
-      } else {
-	error->all(FLERR, "Illegal fix_modify command");
-      }
+    if (strcmp(arg[iarg], "nevery") == 0) {
+      nevery = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
+      if (nevery <= 0) error->all(FLERR,"Illegal fix_modify command");
       iarg += 2;
+    } else {
+      error->all(FLERR, "Illegal fix_modify command");
     }
   }
   return iarg;
@@ -68,10 +65,10 @@ int FixDensity::modify_param(int narg, char **arg)
 
 /* ---------------------------------------------------------------------- */
 
-void FixDensity::post_integrate()
+void FixDensity::post_physics_nufeb()
 {
-  if (compute_flag)
-    compute();
+  if (update->ntimestep % nevery) return;
+  compute();
 }
 
 /* ---------------------------------------------------------------------- */

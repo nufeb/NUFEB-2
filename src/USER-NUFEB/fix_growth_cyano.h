@@ -27,8 +27,11 @@ namespace LAMMPS_NS {
 class FixGrowthCyano: public FixGrowth {
  public:
   FixGrowthCyano(class LAMMPS *, int, char **);
-  virtual ~FixGrowthCyano() {}
-  virtual void compute();
+  ~FixGrowthCyano() {}
+
+  void update_atoms();
+  void update_cells();
+
  protected:
   int ilight;   // light
   int ico2;     // co2
@@ -47,9 +50,6 @@ class FixGrowthCyano: public FixGrowth {
   double gco2_flag;
   
   class AtomVecBacillus *avec;
-
-  template <int, int> void update_cells();
-  virtual void update_atoms();
 };
 
 }

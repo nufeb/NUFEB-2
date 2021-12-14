@@ -27,8 +27,10 @@ namespace LAMMPS_NS {
 class FixGrowthMonod: public FixGrowth {
  public:
   FixGrowthMonod(class LAMMPS *, int, char **);
-  virtual ~FixGrowthMonod() {}
-  virtual void compute();
+  ~FixGrowthMonod() {}
+
+  void update_atoms();
+  void update_cells();
 
  protected:
   int isub;
@@ -40,9 +42,6 @@ class FixGrowthMonod: public FixGrowth {
   double decay;
   
   class AtomVecBacillus *avec;
-
-  template <int, int> void update_cells();
-  virtual void update_atoms();
 };
 
 }

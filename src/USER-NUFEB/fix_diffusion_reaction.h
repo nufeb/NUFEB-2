@@ -26,21 +26,18 @@ namespace LAMMPS_NS {
 
 class FixDiffusionReaction : public Fix {
  public:
-  bool compute_flag;
-
   FixDiffusionReaction(class LAMMPS *, int, char **);
-  virtual ~FixDiffusionReaction();
-  int setmask();
+  ~FixDiffusionReaction();
+  int setmask() {return 0;}
   int modify_param(int, char **);
-  virtual void init();
-  virtual void pre_force(int);
-  virtual void final_integrate();
-  virtual double compute_scalar();
-  virtual void reset_dt();
-  virtual void compute_initial();
-  virtual void compute_final();
-  virtual void closed_system_init();
-  virtual void closed_system_scaleup(double);
+  void init();
+  double compute_scalar();
+  void reset_dt();
+  void compute_initial();
+  void compute_final();
+  void closed_system_init();
+  void closed_system_scaleup(double);
+  void compute() {}
   
  protected:
   int isub;

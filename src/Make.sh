@@ -115,7 +115,7 @@ if (test $cmd = "style") || (test $cmd = "packages") then
   $cmd PAIR_CLASS      pair_       pair       force
   $cmd READER_CLASS    reader_     reader     read_dump
   $cmd REGION_CLASS    region_     region     domain
-  $cmd GRID_CLASS      grid_       grid      grid
+  $cmd GRID_CLASS      grid_       grid       grid
   
 # edit Makefile.lib, for creating non-shared lib
 # called by "make makelib"

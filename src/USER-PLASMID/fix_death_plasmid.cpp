@@ -16,6 +16,7 @@
 #include "error.h"
 #include "modify.h"
 #include "group.h"
+#include "update.h"
 #include "atom_masks.h"
 #include "fix_death_plasmid.h"
 #include "fix_property_plasmid.h"
@@ -26,12 +27,10 @@ using namespace FixConst;
 /* ---------------------------------------------------------------------- */
 
 FixDeathPlasmid::FixDeathPlasmid(LAMMPS *lmp, int narg, char **arg) :
-  FixDeath(lmp, narg, arg)
+    Fix(lmp, narg, arg)
 {
   if (narg < 4)
     error->all(FLERR, "Illegal nufeb/death/plasmid command");
-
-  compute_flag = 1;
   
   idead = group->find(arg[3]);
   if (idead < 0)
@@ -44,6 +43,40 @@ FixDeathPlasmid::FixDeathPlasmid(LAMMPS *lmp, int narg, char **arg) :
   if (ifix < 0 ) error->all(FLERR,"Illegal nufeb/death/plasmid command: "
       "requires fix nufeb/property/plasmid");
   fix_plasmid = (FixPropertyPlasmid *) modify->fix[ifix];
+}
+
+/* ---------------------------------------------------------------------- */
+
+int FixDeathPlasmid::setmask()
+{
+  int mask = 0;
+  mask |= BIOLOGY_NUFEB;
+  return mask;
+}
+
+/* ---------------------------------------------------------------------- */
+
+int FixDeathPlasmid::modify_param(int narg, char **arg)
+{
+  int iarg = 0;
+  while (iarg < narg) {
+    if (strcmp(arg[iarg], "nevery") == 0) {
+      nevery = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
+      if (nevery <= 0) error->all(FLERR,"Illegal fix_modify command");
+      iarg += 2;
+    } else {
+      error->all(FLERR, "Illegal fix_modify command");
+    }
+  }
+  return iarg;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixDeathPlasmid::biology_nufeb()
+{
+  if (update->ntimestep % nevery) return;
+  compute();
 }
 
 /* ---------------------------------------------------------------------- */

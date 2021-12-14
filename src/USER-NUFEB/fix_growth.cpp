@@ -32,10 +32,9 @@ using namespace MathConst;
 FixGrowth::FixGrowth(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
-  compute_flag = 1;
-  reaction_flag = 1;
-  growth_flag = 1;
   dt = 1.0;
+
+  dynamic_group_allow = 1;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -44,32 +43,9 @@ int FixGrowth::modify_param(int narg, char **arg)
 {
   int iarg = 0;
   while (iarg < narg) {
-    if (strcmp(arg[iarg], "compute") == 0) {
-      if (strcmp(arg[iarg+1], "yes") == 0) {
-	compute_flag = 1;
-      } else if (strcmp(arg[iarg+1], "no") == 0) {
-	compute_flag = 0;
-      } else {
-	error->all(FLERR, "Illegal fix_modify command");
-      }
-      iarg += 2;
-    } else if (strcmp(arg[iarg], "reaction") == 0) {
-      if (strcmp(arg[iarg+1], "yes") == 0) {
-	reaction_flag = 1;
-      } else if (strcmp(arg[iarg+1], "no") == 0) {
-	reaction_flag = 0;
-      } else {
-	error->all(FLERR, "Illegal fix_modify command");
-      }
-      iarg += 2;
-    } else if (strcmp(arg[iarg], "growth") == 0) {
-      if (strcmp(arg[iarg+1], "yes") == 0) {
-	growth_flag = 1;
-      } else if (strcmp(arg[iarg+1], "no") == 0) {
-	growth_flag = 0;
-      } else {
-	error->all(FLERR, "Illegal fix_modify command");
-      }
+    if (strcmp(arg[iarg], "nevery") == 0) {
+      nevery = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
+      if (nevery <= 0) error->all(FLERR,"Illegal fix_modify command");
       iarg += 2;
     } else {
       error->all(FLERR, "Illegal fix_modify command");
@@ -97,18 +73,25 @@ void FixGrowth::reset_dt()
 int FixGrowth::setmask()
 {
   int mask = 0;
-  mask |= POST_INTEGRATE;
+  mask |= BIOLOGY_NUFEB;
+  mask |= CHEMISTRY_NUFEB;
   return mask;
 }
 
 /* ---------------------------------------------------------------------- */
 
-void FixGrowth::post_integrate()
+void FixGrowth::biology_nufeb()
 {
-  if (compute_flag)
-    compute();
+  if (update->ntimestep % nevery) return;
+  update_atoms();
 }
 
+/* ---------------------------------------------------------------------- */
+
+void FixGrowth::chemistry_nufeb()
+{
+  update_cells();
+}
 
 /* ---------------------------------------------------------------------- */
 

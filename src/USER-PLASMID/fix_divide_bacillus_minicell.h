@@ -28,8 +28,8 @@ class FixDivideBacillusMinicell : public FixDivide {
  public:
   
   FixDivideBacillusMinicell(class LAMMPS *, int, char **);
-  virtual ~FixDivideBacillusMinicell();
-  virtual void compute();
+  ~FixDivideBacillusMinicell();
+  void compute();
   void init();
   void *extract(const char *, int &);
   

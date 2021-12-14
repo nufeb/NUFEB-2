@@ -31,11 +31,19 @@ FixPropertyCycletime::FixPropertyCycletime(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 3) error->all(FLERR,"Illegal fix nufeb/property/cycletime command");
 
   create_attribute = 1;
-  compute_flag = 1;
   scalar_flag = 1;
   // use aprop if size_peratom_cols > 0
   size_peratom_cols = 2;
   grow_arrays(atom->nmax);
+}
+
+/* ---------------------------------------------------------------------- */
+
+int FixPropertyCycletime::setmask()
+{
+  int mask = 0;
+  mask |= BIOLOGY_NUFEB;
+  return mask;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -52,8 +60,10 @@ void FixPropertyCycletime::init()
    update cell age
 ------------------------------------------------------------------------- */
 
-void FixPropertyCycletime::compute()
+void FixPropertyCycletime::biology_nufeb()
 {
+  if (update->ntimestep % nevery) return;
+
   for (int i = 0; i < atom->nlocal; i++) {
     if (atom->mask[i] & groupbit) {
       aprop[i][0] += update->dt;

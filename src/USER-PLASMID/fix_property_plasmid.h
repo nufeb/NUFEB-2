@@ -34,7 +34,9 @@ class FixPropertyPlasmid : public FixProperty {
   FixPropertyPlasmid(class LAMMPS *, int, char **);
   ~FixPropertyPlasmid();
 
+  int setmask();
   void grow_arrays(int);
+  void biology_nufeb();
   void init() {}
   void set_arrays(int) {};
   void update_arrays(int, int);

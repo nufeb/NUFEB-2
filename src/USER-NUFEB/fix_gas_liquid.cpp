@@ -35,8 +35,6 @@ FixGasLiquid::FixGasLiquid(LAMMPS *lmp, int narg, char **arg) :
   if (!grid->chemostat_flag)
     error->all(FLERR,"Fix reactor requires nufeb/chemostat grid style");
 
-  compute_flag = 1;
-
   iliquid = -1;
   igas = -1;
 
@@ -87,39 +85,18 @@ FixGasLiquid::FixGasLiquid(LAMMPS *lmp, int narg, char **arg) :
 
 /* ---------------------------------------------------------------------- */
 
-int FixGasLiquid::modify_param(int narg, char **arg)
-{
-  int iarg = 0;
-  while (iarg < narg) {
-    if (strcmp(arg[iarg], "compute") == 0) {
-      if (strcmp(arg[iarg+1], "yes") == 0) {
-	compute_flag = 1;
-      } else if (strcmp(arg[iarg+1], "no") == 0) {
-	compute_flag = 0;
-      } else {
-	error->all(FLERR, "Illegal fix_modify command");
-      }
-      iarg += 2;
-    }
-  }
-  return iarg;
-}
-
-/* ---------------------------------------------------------------------- */
-
 int FixGasLiquid::setmask()
 {
   int mask = 0;
-  mask |= POST_INTEGRATE;
+  mask |= CHEMISTRY_NUFEB;
   return mask;
 }
 
 /* ---------------------------------------------------------------------- */
 
-void FixGasLiquid::post_integrate()
+void FixGasLiquid::chemistry_nufeb()
 {
-  if (compute_flag)
-    compute();
+  compute();
 }
 
 /* ---------------------------------------------------------------------- */

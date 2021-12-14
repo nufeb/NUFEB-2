@@ -27,8 +27,10 @@ namespace LAMMPS_NS {
 class FixGrowthAnammox: public FixGrowth {
  public:
   FixGrowthAnammox(class LAMMPS *, int, char **);
-  virtual ~FixGrowthAnammox() {}
-  virtual void compute();
+  ~FixGrowthAnammox() {}
+
+  void update_atoms();
+  void update_cells();
 
  protected:
   int inh4;
@@ -44,9 +46,6 @@ class FixGrowthAnammox: public FixGrowth {
   double yield;
   double maintain;
   double decay;
-  
-  template <int, int> void update_cells();
-  virtual void update_atoms();
 };
 
 }

@@ -30,6 +30,7 @@ class FixPropertyGeneration : public FixProperty {
   FixPropertyGeneration(class LAMMPS *, int, char **);
   ~FixPropertyGeneration() {};
 
+  int setmask();
   void init();
   void set_arrays(int);
   void update_arrays(int, int);

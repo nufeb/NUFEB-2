@@ -31,9 +31,10 @@ class FixPropertyCycletime : public FixProperty {
   ~FixPropertyCycletime() {};
 
   void init();
+  int setmask();
+  void biology_nufeb();
   void set_arrays(int);
   void update_arrays(int, int);
-  void compute();
   double compute_scalar();
 };
 

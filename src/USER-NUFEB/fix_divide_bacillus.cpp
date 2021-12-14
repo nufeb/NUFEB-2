@@ -22,7 +22,6 @@
 #include "error.h"
 #include "lmptype.h"
 #include "math_const.h"
-#include "update.h"
 #include "modify.h"
 #include "domain.h"
 #include "compute.h"
@@ -55,6 +54,8 @@ FixDivideBacillus::FixDivideBacillus(LAMMPS *lmp, int narg, char **arg) :
   // Random number generator, same for all procs
   random = new RanPark(lmp, seed);
 }
+
+/* ---------------------------------------------------------------------- */
 
 FixDivideBacillus::~FixDivideBacillus()
 {

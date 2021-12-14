@@ -38,8 +38,6 @@ FixGrowthEPS::FixGrowthEPS(LAMMPS *lmp, int narg, char **arg) :
   if (!grid->chemostat_flag)
     error->all(FLERR, "fix nufeb/growth/eps requires grid_style nufeb/chemostat");
 
-  dynamic_group_allow = 1;
-
   isub = -1;
   decay = 0.0;
 
@@ -60,34 +58,14 @@ FixGrowthEPS::FixGrowthEPS(LAMMPS *lmp, int narg, char **arg) :
 
 /* ---------------------------------------------------------------------- */
 
-void FixGrowthEPS::compute()
-{
-  if (reaction_flag && growth_flag) {
-    update_cells<1, 1>();
-    update_atoms();
-  } else if (reaction_flag && !growth_flag) {
-    update_cells<1, 0>();
-  } else if (!reaction_flag && growth_flag) {
-    update_cells<0, 1>();
-    update_atoms();
-  }
-}
-
-/* ---------------------------------------------------------------------- */
-
-template <int Reaction, int Growth>
 void FixGrowthEPS::update_cells()
 {
   double **reac = grid->reac;
   double **dens = grid->dens;
 
   for (int i = 0; i < grid->ncells; i++) {
-    if (Reaction &&  !(grid->mask[i] & GHOST_MASK)) {
+    if (!(grid->mask[i] & GHOST_MASK)) {
       reac[isub][i] += decay * dens[igroup][i];
-    }
-
-    if (Growth) {
-      grid->growth[igroup][i][0] = -decay;
     }
   }
 }
@@ -96,5 +74,9 @@ void FixGrowthEPS::update_cells()
 
 void FixGrowthEPS::update_atoms()
 {
+  for (int i = 0; i < grid->ncells; i++) {
+    grid->growth[igroup][i][0] = -decay;
+  }
+
   update_atoms_coccus();
 }
