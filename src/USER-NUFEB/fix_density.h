@@ -27,11 +27,11 @@ namespace LAMMPS_NS {
 class FixDensity : public Fix {
  public:
   FixDensity(class LAMMPS *, int, char **);
-  ~FixDensity() {}
+  virtual ~FixDensity() {}
   int setmask();
   int modify_param(int, char **);
-  void post_physics_nufeb();
-  void compute();
+  virtual void post_physics_nufeb();
+  virtual void compute();
 };
 
 }

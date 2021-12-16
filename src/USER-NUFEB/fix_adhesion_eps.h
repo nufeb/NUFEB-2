@@ -27,7 +27,7 @@ namespace LAMMPS_NS {
 class FixEPSAdhesion : public Fix {
  public:
   FixEPSAdhesion(class LAMMPS *, int, char **);
-  ~FixEPSAdhesion() {}
+  virtual ~FixEPSAdhesion() {}
   int setmask();
   virtual void post_force(int);
 

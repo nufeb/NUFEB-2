@@ -24,8 +24,8 @@ class FixDivide : public Fix {
   virtual ~FixDivide() {};
   int modify_param(int, char **);
   int setmask();
-  void biology_nufeb();
-  void post_neighbor();
+  virtual void biology_nufeb();
+  virtual void post_neighbor();
   virtual void compute() = 0;
 };
 

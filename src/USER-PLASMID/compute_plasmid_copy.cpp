@@ -69,7 +69,7 @@ ComputePlasmidCopy::ComputePlasmidCopy(LAMMPS *lmp, int narg, char **arg) :
       cpflag[i] = 2;
       strncpy(str, arg[4+i], n-1);
       str[n-1] = '\0';
-    } else if (isdigit[arg[4+i][n-1]]) {
+    } else if (isdigit(arg[4+i][n-1])) {
       str = new char[n+1];
       cpflag[i] = 0;
       strcpy(str, arg[4+i]);

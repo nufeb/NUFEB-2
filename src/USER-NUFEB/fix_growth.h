@@ -25,8 +25,8 @@ class FixGrowth : public Fix {
   virtual ~FixGrowth() {}
   int modify_param(int, char **);
 
-  void chemistry_nufeb();
-  void biology_nufeb();
+  virtual void chemistry_nufeb();
+  virtual void biology_nufeb();
 
   int setmask();
   virtual void init();

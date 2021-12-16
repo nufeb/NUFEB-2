@@ -27,10 +27,10 @@ namespace LAMMPS_NS {
 class FixGrowthCyano: public FixGrowth {
  public:
   FixGrowthCyano(class LAMMPS *, int, char **);
-  ~FixGrowthCyano() {}
+  virtual ~FixGrowthCyano() {}
 
-  void update_atoms();
-  void update_cells();
+  virtual void update_atoms();
+  virtual void update_cells();
 
  protected:
   int ilight;   // light

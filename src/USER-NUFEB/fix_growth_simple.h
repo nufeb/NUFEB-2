@@ -27,10 +27,10 @@ namespace LAMMPS_NS {
 class FixGrowthSimple: public FixGrowth {
  public:
   FixGrowthSimple(class LAMMPS *, int, char **);
-  ~FixGrowthSimple() {}
+  virtual ~FixGrowthSimple() {}
 
-  void update_atoms();
-  void update_cells() {}
+  virtual void update_atoms();
+  virtual void update_cells() {}
 
  protected:
   int isub;

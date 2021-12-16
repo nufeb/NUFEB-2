@@ -27,7 +27,6 @@ FixStyle(nufeb/growth/nob/kk/host,FixGrowthNOBKokkos<LMPHostType>)
 
 namespace LAMMPS_NS {
 
-template <int, int>
 struct FixGrowthNOBCellsTag {};
 struct FixGrowthNOBAtomsTag {};
 
@@ -35,15 +34,17 @@ template <class DeviceType>
 class FixGrowthNOBKokkos: public FixGrowthNOB {
  public:
   FixGrowthNOBKokkos(class LAMMPS *, int, char **);
-  virtual ~FixGrowthNOBKokkos() {}
-  virtual void compute();
+  ~FixGrowthNOBKokkos() {}
 
-  template <int, int> void update_cells();
+  void update_cells();
   void update_atoms();
 
   struct Functor
   {
     int igroup;
+    int groupbit;
+    double dt;
+
     int io2;
     int ino2;
     int ino3;
@@ -56,28 +57,55 @@ class FixGrowthNOBKokkos: public FixGrowthNOB {
     double maintain;
     double decay;
 
+    double boxlo[3];
+    int grid_sublo[3];
+    int grid_subbox[3];
+    double cell_size;
+    double vol;
+
     typedef ArrayTypes<DeviceType> AT;
     typename AT::t_int_1d d_mask;
+    typename AT::t_int_1d d_gmask;
     typename AT::t_float_2d d_conc;
     typename AT::t_float_2d d_reac;
     typename AT::t_float_2d d_dens;
     typename AT::t_float_3d d_growth;
 
+    typename AT::t_x_array d_x;
+    typename AT::t_float_1d d_rmass;
+    typename AT::t_float_1d d_radius;
+    typename AT::t_float_1d d_outer_mass;
+    typename AT::t_float_1d d_outer_radius;
+
     Functor(FixGrowthNOBKokkos *ptr);
-    
-    template <int Reaction, int Growth>
+
     KOKKOS_INLINE_FUNCTION
-    void operator()(FixGrowthNOBCellsTag<Reaction, Growth>, int) const;
+    void operator()(FixGrowthNOBCellsTag, int) const;
+    KOKKOS_INLINE_FUNCTION
+    void operator()(FixGrowthNOBAtomsTag, int) const;
   };
 
  protected:
+  double boxlo[3];
+  int grid_sublo[3];
+  int grid_subbox[3];
+  double cell_size;
+  double vol;
+
   typedef ArrayTypes<DeviceType> AT;
 
   typename AT::t_int_1d d_mask;
+  typename AT::t_int_1d d_gmask;
   typename AT::t_float_2d d_conc;
   typename AT::t_float_2d d_reac;
   typename AT::t_float_2d d_dens;
   typename AT::t_float_3d d_growth;
+
+  typename AT::t_x_array d_x;
+  typename AT::t_float_1d d_rmass;
+  typename AT::t_float_1d d_radius;
+  typename AT::t_float_1d d_outer_mass;
+  typename AT::t_float_1d d_outer_radius;
 };
 
 }

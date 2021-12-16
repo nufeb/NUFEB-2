@@ -35,7 +35,7 @@ class FixEPSAdhesionKokkos : public FixEPSAdhesion {
  public:
   FixEPSAdhesionKokkos(class LAMMPS *, int, char **);
   ~FixEPSAdhesionKokkos() {}
-  virtual void post_force(int);
+  void post_force(int);
 
   struct Functor
   {

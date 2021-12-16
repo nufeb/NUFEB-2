@@ -27,13 +27,13 @@ namespace LAMMPS_NS {
 class FixDeathDiameter : public Fix {
  public:
   FixDeathDiameter(class LAMMPS *, int, char **);
-  ~FixDeathDiameter() {}
+  virtual ~FixDeathDiameter() {}
   int modify_param(int, char **);
 
-  void init() {}
   int setmask();
-  void biology_nufeb();
-  void compute();
+  virtual void init() {}
+  virtual void biology_nufeb();
+  virtual void compute();
   
  private:
   int idead;

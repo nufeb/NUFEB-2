@@ -48,13 +48,6 @@
 #include "comm_grid.h"
 #include "fix_density.h"
 #include "fix_diffusion_reaction.h"
-#include "fix_eps_extract.h"
-#include "fix_divide.h"
-#include "fix_death.h"
-#include "fix_reactor.h"
-#include "fix_gas_liquid.h"
-#include "fix_property.h"
-#include "fix_boundary_layer.h"
 #include "compute_volume.h"
 
 using namespace LAMMPS_NS;
@@ -102,6 +95,16 @@ void NufebRunKokkos::init()
   update->integrate_style = new char[13];
   strcpy(update->integrate_style, "verlet/nufeb\0");
 
+  // allocate space for storing fixes
+  fix_diffusion = new FixDiffusionReaction*[modify->nfix];
+
+  for (int i = 0; i < modify->nfix; i++) {
+    // find nufeb fixes
+    if (strstr(modify->fix[i]->style, "nufeb/diffusion_reaction")) {
+      fix_diffusion[nfix_diffusion++] = (FixDiffusionReaction *)modify->fix[i];
+    }
+  }
+
   // create fix nufeb/density
   char **fixarg = new char*[3];
   fixarg[0] = (char *)"nufeb_density";
@@ -110,38 +113,6 @@ void NufebRunKokkos::init()
   modify->add_fix(3, fixarg, 1);
   delete [] fixarg;
   fix_density = (FixDensity *)modify->fix[modify->nfix-1];
-
-  // allocate space for storing fixes
-  fix_growth = new FixGrowth*[modify->nfix];
-  fix_diffusion = new FixDiffusionReaction*[modify->nfix];
-  fix_eps_extract = new FixEPSExtract*[modify->nfix];
-  fix_divide = new FixDivide*[modify->nfix];
-  fix_death = new FixDeath*[modify->nfix];
-  fix_reactor = new FixReactor*[modify->nfix];
-  fix_property = new FixProperty*[modify->nfix];
-
-  // find fixes
-  for (int i = 0; i < modify->nfix; i++) {
-    if (strstr(modify->fix[i]->style, "nufeb/growth")) {
-      fix_growth[nfix_growth++] = (FixGrowth *)modify->fix[i];
-    } else if (strstr(modify->fix[i]->style, "nufeb/diffusion_reaction")) {
-      fix_diffusion[nfix_diffusion++] = (FixDiffusionReaction *)modify->fix[i];
-    } else if (strstr(modify->fix[i]->style, "nufeb/eps_extract")) {
-      fix_eps_extract[nfix_eps_extract++] = (FixEPSExtract *)modify->fix[i];
-    } else if (strstr(modify->fix[i]->style, "nufeb/divide")) {
-      fix_divide[nfix_divide++] = (FixDivide *)modify->fix[i];
-    } else if (strstr(modify->fix[i]->style, "nufeb/death")) {
-      fix_death[nfix_death++] = (FixDeath *)modify->fix[i];
-    } else if (strstr(modify->fix[i]->style, "nufeb/reactor")) {
-      fix_reactor[nfix_reactor++] = (FixReactor *)modify->fix[i];
-    } else if (strstr(modify->fix[i]->style, "nufeb/gas_liquid")) {
-      fix_gas_liquid = (FixGasLiquid *)modify->fix[i];
-    } else if (strstr(modify->fix[i]->style, "nufeb/property")) {
-      fix_property[nfix_property++] = (FixProperty *)modify->fix[i];
-    } else if (strstr(modify->fix[i]->style, "nufeb/boundary_layer")) {
-      fix_blayer = (FixBoundaryLayer *) modify->fix[i];
-    }
-  }
 
   // create compute volume
   char **volarg = new char*[3];
@@ -318,46 +289,9 @@ void NufebRunKokkos::setup(int flag)
   // NUFEB specific
 
   biodt = update->dt;
-  
-  // disable all fixes that will be called directly
-  fix_density->compute_flag = 0;
-  disable_sync(fix_density);
-  for (int i = 0; i < nfix_growth; i++) {
-    fix_growth[i]->compute_flag = 0;
-  }
-  for (int i = 0; i < nfix_diffusion; i++) {
-    fix_diffusion[i]->compute_flag = 0;
-  }
-  for (int i = 0; i < nfix_eps_extract; i++) {
-    fix_eps_extract[i]->compute_flag = 0;
-    disable_sync(fix_eps_extract[i]);
-  }
-  for (int i = 0; i < nfix_divide; i++) {
-    fix_divide[i]->compute_flag = 0;
-    disable_sync(fix_divide[i]);
-  }
-  for (int i = 0; i < nfix_death; i++) {
-    fix_death[i]->compute_flag = 0;
-    disable_sync(fix_death[i]);
-  }
-  for (int i = 0; i < nfix_reactor; i++)
-    fix_reactor[i]->compute_flag = 0;
-
-  for (int i = 0; i < nfix_property; i++)
-    fix_property[i]->compute_flag = 0;
-
-  if (fix_gas_liquid != nullptr)
-    fix_gas_liquid->compute_flag = 0;
-
-  if (fix_blayer != nullptr)
-    fix_blayer->compute_flag = 0;
 
   // compute density
   fix_density->compute();
-
-  // update boundary layer
-  if (fix_blayer != nullptr)
-    fix_blayer->compute();
 
   // run diffusion until it reaches steady state
   if (init_diff_flag) {
@@ -481,31 +415,14 @@ void NufebRunKokkos::setup_minimal(int flag)
 void NufebRunKokkos::run(int n)
 {
   bigint ntimestep;
-  int nflag,sortflag;
 
-  int n_post_integrate = modify->n_post_integrate;
-  int n_pre_exchange = modify->n_pre_exchange;
-  int n_pre_neighbor = modify->n_pre_neighbor;
-  int n_post_neighbor = modify->n_post_neighbor;
-  int n_pre_force = modify->n_pre_force;
-  int n_pre_reverse = modify->n_pre_reverse;
-  int n_post_force = modify->n_post_force;
-  int n_end_of_step = modify->n_end_of_step;
-
-  if (atomKK->sortfreq > 0) sortflag = 1;
-  else sortflag = 0;
-
-  f_merge_copy = DAT::t_f_array("nufeb:f_merge_copy",atomKK->k_f.extent(0));
-
-  atomKK->sync(Device,ALL_MASK);
-
-  timer->init_timeout();
   for (int i = 0; i < n; i++) {
 
     if (timer->check_timeout(i)) {
       update->nsteps = i;
       break;
     }
+
     ntimestep = ++update->ntimestep;
 
     // needs to come before ev_set
@@ -515,274 +432,51 @@ void NufebRunKokkos::run(int n)
 
     double t = get_time();
     module_biology();
-
     if (profile)
       fprintf(profile, "%d %e ", update->ntimestep, get_time()-t);
 
-    update->dt = pairdt;
-    reset_dt();
-    
+    // run physics module
     t = get_time();
-    double vol = comp_volume->compute_scalar();
-    npair = 0;
-    double press = 0.0;
-    do {
-      // initial time integration
-
-      //ktimer.reset();
-      timer->stamp();
-      modify->initial_integrate(vflag);
-      //time += ktimer.seconds();
-      if (n_post_integrate) modify->post_integrate();
-      timer->stamp(Timer::MODIFY);
-
-      // regular communication vs neighbor list rebuild
-
-      nflag = neighbor->decide();
-
-      if (nflag == 0) {
-	timer->stamp();
-	comm->forward_comm();
-	timer->stamp(Timer::COMM);
-      } else {
-	// added debug
-	//atomKK->sync(Host,ALL_MASK);
-	//atomKK->modified(Host,ALL_MASK);
-
-	if (n_pre_exchange) {
-	  timer->stamp();
-	  modify->pre_exchange();
-	  timer->stamp(Timer::MODIFY);
-	}
-	// debug
-	//atomKK->sync(Host,ALL_MASK);
-	//atomKK->modified(Host,ALL_MASK);
-	if (triclinic) domain->x2lamda(atomKK->nlocal);
-	domain->pbc();
-	if (domain->box_change) {
-	  domain->reset_box();
-	  comm->setup();
-	  if (neighbor->style) neighbor->setup_bins();
-	}
-	timer->stamp();
-
-	// added debug
-	//atomKK->sync(Device,ALL_MASK);
-	//atomKK->modified(Device,ALL_MASK);
-
-	comm->exchange();
-	if (sortflag && ntimestep >= atomKK->nextsort) atomKK->sort();
-	comm->borders();
-
-	// added debug
-	//atomKK->sync(Host,ALL_MASK);
-	//atomKK->modified(Host,ALL_MASK);
-
-	if (triclinic) domain->lamda2x(atomKK->nlocal+atomKK->nghost);
-
-	timer->stamp(Timer::COMM);
-	if (n_pre_neighbor) {
-	  modify->pre_neighbor();
-	  timer->stamp(Timer::MODIFY);
-	}
-	neighbor->build(1);
-	timer->stamp(Timer::NEIGH);
-    	if (n_post_neighbor) {
-    	  modify->post_neighbor();
-    	  timer->stamp(Timer::MODIFY);
-    	}
-      }
-
-      // force computations
-      // important for pair to come before bonded contributions
-      // since some bonded potentials tally pairwise energy/virial
-      // and Pair:ev_tally() needs to be called before any tallying
-
-      force_clear();
-
-      timer->stamp();
-
-      if (n_pre_force) {
-	modify->pre_force(vflag);
-	timer->stamp(Timer::MODIFY);
-      }
-
-      bool execute_on_host = false;
-      unsigned int datamask_read_device = 0;
-      unsigned int datamask_modify_device = 0;
-      unsigned int datamask_read_host = 0;
-
-      if ( pair_compute_flag ) {
-	if (force->pair->execution_space==Host) {
-	  execute_on_host  = true;
-	  datamask_read_host   |= force->pair->datamask_read;
-	  datamask_modify_device |= force->pair->datamask_modify;
-	} else {
-	  datamask_read_device   |= force->pair->datamask_read;
-	  datamask_modify_device |= force->pair->datamask_modify;
-	}
-      }
-      if ( atomKK->molecular && force->bond )  {
-	if (force->bond->execution_space==Host) {
-	  execute_on_host  = true;
-	  datamask_read_host   |= force->bond->datamask_read;
-	  datamask_modify_device |= force->bond->datamask_modify;
-	} else {
-	  datamask_read_device   |= force->bond->datamask_read;
-	  datamask_modify_device |= force->bond->datamask_modify;
-	}
-      }
-      if ( atomKK->molecular && force->angle ) {
-	if (force->angle->execution_space==Host) {
-	  execute_on_host  = true;
-	  datamask_read_host   |= force->angle->datamask_read;
-	  datamask_modify_device |= force->angle->datamask_modify;
-	} else {
-	  datamask_read_device   |= force->angle->datamask_read;
-	  datamask_modify_device |= force->angle->datamask_modify;
-	}
-      }
-      if ( atomKK->molecular && force->dihedral ) {
-	if (force->dihedral->execution_space==Host) {
-	  execute_on_host  = true;
-	  datamask_read_host   |= force->dihedral->datamask_read;
-	  datamask_modify_device |= force->dihedral->datamask_modify;
-	} else {
-	  datamask_read_device   |= force->dihedral->datamask_read;
-	  datamask_modify_device |= force->dihedral->datamask_modify;
-	}
-      }
-      if ( atomKK->molecular && force->improper ) {
-	if (force->improper->execution_space==Host) {
-	  execute_on_host  = true;
-	  datamask_read_host   |= force->improper->datamask_read;
-	  datamask_modify_device |= force->improper->datamask_modify;
-	} else {
-	  datamask_read_device   |= force->improper->datamask_read;
-	  datamask_modify_device |= force->improper->datamask_modify;
-	}
-      }
-      if ( kspace_compute_flag ) {
-	if (force->kspace->execution_space==Host) {
-	  execute_on_host  = true;
-	  datamask_read_host   |= force->kspace->datamask_read;
-	  datamask_modify_device |= force->kspace->datamask_modify;
-	} else {
-	  datamask_read_device   |= force->kspace->datamask_read;
-	  datamask_modify_device |= force->kspace->datamask_modify;
-	}
-      }
-
-      if (pair_compute_flag) {
-	atomKK->sync(force->pair->execution_space,force->pair->datamask_read);
-	atomKK->sync(force->pair->execution_space,~(~force->pair->datamask_read|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
-	Kokkos::Impl::Timer ktimer;
-	force->pair->compute(eflag,vflag);
-	atomKK->modified(force->pair->execution_space,force->pair->datamask_modify);
-	atomKK->modified(force->pair->execution_space,~(~force->pair->datamask_modify|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
-	timer->stamp(Timer::PAIR);
-      }
-
-      if(execute_on_host) {
-        if(pair_compute_flag && force->pair->datamask_modify!=(F_MASK | ENERGY_MASK | VIRIAL_MASK))
-          Kokkos::fence();
-        atomKK->sync_overlapping_device(Host,~(~datamask_read_host|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
-        if(pair_compute_flag && force->pair->execution_space!=Host) {
-          Kokkos::deep_copy(LMPHostType(),atomKK->k_f.h_view,0.0);
-        }
-      }
-
-      if (atomKK->molecular) {
-	if (force->bond) {
-	  atomKK->sync(force->bond->execution_space,~(~force->bond->datamask_read|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
-	  force->bond->compute(eflag,vflag);
-	  atomKK->modified(force->bond->execution_space,~(~force->bond->datamask_modify|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
-	}
-	if (force->angle) {
-	  atomKK->sync(force->angle->execution_space,~(~force->angle->datamask_read|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
-	  force->angle->compute(eflag,vflag);
-	  atomKK->modified(force->angle->execution_space,~(~force->angle->datamask_modify|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
-	}
-	if (force->dihedral) {
-	  atomKK->sync(force->dihedral->execution_space,~(~force->dihedral->datamask_read|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
-	  force->dihedral->compute(eflag,vflag);
-	  atomKK->modified(force->dihedral->execution_space,~(~force->dihedral->datamask_modify|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
-	}
-	if (force->improper) {
-	  atomKK->sync(force->improper->execution_space,~(~force->improper->datamask_read|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
-	  force->improper->compute(eflag,vflag);
-	  atomKK->modified(force->improper->execution_space,~(~force->improper->datamask_modify|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
-	}
-	timer->stamp(Timer::BOND);
-      }
-
-      if (kspace_compute_flag) {
-	atomKK->sync(force->kspace->execution_space,~(~force->kspace->datamask_read|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
-	force->kspace->compute(eflag,vflag);
-	atomKK->modified(force->kspace->execution_space,~(~force->kspace->datamask_modify|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
-	timer->stamp(Timer::KSPACE);
-      }
-
-      if(execute_on_host && !std::is_same<LMPHostType,LMPDeviceType>::value) {
-	if(f_merge_copy.extent(0)<atomKK->k_f.extent(0)) {
-	  f_merge_copy = DAT::t_f_array("VerletKokkos::f_merge_copy",atomKK->k_f.extent(0));
-	}
-	f = atomKK->k_f.d_view;
-	Kokkos::deep_copy(LMPHostType(),f_merge_copy,atomKK->k_f.h_view);
-	Kokkos::parallel_for(atomKK->k_f.extent(0),
-			     ForceAdder<DAT::t_f_array,DAT::t_f_array>(atomKK->k_f.d_view,f_merge_copy));
-	atomKK->k_f.clear_sync_state(); // special case
-	atomKK->k_f.modify<LMPDeviceType>();
-      }
-
-      if (n_pre_reverse) {
-	modify->pre_reverse(eflag,vflag);
-	timer->stamp(Timer::MODIFY);
-      }
-
-      // reverse communication of forces
-
-      if (force->newton) {
-	Kokkos::fence();
-	comm->reverse_comm();
-	timer->stamp(Timer::COMM);
-      }
-
-      // force modifications, final time integration, diagnostics
-
-      if (n_post_force) modify->post_force(vflag);
-      modify->final_integrate();
-      if (n_end_of_step) modify->end_of_step();
-      timer->stamp(Timer::MODIFY);
-
-      ++npair;
-      
-      press = comp_pressure->compute_scalar() * domain->xprd * domain->yprd * domain->zprd;
-      press += comp_ke->compute_scalar();
-      press /= 3.0 * vol;
-    } while(fabs(press) > pairtol && ((pairmax > 0) ? npair < pairmax : true));
+    double press;
+    press = module_physics();
     if (profile)
       fprintf(profile, "%d %e ", npair, get_time()-t);
-    if (comm->me == 0) fprintf(screen, "pair interaction: %d steps (pressure %e N/m2)\n", npair, press);
+    if (info && comm->me == 0) fprintf(screen, "pair interaction: %d steps (pressure %e N/m2)\n", npair, press);
 
-    // update densities
-    t = get_time();
-    fix_density->compute();
+    // reset to biological timestep
+    update->dt = biodt;
+    reset_dt();
 
-    if (profile)
-      fprintf(profile, "%e ", get_time()-t);
+    // call all fixes implementing post_physcis()
+    if (modify->n_post_physics_nufeb) {
+      timer->stamp();
+      modify->post_physics_nufeb();
+      timer->stamp(Timer::MODIFY);
+    }
 
-    // update boundary layer
-    if (fix_blayer != nullptr)
-      fix_blayer->compute();
-
-    // run diffusion until it reaches steady state
-
+    // run chemistry module
     t = get_time();
     ndiff = module_chemsitry();
     if (profile)
-      fprintf(profile, "%d %e\n", ndiff, get_time()-t);
-    if (comm->me == 0) fprintf(screen, "diffusion: %d steps\n", ndiff);
+      fprintf(profile, "%d %e ", ndiff, get_time()-t);
+    if (info && comm->me == 0) fprintf(screen, "diffusion: %d steps\n", ndiff);
+
+    // reset to biological timestep
+    update->dt = biodt;
+    reset_dt();
+
+    // call all fixes implementing post_chemistry_nufeb()
+    if (modify->n_post_chemistry_nufeb) {
+      timer->stamp();
+      modify->post_chemistry_nufeb();
+      timer->stamp(Timer::MODIFY);
+    }
+
+    // run reactor module
+    t = get_time();
+    module_reactor();
+    if (profile)
+      fprintf(profile, "%e\n", get_time()-t);
 
     // all output
 
@@ -796,6 +490,7 @@ void NufebRunKokkos::run(int n)
   }
 
   atomKK->sync(Host,ALL_MASK);
+  gridKK->sync(Host,ALL_MASK);
 }
 
 /* ----------------------------------------------------------------------
@@ -856,38 +551,17 @@ void NufebRunKokkos::force_clear()
 
 void NufebRunKokkos::module_biology()
 {
-  // set biological dt
+  // reset to biological timestep
 
   update->dt = biodt;
   reset_dt();
 
-  // setup growth fixes
+  // call all fixes implementing biology_nufeb()
 
-  for (int i = 0; i < nfix_growth; i++) {
-    fix_growth[i]->reaction_flag = 0;
-    fix_growth[i]->growth_flag = 1;
-  }
-
-  // grow atoms
-  for (int i = 0; i < nfix_growth; i++) {
-    fix_growth[i]->compute();
-  }
-  atomKK->sync(Host,ALL_MASK);
-  for (int i = 0; i < nfix_eps_extract; i++) {
-    fix_eps_extract[i]->compute();
-  }
-  atomKK->modified(Host,ALL_MASK);
-  atomKK->sync(Host,ALL_MASK);
-  for (int i = 0; i < nfix_divide; i++) {
-    fix_divide[i]->compute();
-  }
-  atomKK->modified(Host,ALL_MASK);
-  for (int i = 0; i < nfix_death; i++) {
-    fix_death[i]->compute();
-  }
-
-  for (int i = 0; i < nfix_property; i++) {
-    fix_property[i]->compute();
+  if (modify->n_biology_nufeb) {
+    timer->stamp();
+    modify->biology_nufeb();
+    timer->stamp(Timer::MODIFY);
   }
 }
 
@@ -895,12 +569,6 @@ void NufebRunKokkos::module_biology()
 
 int NufebRunKokkos::module_chemsitry()
 {
-  // setup growth fixes for diffusion
-  for (int i = 0; i < nfix_growth; i++) {
-    fix_growth[i]->reaction_flag = 1;
-    fix_growth[i]->growth_flag = 0;
-  }
-
   // set diffusion dt
 
   update->dt = diffdt;
@@ -913,8 +581,11 @@ int NufebRunKokkos::module_chemsitry()
   int niter = 0;
   bool flag;
   bool converge[nfix_diffusion];
-  for (int i = 0; i < nfix_diffusion; i++)
+
+  for (int i = 0; i < nfix_diffusion; i++) {
     converge[i] = false;
+  }
+
   do {
     timer->stamp();
     comm_grid->forward_comm();
@@ -925,13 +596,12 @@ int NufebRunKokkos::module_chemsitry()
       if (!converge[i])
 	fix_diffusion[i]->compute_initial();
     }
-    
-    for (int i = 0; i < nfix_growth; i++) {
-      fix_growth[i]->compute();
-    }
 
-    if (fix_gas_liquid != nullptr) {
-      fix_gas_liquid->compute();
+    // call all fixes implementing chemistry_nufebs()
+    if (modify->n_chemistry_nufeb) {
+      timer->stamp();
+      modify->chemistry_nufeb();
+      timer->stamp(Timer::MODIFY);
     }
 
     for (int i = 0; i < nfix_diffusion; i++) {
@@ -960,6 +630,273 @@ int NufebRunKokkos::module_chemsitry()
 
 /* ---------------------------------------------------------------------- */
 
+double NufebRunKokkos::module_physics()
+{
+  bigint ntimestep;
+  int nflag,sortflag;
+
+  if (atom->sortfreq > 0) sortflag = 1;
+  else sortflag = 0;
+
+  f_merge_copy = DAT::t_f_array("nufeb:f_merge_copy",atomKK->k_f.extent(0));
+
+  int n_post_integrate = modify->n_post_integrate;
+  int n_pre_exchange = modify->n_pre_exchange;
+  int n_pre_neighbor = modify->n_pre_neighbor;
+  int n_post_neighbor = modify->n_post_neighbor;
+  int n_pre_force = modify->n_pre_force;
+  int n_pre_reverse = modify->n_pre_reverse;
+  int n_post_force = modify->n_post_force;
+  int n_end_of_step = modify->n_end_of_step;
+
+  update->dt = pairdt;
+  reset_dt();
+
+  double vol = comp_volume->compute_scalar();
+  timer->stamp(Timer::MODIFY);
+
+  npair = 0;
+  double press = 0.0;
+  do {
+    // initial time integration
+
+    //ktimer.reset();
+    timer->stamp();
+    modify->initial_integrate(vflag);
+    //time += ktimer.seconds();
+    if (n_post_integrate) modify->post_integrate();
+    timer->stamp(Timer::MODIFY);
+
+    // regular communication vs neighbor list rebuild
+
+    nflag = neighbor->decide();
+
+    if (nflag == 0) {
+      timer->stamp();
+      comm->forward_comm();
+      timer->stamp(Timer::COMM);
+    } else {
+      // added debug
+      //atomKK->sync(Host,ALL_MASK);
+      //atomKK->modified(Host,ALL_MASK);
+
+      if (n_pre_exchange) {
+	timer->stamp();
+	modify->pre_exchange();
+	timer->stamp(Timer::MODIFY);
+      }
+      // debug
+      //atomKK->sync(Host,ALL_MASK);
+      //atomKK->modified(Host,ALL_MASK);
+      if (triclinic) domain->x2lamda(atomKK->nlocal);
+      domain->pbc();
+      if (domain->box_change) {
+	domain->reset_box();
+	comm->setup();
+	if (neighbor->style) neighbor->setup_bins();
+      }
+      timer->stamp();
+
+      // added debug
+      //atomKK->sync(Device,ALL_MASK);
+      //atomKK->modified(Device,ALL_MASK);
+
+      comm->exchange();
+      if (sortflag && ntimestep >= atomKK->nextsort) atomKK->sort();
+      comm->borders();
+
+      // added debug
+      //atomKK->sync(Host,ALL_MASK);
+      //atomKK->modified(Host,ALL_MASK);
+
+      if (triclinic) domain->lamda2x(atomKK->nlocal+atomKK->nghost);
+
+      timer->stamp(Timer::COMM);
+      if (n_pre_neighbor) {
+	modify->pre_neighbor();
+	timer->stamp(Timer::MODIFY);
+      }
+      neighbor->build(1);
+      timer->stamp(Timer::NEIGH);
+      if (n_post_neighbor) {
+	modify->post_neighbor();
+	timer->stamp(Timer::MODIFY);
+      }
+    }
+
+    // force computations
+    // important for pair to come before bonded contributions
+    // since some bonded potentials tally pairwise energy/virial
+    // and Pair:ev_tally() needs to be called before any tallying
+
+    force_clear();
+
+    timer->stamp();
+
+    if (n_pre_force) {
+      modify->pre_force(vflag);
+      timer->stamp(Timer::MODIFY);
+    }
+
+    bool execute_on_host = false;
+    unsigned int datamask_read_device = 0;
+    unsigned int datamask_modify_device = 0;
+    unsigned int datamask_read_host = 0;
+
+    if ( pair_compute_flag ) {
+      if (force->pair->execution_space==Host) {
+	execute_on_host  = true;
+	datamask_read_host   |= force->pair->datamask_read;
+	datamask_modify_device |= force->pair->datamask_modify;
+      } else {
+	datamask_read_device   |= force->pair->datamask_read;
+	datamask_modify_device |= force->pair->datamask_modify;
+      }
+    }
+    if ( atomKK->molecular && force->bond )  {
+      if (force->bond->execution_space==Host) {
+	execute_on_host  = true;
+	datamask_read_host   |= force->bond->datamask_read;
+	datamask_modify_device |= force->bond->datamask_modify;
+      } else {
+	datamask_read_device   |= force->bond->datamask_read;
+	datamask_modify_device |= force->bond->datamask_modify;
+      }
+    }
+    if ( atomKK->molecular && force->angle ) {
+      if (force->angle->execution_space==Host) {
+	execute_on_host  = true;
+	datamask_read_host   |= force->angle->datamask_read;
+	datamask_modify_device |= force->angle->datamask_modify;
+      } else {
+	datamask_read_device   |= force->angle->datamask_read;
+	datamask_modify_device |= force->angle->datamask_modify;
+      }
+    }
+    if ( atomKK->molecular && force->dihedral ) {
+      if (force->dihedral->execution_space==Host) {
+	execute_on_host  = true;
+	datamask_read_host   |= force->dihedral->datamask_read;
+	datamask_modify_device |= force->dihedral->datamask_modify;
+      } else {
+	datamask_read_device   |= force->dihedral->datamask_read;
+	datamask_modify_device |= force->dihedral->datamask_modify;
+      }
+    }
+    if ( atomKK->molecular && force->improper ) {
+      if (force->improper->execution_space==Host) {
+	execute_on_host  = true;
+	datamask_read_host   |= force->improper->datamask_read;
+	datamask_modify_device |= force->improper->datamask_modify;
+      } else {
+	datamask_read_device   |= force->improper->datamask_read;
+	datamask_modify_device |= force->improper->datamask_modify;
+      }
+    }
+    if ( kspace_compute_flag ) {
+      if (force->kspace->execution_space==Host) {
+	execute_on_host  = true;
+	datamask_read_host   |= force->kspace->datamask_read;
+	datamask_modify_device |= force->kspace->datamask_modify;
+      } else {
+	datamask_read_device   |= force->kspace->datamask_read;
+	datamask_modify_device |= force->kspace->datamask_modify;
+      }
+    }
+
+    if (pair_compute_flag) {
+      atomKK->sync(force->pair->execution_space,force->pair->datamask_read);
+      atomKK->sync(force->pair->execution_space,~(~force->pair->datamask_read|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
+      Kokkos::Impl::Timer ktimer;
+      force->pair->compute(eflag,vflag);
+      atomKK->modified(force->pair->execution_space,force->pair->datamask_modify);
+      atomKK->modified(force->pair->execution_space,~(~force->pair->datamask_modify|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
+      timer->stamp(Timer::PAIR);
+    }
+
+    if(execute_on_host) {
+      if(pair_compute_flag && force->pair->datamask_modify!=(F_MASK | ENERGY_MASK | VIRIAL_MASK))
+	Kokkos::fence();
+      atomKK->sync_overlapping_device(Host,~(~datamask_read_host|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
+      if(pair_compute_flag && force->pair->execution_space!=Host) {
+	Kokkos::deep_copy(LMPHostType(),atomKK->k_f.h_view,0.0);
+      }
+    }
+
+    if (atomKK->molecular) {
+      if (force->bond) {
+	atomKK->sync(force->bond->execution_space,~(~force->bond->datamask_read|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
+	force->bond->compute(eflag,vflag);
+	atomKK->modified(force->bond->execution_space,~(~force->bond->datamask_modify|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
+      }
+      if (force->angle) {
+	atomKK->sync(force->angle->execution_space,~(~force->angle->datamask_read|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
+	force->angle->compute(eflag,vflag);
+	atomKK->modified(force->angle->execution_space,~(~force->angle->datamask_modify|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
+      }
+      if (force->dihedral) {
+	atomKK->sync(force->dihedral->execution_space,~(~force->dihedral->datamask_read|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
+	force->dihedral->compute(eflag,vflag);
+	atomKK->modified(force->dihedral->execution_space,~(~force->dihedral->datamask_modify|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
+      }
+      if (force->improper) {
+	atomKK->sync(force->improper->execution_space,~(~force->improper->datamask_read|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
+	force->improper->compute(eflag,vflag);
+	atomKK->modified(force->improper->execution_space,~(~force->improper->datamask_modify|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
+      }
+      timer->stamp(Timer::BOND);
+    }
+
+    if (kspace_compute_flag) {
+      atomKK->sync(force->kspace->execution_space,~(~force->kspace->datamask_read|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
+      force->kspace->compute(eflag,vflag);
+      atomKK->modified(force->kspace->execution_space,~(~force->kspace->datamask_modify|(F_MASK | ENERGY_MASK | VIRIAL_MASK)));
+      timer->stamp(Timer::KSPACE);
+    }
+
+    if(execute_on_host && !std::is_same<LMPHostType,LMPDeviceType>::value) {
+      if(f_merge_copy.extent(0)<atomKK->k_f.extent(0)) {
+	f_merge_copy = DAT::t_f_array("VerletKokkos::f_merge_copy",atomKK->k_f.extent(0));
+      }
+      f = atomKK->k_f.d_view;
+      Kokkos::deep_copy(LMPHostType(),f_merge_copy,atomKK->k_f.h_view);
+      Kokkos::parallel_for(atomKK->k_f.extent(0),
+			   ForceAdder<DAT::t_f_array,DAT::t_f_array>(atomKK->k_f.d_view,f_merge_copy));
+      atomKK->k_f.clear_sync_state(); // special case
+      atomKK->k_f.modify<LMPDeviceType>();
+    }
+
+    if (n_pre_reverse) {
+      modify->pre_reverse(eflag,vflag);
+      timer->stamp(Timer::MODIFY);
+    }
+
+    // reverse communication of forces
+
+    if (force->newton) {
+      Kokkos::fence();
+      comm->reverse_comm();
+      timer->stamp(Timer::COMM);
+    }
+
+    // force modifications, final time integration, diagnostics
+
+    if (n_post_force) modify->post_force(vflag);
+    modify->final_integrate();
+    if (n_end_of_step) modify->end_of_step();
+    timer->stamp(Timer::MODIFY);
+
+    ++npair;
+
+    press = comp_pressure->compute_scalar() * domain->xprd * domain->yprd * domain->zprd;
+    press += comp_ke->compute_scalar();
+    press /= 3.0 * vol;
+  } while(fabs(press) > pairtol && ((pairmax > 0) ? npair < pairmax : true));
+
+  return press;
+}
+/* ---------------------------------------------------------------------- */
+
 void NufebRunKokkos::module_reactor()
 {
   // set biological dt
@@ -969,8 +906,10 @@ void NufebRunKokkos::module_reactor()
 
   // update reactor attributes
 
-  for (int i = 0; i < nfix_reactor; i++) {
-    fix_reactor[i]->compute();
+  if (modify->n_reactor_nufeb) {
+    timer->stamp();
+    modify->reactor_nufeb();
+    timer->stamp(Timer::MODIFY);
   }
 }
 

@@ -27,8 +27,8 @@ class FixShear : public Fix {
   FixShear(class LAMMPS *, int, char **);
   virtual ~FixShear() {};
   int setmask();
-  void compute();
-  void post_force(int);
+  virtual void compute();
+  virtual void post_force(int);
 
  protected:
   double shear_rate;

@@ -28,7 +28,7 @@ class FixPropertyCycletime : public FixProperty {
  public:
 
   FixPropertyCycletime(class LAMMPS *, int, char **);
-  ~FixPropertyCycletime() {};
+  virtual ~FixPropertyCycletime() {};
 
   void init();
   int setmask();

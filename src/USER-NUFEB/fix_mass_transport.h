@@ -27,11 +27,11 @@ namespace LAMMPS_NS {
 class FixMassTransport : public Fix {
  public:
   FixMassTransport(class LAMMPS *, int, char **);
-  ~FixMassTransport() {}
+  virtual ~FixMassTransport() {}
 
   int setmask();
-  void chemistry_nufeb();
-  void compute();
+  virtual void chemistry_nufeb();
+  virtual void compute();
 
  protected:
   int isub;

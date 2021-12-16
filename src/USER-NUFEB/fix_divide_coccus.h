@@ -28,8 +28,8 @@ class FixDivideCoccus : public FixDivide {
  public:
   
   FixDivideCoccus(class LAMMPS *, int, char **);
-  ~FixDivideCoccus();
-  void compute();
+  virtual ~FixDivideCoccus();
+  virtual void compute();
   
  private:
   double diameter;

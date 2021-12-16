@@ -27,9 +27,9 @@ namespace LAMMPS_NS {
 class FixAdhesion : public Fix {
  public:
   FixAdhesion(class LAMMPS *, int, char **);
-  ~FixAdhesion();
+  virtual ~FixAdhesion();
   void allocate();
-  void init();
+  virtual void init();
   int modify_param(int, char **);
   int setmask();
   virtual void post_force(int);

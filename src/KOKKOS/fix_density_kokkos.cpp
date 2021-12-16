@@ -19,6 +19,7 @@
 #include "grid_kokkos.h"
 #include "grid_masks.h"
 #include "group.h"
+#include "update.h"
 #include "memory_kokkos.h"
 
 using namespace LAMMPS_NS;
@@ -51,6 +52,13 @@ void FixDensityKokkos<DeviceType>::init()
   Kokkos::deep_copy(d_bitmask, h_bitmask);
 }
 
+/* ---------------------------------------------------------------------- */
+template<class DeviceType>
+void FixDensityKokkos<DeviceType>::post_physics_nufeb()
+{
+  if (update->ntimestep % nevery) return;
+  compute();
+}
 /* ---------------------------------------------------------------------- */
 
 struct AtomicD {
@@ -85,7 +93,9 @@ void FixDensityKokkos<DeviceType>::compute()
     Kokkos::RangePolicy<
     DeviceType,
     FixDensityInitialTag>(0, grid->ncells), f);
+
   DeviceType().fence();
+
   Kokkos::parallel_for(
     Kokkos::RangePolicy<
     DeviceType,

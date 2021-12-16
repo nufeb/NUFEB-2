@@ -24,7 +24,7 @@ class FixProperty : public Fix {
   double *vprop;
 
   FixProperty(class LAMMPS *, int, char **);
-  ~FixProperty();
+  virtual ~FixProperty();
 
   int modify_param(int, char **);
   void grow_arrays(int);

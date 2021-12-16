@@ -27,12 +27,13 @@ namespace LAMMPS_NS {
 class FixBoundaryLayer : public Fix {
  public:
   FixBoundaryLayer(class LAMMPS *, int, char **);
-  ~FixBoundaryLayer() {}
+  virtual ~FixBoundaryLayer() {}
+
   int setmask();
   int modify_param(int, char **);
-  void init();
-  void post_chemistry_nufeb();
-  void compute();
+  virtual void init();
+  virtual void post_chemistry_nufeb();
+  virtual void compute();
 
  protected:
   int isub;

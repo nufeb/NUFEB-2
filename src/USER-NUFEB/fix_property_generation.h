@@ -28,7 +28,7 @@ class FixPropertyGeneration : public FixProperty {
  public:
 
   FixPropertyGeneration(class LAMMPS *, int, char **);
-  ~FixPropertyGeneration() {};
+  virtual ~FixPropertyGeneration() {};
 
   int setmask();
   void init();

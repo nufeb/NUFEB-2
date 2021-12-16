@@ -33,12 +33,12 @@ struct FixDensityComputeTag {};
 template <class DeviceType>
 class FixDensityKokkos : public FixDensity {
  public:
-  int compute_flag;
-
   FixDensityKokkos(class LAMMPS *, int, char **);
-  virtual ~FixDensityKokkos() {}
-  virtual void init();
-  virtual void compute();
+  ~FixDensityKokkos() {}
+
+  void post_physics_nufeb();
+  void init();
+  void compute();
 
   struct Functor
   {

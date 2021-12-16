@@ -29,8 +29,8 @@ class FixWallAdhesion : public Fix {
   FixWallAdhesion(class LAMMPS *, int, char **);
   virtual ~FixWallAdhesion() {}
   int setmask();
-  void post_force(int);
-  void compute();
+  virtual void post_force(int);
+  virtual void compute();
 
  protected:
   double kn;

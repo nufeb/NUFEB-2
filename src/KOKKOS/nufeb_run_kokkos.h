@@ -50,6 +50,7 @@ class NufebRunKokkos : public NufebRun {
   void module_biology();
   void module_reactor();
   int module_chemsitry();
+  double module_physics();
   void disable_sync(class Fix *fix);
 };
 

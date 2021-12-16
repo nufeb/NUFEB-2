@@ -33,7 +33,6 @@ FixGrowth::FixGrowth(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
   dt = 1.0;
-
   dynamic_group_allow = 1;
 }
 

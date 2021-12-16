@@ -27,9 +27,9 @@ namespace LAMMPS_NS {
 class FixNVEBacillus : public FixNVE {
  public:
   FixNVEBacillus(class LAMMPS *, int, char **);
-  void init();
-  void initial_integrate(int);
-  void final_integrate();
+  virtual void init();
+  virtual void initial_integrate(int);
+  virtual void final_integrate();
 
  private:
   double dtq;

@@ -27,17 +27,17 @@ namespace LAMMPS_NS {
 class FixDiffusionReaction : public Fix {
  public:
   FixDiffusionReaction(class LAMMPS *, int, char **);
-  ~FixDiffusionReaction();
+  virtual ~FixDiffusionReaction();
   int setmask() {return 0;}
   int modify_param(int, char **);
-  void init();
-  double compute_scalar();
   void reset_dt();
-  void compute_initial();
-  void compute_final();
-  void closed_system_init();
-  void closed_system_scaleup(double);
-  void compute() {}
+
+  virtual void init();
+  virtual double compute_scalar();
+  virtual void compute_initial();
+  virtual void compute_final();
+  virtual void closed_system_init();
+  virtual void closed_system_scaleup(double);
   
  protected:
   int isub;

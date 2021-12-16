@@ -35,14 +35,14 @@ template<class DeviceType>
 class FixDiffusionReactionKokkos : public FixDiffusionReaction {
  public:
   FixDiffusionReactionKokkos(class LAMMPS *, int, char **);
-  virtual ~FixDiffusionReactionKokkos();
-  virtual void init();
+  ~FixDiffusionReactionKokkos();
+  void init();
   void grow_arrays(int);
-  virtual double compute_scalar();
-  virtual void compute_initial();
-  virtual void compute_final();
-  virtual void closed_system_init();
-  virtual void closed_system_scaleup(double);
+  double compute_scalar();
+  void compute_initial();
+  void compute_final();
+  void closed_system_init();
+  void closed_system_scaleup(double);
 
   struct Functor
   {

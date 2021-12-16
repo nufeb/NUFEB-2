@@ -28,8 +28,8 @@ class FixDivideBacillus : public FixDivide {
  public:
   
   FixDivideBacillus(class LAMMPS *, int, char **);
-  ~FixDivideBacillus();
-  void compute();
+  virtual ~FixDivideBacillus();
+  virtual void compute();
   
  private:
   double maxlength;

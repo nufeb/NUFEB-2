@@ -27,13 +27,13 @@ namespace LAMMPS_NS {
 class FixEPSExtract : public Fix {
  public:
   FixEPSExtract(class LAMMPS *, int, char **);
-  ~FixEPSExtract();
+  virtual ~FixEPSExtract();
 
   int setmask();
   int modify_param(int, char **);
-  void biology_nufeb();
-  void post_neighbor();
-  void compute();
+  virtual void biology_nufeb();
+  virtual void post_neighbor();
+  virtual void compute();
   
  private:
   int type;

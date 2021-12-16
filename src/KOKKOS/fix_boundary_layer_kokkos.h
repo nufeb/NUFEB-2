@@ -38,12 +38,10 @@ struct FixLayerComputeMaxzTag {};
 template <class DeviceType>
 class FixBoundaryLayerKokkos : public FixBoundaryLayer {
  public:
-  int compute_flag;
-
   FixBoundaryLayerKokkos(class LAMMPS *, int, char **);
-  virtual ~FixBoundaryLayerKokkos() {}
-  virtual void init() {FixBoundaryLayer::init();}
-  virtual void compute();
+  ~FixBoundaryLayerKokkos() {}
+
+  void compute();
 
   struct Functor
   {

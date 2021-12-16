@@ -27,10 +27,10 @@ namespace LAMMPS_NS {
 class FixGrowthHET: public FixGrowth {
  public:
   FixGrowthHET(class LAMMPS *, int, char **);
-  ~FixGrowthHET() {}
+  virtual ~FixGrowthHET() {}
 
-  void update_atoms();
-  void update_cells();
+  virtual void update_atoms();
+  virtual void update_cells();
 
  protected:
   int isub;

@@ -27,23 +27,24 @@ FixStyle(nufeb/growth/het/kk/host,FixGrowthHETKokkos<LMPHostType>)
 
 namespace LAMMPS_NS {
 
-template <int, int>
-struct FixGrowthHETCellsTag {};
+struct FixGrowthHETCellsReactionTag {};
+struct FixGrowthHETCellsGrowthTag {};
 struct FixGrowthHETAtomsTag {};
 
 template <class DeviceType>
 class FixGrowthHETKokkos: public FixGrowthHET {
  public:
   FixGrowthHETKokkos(class LAMMPS *, int, char **);
-  virtual ~FixGrowthHETKokkos() {}
-  virtual void compute();
+  ~FixGrowthHETKokkos() {}
 
-  template <int, int> void update_cells();
+  void update_cells();
   void update_atoms();
 
-  struct FunctorCells
+  struct Functor
   {
     int igroup;
+    int groupbit;
+    double dt;
     int isub;
     int io2;
     int ino2;
@@ -62,27 +63,6 @@ class FixGrowthHETKokkos: public FixGrowthHET {
     double anoxic;
     double eps_dens;
 
-    typedef ArrayTypes<DeviceType> AT;
-    typename AT::t_int_1d d_gmask;
-    typename AT::t_float_2d d_conc;
-    typename AT::t_float_2d d_reac;
-    typename AT::t_float_2d d_dens;
-    typename AT::t_float_3d d_growth;
-
-    FunctorCells(FixGrowthHETKokkos *ptr);
-    
-    template <int Reaction, int Growth>
-    KOKKOS_INLINE_FUNCTION
-    void operator()(FixGrowthHETCellsTag<Reaction, Growth>, int) const;
-  };
-
-  struct FunctorAtoms
-  {
-    int groupbit;
-    int igroup;
-    double dt;
-    double eps_dens;
-
     double boxlo[3];
     int grid_sublo[3];
     int grid_subbox[3];
@@ -91,15 +71,25 @@ class FixGrowthHETKokkos: public FixGrowthHET {
 
     typedef ArrayTypes<DeviceType> AT;
     typename AT::t_int_1d d_mask;
+    typename AT::t_int_1d d_gmask;
+    typename AT::t_float_2d d_conc;
+    typename AT::t_float_2d d_reac;
+    typename AT::t_float_2d d_dens;
     typename AT::t_float_3d d_growth;
+
     typename AT::t_x_array d_x;
     typename AT::t_float_1d d_rmass;
     typename AT::t_float_1d d_radius;
     typename AT::t_float_1d d_outer_mass;
     typename AT::t_float_1d d_outer_radius;
 
-    FunctorAtoms(FixGrowthHETKokkos *ptr);
 
+    Functor(FixGrowthHETKokkos *ptr);
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(FixGrowthHETCellsReactionTag, int) const;
+    KOKKOS_INLINE_FUNCTION
+    void operator()(FixGrowthHETCellsGrowthTag, int) const;
     KOKKOS_INLINE_FUNCTION
     void operator()(FixGrowthHETAtomsTag, int) const;
   };

@@ -29,8 +29,8 @@ class FixGrowthEcoli: public FixGrowth {
   FixGrowthEcoli(class LAMMPS *, int, char **);
   virtual ~FixGrowthEcoli() {}
 
-  void update_atoms();
-  void update_cells();
+  virtual void update_atoms();
+  virtual void update_cells();
 
  protected:
   int isuc;	// sucrose

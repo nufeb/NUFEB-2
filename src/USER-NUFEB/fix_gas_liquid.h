@@ -30,10 +30,10 @@ class FixGasLiquid : public Fix {
   int igas;
 
   FixGasLiquid(class LAMMPS *, int, char **);
-  ~FixGasLiquid() {}
+  virtual ~FixGasLiquid() {}
   int setmask();
-  void chemistry_nufeb();
-  void compute();
+  virtual void chemistry_nufeb();
+  virtual void compute();
 
  protected:
   double kga;   // gas mass transfer rate s-1

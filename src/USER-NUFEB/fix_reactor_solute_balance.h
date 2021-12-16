@@ -30,10 +30,10 @@ class FixReactorSoluteBalance : public Fix {
   virtual ~FixReactorSoluteBalance() {}
 
   int setmask();
-  void init();
-  double compute_scalar();
-  void reactor_nufeb();
-  void compute();
+  virtual void init();
+  virtual double compute_scalar();
+  virtual void reactor_nufeb();
+  virtual void compute();
 
  protected:
   int iliq;
