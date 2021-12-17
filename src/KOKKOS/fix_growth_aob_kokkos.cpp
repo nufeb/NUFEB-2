@@ -33,6 +33,7 @@ FixGrowthAOBKokkos<DeviceType>::FixGrowthAOBKokkos(LAMMPS *lmp, int narg, char *
   FixGrowthAOB(lmp, narg, arg)
 {
   kokkosable = 1;
+  atomKK = (AtomKokkos *)atom;
   execution_space = ExecutionSpaceFromDevice<DeviceType>::space;
 
   datamask_read = X_MASK | MASK_MASK | RMASS_MASK | RADIUS_MASK | OUTER_MASS_MASK | OUTER_RADIUS_MASK;
@@ -56,7 +57,7 @@ void FixGrowthAOBKokkos<DeviceType>::update_cells()
   Kokkos::parallel_for(
     Kokkos::RangePolicy<
     DeviceType,
-    FixGrowthAOBCellsTag>(0, grid->ncells), f);
+    FixGrowthAOBCellsReactionTag>(0, grid->ncells), f);
   copymode = 0;
 
   gridKK->modified(execution_space, REAC_MASK);
@@ -80,17 +81,23 @@ void FixGrowthAOBKokkos<DeviceType>::update_atoms()
   d_outer_mass = atomKK->k_outer_mass.view<DeviceType>();
   d_outer_radius = atomKK->k_outer_radius.view<DeviceType>();
 
+  d_gmask = gridKK->k_mask.template view<DeviceType>();
   d_conc = gridKK->k_conc.template view<DeviceType>();
   d_growth = gridKK->k_growth.template view<DeviceType>();
 
   cell_size = grid->cell_size;
   vol = cell_size * cell_size * cell_size;
 
-  gridKK->sync(execution_space, CONC_MASK | GROWTH_MASK);
+  gridKK->sync(execution_space, CONC_MASK | GROWTH_MASK | GMASK_MASK);
   atomKK->sync(execution_space, datamask_read);
 
   copymode = 1;
   Functor f(this);
+  Kokkos::parallel_for(
+    Kokkos::RangePolicy<
+    DeviceType,
+    FixGrowthAOBCellsGrowthTag>(0, grid->ncells), f);
+
   Kokkos::parallel_for(
     Kokkos::RangePolicy<
     DeviceType,
@@ -125,7 +132,7 @@ FixGrowthAOBKokkos<DeviceType>::Functor::Functor(FixGrowthAOBKokkos<DeviceType> 
 
 template <class DeviceType>
 KOKKOS_INLINE_FUNCTION
-void FixGrowthAOBKokkos<DeviceType>::Functor::operator()(FixGrowthAOBCellsTag, int i) const
+void FixGrowthAOBKokkos<DeviceType>::Functor::operator()(FixGrowthAOBCellsReactionTag, int i) const
 {
   double tmp1 = growth * d_conc(inh4, i) / (nh4_affinity + d_conc(inh4, i)) * d_conc(io2, i) / (o2_affinity + d_conc(io2, i));
   double tmp2 = maintain * d_conc(io2, i) / (o2_affinity + d_conc(io2, i));
@@ -141,13 +148,22 @@ void FixGrowthAOBKokkos<DeviceType>::Functor::operator()(FixGrowthAOBCellsTag, i
 
 template <class DeviceType>
 KOKKOS_INLINE_FUNCTION
-void FixGrowthAOBKokkos<DeviceType>::Functor::operator()(FixGrowthAOBAtomsTag, int i) const
+void FixGrowthAOBKokkos<DeviceType>::Functor::operator()(FixGrowthAOBCellsGrowthTag, int i) const
 {
   double tmp1 = growth * d_conc(inh4, i) / (nh4_affinity + d_conc(inh4, i)) * d_conc(io2, i) / (o2_affinity + d_conc(io2, i));
   double tmp2 = maintain * d_conc(io2, i) / (o2_affinity + d_conc(io2, i));
 
-  d_growth(igroup, i, 0) = tmp1 - tmp2 - decay;
+  if (!(d_gmask(i) & GHOST_MASK)) {
+    d_growth(igroup, i, 0) = tmp1 - tmp2 - decay;
+  }
+}
 
+/* ---------------------------------------------------------------------- */
+
+template <class DeviceType>
+KOKKOS_INLINE_FUNCTION
+void FixGrowthAOBKokkos<DeviceType>::Functor::operator()(FixGrowthAOBAtomsTag, int i) const
+{
   if (d_mask[i] & groupbit) {
     // can't do:
     // int cell = grid->cell(d_x[i]);

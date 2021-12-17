@@ -50,7 +50,7 @@ void FixGrowthHETKokkos<DeviceType>::update_cells()
   d_reac = gridKK->k_reac.template view<DeviceType>();
   d_dens = gridKK->k_dens.template view<DeviceType>();
 
-  gridKK->sync(execution_space, GMASK_MASK | CONC_MASK | DENS_MASK);
+  gridKK->sync(execution_space, GMASK_MASK | CONC_MASK | DENS_MASK | REAC_MASK);
 
   copymode = 1;
   Functor f(this);
@@ -81,14 +81,14 @@ void FixGrowthHETKokkos<DeviceType>::update_atoms()
   d_outer_mass = atomKK->k_outer_mass.view<DeviceType>();
   d_outer_radius = atomKK->k_outer_radius.view<DeviceType>();
 
+  d_gmask = gridKK->k_mask.template view<DeviceType>();
   d_conc = gridKK->k_conc.template view<DeviceType>();
   d_growth = gridKK->k_growth.template view<DeviceType>();
-  d_gmask = gridKK->k_mask.template view<DeviceType>();
 
   cell_size = grid->cell_size;
   vol = cell_size * cell_size * cell_size;
 
-  gridKK->sync(execution_space, GMASK_MASK | CONC_MASK | GROWTH_MASK);
+  gridKK->sync(execution_space, CONC_MASK | GROWTH_MASK | GMASK_MASK);
   atomKK->sync(execution_space, datamask_read);
 
   copymode = 1;

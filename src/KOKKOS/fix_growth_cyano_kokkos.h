@@ -27,7 +27,8 @@ FixStyle(nufeb/growth/cyano/kk/host,FixGrowthCyanoKokkos<LMPHostType>)
 
 namespace LAMMPS_NS {
 
-struct FixGrowthCyanoCellsTag {};
+struct FixGrowthCyanoCellsReactionTag {};
+struct FixGrowthCyanoCellsGrowthTag {};
 struct FixGrowthCyanoAtomsTag {};
 
 template <class DeviceType>
@@ -85,7 +86,9 @@ class FixGrowthCyanoKokkos: public FixGrowthCyano {
     Functor(FixGrowthCyanoKokkos *ptr);
     
     KOKKOS_INLINE_FUNCTION
-    void operator()(FixGrowthCyanoCellsTag, int) const;
+    void operator()(FixGrowthCyanoCellsReactionTag, int) const;
+    KOKKOS_INLINE_FUNCTION
+    void operator()(FixGrowthCyanoCellsGrowthTag, int) const;
     KOKKOS_INLINE_FUNCTION
     void operator()(FixGrowthCyanoAtomsTag, int) const;
   };

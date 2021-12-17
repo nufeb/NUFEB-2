@@ -27,7 +27,8 @@ FixStyle(nufeb/growth/ecoli/kk/host,FixGrowthEcoliKokkos<LMPHostType>)
 
 namespace LAMMPS_NS {
 
-struct FixGrowthEcoliCellsTag {};
+struct FixGrowthEcoliCellsReactionTag {};
+struct FixGrowthEcoliCellsGrowthTag {};
 struct FixGrowthEcoliAtomsTag {};
 
 template <class DeviceType>
@@ -80,7 +81,9 @@ class FixGrowthEcoliKokkos: public FixGrowthEcoli {
     Functor(FixGrowthEcoliKokkos *ptr);
     
     KOKKOS_INLINE_FUNCTION
-    void operator()(FixGrowthEcoliCellsTag, int) const;
+    void operator()(FixGrowthEcoliCellsReactionTag, int) const;
+    KOKKOS_INLINE_FUNCTION
+    void operator()(FixGrowthEcoliCellsGrowthTag, int) const;
     KOKKOS_INLINE_FUNCTION
     void operator()(FixGrowthEcoliAtomsTag, int) const;
   };

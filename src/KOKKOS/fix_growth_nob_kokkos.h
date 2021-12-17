@@ -27,7 +27,8 @@ FixStyle(nufeb/growth/nob/kk/host,FixGrowthNOBKokkos<LMPHostType>)
 
 namespace LAMMPS_NS {
 
-struct FixGrowthNOBCellsTag {};
+struct FixGrowthNOBCellsReactionTag {};
+struct FixGrowthNOBCellsGrowthTag {};
 struct FixGrowthNOBAtomsTag {};
 
 template <class DeviceType>
@@ -80,7 +81,9 @@ class FixGrowthNOBKokkos: public FixGrowthNOB {
     Functor(FixGrowthNOBKokkos *ptr);
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(FixGrowthNOBCellsTag, int) const;
+    void operator()(FixGrowthNOBCellsReactionTag, int) const;
+    KOKKOS_INLINE_FUNCTION
+    void operator()(FixGrowthNOBCellsGrowthTag, int) const;
     KOKKOS_INLINE_FUNCTION
     void operator()(FixGrowthNOBAtomsTag, int) const;
   };

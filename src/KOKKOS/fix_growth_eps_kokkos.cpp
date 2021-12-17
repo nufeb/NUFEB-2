@@ -33,6 +33,7 @@ FixGrowthEPSKokkos<DeviceType>::FixGrowthEPSKokkos(LAMMPS *lmp, int narg, char *
   FixGrowthEPS(lmp, narg, arg)
 {
   kokkosable = 1;
+  atomKK = (AtomKokkos *)atom;
   execution_space = ExecutionSpaceFromDevice<DeviceType>::space;
 
   datamask_read = X_MASK | MASK_MASK | RMASS_MASK | RADIUS_MASK | OUTER_MASS_MASK | OUTER_RADIUS_MASK;
@@ -82,11 +83,12 @@ void FixGrowthEPSKokkos<DeviceType>::update_atoms()
 
   d_conc = gridKK->k_conc.template view<DeviceType>();
   d_growth = gridKK->k_growth.template view<DeviceType>();
+  d_gmask = gridKK->k_mask.template view<DeviceType>();
 
   cell_size = grid->cell_size;
   vol = cell_size * cell_size * cell_size;
 
-  gridKK->sync(execution_space, CONC_MASK | GROWTH_MASK);
+  gridKK->sync(execution_space, GMASK_MASK | CONC_MASK | GROWTH_MASK);
   atomKK->sync(execution_space, datamask_read);
 
   copymode = 1;

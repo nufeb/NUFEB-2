@@ -557,12 +557,15 @@ void NufebRunKokkos::module_biology()
   reset_dt();
 
   // call all fixes implementing biology_nufeb()
+  atomKK->sync(Host,ALL_MASK);
 
   if (modify->n_biology_nufeb) {
     timer->stamp();
     modify->biology_nufeb();
     timer->stamp(Timer::MODIFY);
   }
+
+  atomKK->modified(Host,ALL_MASK);
 }
 
 /* ---------------------------------------------------------------------- */
