@@ -35,7 +35,7 @@ ComputePlasmidMSD::ComputePlasmidMSD(LAMMPS *lmp, int narg, char **arg) :
 {
   if (narg < 3) error->all(FLERR,"Illegal compute nufeb/plasmid/msd command");
   avec = nullptr;
-  fix_plasmid = nullptr;;
+  fix_plasmid = nullptr;
 
   avec = (AtomVecBacillus *) atom->style_match("bacillus");
   if (!avec) error->all(FLERR,"compute nufeb/plasmid/msd requires "

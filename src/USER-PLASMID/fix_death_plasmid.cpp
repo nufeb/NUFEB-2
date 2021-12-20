@@ -37,7 +37,7 @@ FixDeathPlasmid::FixDeathPlasmid(LAMMPS *lmp, int narg, char **arg) :
     error->all(FLERR, "Can't find group");
   idead = 1 | group->bitmask[idead];
 
-  fix_plasmid = nullptr;;
+  fix_plasmid = nullptr;
 
   int ifix = modify->find_fix_by_style("^nufeb/property/plasmid");
   if (ifix < 0 ) error->all(FLERR,"Illegal nufeb/death/plasmid command: "

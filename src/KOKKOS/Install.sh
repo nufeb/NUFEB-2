@@ -136,6 +136,8 @@ action fix_gravity_kokkos.cpp
 action fix_gravity_kokkos.h
 action fix_langevin_kokkos.cpp
 action fix_langevin_kokkos.h
+action fix_growth_ananmmox_kokkos.cpp fix_growth_ananmmox.cpp
+action fix_growth_ananmmox_kokkos.h fix_growth_ananmmox.h
 action fix_growth_aob_kokkos.cpp fix_growth_aob.cpp
 action fix_growth_aob_kokkos.h fix_growth_aob.h
 action fix_growth_eps_kokkos.cpp fix_growth_eps.cpp

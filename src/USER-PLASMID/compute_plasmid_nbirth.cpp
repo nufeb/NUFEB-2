@@ -34,7 +34,7 @@ ComputePlasmidNBirth::ComputePlasmidNBirth(LAMMPS *lmp, int narg, char **arg) :
   Compute(lmp, narg, arg)
 {
   if (narg < 3) error->all(FLERR,"Illegal nufeb/plasmid/nbirth command");
-  fix_plasmid = nullptr;;
+  fix_plasmid = nullptr;
 
   int ifix = modify->find_fix_by_style("^nufeb/property/plasmid");
   if (ifix < 0 ) error->all(FLERR,"Illegal nufeb/plasmid/nbirth command: requires fix nufeb/property/plasmid");

@@ -101,8 +101,7 @@ void FixGrowthAnammox::update_cells()
 
   for (int i = 0; i < grid->ncells; i++) {
     double tmp1 = growth * conc[inh4][i] / (nh4_affinity + conc[inh4][i]) * conc[ino2][i] / (no2_affinity + conc[ino2][i]) *
-	o2_affinity / (o2_affinity + conc[io2][i]);;
-    double tmp2 = maintain * conc[io2][i] / (o2_affinity + conc[io2][i]);
+	o2_affinity / (o2_affinity + conc[io2][i]);
 
     if (!(grid->mask[i] & GHOST_MASK)) {
       reac[inh4][i] -= 1 / yield * tmp1 * dens[igroup][i];
@@ -120,7 +119,7 @@ void FixGrowthAnammox::update_atoms()
 
   for (int i = 0; i < grid->ncells; i++) {
     double tmp1 = growth * conc[inh4][i] / (nh4_affinity + conc[inh4][i]) * conc[ino2][i] / (no2_affinity + conc[ino2][i]) *
-	o2_affinity / (o2_affinity + conc[io2][i]);;
+	o2_affinity / (o2_affinity + conc[io2][i]);
     double tmp2 = maintain * conc[io2][i] / (o2_affinity + conc[io2][i]);
 
     grid->growth[igroup][i][0] = tmp1 - tmp2 - decay;
