@@ -13,29 +13,29 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/division/coccus/kk,FixDivideCoccusKokkos<LMPDeviceType>)
-FixStyle(nufeb/division/coccus/kk/device,FixDivideCoccusKokkos<LMPDeviceType>)
-FixStyle(nufeb/division/coccus/kk/host,FixDivideCoccusKokkos<LMPHostType>)
+FixStyle(nufeb/eps_extract/kk,FixEPSExtractKokkos<LMPDeviceType>)
+FixStyle(nufeb/eps_extract/kk/device,FixEPSExtractKokkos<LMPDeviceType>)
+FixStyle(nufeb/eps_extract/kk/host,FixEPSExtractKokkos<LMPHostType>)
 
 #else
 
-#ifndef LMP_FIX_DIVIDE_COCCUS_KOKKOS_H
-#define LMP_FIX_DIVIDE_COCCUS_KOKKOS_H
+#ifndef LMP_FIX_EPS_EXTRACT_KOKKOS_H
+#define LMP_FIX_EPS_EXTRACT_KOKKOS_H
 
-#include "fix_divide_coccus.h"
+#include "fix_eps_extract.h"
 #include "kokkos_type.h"
 #include "Kokkos_Random.hpp"
 #include "comm_kokkos.h"
   
 namespace LAMMPS_NS {
 
-struct FixDivideCoccusComputeTag {};
+struct FixEPSExtractComputeTag {};
   
 template <class DeviceType>
-class FixDivideCoccusKokkos : public FixDivideCoccus {
+class FixEPSExtractKokkos : public FixEPSExtract {
  public:
-  FixDivideCoccusKokkos(class LAMMPS *, int, char **);
-  ~FixDivideCoccusKokkos();
+  FixEPSExtractKokkos(class LAMMPS *, int, char **);
+  ~FixEPSExtractKokkos();
   void init();
 
   void compute();
@@ -44,6 +44,7 @@ class FixDivideCoccusKokkos : public FixDivideCoccus {
   struct Functor
   {
     int groupbit;
+    int eps_mask;
     double eps_density;
 
     double boxlo[3];
@@ -69,14 +70,15 @@ class FixDivideCoccusKokkos : public FixDivideCoccus {
     Kokkos::Random_XorShift64_Pool<DeviceType> rand_pool;
     typedef typename Kokkos::Random_XorShift64_Pool<DeviceType>::generator_type rand_type;
 
-    Functor(FixDivideCoccusKokkos *ptr);
+    Functor(FixEPSExtractKokkos *ptr);
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(FixDivideCoccusComputeTag, int) const;
+    void operator()(FixEPSExtractComputeTag, int) const;
   };
 
  private:
   int nlocal;
+  int eps_mask;
   double boxlo[3];
   double boxhi[3];
   int *divide_list;
@@ -102,7 +104,7 @@ class FixDivideCoccusKokkos : public FixDivideCoccus {
   HAT::t_int_1d h_divide_list;
   HAT::t_int_1d h_mask;
   HAT::t_float_1d h_radius;
-  HAT::t_int_1d h_type;
+  HAT::t_float_1d h_outer_radius;
 
   Kokkos::Random_XorShift64_Pool<DeviceType> rand_pool;
 };

@@ -11,7 +11,7 @@
  See the README file in the top-level LAMMPS directory.
  ------------------------------------------------------------------------- */
 
-#include "fix_divide_coccus_kokkos.h"
+#include "fix_eps_extract_kokkos.h"
 #include "atom_kokkos.h"
 #include "atom_vec_kokkos.h"
 #include "comm.h"
@@ -32,8 +32,8 @@ using namespace FixConst;
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-FixDivideCoccusKokkos<DeviceType>::FixDivideCoccusKokkos(LAMMPS *lmp, int narg, char **arg) :
-  FixDivideCoccus(lmp, narg, arg),rand_pool(seed + comm->me)
+FixEPSExtractKokkos<DeviceType>::FixEPSExtractKokkos(LAMMPS *lmp, int narg, char **arg) :
+  FixEPSExtract(lmp, narg, arg),rand_pool(seed + comm->me)
 {
   kokkosable = 1;
   atomKK = (AtomKokkos *) atom;
@@ -49,7 +49,7 @@ FixDivideCoccusKokkos<DeviceType>::FixDivideCoccusKokkos(LAMMPS *lmp, int narg, 
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-FixDivideCoccusKokkos<DeviceType>::~FixDivideCoccusKokkos()
+FixEPSExtractKokkos<DeviceType>::~FixEPSExtractKokkos()
 {
   if (copymode) return;
   memoryKK->destroy_kokkos(k_divide_list,divide_list);
@@ -58,7 +58,7 @@ FixDivideCoccusKokkos<DeviceType>::~FixDivideCoccusKokkos()
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-void FixDivideCoccusKokkos<DeviceType>::init()
+void FixEPSExtractKokkos<DeviceType>::init()
 {
   grow_arrays(atomKK->nlocal);
 }
@@ -66,10 +66,10 @@ void FixDivideCoccusKokkos<DeviceType>::init()
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-void FixDivideCoccusKokkos<DeviceType>::grow_arrays(int nlocal)
+void FixEPSExtractKokkos<DeviceType>::grow_arrays(int nlocal)
 {
   k_divide_list.template sync<LMPHostType>();
-  memoryKK->grow_kokkos(k_divide_list, divide_list, nlocal, "nufeb/division/coccus:divide_list");
+  memoryKK->grow_kokkos(k_divide_list, divide_list, nlocal, "nufeb/eps_extract:divide_list");
   d_divide_list = k_divide_list.template view<DeviceType>();
   h_divide_list = k_divide_list.template view<LMPHostType>();
   k_divide_list.template modify<LMPHostType>();
@@ -78,10 +78,10 @@ void FixDivideCoccusKokkos<DeviceType>::grow_arrays(int nlocal)
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-void FixDivideCoccusKokkos<DeviceType>::compute()
+void FixEPSExtractKokkos<DeviceType>::compute()
 {
   atomKK->sync(execution_space,datamask_read);
-  atomKK->sync(Host, MASK_MASK | RADIUS_MASK | TYPE_MASK);
+  atomKK->sync(Host, MASK_MASK | RADIUS_MASK | OUTER_RADIUS_MASK);
 
   for (int i = 0; i < 3; i++) {
     boxlo[i] = domain->boxlo[i];
@@ -108,16 +108,16 @@ void FixDivideCoccusKokkos<DeviceType>::compute()
   d_outer_radius = atomKK->k_outer_radius.template view<DeviceType>();
 
   h_mask = atomKK->k_mask.view<LMPHostType>();
-  h_type = atomKK->k_type.view<LMPHostType>();
   h_radius = atomKK->k_radius.view<LMPHostType>();
+  h_outer_radius = atomKK->k_outer_radius.view<LMPHostType>();
 
   // create new atom on host
   for (int i = 0; i < nlocal; i++) {
     if (h_mask(i) & groupbit) {
-      if (h_radius(i) * 2 >= diameter) {
+      if (h_outer_radius(i) / h_radius(i) > ratio) {
 	double *coord = new double[3];
 	coord[0] = coord[1] = coord[2] = 0.0;
-	atomKK->avec->create_atom(h_type(i), coord);
+	atomKK->avec->create_atom(type, coord);
 	h_divide_list(i) = atomKK->nlocal - 1;
 	delete[] coord;
       } else {
@@ -128,6 +128,7 @@ void FixDivideCoccusKokkos<DeviceType>::compute()
 
   k_divide_list.template modify<LMPHostType>();
   k_divide_list.template sync<DeviceType>();
+  eps_mask = group->bitmask[ieps];
 
   // update atom attributes on device
   copymode = 1;
@@ -135,22 +136,10 @@ void FixDivideCoccusKokkos<DeviceType>::compute()
   Kokkos::parallel_for(
     Kokkos::RangePolicy<
     DeviceType,
-    FixDivideCoccusComputeTag>(0, nlocal), f);
+    FixEPSExtractComputeTag>(0, nlocal), f);
   copymode = 0;
 
   atomKK->modified(execution_space,datamask_modify);
-
-  for (int i = 0; i < nlocal; i++) {
-    int j = h_divide_list(i);
-    if (j > 0) {
-      for (int m = 0; m < modify->nfix; m++)
-	modify->fix[m]->update_arrays(i, j);
-
-      for (int m = 0; m < modify->ncompute; m++)
-	modify->compute[m]->set_arrays(j);
-    }
-  }
-
   atomKK->sync(Host,TAG_MASK);
 
   bigint nblocal = atomKK->nlocal;
@@ -173,12 +162,12 @@ void FixDivideCoccusKokkos<DeviceType>::compute()
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-FixDivideCoccusKokkos<DeviceType>::Functor::Functor(FixDivideCoccusKokkos<DeviceType> *ptr):
+FixEPSExtractKokkos<DeviceType>::Functor::Functor(FixEPSExtractKokkos<DeviceType> *ptr):
   groupbit(ptr->groupbit), eps_density(ptr->eps_density), d_divide_list(ptr->d_divide_list),
   d_x(ptr->d_x), d_f(ptr->d_f), d_v(ptr->d_v), d_mask(ptr->d_mask), d_tag(ptr->d_tag),
   d_omega(ptr->d_omega), d_torque(ptr->d_torque), d_rmass(ptr->d_rmass), d_biomass(ptr->d_biomass),
   d_radius(ptr->d_radius), d_outer_mass(ptr->d_outer_mass), d_outer_radius(ptr->d_outer_radius),
-  rand_pool(ptr->rand_pool)
+  rand_pool(ptr->rand_pool), eps_mask(ptr->eps_mask)
 {
   for (int i = 0; i < 3; i++) {
     boxlo[i] = ptr->boxlo[i];
@@ -190,7 +179,7 @@ FixDivideCoccusKokkos<DeviceType>::Functor::Functor(FixDivideCoccusKokkos<Device
 
 template <class DeviceType>
 KOKKOS_INLINE_FUNCTION
-void FixDivideCoccusKokkos<DeviceType>::Functor::operator()(FixDivideCoccusComputeTag, int i) const
+void FixEPSExtractKokkos<DeviceType>::Functor::operator()(FixEPSExtractComputeTag, int i) const
 {
   if (d_mask(i) & groupbit) {
     if (d_divide_list(i) > 0) {
@@ -198,14 +187,19 @@ void FixDivideCoccusKokkos<DeviceType>::Functor::operator()(FixDivideCoccusCompu
       static const double MY_PI  = 3.14159265358979323846; // pi
       double DELTA = 1.005;
 
-      double density = d_rmass(i) /
-	  (4.0 * MY_PI / 3.0 * d_radius(i) * d_radius(i) * d_radius(i));
-      double split = 0.4 + (rand_gen.drand() * 0.2); //(random->uniform() * 0.2);
-      double imass = d_rmass(i) * split;
-      double jmass = d_rmass(i) - imass;
+      d_outer_mass(i) = (4.0 * MY_PI / 3.0) *
+	  ((d_outer_radius(i) * d_outer_radius(i) * d_outer_radius(i)) -
+	      (d_radius(i) * d_radius(i) * d_radius(i))) * eps_density;
 
-      double iouter_mass = d_outer_mass(i) * split;
-      double jouter_mass = d_outer_mass(i) - iouter_mass;
+      double split = 0.4 + (rand_gen.drand() * 0.2); //(random->uniform() * 0.2);
+
+      double new_outer_mass = d_outer_mass(i) * split;
+      double eps_mass = d_outer_mass(i) - new_outer_mass;
+
+      d_outer_mass(i) = new_outer_mass;
+
+      double density = d_rmass(i) / (4.0 * MY_PI / 3.0 * d_radius(i) * d_radius(i) * d_radius(i));
+      d_outer_radius(i) = pow((3.0 / (4.0 * MY_PI)) * ((d_rmass(i) / density) + (d_outer_mass(i) / eps_density)), (1.0 / 3.0));
 
       double theta = rand_gen.drand() * 2 * MY_PI; //random->uniform() * 2 * MY_PI;
       double phi = rand_gen.drand() * MY_PI; // random->uniform() * (MY_PI);
@@ -214,67 +208,36 @@ void FixDivideCoccusKokkos<DeviceType>::Functor::operator()(FixDivideCoccusCompu
       double oldy = d_x(i,1);
       double oldz = d_x(i,2);
 
-      // update daughter cell i
-      d_rmass(i) = imass;
-      d_outer_mass(i) = iouter_mass;
-      d_radius(i) = pow(((6 * d_rmass(i)) / (density * MY_PI)), (1.0 / 3.0)) * 0.5;
-      d_outer_radius(i) = pow((3.0 / (4.0 * MY_PI)) * ((d_rmass(i) / density) + (iouter_mass / eps_density)), (1.0 / 3.0));
+      // update attributes of the new EPS atom
+      double child_radius = pow(((6 * eps_mass) / (eps_density * MY_PI)), (1.0 / 3.0)) * 0.5;
+      double newx = oldx - (child_radius * cos(theta) * sin(phi) * DELTA);
+      double newy = oldy - (child_radius * sin(theta) * sin(phi) * DELTA);
+      double newz = oldz - (child_radius * cos(phi) * DELTA);
 
-      double newx = oldx + (d_outer_radius(i) * cos(theta) * sin(phi) * DELTA);
-      double newy = oldy + (d_outer_radius(i) * sin(theta) * sin(phi) * DELTA);
-      double newz = oldz + (d_outer_radius(i) * cos(phi) * DELTA);
-
-      if (newx - d_outer_radius(i) < boxlo[0]) {
-        newx = boxlo[0] + d_outer_radius(i);
+      if (newx - child_radius < boxlo[0]) {
+        newx = boxlo[0] + child_radius;
       } else if (newx + d_outer_radius(i) > boxhi[0]) {
-        newx = boxhi[0] - d_outer_radius(i);
+        newx = boxhi[0] - child_radius;
       }
-      if (newy - d_outer_radius(i) < boxlo[1]) {
-        newy = boxlo[1] + d_outer_radius(i);
+      if (newy - child_radius < boxlo[1]) {
+        newy = boxlo[1] + child_radius;
       } else if (newy + d_outer_radius(i) > boxhi[1]) {
-        newy = boxhi[1] - d_outer_radius(i);
+        newy = boxhi[1] - child_radius;
       }
-      if (newz - d_outer_radius(i) < boxlo[2]) {
-        newz = boxlo[2] + d_outer_radius(i);
+      if (newz - child_radius < boxlo[2]) {
+        newz = boxlo[2] + child_radius;
       } else if (newz + d_outer_radius(i) > boxhi[2]) {
-        newz = boxhi[2] - d_outer_radius(i);
+        newz = boxhi[2] - child_radius;
       }
-
-      d_x(i,0) = newx;
-      d_x(i,1) = newy;
-      d_x(i,2) = newz;
 
       int j = d_divide_list[i];
-
-      // create daughter cell j
-      double jradius = pow(((6 * jmass) / (density * MY_PI)), (1.0 / 3.0)) * 0.5;
-      double jouter_radius = pow((3.0 / (4.0 * MY_PI)) * ((jmass / density) + (jouter_mass / eps_density)), (1.0 / 3.0));
-      newx = oldx - (jouter_radius * cos(theta) * sin(phi) * DELTA);
-      newy = oldy - (jouter_radius * sin(theta) * sin(phi) * DELTA);
-      newz = oldz - (jouter_radius * cos(phi) * DELTA);
-
-      if (newx - jouter_radius < boxlo[0]) {
-        newx = boxlo[0] + jouter_radius;
-      } else if (newx + jouter_radius > boxhi[0]) {
-        newx = boxhi[0] - jouter_radius;
-      }
-      if (newy - jouter_radius < boxlo[1]) {
-        newy = boxlo[1] + jouter_radius;
-      } else if (newy + jouter_radius > boxhi[1]) {
-        newy = boxhi[1] - jouter_radius;
-      }
-      if (newz - jouter_radius < boxlo[2]) {
-        newz = boxlo[2] + jouter_radius;
-      } else if (newz + jouter_radius > boxhi[2]) {
-        newz = boxhi[2] - jouter_radius;
-      }
 
       d_x(j,0) = newx;
       d_x(j,1) = newy;
       d_x(j,2) = newz;
 
       d_tag(j) = 0;
-      d_mask(j) = d_mask(i);
+      d_mask(j) = 1 | eps_mask;
       d_v(j,0) = d_v(i,0);
       d_v(j,1) = d_v(i,1);
       d_v(j,2) = d_v(i,2);
@@ -287,12 +250,11 @@ void FixDivideCoccusKokkos<DeviceType>::Functor::operator()(FixDivideCoccusCompu
       d_torque(j,0) = d_torque(i,0);
       d_torque(j,1) = d_torque(i,1);
       d_torque(j,2) = d_torque(i,2);
-
-      d_rmass(j) = jmass;
-      d_biomass(j) = d_biomass(i);
-      d_radius(j) = jradius;
-      d_outer_mass(j) = jouter_mass;
-      d_outer_radius(j) = jouter_radius;
+      d_rmass(j) = eps_mass;
+      d_biomass(j) = 1.0;
+      d_radius(j) = child_radius;
+      d_outer_mass(j) = 0.0;
+      d_outer_radius(j) = child_radius;
 
       rand_pool.free_state(rand_gen);
     }
@@ -303,8 +265,8 @@ void FixDivideCoccusKokkos<DeviceType>::Functor::operator()(FixDivideCoccusCompu
 /* ---------------------------------------------------------------------- */
 
 namespace LAMMPS_NS {
-template class FixDivideCoccusKokkos<LMPDeviceType>;
+template class FixEPSExtractKokkos<LMPDeviceType>;
 #ifdef KOKKOS_ENABLE_CUDA
-template class FixDivideCoccusKokkos<LMPHostType>;
+template class FixEPSExtractKokkos<LMPHostType>;
 #endif
 }
