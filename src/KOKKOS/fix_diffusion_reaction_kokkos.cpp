@@ -103,6 +103,8 @@ double FixDiffusionReactionKokkos<DeviceType>::compute_scalar()
 template <class DeviceType>
 void FixDiffusionReactionKokkos<DeviceType>::compute_initial()
 {
+  gridKK->sync(execution_space, GMASK_MASK | CONC_MASK | BULK_MASK | BOUNDARY_MASK);
+
   d_mask = gridKK->k_mask.template view<DeviceType>();
   d_conc = gridKK->k_conc.template view<DeviceType>();
   d_reac = gridKK->k_reac.template view<DeviceType>();
@@ -113,8 +115,6 @@ void FixDiffusionReactionKokkos<DeviceType>::compute_initial()
     grow_arrays(grid->ncells);
     ncells = grid->ncells;
   }
-
-  gridKK->sync(execution_space, GMASK_MASK | CONC_MASK | BULK_MASK | BOUNDARY_MASK);
   
   copymode = 1;
   Functor f(this);
@@ -132,6 +132,10 @@ void FixDiffusionReactionKokkos<DeviceType>::compute_initial()
 template <class DeviceType>
 void FixDiffusionReactionKokkos<DeviceType>::compute_final()
 {
+  gridKK->sync(execution_space, GMASK_MASK);
+  gridKK->sync(execution_space, REAC_MASK);
+  gridKK->sync(execution_space, BOUNDARY_MASK);
+
   cell_size = grid->cell_size;
   for (int i = 0; i < 3; i++)
     subbox[i] = grid->subbox[i];
@@ -139,10 +143,6 @@ void FixDiffusionReactionKokkos<DeviceType>::compute_final()
   d_mask = gridKK->k_mask.template view<DeviceType>();
   d_conc = gridKK->k_conc.template view<DeviceType>();
   d_reac = gridKK->k_reac.template view<DeviceType>();
-  
-  gridKK->sync(execution_space, GMASK_MASK);
-  gridKK->sync(execution_space, REAC_MASK);
-  gridKK->sync(execution_space, BOUNDARY_MASK);
   
   copymode = 1;
   Functor f(this);
@@ -164,12 +164,12 @@ void FixDiffusionReactionKokkos<DeviceType>::compute_final()
 template <class DeviceType>
 void FixDiffusionReactionKokkos<DeviceType>::closed_system_init()
 {
+  gridKK->sync(execution_space, GMASK_MASK);
+  gridKK->sync(execution_space, CONC_MASK);
+
   if (!closed_system) return;
   d_mask = gridKK->k_mask.template view<DeviceType>();
   d_conc = gridKK->k_conc.template view<DeviceType>();
-
-  gridKK->sync(execution_space, GMASK_MASK);
-  gridKK->sync(execution_space, CONC_MASK);
 
   double result = 0.0;
   Kokkos::parallel_reduce(
@@ -198,9 +198,9 @@ void FixDiffusionReactionKokkos<DeviceType>::closed_system_scaleup(double biodt)
 {
   if (!closed_system) return;
 
-  d_conc = gridKK->k_conc.template view<DeviceType>();
-
   gridKK->sync(execution_space, CONC_MASK);
+
+  d_conc = gridKK->k_conc.template view<DeviceType>();
 
   Kokkos::parallel_for(
     grid->ncells, LAMMPS_LAMBDA(int i) {

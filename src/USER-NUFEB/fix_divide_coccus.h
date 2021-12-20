@@ -31,7 +31,7 @@ class FixDivideCoccus : public FixDivide {
   virtual ~FixDivideCoccus();
   virtual void compute();
   
- private:
+ protected:
   double diameter;
   double eps_density;
   int seed;  

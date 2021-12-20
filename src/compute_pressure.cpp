@@ -170,6 +170,7 @@ ComputePressure::~ComputePressure()
   delete [] vector;
   delete [] vptr;
   delete [] pstyle;
+  delete [] vol_str;
 }
 
 /* ---------------------------------------------------------------------- */
