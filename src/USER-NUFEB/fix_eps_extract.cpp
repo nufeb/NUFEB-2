@@ -45,7 +45,7 @@ FixEPSExtract::FixEPSExtract(LAMMPS *lmp, int narg, char **arg) :
   if (ieps < 0)
     error->all(FLERR, "Can't find group");
   ratio = utils::numeric(FLERR,arg[5],true,lmp);
-  density = utils::numeric(FLERR,arg[6],true,lmp);
+  eps_density = utils::numeric(FLERR,arg[6],true,lmp);
   seed = utils::inumeric(FLERR,arg[7],true,lmp);
 
   // Random number generator, same for all procs
@@ -116,7 +116,9 @@ void FixEPSExtract::compute()
   for (int i = 0; i < nlocal; i++) {
     if (atom->mask[i] & groupbit) {
       if ((atom->outer_radius[i] / atom->radius[i]) > ratio) {
-        atom->outer_mass[i] = (4.0 * MY_PI / 3.0) * ((atom->outer_radius[i] * atom->outer_radius[i] * atom->outer_radius[i]) - (atom->radius[i] * atom->radius[i] * atom->radius[i])) * density;
+        atom->outer_mass[i] = (4.0 * MY_PI / 3.0) *
+            ((atom->outer_radius[i] * atom->outer_radius[i] * atom->outer_radius[i]) -
+        	(atom->radius[i] * atom->radius[i] * atom->radius[i])) * eps_density;
 
         double split = 0.4 + (random->uniform() * 0.2);
 
@@ -126,7 +128,7 @@ void FixEPSExtract::compute()
         atom->outer_mass[i] = new_outer_mass;
 
         double density = atom->rmass[i] / (4.0 * MY_PI / 3.0 * atom->radius[i] * atom->radius[i] * atom->radius[i]);
-        atom->outer_radius[i] = pow((3.0 / (4.0 * MY_PI)) * ((atom->rmass[i] / density) + (atom->outer_mass[i] / density)), (1.0 / 3.0));
+        atom->outer_radius[i] = pow((3.0 / (4.0 * MY_PI)) * ((atom->rmass[i] / density) + (atom->outer_mass[i] / eps_density)), (1.0 / 3.0));
 
         double theta = random->uniform() * 2 * MY_PI;
         double phi = random->uniform() * (MY_PI);
@@ -135,8 +137,8 @@ void FixEPSExtract::compute()
         double oldy = atom->x[i][1];
         double oldz = atom->x[i][2];
 
-        // create child
-        double child_radius = pow(((6 * eps_mass) / (density * MY_PI)), (1.0 / 3.0)) * 0.5;
+        // create EPS atom
+        double child_radius = pow(((6 * eps_mass) / (eps_density * MY_PI)), (1.0 / 3.0)) * 0.5;
         double *coord = new double[3];
         double newx = oldx - ((child_radius + atom->outer_radius[i]) * cos(theta) * sin(phi) * DELTA);
         double newy = oldy - ((child_radius + atom->outer_radius[i]) * sin(theta) * sin(phi) * DELTA);
@@ -183,7 +185,7 @@ void FixEPSExtract::compute()
         atom->outer_mass[n] = 0;
         atom->outer_radius[n] = child_radius;
 
-        modify->create_attribute(n);
+ //       modify->create_attribute(n);
 
         delete[] coord;
       }

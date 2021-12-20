@@ -35,11 +35,11 @@ class FixEPSExtract : public Fix {
   virtual void post_neighbor();
   virtual void compute();
   
- private:
+ protected:
   int type;
   int ieps;
   double ratio;
-  double density;
+  double eps_density;
   int seed;
 
   class RanPark *random;
