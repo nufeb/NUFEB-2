@@ -446,7 +446,7 @@ void NufebRun::run(int n)
     if (profile)
       fprintf(profile, "%d %e ", ndiff, get_time()-t);
     if (info && comm->me == 0) fprintf(screen, "diffusion: %d steps\n", ndiff);
-    
+
     // reset to biological timestep
     update->dt = biodt;
     reset_dt();
@@ -574,20 +574,19 @@ int NufebRun::module_chemsitry()
   }
 
   int niter = 0;
-  bool flag;
+  bool conv_flag;
   bool converge[nfix_diffusion];
   for (int i = 0; i < nfix_diffusion; i++) {
     converge[i] = false;
   }
+
   do {
     timer->stamp();
     comm_grid->forward_comm();
     timer->stamp(Timer::COMM);
 
-    flag = true;
     for (int i = 0; i < nfix_diffusion; i++) {
-      if (!converge[i])
-	fix_diffusion[i]->compute_initial();
+      fix_diffusion[i]->compute_initial();
     }
 
     // call all fixes implementing chemistry_nufebs()
@@ -597,21 +596,22 @@ int NufebRun::module_chemsitry()
       timer->stamp(Timer::MODIFY);
     }
 
+    conv_flag = true;
     for (int i = 0; i < nfix_diffusion; i++) {
-      if (!converge[i]) {
-	fix_diffusion[i]->compute_final();
-	double res = fix_diffusion[i]->compute_scalar();
-	if (res < difftol) converge[i] = true;
-	if (!converge[i]) flag = false;
-      }
+      if (converge[i]) continue;
+      fix_diffusion[i]->compute_final();
+      double res = fix_diffusion[i]->compute_scalar();
+      if (res < difftol) converge[i] = true;
+      if (!converge[i]) conv_flag = false;
     }
+
     timer->stamp(Timer::MODIFY);
     ++niter;
 
     if (diffmax > 0 && niter >= diffmax)
-      flag = true;
+      conv_flag = true;
 
-  } while (!flag);
+  } while (!conv_flag);
 
   for (int i = 0; i < nfix_diffusion; i++) {
     fix_diffusion[i]->closed_system_scaleup(biodt);

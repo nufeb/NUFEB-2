@@ -57,7 +57,7 @@ FixGrowthHET::FixGrowthHET(LAMMPS *lmp, int narg, char **arg) :
   maintain = 0.0;
   decay = 0.0;
   eps_yield = 0.0;
-  anoxic = 1.0;
+  anoxic = 0.0;
   eps_dens = 1.0;
 
   isub = grid->find(arg[3]);

@@ -38,7 +38,7 @@ class FixDiffusionReaction : public Fix {
   virtual void compute_final();
   virtual void closed_system_init();
   virtual void closed_system_scaleup(double);
-  
+
  protected:
   int isub;
   double diff_coef;

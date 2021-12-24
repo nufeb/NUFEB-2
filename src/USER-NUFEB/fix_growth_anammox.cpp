@@ -65,13 +65,14 @@ FixGrowthAnammox::FixGrowthAnammox(LAMMPS *lmp, int narg, char **arg) :
   ino2 = grid->find(arg[7]);
   if (ino2 < 0)
     error->all(FLERR, "Can't find substrate name: no2");
+  no2_affinity = utils::numeric(FLERR,arg[8],true,lmp);
 
-  ino3 = grid->find(arg[8]);
+  ino3 = grid->find(arg[9]);
   if (ino3 < 0)
     error->all(FLERR, "Can't find substrate name: no3");
 
 
-  int iarg = 8;
+  int iarg = 10;
   while (iarg < narg) {
     if (strcmp(arg[iarg], "growth") == 0) {
       growth = utils::numeric(FLERR,arg[iarg+1],true,lmp);

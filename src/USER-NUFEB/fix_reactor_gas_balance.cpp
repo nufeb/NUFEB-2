@@ -154,4 +154,5 @@ void FixReactorGasBalance::compute()
   MPI_Allreduce(MPI_IN_PLACE, &sum_reac, 1, MPI_DOUBLE, MPI_SUM, world);
 
   bulk[igas] += (sum_reac * vol / reactor_vhead  - (q / reactor_vhead * bulk[igas])) * update->dt;
+  bulk[iliq] = MAX(0, bulk[igas]);
 }

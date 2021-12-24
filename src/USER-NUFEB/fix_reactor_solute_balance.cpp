@@ -70,7 +70,7 @@ FixReactorSoluteBalance::FixReactorSoluteBalance(LAMMPS *lmp, int narg, char **a
       } else if (strcmp(arg[iarg+1],"xz") == 0) {
 	domain_af = (domain->boxhi[0] - domain->boxlo[0]) * (domain->boxhi[2] - domain->boxlo[2]);
       } else
-	 error->all(FLERR,"Illegal fix nufeb/reactor/solute_balance command");
+	error->all(FLERR,"Illegal fix nufeb/reactor/solute_balance command");
       iarg += 2;
     }
   }
@@ -131,4 +131,5 @@ void FixReactorSoluteBalance::compute()
   MPI_Allreduce(MPI_IN_PLACE, &sum_reac, 1, MPI_DOUBLE, MPI_SUM, world);
 
   bulk[iliq] += ((q / rvol) * (inlet - bulk[iliq]) + ((reactor_af * sum_reac * vol) / (rvol * domain_af))) * update->dt;
+  bulk[iliq] = MAX(0, bulk[iliq]);
 }
