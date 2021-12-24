@@ -42,10 +42,10 @@ FixBoundaryLayerKokkos<DeviceType>::FixBoundaryLayerKokkos(LAMMPS *lmp, int narg
 template<class DeviceType>
 void FixBoundaryLayerKokkos<DeviceType>::compute()
 {
-  d_mask = atomKK->k_mask.view<DeviceType>();
-  d_x = atomKK->k_x.view<DeviceType>();
-  d_boundary = gridKK->k_boundary.view<DeviceType>();
-  d_gmask = gridKK->k_mask.view<DeviceType>();
+  d_mask = atomKK->k_mask.template view<DeviceType>();
+  d_x = atomKK->k_x.template view<DeviceType>();
+  d_boundary = gridKK->k_boundary.template view<DeviceType>();
+  d_gmask = gridKK->k_mask.template view<DeviceType>();
 
   atomKK->sync(execution_space, datamask_read);
   gridKK->sync(execution_space, GMASK_MASK | BOUNDARY_MASK);
