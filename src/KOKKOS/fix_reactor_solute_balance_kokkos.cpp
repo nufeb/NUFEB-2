@@ -57,7 +57,7 @@ void FixReactorSoluteBalanceKokkos<DeviceType>::compute()
 
   h_bulk(iliq) += ((q / rvol) * (inlet - h_bulk(iliq)) +
       ((reactor_af * result * vol) / (rvol * domain_af))) * update->dt;
-
+  h_bulk(iliq) = MAX(0, h_bulk(iliq));
   gridKK->modified(Host, BULK_MASK);
 }
 
