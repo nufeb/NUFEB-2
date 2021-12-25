@@ -36,7 +36,7 @@ class FixDiffusionReaction : public Fix {
   virtual double compute_scalar();
   virtual void compute_initial();
   virtual void compute_final();
-  virtual void closed_system_init();
+  virtual void closed_system_initial();
   virtual void closed_system_scaleup(double);
 
  protected:

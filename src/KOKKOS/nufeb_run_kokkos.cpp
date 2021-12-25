@@ -574,7 +574,7 @@ int NufebRunKokkos::module_chemsitry()
   reset_dt();
 
   for (int i = 0; i < nfix_diffusion; i++) {
-    fix_diffusion[i]->closed_system_init();
+    fix_diffusion[i]->closed_system_initial();
   }
 
   int niter = 0;

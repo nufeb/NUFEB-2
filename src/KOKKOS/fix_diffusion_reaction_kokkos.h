@@ -41,7 +41,7 @@ class FixDiffusionReactionKokkos : public FixDiffusionReaction {
   double compute_scalar();
   void compute_initial();
   void compute_final();
-  void closed_system_init();
+  void closed_system_initial();
   void closed_system_scaleup(double);
 
   struct Functor

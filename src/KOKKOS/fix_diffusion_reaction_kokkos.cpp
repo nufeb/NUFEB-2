@@ -162,7 +162,7 @@ void FixDiffusionReactionKokkos<DeviceType>::compute_final()
 /* ---------------------------------------------------------------------- */
 
 template <class DeviceType>
-void FixDiffusionReactionKokkos<DeviceType>::closed_system_init()
+void FixDiffusionReactionKokkos<DeviceType>::closed_system_initial()
 {
   gridKK->sync(execution_space, GMASK_MASK);
   gridKK->sync(execution_space, CONC_MASK);
