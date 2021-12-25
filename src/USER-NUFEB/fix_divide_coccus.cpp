@@ -87,23 +87,23 @@ void FixDivideCoccus::compute()
         atom->outer_mass[i] = iouter_mass;
         atom->radius[i] = pow(((6 * atom->rmass[i]) / (density * MY_PI)), (1.0 / 3.0)) * 0.5;
         atom->outer_radius[i] = pow((3.0 / (4.0 * MY_PI)) * ((atom->rmass[i] / density) + (iouter_mass / eps_density)), (1.0 / 3.0));
-        double newx = oldx + (atom->outer_radius[i] * cos(theta) * sin(phi) * DELTA);
-        double newy = oldy + (atom->outer_radius[i] * sin(theta) * sin(phi) * DELTA);
-        double newz = oldz + (atom->outer_radius[i] * cos(phi) * DELTA);
-        if (newx - atom->outer_radius[i] < domain->boxlo[0]) {
-          newx = domain->boxlo[0] + atom->outer_radius[i];
-        } else if (newx + atom->outer_radius[i] > domain->boxhi[0]) {
-          newx = domain->boxhi[0] - atom->outer_radius[i];
+        double newx = oldx + (atom->radius[i] * cos(theta) * sin(phi) * DELTA);
+        double newy = oldy + (atom->radius[i] * sin(theta) * sin(phi) * DELTA);
+        double newz = oldz + (atom->radius[i] * cos(phi) * DELTA);
+        if (newx - atom->radius[i] < domain->boxlo[0]) {
+          newx = domain->boxlo[0] + atom->radius[i];
+        } else if (newx + atom->radius[i] > domain->boxhi[0]) {
+          newx = domain->boxhi[0] - atom->radius[i];
         }
-        if (newy - atom->outer_radius[i] < domain->boxlo[1]) {
-          newy = domain->boxlo[1] + atom->outer_radius[i];
-        } else if (newy + atom->outer_radius[i] > domain->boxhi[1]) {
-          newy = domain->boxhi[1] - atom->outer_radius[i];
+        if (newy - atom->radius[i] < domain->boxlo[1]) {
+          newy = domain->boxlo[1] + atom->radius[i];
+        } else if (newy + atom->radius[i] > domain->boxhi[1]) {
+          newy = domain->boxhi[1] - atom->radius[i];
         }
-        if (newz - atom->outer_radius[i] < domain->boxlo[2]) {
-          newz = domain->boxlo[2] + atom->outer_radius[i];
-        } else if (newz + atom->outer_radius[i] > domain->boxhi[2]) {
-          newz = domain->boxhi[2] - atom->outer_radius[i];
+        if (newz - atom->radius[i] < domain->boxlo[2]) {
+          newz = domain->boxlo[2] + atom->radius[i];
+        } else if (newz + atom->radius[i] > domain->boxhi[2]) {
+          newz = domain->boxhi[2] - atom->radius[i];
         }
         atom->x[i][0] = newx;
         atom->x[i][1] = newy;
@@ -113,23 +113,23 @@ void FixDivideCoccus::compute()
         double jradius = pow(((6 * jmass) / (density * MY_PI)), (1.0 / 3.0)) * 0.5;
         double jouter_radius = pow((3.0 / (4.0 * MY_PI)) * ((jmass / density) + (jouter_mass / eps_density)), (1.0 / 3.0));
         double *coord = new double[3];
-        newx = oldx - (jouter_radius * cos(theta) * sin(phi) * DELTA);
-        newy = oldy - (jouter_radius * sin(theta) * sin(phi) * DELTA);
-        newz = oldz - (jouter_radius * cos(phi) * DELTA);
-        if (newx - jouter_radius < domain->boxlo[0]) {
-          newx = domain->boxlo[0] + jouter_radius;
-        } else if (newx + jouter_radius > domain->boxhi[0]) {
-          newx = domain->boxhi[0] - jouter_radius;
+        newx = oldx - (jradius * cos(theta) * sin(phi) * DELTA);
+        newy = oldy - (jradius * sin(theta) * sin(phi) * DELTA);
+        newz = oldz - (jradius * cos(phi) * DELTA);
+        if (newx - jradius < domain->boxlo[0]) {
+          newx = domain->boxlo[0] + jradius;
+        } else if (newx + jradius > domain->boxhi[0]) {
+          newx = domain->boxhi[0] - jradius;
         }
-        if (newy - jouter_radius < domain->boxlo[1]) {
+        if (newy - jradius < domain->boxlo[1]) {
           newy = domain->boxlo[1] + jouter_radius;
-        } else if (newy + jouter_radius > domain->boxhi[1]) {
-          newy = domain->boxhi[1] - jouter_radius;
+        } else if (newy + jradius > domain->boxhi[1]) {
+          newy = domain->boxhi[1] - jradius;
         }
-        if (newz - jouter_radius < domain->boxlo[2]) {
-          newz = domain->boxlo[2] + jouter_radius;
-        } else if (newz + jouter_radius > domain->boxhi[2]) {
-          newz = domain->boxhi[2] - jouter_radius;
+        if (newz - jradius < domain->boxlo[2]) {
+          newz = domain->boxlo[2] + jradius;
+        } else if (newz + jradius > domain->boxhi[2]) {
+          newz = domain->boxhi[2] - jradius;
         }
         coord[0] = newx;
         coord[1] = newy;

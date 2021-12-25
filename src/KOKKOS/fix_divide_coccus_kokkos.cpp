@@ -220,24 +220,24 @@ void FixDivideCoccusKokkos<DeviceType>::Functor::operator()(FixDivideCoccusCompu
       d_radius(i) = pow(((6 * d_rmass(i)) / (density * MY_PI)), (1.0 / 3.0)) * 0.5;
       d_outer_radius(i) = pow((3.0 / (4.0 * MY_PI)) * ((d_rmass(i) / density) + (iouter_mass / eps_density)), (1.0 / 3.0));
 
-      double newx = oldx + (d_outer_radius(i) * cos(theta) * sin(phi) * DELTA);
-      double newy = oldy + (d_outer_radius(i) * sin(theta) * sin(phi) * DELTA);
-      double newz = oldz + (d_outer_radius(i) * cos(phi) * DELTA);
+      double newx = oldx + (d_radius(i) * cos(theta) * sin(phi) * DELTA);
+      double newy = oldy + (d_radius(i) * sin(theta) * sin(phi) * DELTA);
+      double newz = oldz + (d_radius(i) * cos(phi) * DELTA);
 
-      if (newx - d_outer_radius(i) < boxlo[0]) {
-        newx = boxlo[0] + d_outer_radius(i);
-      } else if (newx + d_outer_radius(i) > boxhi[0]) {
-        newx = boxhi[0] - d_outer_radius(i);
+      if (newx - d_radius(i) < boxlo[0]) {
+        newx = boxlo[0] + d_radius(i);
+      } else if (newx + d_radius(i) > boxhi[0]) {
+        newx = boxhi[0] - d_radius(i);
       }
-      if (newy - d_outer_radius(i) < boxlo[1]) {
-        newy = boxlo[1] + d_outer_radius(i);
-      } else if (newy + d_outer_radius(i) > boxhi[1]) {
-        newy = boxhi[1] - d_outer_radius(i);
+      if (newy - d_radius(i) < boxlo[1]) {
+        newy = boxlo[1] + d_radius(i);
+      } else if (newy + d_radius(i) > boxhi[1]) {
+        newy = boxhi[1] - d_radius(i);
       }
-      if (newz - d_outer_radius(i) < boxlo[2]) {
-        newz = boxlo[2] + d_outer_radius(i);
-      } else if (newz + d_outer_radius(i) > boxhi[2]) {
-        newz = boxhi[2] - d_outer_radius(i);
+      if (newz - d_radius(i) < boxlo[2]) {
+        newz = boxlo[2] + d_radius(i);
+      } else if (newz + d_radius(i) > boxhi[2]) {
+        newz = boxhi[2] - d_radius(i);
       }
 
       d_x(i,0) = newx;
@@ -249,24 +249,24 @@ void FixDivideCoccusKokkos<DeviceType>::Functor::operator()(FixDivideCoccusCompu
       // create daughter cell j
       double jradius = pow(((6 * jmass) / (density * MY_PI)), (1.0 / 3.0)) * 0.5;
       double jouter_radius = pow((3.0 / (4.0 * MY_PI)) * ((jmass / density) + (jouter_mass / eps_density)), (1.0 / 3.0));
-      newx = oldx - (jouter_radius * cos(theta) * sin(phi) * DELTA);
-      newy = oldy - (jouter_radius * sin(theta) * sin(phi) * DELTA);
-      newz = oldz - (jouter_radius * cos(phi) * DELTA);
+      newx = oldx - (jradius * cos(theta) * sin(phi) * DELTA);
+      newy = oldy - (jradius * sin(theta) * sin(phi) * DELTA);
+      newz = oldz - (jradius * cos(phi) * DELTA);
 
-      if (newx - jouter_radius < boxlo[0]) {
-        newx = boxlo[0] + jouter_radius;
-      } else if (newx + jouter_radius > boxhi[0]) {
-        newx = boxhi[0] - jouter_radius;
+      if (newx - jradius < boxlo[0]) {
+        newx = boxlo[0] + jradius;
+      } else if (newx + jradius > boxhi[0]) {
+        newx = boxhi[0] - jradius;
       }
-      if (newy - jouter_radius < boxlo[1]) {
-        newy = boxlo[1] + jouter_radius;
-      } else if (newy + jouter_radius > boxhi[1]) {
-        newy = boxhi[1] - jouter_radius;
+      if (newy - jradius < boxlo[1]) {
+        newy = boxlo[1] + jradius;
+      } else if (newy + jradius > boxhi[1]) {
+        newy = boxhi[1] - jradius;
       }
-      if (newz - jouter_radius < boxlo[2]) {
-        newz = boxlo[2] + jouter_radius;
-      } else if (newz + jouter_radius > boxhi[2]) {
-        newz = boxhi[2] - jouter_radius;
+      if (newz - jradius < boxlo[2]) {
+        newz = boxlo[2] + jradius;
+      } else if (newz + jradius > boxhi[2]) {
+        newz = boxhi[2] - jradius;
       }
 
       d_x(j,0) = newx;
