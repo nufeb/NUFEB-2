@@ -35,7 +35,7 @@ class FixDeathDiameter : public Fix {
   virtual void biology_nufeb();
   virtual void compute();
   
- private:
+ protected:
   int idead;
   double diameter;
 };

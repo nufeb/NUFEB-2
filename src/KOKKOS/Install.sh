@@ -114,6 +114,8 @@ action fft3d_kokkos.cpp fft3d.cpp
 action fft3d_kokkos.h fft3d.h
 action fix_boundary_layer_kokkos.h fix_boundary_layer.h
 action fix_boundary_layer_kokkos.cpp fix_boundary_layer.cpp
+action fix_death_diameter_kokkos.cpp
+action fix_death_diameter_kokkos.h
 action fix_deform_kokkos.cpp
 action fix_deform_kokkos.h
 action fix_density_kokkos.cpp fix_density.cpp

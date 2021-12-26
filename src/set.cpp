@@ -866,6 +866,8 @@ void Set::set(int keyword)
     else if (keyword == MASS) {
       if (dvalue <= 0.0) error->one(FLERR,"Invalid mass in set command");
       atom->rmass[i] = dvalue;
+      // NUFEB specific
+      atom->outer_mass[i] = dvalue;
     }
     else if (keyword == DIAMETER) {
       if (dvalue < 0.0) error->one(FLERR,"Invalid diameter in set command");
@@ -874,6 +876,7 @@ void Set::set(int keyword)
       if (atom->bacillus_flag) {
 	avec_bacillus->set_diameter(i,dvalue);
       }
+      atom->outer_radius[i] = 0.5 * dvalue;
     }
     else if (keyword == VOLUME) {
       if (dvalue <= 0.0) error->one(FLERR,"Invalid volume in set command");
@@ -972,6 +975,9 @@ void Set::set(int keyword)
         atom->rmass[i] = area * dvalue;
       } else atom->rmass[i] = dvalue;
 
+      // NUFEB specific
+      if (atom->coccus_flag)
+	atom->outer_mass[i] = atom->rmass[i];
       if (atom->bacillus_flag){
       	double r = atom->radius[i];
       	atom->rmass[i] = dvalue * (4.0*MY_PI/3.0*r*r*r +
