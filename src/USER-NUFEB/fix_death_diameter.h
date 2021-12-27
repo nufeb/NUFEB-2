@@ -37,6 +37,7 @@ class FixDeathDiameter : public Fix {
   
  protected:
   int idead;
+  int tdead;
   double diameter;
 };
 

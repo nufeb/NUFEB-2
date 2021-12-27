@@ -30,8 +30,8 @@ FixDeathDiameterKokkos<DeviceType>::FixDeathDiameterKokkos(LAMMPS *lmp, int narg
   atomKK = (AtomKokkos *) atom;
   execution_space = ExecutionSpaceFromDevice<DeviceType>::space;
 
-  datamask_read = MASK_MASK | RADIUS_MASK;
-  datamask_modify = MASK_MASK;
+  datamask_read = MASK_MASK | RADIUS_MASK | TYPE_MASK;
+  datamask_modify = MASK_MASK | TYPE_MASK;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -42,6 +42,7 @@ void FixDeathDiameterKokkos<DeviceType>::compute()
   atomKK->sync(execution_space,datamask_read);
 
   d_mask = atomKK->k_mask.view<DeviceType>();
+  d_type = atomKK->k_type.view<DeviceType>();
   d_radius = atomKK->k_radius.template view<DeviceType>();
 
   copymode = 1;
@@ -60,7 +61,8 @@ void FixDeathDiameterKokkos<DeviceType>::compute()
 template <class DeviceType>
 FixDeathDiameterKokkos<DeviceType>::Functor::Functor(FixDeathDiameterKokkos<DeviceType> *ptr):
   d_mask(ptr->d_mask), groupbit(ptr->groupbit), idead(ptr->idead),
-  diameter(ptr->diameter), d_radius(ptr->d_radius)
+  diameter(ptr->diameter), d_radius(ptr->d_radius), tdead(ptr->tdead),
+  d_type(ptr->d_type)
 {}
 
 /* ---------------------------------------------------------------------- */
@@ -72,6 +74,7 @@ void FixDeathDiameterKokkos<DeviceType>::Functor::operator()(FixDeathDiameterCom
   if (d_mask(i) & groupbit) {
     if (d_radius(i) < 0.5 * diameter) {
       d_mask(i) = idead;
+      if (tdead > 0) d_type(i) = tdead;
     }
   }
 }

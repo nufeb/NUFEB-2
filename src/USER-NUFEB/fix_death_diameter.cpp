@@ -30,12 +30,23 @@ FixDeathDiameter::FixDeathDiameter(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 4)
     error->all(FLERR, "Illegal fix nufeb/death/diameter command");
   
+  tdead = -1;
   idead = group->find(arg[3]);
   idead = 1 | group->bitmask[idead];
 
   if (idead < 0)
     error->all(FLERR, "Can't find group");
   diameter = utils::numeric(FLERR,arg[4],true,lmp);
+
+  int iarg = 5;
+  while (iarg < narg) {
+    if (strcmp(arg[iarg], "type") == 0) {
+      tdead = utils::inumeric(FLERR,arg[iarg+1],true,lmp);
+      iarg += 2;
+    } else {
+      error->all(FLERR, "Illegal fix nufeb/death/diameter command");
+    }
+  }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -77,12 +88,14 @@ void FixDeathDiameter::biology_nufeb()
 void FixDeathDiameter::compute()
 {
   int *mask = atom->mask;
+  int *type = atom->type;
   double *radius = atom->radius;
 
   for (int i = 0; i < atom->nlocal; i++) {
     if (mask[i] & groupbit) {
       if (radius[i] < 0.5 * diameter) {
         mask[i] = idead;
+        if (tdead > 0) type[i] = tdead;
       }
     }
   }

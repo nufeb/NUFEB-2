@@ -41,10 +41,12 @@ class FixDeathDiameterKokkos : public FixDeathDiameter {
   {
     int groupbit;
     int idead;
+    int tdead;
     double diameter;
 
     typedef ArrayTypes<DeviceType> AT;
     typename AT::t_int_1d d_mask;
+    typename AT::t_int_1d d_type;
     typename AT::t_float_1d d_radius;
 
     Functor(FixDeathDiameterKokkos *ptr);
@@ -56,6 +58,7 @@ class FixDeathDiameterKokkos : public FixDeathDiameter {
  private:
   typedef ArrayTypes<DeviceType> AT;
   typename AT::t_int_1d d_mask;
+  typename AT::t_int_1d d_type;
   typename AT::t_float_1d d_radius;
 };
 }
