@@ -56,6 +56,7 @@ class GridVecChemostatKokkos : public GridVecKokkos {
   double **conc;    // concentration
   double **reac;    // reaction rate
   double **dens;    // density
+  double **diff_coeff; // diffusion coeff
   int **boundary;   // boundary conditions (-x, +x, -y, +y, -z, +z)
   double ***growth; // growth rate
 
@@ -67,6 +68,8 @@ class GridVecChemostatKokkos : public GridVecKokkos {
   HAT::t_float_2d h_conc;
   DAT::t_float_2d d_reac;
   HAT::t_float_2d h_reac;
+  DAT::t_float_2d d_diff_coeff;
+  HAT::t_float_2d h_diff_coeff;
   DAT::t_float_2d d_dens;
   HAT::t_float_2d h_dens;
   DAT::t_int_2d d_boundary;

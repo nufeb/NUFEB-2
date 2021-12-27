@@ -81,6 +81,8 @@ action fix_death_diameter.cpp
 action fix_death_diameter.h
 action fix_density.cpp
 action fix_density.h
+action fix_diffusion_coeff.cpp
+action fix_diffusion_coeff.h
 action fix_diffusion_reaction.cpp
 action fix_diffusion_reaction.h
 action fix_divide.cpp

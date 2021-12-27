@@ -71,7 +71,6 @@ FixGrowthAnammox::FixGrowthAnammox(LAMMPS *lmp, int narg, char **arg) :
   if (ino3 < 0)
     error->all(FLERR, "Can't find substrate name: no3");
 
-
   int iarg = 10;
   while (iarg < narg) {
     if (strcmp(arg[iarg], "growth") == 0) {

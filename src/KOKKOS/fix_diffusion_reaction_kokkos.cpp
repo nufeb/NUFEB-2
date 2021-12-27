@@ -135,6 +135,7 @@ void FixDiffusionReactionKokkos<DeviceType>::compute_final()
   gridKK->sync(execution_space, GMASK_MASK);
   gridKK->sync(execution_space, REAC_MASK);
   gridKK->sync(execution_space, BOUNDARY_MASK);
+  gridKK->sync(execution_space, DIFF_COEFF_MASK);
 
   cell_size = grid->cell_size;
   for (int i = 0; i < 3; i++)
@@ -143,6 +144,7 @@ void FixDiffusionReactionKokkos<DeviceType>::compute_final()
   d_mask = gridKK->k_mask.template view<DeviceType>();
   d_conc = gridKK->k_conc.template view<DeviceType>();
   d_reac = gridKK->k_reac.template view<DeviceType>();
+  d_diff_coeff = gridKK->k_diff_coeff.template view<DeviceType>();
   
   copymode = 1;
   Functor f(this);
@@ -218,7 +220,7 @@ template <class DeviceType>
 FixDiffusionReactionKokkos<DeviceType>::Functor::Functor(FixDiffusionReactionKokkos<DeviceType> *ptr):
   d_prev(ptr->d_prev), d_conc(ptr->d_conc), d_reac(ptr->d_reac),
   d_mask(ptr->d_mask), d_penult(ptr->d_penult), cell_size(ptr->cell_size),
-  diff_coef(ptr->diff_coef), dt(ptr->dt), isub(ptr->isub),
+  d_diff_coeff(ptr->d_diff_coeff), dt(ptr->dt), isub(ptr->isub),
   closed_system(ptr->closed_system), d_bulk(ptr->d_bulk),
   d_boundary(ptr->d_boundary)
 {
@@ -293,14 +295,14 @@ void FixDiffusionReactionKokkos<DeviceType>::Functor::operator()(FixDiffusionRea
     int py = i + subbox[0];
     int nz = i - nxy;
     int pz = i + nxy;
-    double dnx = diff_coef * (d_prev(i) - d_prev(nx)) / cell_size;
-    double dpx = diff_coef * (d_prev(px) - d_prev(i)) / cell_size;
+    double dnx = d_diff_coeff(isub,i) * (d_prev(i) - d_prev(nx)) / cell_size;
+    double dpx = d_diff_coeff(isub,i) * (d_prev(px) - d_prev(i)) / cell_size;
     double ddx = (dpx - dnx) / cell_size;
-    double dny = diff_coef * (d_prev(i) - d_prev(ny)) / cell_size;
-    double dpy = diff_coef * (d_prev(py) - d_prev(i)) / cell_size;
+    double dny = d_diff_coeff(isub,i) * (d_prev(i) - d_prev(ny)) / cell_size;
+    double dpy = d_diff_coeff(isub,i) * (d_prev(py) - d_prev(i)) / cell_size;
     double ddy = (dpy - dny) / cell_size;
-    double dnz = diff_coef * (d_prev(i) - d_prev(nz)) / cell_size;
-    double dpz = diff_coef * (d_prev(pz) - d_prev(i)) / cell_size;
+    double dnz = d_diff_coeff(isub,i) * (d_prev(i) - d_prev(nz)) / cell_size;
+    double dpz = d_diff_coeff(isub,i) * (d_prev(pz) - d_prev(i)) / cell_size;
     double ddz = (dpz - dnz) / cell_size;
     // prevent negative concentrations
     d_conc(isub, i) = MAX(0, d_prev(i) + dt * (ddx + ddy + ddz + d_reac(isub, i)));

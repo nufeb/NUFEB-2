@@ -47,6 +47,7 @@ class GridVecChemostat : public GridVec {
   double ***growth; // growth rate
   double *bulk;     // bulk concentration
   int **boundary;   // boundary conditions (-x, +x, -y, +y, -z, +z)
+  double **diff_coeff;
 };
 
 }

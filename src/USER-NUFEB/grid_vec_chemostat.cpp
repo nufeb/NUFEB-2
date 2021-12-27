@@ -35,6 +35,7 @@ GridVecChemostat::GridVecChemostat(LAMMPS *lmp) : GridVec(lmp)
   growth = nullptr;
   bulk = nullptr;
   boundary = nullptr;
+  diff_coeff = nullptr;
   grid->chemostat_flag = 1;
 }
 
@@ -63,6 +64,7 @@ void GridVecChemostat::grow(int n)
     growth = memory->grow(grid->growth, group->ngroup, n, 2, "nufeb/chemostat:grow");
     bulk = memory->grow(grid->bulk, grid->nsubs, "nufeb/chemostat:bulk");
     boundary = memory->grow(grid->boundary, grid->nsubs, 6, "nufeb/chemostat:boundary");
+    diff_coeff = memory->grow(grid->diff_coeff, grid->nsubs, n, "nufeb/chemostat:diff_coeff");
 
     nmax = n;
     grid->nmax = nmax;
@@ -74,6 +76,7 @@ void GridVecChemostat::grow(int n)
     grid->growth = growth;
     grid->bulk = bulk;
     grid->boundary = boundary;
+    grid->diff_coeff = diff_coeff;
   }
 }
 
@@ -182,5 +185,6 @@ void GridVecChemostat::set_grid(int isub, double domain, double bulk)
       }
     }
     grid->reac[isub][i] = 0.0;
+    grid->diff_coeff[isub][i] = 0.0;
   }
 }

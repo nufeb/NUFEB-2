@@ -52,12 +52,12 @@ class FixDiffusionReactionKokkos : public FixDiffusionReaction {
     typename AT::t_float_1d d_penult;
     typename AT::t_float_2d d_conc;
     typename AT::t_float_2d d_reac;
+    typename AT::t_float_2d d_diff_coeff;
     typename AT::t_int_1d d_mask;
     typename AT::t_float_1d d_bulk;
     typename AT::t_int_2d d_boundary;
 
     double cell_size;
-    double diff_coef;
     double dt;
     int isub;
     int subbox[3];
@@ -88,6 +88,7 @@ class FixDiffusionReactionKokkos : public FixDiffusionReaction {
   typename AT::t_float_1d d_penult;
   typename AT::t_float_2d d_conc;
   typename AT::t_float_2d d_reac;
+  typename AT::t_float_2d d_diff_coeff;
   typename AT::t_int_1d d_mask;
 
   typename AT::t_float_1d d_bulk;

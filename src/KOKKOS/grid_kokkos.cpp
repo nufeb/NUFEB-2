@@ -35,6 +35,7 @@ GridKokkos::~GridKokkos()
   memoryKK->destroy_kokkos(k_bulk, bulk);
   memoryKK->destroy_kokkos(k_conc, conc);
   memoryKK->destroy_kokkos(k_reac, reac);
+  memoryKK->destroy_kokkos(k_diff_coeff, diff_coeff);
   memoryKK->destroy_kokkos(k_dens, dens);
   memoryKK->destroy_kokkos(k_boundary, boundary);
   memoryKK->destroy_kokkos(k_growth, growth);

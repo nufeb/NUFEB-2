@@ -26,6 +26,9 @@ namespace LAMMPS_NS {
 
 class FixDiffusionReaction : public Fix {
  public:
+  int isub;
+  double diff_coeff;
+
   FixDiffusionReaction(class LAMMPS *, int, char **);
   virtual ~FixDiffusionReaction();
   int setmask() {return 0;}
@@ -40,8 +43,6 @@ class FixDiffusionReaction : public Fix {
   virtual void closed_system_scaleup(double);
 
  protected:
-  int isub;
-  double diff_coef;
   int ncells;
   double *prev;		       // substrate concentration at n-1 step
   double dt;

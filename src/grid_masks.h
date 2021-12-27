@@ -36,6 +36,7 @@
 #define GROWTH_MASK    0x00080000
 #define BULK_MASK      0x00100000
 #define BOUNDARY_MASK  0x00200000
+#define DIFF_COEFF_MASK 0x00400000
 
 #endif
 

@@ -33,6 +33,7 @@ GridVecChemostatKokkos::GridVecChemostatKokkos(LAMMPS *lmp) : GridVecKokkos(lmp)
   bulk = NULL;
   conc = NULL;
   reac = NULL;
+  diff_coeff = NULL;
   dens = NULL;
   boundary = NULL;
   growth = NULL;
@@ -64,6 +65,7 @@ void GridVecChemostatKokkos::grow(int n)
     memoryKK->grow_kokkos(gridKK->k_bulk, gridKK->bulk, grid->nsubs, "nufeb/chemostat:bulk");
     memoryKK->grow_kokkos(gridKK->k_conc, gridKK->conc, grid->nsubs, n, "nufeb/chemostat:conc");
     memoryKK->grow_kokkos(gridKK->k_reac, gridKK->reac, grid->nsubs, n, "nufeb/chemostat:reac");
+    memoryKK->grow_kokkos(gridKK->k_diff_coeff, gridKK->diff_coeff, grid->nsubs, n, "nufeb/chemostat:diff_coeff");
     memoryKK->grow_kokkos(gridKK->k_dens, gridKK->dens, group->ngroup, n, "nufeb/chemostat:dens");
     memoryKK->grow_kokkos(gridKK->k_boundary, gridKK->boundary, grid->nsubs, 6, "nufeb/chemostat:boundary");
     memoryKK->grow_kokkos(gridKK->k_growth, gridKK->growth, group->ngroup, n, 2, "nufeb/chemostat:grow");
@@ -80,6 +82,9 @@ void GridVecChemostatKokkos::grow(int n)
     d_conc = gridKK->k_conc.d_view;
     h_conc = gridKK->k_conc.h_view;
     reac = gridKK->reac;
+    d_diff_coeff = gridKK->k_diff_coeff.d_view;
+    h_diff_coeff = gridKK->k_diff_coeff.h_view;
+    diff_coeff = gridKK->diff_coeff;
     d_reac = gridKK->k_reac.d_view;
     h_reac = gridKK->k_reac.h_view;
     dens = gridKK->dens;
@@ -331,6 +336,7 @@ void GridVecChemostatKokkos::set_grid(int isub, double domain, double bulk)
       }
     }
     grid->reac[isub][i] = 0.0;
+    grid->diff_coeff[isub][i] = 0.0;
   }
 }
 
@@ -343,6 +349,7 @@ void GridVecChemostatKokkos::sync(ExecutionSpace space, unsigned int mask)
     if (mask & CONC_MASK) gridKK->k_conc.sync<LMPDeviceType>();
     if (mask & REAC_MASK) gridKK->k_reac.sync<LMPDeviceType>();
     if (mask & DENS_MASK) gridKK->k_dens.sync<LMPDeviceType>();
+    if (mask & DIFF_COEFF_MASK) gridKK->k_diff_coeff.sync<LMPDeviceType>();
     if (mask & GROWTH_MASK) gridKK->k_growth.sync<LMPDeviceType>();
     if (mask & BULK_MASK) gridKK->k_bulk.sync<LMPDeviceType>();
     if (mask & BOUNDARY_MASK) gridKK->k_boundary.sync<LMPDeviceType>();
@@ -350,6 +357,7 @@ void GridVecChemostatKokkos::sync(ExecutionSpace space, unsigned int mask)
     if (mask & GMASK_MASK) gridKK->k_mask.sync<LMPHostType>();
     if (mask & CONC_MASK) gridKK->k_conc.sync<LMPHostType>();
     if (mask & REAC_MASK) gridKK->k_reac.sync<LMPHostType>();
+    if (mask & DIFF_COEFF_MASK) gridKK->k_diff_coeff.sync<LMPHostType>();
     if (mask & DENS_MASK) gridKK->k_dens.sync<LMPHostType>();
     if (mask & GROWTH_MASK) gridKK->k_growth.sync<LMPHostType>();
     if (mask & BULK_MASK) gridKK->k_bulk.sync<LMPHostType>();
@@ -365,6 +373,7 @@ void GridVecChemostatKokkos::modified(ExecutionSpace space, unsigned int mask)
     if (mask & GMASK_MASK) gridKK->k_mask.modify<LMPDeviceType>();
     if (mask & CONC_MASK) gridKK->k_conc.modify<LMPDeviceType>();
     if (mask & REAC_MASK) gridKK->k_reac.modify<LMPDeviceType>();
+    if (mask & DIFF_COEFF_MASK) gridKK->k_diff_coeff.modify<LMPDeviceType>();
     if (mask & DENS_MASK) gridKK->k_dens.modify<LMPDeviceType>();
     if (mask & GROWTH_MASK) gridKK->k_growth.modify<LMPDeviceType>();
     if (mask & BULK_MASK) gridKK->k_bulk.modify<LMPDeviceType>();
@@ -373,6 +382,7 @@ void GridVecChemostatKokkos::modified(ExecutionSpace space, unsigned int mask)
     if (mask & GMASK_MASK) gridKK->k_mask.modify<LMPHostType>();
     if (mask & CONC_MASK) gridKK->k_conc.modify<LMPHostType>();
     if (mask & REAC_MASK) gridKK->k_reac.modify<LMPHostType>();
+    if (mask & DIFF_COEFF_MASK) gridKK->k_diff_coeff.modify<LMPHostType>();
     if (mask & DENS_MASK) gridKK->k_dens.modify<LMPHostType>();
     if (mask & GROWTH_MASK) gridKK->k_growth.modify<LMPHostType>();
     if (mask & BULK_MASK) gridKK->k_bulk.modify<LMPHostType>();
@@ -399,6 +409,8 @@ void GridVecChemostatKokkos::sync_overlapping_device(ExecutionSpace space, unsig
       perform_async_copy<DAT::tdual_float_1d>(gridKK->k_bulk, space);
     if ((mask & BOUNDARY_MASK) && gridKK->k_boundary.need_sync<LMPDeviceType>())
       perform_async_copy<DAT::tdual_int_2d>(gridKK->k_boundary, space);
+    if ((mask & DIFF_COEFF_MASK) && gridKK->k_diff_coeff.need_sync<LMPDeviceType>())
+      perform_async_copy<DAT::tdual_float_2d>(gridKK->k_diff_coeff, space);
   } else {
     if ((mask & GMASK_MASK) && gridKK->k_mask.need_sync<LMPHostType>())
       perform_async_copy<DAT::tdual_int_1d>(gridKK->k_mask, space);
@@ -414,5 +426,7 @@ void GridVecChemostatKokkos::sync_overlapping_device(ExecutionSpace space, unsig
       perform_async_copy<DAT::tdual_float_1d>(gridKK->k_bulk, space);
     if ((mask & BOUNDARY_MASK) && gridKK->k_boundary.need_sync<LMPHostType>())
       perform_async_copy<DAT::tdual_int_2d>(gridKK->k_boundary, space);
+    if ((mask & DIFF_COEFF_MASK) && gridKK->k_diff_coeff.need_sync<LMPHostType>())
+      perform_async_copy<DAT::tdual_float_2d>(gridKK->k_diff_coeff, space);
   }
 }

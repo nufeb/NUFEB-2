@@ -49,7 +49,7 @@ FixDiffusionReaction::FixDiffusionReaction(LAMMPS *lmp, int narg, char **arg) :
   if (isub < 0)
     error->all(FLERR, "Can't find substrate for nufeb/diffusion_reaction");
 
-  diff_coef = utils::numeric(FLERR,arg[4],true,lmp);
+  diff_coeff = utils::numeric(FLERR,arg[4],true,lmp);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -85,8 +85,10 @@ void FixDiffusionReaction::init()
   boundary = grid->boundary[isub];
   ncells = grid->ncells;
   prev = memory->create(prev, ncells, "nufeb/diffusion_reaction:prev");
-  for (int i = 0; i < ncells; i++)
+  for (int i = 0; i < ncells; i++) {
     prev[i] = 0.0;
+    grid->diff_coeff[isub][i] = diff_coeff;
+  }
 
   int fix = 0;
   for (int i = 0; i < 6; i++) {
@@ -200,14 +202,14 @@ void FixDiffusionReaction::compute_final()
       int py = i + grid->subbox[0];
       int nz = i - nxy;
       int pz = i + nxy;
-      double dnx = diff_coef * (prev[i] - prev[nx]) / grid->cell_size;
-      double dpx = diff_coef * (prev[px] - prev[i]) / grid->cell_size;
+      double dnx = grid->diff_coeff[isub][i] * (prev[i] - prev[nx]) / grid->cell_size;
+      double dpx = grid->diff_coeff[isub][i] * (prev[px] - prev[i]) / grid->cell_size;
       double ddx = (dpx - dnx) / grid->cell_size;
-      double dny = diff_coef * (prev[i] - prev[ny]) / grid->cell_size;
-      double dpy = diff_coef * (prev[py] - prev[i]) / grid->cell_size;
+      double dny = grid->diff_coeff[isub][i] * (prev[i] - prev[ny]) / grid->cell_size;
+      double dpy = grid->diff_coeff[isub][i] * (prev[py] - prev[i]) / grid->cell_size;
       double ddy = (dpy - dny) / grid->cell_size;
-      double dnz = diff_coef * (prev[i] - prev[nz]) / grid->cell_size;
-      double dpz = diff_coef * (prev[pz] - prev[i]) / grid->cell_size;
+      double dnz = grid->diff_coeff[isub][i] * (prev[i] - prev[nz]) / grid->cell_size;
+      double dpz = grid->diff_coeff[isub][i] * (prev[pz] - prev[i]) / grid->cell_size;
       double ddz = (dpz - dnz) / grid->cell_size;
       // prevent negative concentrations
       grid->conc[isub][i] = MAX(0, prev[i] + dt * (ddx + ddy + ddz + grid->reac[isub][i]));

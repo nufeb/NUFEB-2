@@ -62,6 +62,7 @@ class Grid : protected Pointers {
   int chemostat_flag;
   double **reac;    // reaction rate
   double **dens;    // density
+  double **diff_coeff; //diffusion Coefficient
   double ***growth; // growth rate
   double *bulk;     // bulk concentration
   int **boundary;   // boundary conditions (-x, +x, -y, +y, -z, +z)

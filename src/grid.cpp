@@ -58,6 +58,7 @@ Grid::Grid(LAMMPS *lmp) : Pointers(lmp)
   growth = NULL;
   bulk = NULL;
   boundary = NULL;
+  diff_coeff = NULL;
 
   simple_flag = 0;
   chemostat_flag = 0;
@@ -75,6 +76,7 @@ Grid::~Grid()
   memory->destroy(dens);
   memory->destroy(conc);
   memory->destroy(reac);
+  memory->destroy(diff_coeff);
   memory->destroy(growth);
   memory->destroy(bulk);
   memory->destroy(boundary);
