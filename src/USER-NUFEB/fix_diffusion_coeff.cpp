@@ -37,6 +37,8 @@ FixDiffusionCoeff::FixDiffusionCoeff(LAMMPS *lmp, int narg, char **arg) :
   isub = grid->find(arg[3]);
   coeff_flag = -1;
   fix_diffusion = nullptr;
+  vol = 0.0;
+  const_coeff = 0.0;
 
   int iarg = 4;
   while (iarg < narg) {
@@ -65,6 +67,8 @@ FixDiffusionCoeff::FixDiffusionCoeff(LAMMPS *lmp, int narg, char **arg) :
 
   if (fix_diffusion == nullptr)
     error->all(FLERR, "Cannot find fix nufeb/diffusion_reaction");
+
+  const_coeff = fix_diffusion->diff_coeff;
 }
 
 
@@ -91,15 +95,17 @@ void FixDiffusionCoeff::compute()
   int ncells = grid->ncells;
   double **coeff = grid->diff_coeff;
   double **dens = grid->dens;
-  double vol = grid->cell_size * grid->cell_size * grid->cell_size;
+
+  const_coeff = fix_diffusion->diff_coeff;
+  vol = grid->cell_size * grid->cell_size * grid->cell_size;
 
   for (int i = 0; i < ncells; i++) {
     if (coeff_flag == RATIO) {
       if (dens[0][i] > 0) {
-	coeff[isub][i] = fix_diffusion->diff_coeff * ratio;
+	coeff[isub][i] = const_coeff * ratio;
       }
     } else if (coeff_flag == DYNAMICS) {
-      coeff[isub][i] = fix_diffusion->diff_coeff * (1 - (0.43 * pow(dens[0][i]/vol,0.92)) /
+      coeff[isub][i] = const_coeff * (1 - (0.43 * pow(dens[0][i]/vol,0.92)) /
 	  (11.19 + 0.27 * pow(dens[0][i]/vol,0.99)));
     }
   }

@@ -120,6 +120,8 @@ action fix_deform_kokkos.cpp
 action fix_deform_kokkos.h
 action fix_density_kokkos.cpp fix_density.cpp
 action fix_density_kokkos.h fix_density.h
+action fix_diffusion_coeff_kokkos.cpp
+action fix_diffusion_coeff_kokkos.h
 action fix_diffusion_reaction_kokkos.cpp
 action fix_diffusion_reaction_kokkos.h
 action fix_divide_coccus_kokkos.cpp

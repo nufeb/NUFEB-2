@@ -37,6 +37,8 @@ class FixDiffusionCoeff : public Fix {
   int isub;
   int coeff_flag;
   double ratio;
+  double vol;
+  double const_coeff;
 
   class FixDiffusionReaction *fix_diffusion;
 };

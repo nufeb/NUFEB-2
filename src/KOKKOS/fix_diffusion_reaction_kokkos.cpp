@@ -53,6 +53,7 @@ void FixDiffusionReactionKokkos<DeviceType>::init()
   memory->destroy(prev);
   if (closed_system) memoryKK->destroy_kokkos(penult);
   grow_arrays(ncells);
+  gridKK->modified(Host, DIFF_COEFF_MASK);
 }
 
 /* ---------------------------------------------------------------------- */
