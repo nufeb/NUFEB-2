@@ -1,7 +1,7 @@
 NUFEB Simulation 
 
-       41 atoms 
-       3 atom types 
+       40 atoms 
+       2 atom types 
 
    0.000000e-04   1e-04  xlo xhi 
    0.000000e-04   0.4e-04  ylo yhi 
@@ -49,5 +49,4 @@ NUFEB Simulation
      38 1 1.0e-6 150 7.5e-5 3.5e-5 1e-6 1.0e-6 
      39 1 1.0e-6 150 8.5e-5 3.5e-5 1e-6 1.0e-6 
      40 1 1.0e-6 150 9.5e-5 3.5e-5 1e-6 1.0e-6 
-     41 2 1.0e-8 150 0.6e-5 0.5e-5 1e-6 1.0e-8   
 
