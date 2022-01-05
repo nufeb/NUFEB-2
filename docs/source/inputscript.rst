@@ -12,7 +12,7 @@ Input script structure
 ------------------------
 
 This section describes the structure of a typical NUFEB input script. We will take the
-scripts in NUFEB-dev/examples/biofilm-het directory as an example for the explanation.
+script in NUFEB-dev/examples/biofilm-het directory as an example for the explanation.
 
 A NUFEB input script typically the following parts:
 
@@ -38,8 +38,8 @@ The relevant commands are
 `newton* <https://docs.lammps.org/newton.html>`_,
 `processors* <https://docs.lammps.org/processors.html>`_, 
 `boundary* <https://docs.lammps.org/boundary.html>`_,
-`atom_modify* <https://docs.lammps.org/atom_modify.html>`_.
-`comm_modify* <https://docs.lammps.org/comm_modify.html>`_, 
+`atom_modify* <https://docs.lammps.org/atom_modify.html>`_,
+`comm_modify* <https://docs.lammps.org/comm_modify.html>`_. 
 
 Example:
 
@@ -120,9 +120,10 @@ Example:
 IbM processes
 ------------------------------
 
-NUFEB provides a variety of individual-based microbial modelling processes.
+NUFEB provides a variety of individual-based microbial modelling (IbM) processes.
 They are classified into different submodules depending on the timesteps and 
-their execution orders in the NUFEB integration procedure (see :doc:`run_style nufeb <run_style_nufeb>`):
+their execution orders in the NUFEB integration procedure 
+(:doc:`run_style nufeb <run_style_nufeb>` command):
 
 1. :doc:`Biological processes <list_biology>` 
 2. :doc:`Physical processes <list_physics>` 
@@ -217,7 +218,7 @@ Example:
 Run a simulation
 ------------------------------
 
-A NUFEB simulation is run using the :doc:`run_style nufeb <run_style_nufeb>`, and `run* <https://docs.lammps.org/run.html>`_ command.
+A NUFEB simulation is run using the :doc:`run_style nufeb <run_style_nufeb>` and `run* <https://docs.lammps.org/run.html>`_ commands.
 
 Example:
 
