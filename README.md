@@ -40,7 +40,7 @@ sudo yum install cmake git gcc-c++ openmpi openmpi-devel libpng-dev ffmpeg
 ### Getting source
 Get NUFEB source code and submodules for its thirdparty libraries:
 <pre>
-git clone https://github.com/nufeb/NUFEB --recursive
+git clone https://github.com/nufeb/NUFEB-dev --recursive
 </pre>
 
 Build NUFEB:
@@ -52,7 +52,7 @@ Build NUFEB:
 Run a case in /examples after building NUFEB, for example:
 <pre>
 cd examples/biofilm-het
-mpirun -np 4 ../../lammps/src/lmp_nufeb -in Inputscript.lammps
+mpirun -np 4 ../../nufeb_mpi -in Inputscript.lammps
 </pre>
 
 ---------------------------------------------------------------------------
