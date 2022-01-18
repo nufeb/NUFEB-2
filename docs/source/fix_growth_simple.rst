@@ -32,8 +32,9 @@ Examples
 Description
 """""""""""
 
-Perform linear microbial growth (or decay) to the atoms defined in *group-ID*. The fix is called in each biological step (see :doc:`run_style nufeb <run_style_nufeb>`)
-to update atom and grid properties.
+Perform exponential microbial growth (or decay) to the atoms defined in *group-ID*. 
+The fix is called in each biological step (see :doc:`run_style nufeb <run_style_nufeb>`)
+to update atom and grid attributes.
 The following forward Euler method is implemented to update the mass (*m*) of each atom in the group:
 
 .. math::
@@ -41,6 +42,6 @@ The following forward Euler method is implemented to update the mass (*m*) of ea
   m'= m + \mu \Delta t
   
 where :math:`\mu` is the growth rate of the atoms (*growth*). 
-The new mass is then used to update other atom properties. For a coccus-style atom,
+The new mass is then used to update other atom attributes. For a coccus-style atom,
 its diameter changes accordingly. For a bacillus-style atom, the update is along
-the length of the atom while the variations in its width (diameter) are neglible.
+the length of the atom while the variations in its width (diameter) are negligible.

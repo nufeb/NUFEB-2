@@ -54,7 +54,7 @@ The style *d* means Dirichlet boundary condition,
 which intuitively means that the boundary is connecting to a well-mixed bulk liquid, and
 the substrate concentration at the boundary is kept fixed.
 
-The combinations of boundary conditions allow to model different simulation senarios.
+The combinations of boundary conditions allow to model different simulation scenarios.
 For example, 1) *nn nn nn* often model a system that microbes grow in a complete insulated micro well (closed system).
 2) *pp pp nd* models a representative volume of the full-scale bioreactor, 
 where the (modelled) microbes grows on the surface of the bioreactor. 

@@ -61,7 +61,7 @@ oxygenated conditions or nitrate in anoxic denitrifying conditions,
 and takes also into account the related decay and endogenous respiration processes.
 
 The fix is called in each biological step (see :doc:`run_style nufeb <run_style_nufeb>`)
-to update atom and grid properties.
+to update atom and grid attributes.
 The following forward Euler method is implemented to update the mass 
 (*m*) and outer mass (*om*) of each atom in the group:
 
