@@ -1,4 +1,4 @@
-Microbe
+Microbe and field
 ######################
 
 .. toctree::
@@ -9,3 +9,6 @@ Microbe
    fix_property_cycletime
    fix_property_generation
    fix_property_plasmid
+   grid_modify
+   grid_style_chemostat
+   grid_style_simple

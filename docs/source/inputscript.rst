@@ -39,7 +39,8 @@ The relevant commands are
 `processors* <https://docs.lammps.org/processors.html>`_, 
 `boundary* <https://docs.lammps.org/boundary.html>`_,
 `atom_modify* <https://docs.lammps.org/atom_modify.html>`_,
-`comm_modify* <https://docs.lammps.org/comm_modify.html>`_. 
+`comm_modify* <https://docs.lammps.org/comm_modify.html>`_.
+(Commands with asterisk `*` are inherited from LAMMPS with/without modifications.)
 
 Example:
 
@@ -74,7 +75,7 @@ System definition
 
 Define substrates, computation domain, and initial atoms (microbes). 
 
-Substrate are defined via grid_style command 
+Substrates are defined via grid_style command 
 (:doc:`grid_style chemostat <grid_style_chemostat>` or :doc:`grid_style simple <grid_style_simple>`).
 There are 3 ways to define computational domain and initial atoms in NUFEB. 
 Read them in from

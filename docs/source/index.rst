@@ -62,7 +62,7 @@ send an email to the developers.
    :caption: Command Reference
 
    list_general
-   list_microbe
+   list_microbe_grid
    list_biology
    list_physics
    list_chemsitry
