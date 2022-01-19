@@ -1,4 +1,4 @@
-Installation on Windows
+Install NUFEB on Windows
 ================================
 
 NUFEB does not support a direct Windows installation. 

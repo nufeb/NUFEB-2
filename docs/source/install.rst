@@ -1,7 +1,7 @@
-Installation on Linux & Mac
+Install NUFEB on Linux & Mac
 ================================
 
-This section describes how to install and run NUFEB on Linux and Mac OS. 
+This section describes how to install NUFEB on Linux and Mac OS. 
 
 .. contents:: 
 		:local:
@@ -134,36 +134,3 @@ will be automatically added to the system (.bashrc).
    
    
 
-Running NUFEB
---------------------------------
-
-By default, NUFEB runs by reading commands from standard input. Thus if you run the NUFEB executable by itself, e.g.
-
- .. parsed-literal::
-   nufeb_mpi
-
-it will simply wait, expecting commands from the keyboard. 
-
-Typically you should put commands in an input script and use I/O redirection, e.g.
-
- .. parsed-literal::
-   mpirun -np 4 nufeb_mpi -in Inputscript.lammps
-  
-Here we are using parallel environments (MPI), 
-using `mpirun -np X` command-line switch to specify the numbers of CPUs to run the simulation. 
-
-Example cases are avaiable in *NUFEB-dev/examples* directory. To run one of them, 
-go to its subdirectories and run NUFEB executable by passing in the input file, for example:
-
- .. parsed-literal::
-  cd NUFEB-dev/examples/biofilm-het/  
-  mpirun -np 4 nufeb_mpi -in Inputscript.lammps
-
-or
-
- .. parsed-literal::
-  cd NUFEB-dev/examples/biofilm-het/
-  mpirun -np 4 nufeb_mpi -in Inputscript-vtk.lammps
-  
-if the VTK option is enabled. 
-Output files will be generated and saved in a subdirectory during the simulation.

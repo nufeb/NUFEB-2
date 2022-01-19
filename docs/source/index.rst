@@ -39,6 +39,7 @@ send an email to the developers.
    intro
    install
    install_win
+   run_nufeb
    inputscript
    commands
    packages
