@@ -58,7 +58,7 @@ FixPlasmidPartition::FixPlasmidPartition(LAMMPS *lmp, int narg, char **arg) :
   ftime = 60;
   fvel = 0.026e-6;
   nucleoid_flag = 1;
-  fmax = 0;
+  fila_max = 0;
 
   seed = utils::inumeric(FLERR,arg[3],true,lmp);
   // Random number generator, same for all procs
@@ -106,7 +106,7 @@ FixPlasmidPartition::FixPlasmidPartition(LAMMPS *lmp, int narg, char **arg) :
 FixPlasmidPartition:: ~FixPlasmidPartition() {
   memory->destroy(nfilas);
 
-  if (fmax) {
+  if (fila_max) {
     memory->destroy(fila);
     memory->destroy(tfila);
   }
@@ -116,13 +116,13 @@ FixPlasmidPartition:: ~FixPlasmidPartition() {
 
 /* ---------------------------------------------------------------------- */
 void FixPlasmidPartition::init() {
-  fmax = fix_plm->fmax;
+  fila_max = fix_plm->fila_max;
   grow_arrays(atom->nmax);
 
   for (int i = 0; i < atom->nlocal; i++) {
     // initialise protein number
     for (int j = 0; j < static_cast<int>(fix_plm->vprop[i]); j++) {
-      for (int f = 0; f < fix_plm->fmax; f++) {
+      for (int f = 0; f < fix_plm->fila_max; f++) {
 	tfila[i][f] = 0.0;
 	fila[i][f][0] = -1;
 	fila[i][f][1] = -1;
@@ -138,9 +138,9 @@ void FixPlasmidPartition::init() {
 
 void FixPlasmidPartition::grow_arrays(int nmax)
 {
-  memory->grow(fila,nmax,fmax,2,"fix_nufeb/property/plasmid:fila");
+  memory->grow(fila,nmax,fila_max,2,"fix_nufeb/property/plasmid:fila");
   memory->grow(nfilas,nmax,"fix_nufeb/property/plasmid:nfilas");
-  memory->grow(tfila,nmax,fmax,"fix_nufeb/property/plasmid:tfila");
+  memory->grow(tfila,nmax,fila_max,"fix_nufeb/property/plasmid:tfila");
 
   fix_plm->nfilas = nfilas;
   fix_plm->fila = fila;
@@ -185,7 +185,7 @@ void FixPlasmidPartition::partition(int i)
 {
   int *dflist;
 
-  memory->create(dflist,fmax,"fix nufeb/property/plasmid:dlist");
+  memory->create(dflist,fila_max,"fix nufeb/property/plasmid:dlist");
   double **plm_x = fix_plm->plm_x;
   double plm_dia = fix_plm->plm_dia;
 
@@ -365,7 +365,7 @@ double FixPlasmidPartition::memory_usage()
   double bytes;
 
   bytes += atom->nmax*sizeof(double);
-  bytes += atom->nmax*fmax*sizeof(double)*3;
+  bytes += atom->nmax*fila_max*sizeof(double)*3;
 
   return bytes;
 }

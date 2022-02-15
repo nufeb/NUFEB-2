@@ -34,12 +34,6 @@ using namespace LAMMPS_NS;
 using namespace MathConst;
 using namespace FixConst;
 
-#define CUTOFF 0.5e-6
-#define NUCLEOID_DIA_RATIO 0.65
-#define NUCLEOID_LEN_RATIO 0.65
-#define DELTA 1.005
-#define BETA 1.01
-
 /* ---------------------------------------------------------------------- */
 
 FixPropertyPlasmid::FixPropertyPlasmid(LAMMPS *lmp, int narg, char **arg) :
@@ -56,7 +50,7 @@ FixPropertyPlasmid::FixPropertyPlasmid(LAMMPS *lmp, int narg, char **arg) :
 
   if (narg < 3) error->all(FLERR,"Illegal fix nufeb/property/plasmid command");
 
-  fmax = 0;
+  fila_max = 0;
   plm_max = 5;
   plm_init = 0;
   plm_dia = 5e-7;
@@ -88,7 +82,7 @@ FixPropertyPlasmid::FixPropertyPlasmid(LAMMPS *lmp, int narg, char **arg) :
       "initial plasmid cannot be more than maximum plasmid number");
 
   size_peratom_cols = 0;
-  fmax = plm_max * (plm_max - 1) / 2;
+  fila_max = plm_max * (plm_max - 1) / 2;
 
   grow_arrays(atom->nmax);
 
@@ -186,37 +180,37 @@ void FixPropertyPlasmid::update_arrays(int i, int j)
 
   int ibac = atom->bacillus[i];
   double current_t = update->ntimestep * update->dt;
-  int *dlist, *dflist, *tlist;
+  int *dlist_plm, *dlist_fila, *tlist;
 
-  memory->create(dlist,plm_max,"fix nufeb/property/plasmid:dlist");
-  memory->create(dflist,fmax,"fix nufeb/property/plasmid:dflist");
-  memory->create(tlist,plm_max,"fix nufeb/property/plasmid:jlist");
+  memory->create(dlist_plm,plm_max,"fix nufeb/property/plasmid:dlist_plm");
+  memory->create(dlist_fila,fila_max,"fix nufeb/property/plasmid:dlist_fila");
+  memory->create(tlist,plm_max,"fix nufeb/property/plasmid:tlist");
 
   AtomVecBacillus::Bonus *ibouns = &avec->bonus[ibac];
 
   vprop[j] = 0;
 
   for (int m = 0; m < (int)vprop[i]; m++) {
-    double xp[3],xp1[3],xp2[3];
+    double px[3],px1[3],px2[3];
     double d,r;
     double idist = sqrt(2*atom->radius[i]*atom->radius[i])-(plm_dia*0.5);
 
-    get_plasmid_coords(i, m, xp, pre_x[i]);
-    avec->get_pole_coords(i,xp1,xp2);
-    distance_bt_pt_line(xp,xp1,xp2,d);
+    get_plasmid_coords(i, m, px, pre_x[i]);
+    avec->get_pole_coords(i,px1,px2);
+    distance_bt_pt_line(px,px1,px2,d);
 
     // plasmid transmission
     if (d > idist) {
       // move plasmid k to cell j
       int n = static_cast<int>(vprop[j]);
-      dlist[m] = 1;
+      dlist_plm[m] = 1;
       tlist[m] = n;
       if (rep_flag) nproteins[j][n] = nproteins[i][m];
-      set_plm_x(j, n, xp, atom->x[j]);
+      set_plm_x(j, n, px, atom->x[j]);
       vprop[j]++;
     } else {
-      dlist[m] = 0;
-      set_plm_x(i, m, xp, atom->x[i]);
+      dlist_plm[m] = 0;
+      set_plm_x(i, m, px, atom->x[i]);
     }
   }
   // delete broken filament
@@ -227,27 +221,27 @@ void FixPropertyPlasmid::update_arrays(int i, int j)
       int m = fila[i][f][0];
       int n = fila[i][f][1];
 
-      if (dlist[m] != dlist[n]) {
-	dflist[f] = 1;
-      } else if (dlist[m] && dlist[n]) {
-	dflist[f] = 1;
+      if (dlist_plm[m] != dlist_plm[n]) {
+	dlist_fila[f] = 1;
+      } else if (dlist_plm[m] && dlist_plm[n]) {
+	dlist_fila[f] = 1;
 	fila[j][njfila][0] = tlist[m];
 	fila[j][njfila][1] = tlist[n];
 	tfila[j][njfila] = tfila[i][f];
 	nfilas[j]++;
       } else {
-	dflist[f] = 0;
+	dlist_fila[f] = 0;
       }
     }
-    delete_filament(dflist,i);
+    delete_filament(dlist_fila,i);
   }
 
   int k = 0;
   while (k < static_cast<int>(vprop[i])) {
     // remove plasmid k from i
-    if (dlist[k]) {
+    if (dlist_plm[k]) {
       copy_plasmid(i,k,static_cast<int>(vprop[i])-1,1);
-      dlist[k] = dlist[static_cast<int>(vprop[i])-1];
+      dlist_plm[k] = dlist_plm[static_cast<int>(vprop[i])-1];
       vprop[i]--;
     } else k++;
   }
@@ -260,8 +254,8 @@ void FixPropertyPlasmid::update_arrays(int i, int j)
     relocate_plm_x(j,m);
   }
 
-  memory->destroy(dlist);
-  memory->destroy(dflist);
+  memory->destroy(dlist_plm);
+  memory->destroy(dlist_fila);
   memory->destroy(tlist);
 }
 
@@ -287,25 +281,25 @@ void FixPropertyPlasmid::delete_filament(int *dflist, int i) {
 /* ----------------------------------------------------------------------
    get coordinate for plasmid j in bacillus i
 ------------------------------------------------------------------------- */
-void FixPropertyPlasmid::get_plasmid_coords(int i, int j, double *xp)
+void FixPropertyPlasmid::get_plasmid_coords(int i, int j, double *px)
 {
   if (atom->bacillus[i] < 0)
     error->one(FLERR,"Assigning bacillus parameters to non-bacillus atom");
 
   AtomVecBacillus::Bonus *bouns = &avec->bonus[atom->bacillus[i]];
 
-  double jxpm[3];
+  double jplm_x[3];
   double v[3];
   double quat_pm[4];
   double v_length = bouns->length*0.5;
 
-  jxpm[0] = plm_x[i][j*3];
-  jxpm[1] = plm_x[i][j*3+1];
-  jxpm[2] = plm_x[i][j*3+2];
+  jplm_x[0] = plm_x[i][j*3];
+  jplm_x[1] = plm_x[i][j*3+1];
+  jplm_x[2] = plm_x[i][j*3+2];
 
   v[0] = v[1] = v[2] = 0.0;
 
-  if (jxpm[0] > 0) {
+  if (jplm_x[0] > 0) {
     v[0] = v_length;
     get_quat(bouns->pole1,v,quat_pm);
   } else {
@@ -317,15 +311,15 @@ void FixPropertyPlasmid::get_plasmid_coords(int i, int j, double *xp)
   double p[3][3];
 
   MathExtra::quat_to_mat(quat_pm,p);
-  MathExtra::matvec(p,jxpm,cpx);
+  MathExtra::matvec(p,jplm_x,cpx);
   MathExtra::quat_to_mat(bouns->quat,p);
-  MathExtra::matvec(p,cpx,xp);
+  MathExtra::matvec(p,cpx,px);
 
   double *x = atom->x[bouns->ilocal];
 
-  xp[0] += x[0];
-  xp[1] += x[1];
-  xp[2] += x[2];
+  px[0] += x[0];
+  px[1] += x[1];
+  px[2] += x[2];
 }
 
 /* ----------------------------------------------------------------------
@@ -338,18 +332,18 @@ void FixPropertyPlasmid::get_plasmid_coords(int i, int j, double *xp, double *x)
 
   AtomVecBacillus::Bonus *bouns = &avec->bonus[atom->bacillus[i]];
 
-  double jxpm[3];
+  double jplm_x[3];
   double v[3];
   double quat_pm[4];
   double v_length = bouns->length*0.5;
 
-  jxpm[0] = plm_x[i][j*3];
-  jxpm[1] = plm_x[i][j*3+1];
-  jxpm[2] = plm_x[i][j*3+2];
+  jplm_x[0] = plm_x[i][j*3];
+  jplm_x[1] = plm_x[i][j*3+1];
+  jplm_x[2] = plm_x[i][j*3+2];
 
   v[0] = v[1] = v[2] = 0.0;
 
-  if (jxpm[0] > 0) {
+  if (jplm_x[0] > 0) {
     v[0] = v_length;
     get_quat(bouns->pole1,v,quat_pm);
   } else {
@@ -361,7 +355,7 @@ void FixPropertyPlasmid::get_plasmid_coords(int i, int j, double *xp, double *x)
   double p[3][3];
 
   MathExtra::quat_to_mat(quat_pm,p);
-  MathExtra::matvec(p,jxpm,cpx);
+  MathExtra::matvec(p,jplm_x,cpx);
   MathExtra::quat_to_mat(bouns->quat,p);
   MathExtra::matvec(p,cpx,xp);
 
@@ -404,7 +398,7 @@ void FixPropertyPlasmid::set_plm_x(int i, int j, double *xp, double *x)
 
   AtomVecBacillus::Bonus *bouns = &avec->bonus[atom->bacillus[i]];
 
-  double jxpm[3];
+  double jplm_x[3];
   double quat[4];
   double p[3][3];
   double cpx[3];
@@ -435,11 +429,11 @@ void FixPropertyPlasmid::set_plm_x(int i, int j, double *xp, double *x)
   }
 
   MathExtra::quat_to_mat(quat_pm,p);
-  MathExtra::matvec(p,cpx,jxpm);
+  MathExtra::matvec(p,cpx,jplm_x);
 
-  plm_x[i][j*3] = jxpm[0];
-  plm_x[i][j*3+1] = jxpm[1];
-  plm_x[i][j*3+2] = jxpm[2];
+  plm_x[i][j*3] = jplm_x[0];
+  plm_x[i][j*3+1] = jplm_x[1];
+  plm_x[i][j*3+2] = jplm_x[2];
 }
 
 /* ----------------------------------------------------------------------
@@ -571,7 +565,7 @@ void FixPropertyPlasmid::copy_arrays(int i, int j, int /*delflag*/)
   }
 
   if (par_flag) {
-    for (int n = 0; n < fmax; n++) {
+    for (int n = 0; n < fila_max; n++) {
       fila[j][n][0] = fila[i][n][0];
       fila[j][n][1] = fila[i][n][1];
       tfila[j][n] = tfila[i][n];
@@ -606,7 +600,7 @@ int FixPropertyPlasmid::pack_exchange(int i, double *buf)
   }
 
   if (par_flag) {
-    for (int n = 0; n < fmax; n++) {
+    for (int n = 0; n < fila_max; n++) {
       buf[m++] = fila[i][n][0];
       buf[m++] = fila[i][n][1];
       buf[m++] = tfila[i][n];
@@ -643,7 +637,7 @@ int FixPropertyPlasmid::unpack_exchange(int nlocal, double *buf)
   }
 
   if (par_flag) {
-    for (int n = 0; n < fmax; n++) {
+    for (int n = 0; n < fila_max; n++) {
       fila[nlocal][n][0] = buf[m++];
       fila[nlocal][n][1] = buf[m++];
       tfila[nlocal][n] = buf[m++];

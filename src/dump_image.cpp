@@ -874,11 +874,11 @@ void DumpImage::create_image()
 #ifdef LMP_USER_PLASMID
 	FixPropertyPlasmid *fix = (FixPropertyPlasmid *) modify->fix[ifix];
 
-	double xplasmid[3];
-	xplasmid[0] = xplasmid[1] = xplasmid[2] = 0.0;
+	double plm_x[3];
+	plm_x[0] = plm_x[1] = plm_x[2] = 0.0;
 	for (int k = 0; k < (int)fix->vprop[i]; k++) {
-	  fix->get_plasmid_coords(i,k,xplasmid);
-	  image->draw_sphere(xplasmid,image->color2rgb("green"),fix->get_plasmid_diameter());
+	  fix->get_plasmid_coords(i,k,plm_x);
+	  image->draw_sphere(plm_x,image->color2rgb("green"),fix->plm_dia);
 	}
 	double xfilament1[3];
 	double xfilament2[3];

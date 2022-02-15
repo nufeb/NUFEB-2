@@ -42,7 +42,7 @@ class FixPlasmidPartition : public Fix {
   void relocate_plm_x(int, int);
 
   int nucleoid_flag;
-  int fmax;              // maximum # of filaments
+  int fila_max;              // maximum # of filaments
   int *nfilas;           // # of filaments
   int ***fila;           // filament defined as straight line
   double **tfila;        // filament duration

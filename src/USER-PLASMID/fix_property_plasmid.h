@@ -61,7 +61,7 @@ class FixPropertyPlasmid : public FixProperty {
 
   double **nproteins;        // number of initiator proteins
 
-  int fmax;                  // maximum # of filaments
+  int fila_max;              // maximum # of filaments
   int *nfilas;               // # of filaments
   int ***fila;               // filament defined as straight line
   double **tfila;            // filament duration
