@@ -13,31 +13,40 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/death/plasmid,FixDeathPlasmid)
+FixStyle(nufeb/plasmid/replicate,FixPlasmidReplication)
 
 #else
 
-#ifndef LMP_FIX_DEATH_PLASMID_H
-#define LMP_FIX_DEATH_PLASMID_H
+#ifndef LMP_FIX_PLASMID_REPLICATION_H
+#define LMP_FIX_PLASMID_REPLICATION_H
 
 #include "fix.h"
 
 namespace LAMMPS_NS {
 
-class FixDeathPlasmid : public Fix {
+class FixPlasmidReplication : public Fix {
  public:
-  FixDeathPlasmid(class LAMMPS *, int, char **);
-  ~FixDeathPlasmid() {}
-  int modify_param(int, char **);
+  FixPlasmidReplication(class LAMMPS *, int, char **);
+  ~FixPlasmidReplication();
 
-  void init() {}
+  void init();
   int setmask();
+  void grow_arrays(int);
   void biology_nufeb();
   void compute();
+  double memory_usage();
 
  private:
-  int idead;
-  class FixPropertyPlasmid *fix_plasmid;
+  void replication(int);
+
+  double **nproteins;    // number of initiator proteins
+  double alpha;
+  int mean_protein, init_protein;
+  int seed;
+
+  class RanPark *random;
+
+  class FixPropertyPlasmid *fix_plm;
 };
 
 }

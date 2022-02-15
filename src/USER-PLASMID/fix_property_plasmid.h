@@ -37,15 +37,14 @@ class FixPropertyPlasmid : public FixProperty {
   int setmask();
   void grow_arrays(int);
   void biology_nufeb();
-  void init() {}
+  void init() {};
   void set_arrays(int) {};
   void update_arrays(int, int);
   void compute();
 
   void get_plasmid_coords(int, int, double *, double *);
   void get_plasmid_coords(int, int, double *);
-  double get_plasmid_diameter() {return dia;};
-  void create_plasmid();
+  void relocate_plm_x(int, int);
   void delete_filament(int *, int);
 
   double memory_usage();
@@ -53,44 +52,32 @@ class FixPropertyPlasmid : public FixProperty {
   void copy_plasmid(int, int, int, int);
   int pack_exchange(int, double *);
   int unpack_exchange(int, double *);
-  int pack_restart(int, double *);
-  void unpack_restart(int, int);
-  int size_restart(int);
-  int maxsize_restart();
 
-  int pmax;              // maximum # of plasmid
-  double **xpm;          // plasmid position
-  double **pre_x;        // previous cell location
-  double **nproteins;    // number of initiator proteins
-  int fmax;              // maximum # of filaments
-  int *nfilas;           // # of filaments
-  int ***fila;           // filament defined as straight line
-  double **tfila;        // filament duration
-  double ftime, fvel;    // filament formation time, filament formation rate
-  double alpha;
-  int nucleoid_flag;
-  int restart_size;
+  int plm_max;               // maximum # of plasmid
+  int plm_init;              // # of initial plasmid
+  double plm_dia;
+  double **plm_x;            // plasmid position
+  double **pre_x;            // previous cell location
+
+  double **nproteins;        // number of initiator proteins
+
+  int fmax;                  // maximum # of filaments
+  int *nfilas;               // # of filaments
+  int ***fila;               // filament defined as straight line
+  double **tfila;            // filament duration
+
+  int rep_flag, par_flag;
+
   std::ofstream myfile;
 
  private:
-  void replication(int);
-  void motility(int);
   void get_cell_boundary(double *, int, int);
-  int check_nucleoid(int, int, double);
-  void set_plasmid_xpm(int, int, double *,double *);
-  void relocate_xpm(int, int);
+  void set_plm_x(int, int, double *,double *);
   void get_quat(double *, double *, double *);
   void distance_bt_pt_line(double *, double *, double *, double &);
-  void dump();
+  //void dump();
 
-  double dia, diff_coef, dt;
-  int mean_protein, init_protein;
-  int pinit;              // # of initial plasmid
-  int seed;
-
-  class RanPark *random;
   class AtomVecBacillus *avec;
-  class FixDivideBacillusMinicell *fix_div;
 
   double dot(double x1, double x2, double x3, double y1, double y2, double y3) { return x1*y1 + x2*y2 + x3*y3; }
   double norm(double x1, double x2, double x3) { return sqrt(dot(x1, x2, x3, x1, x2, x3)); }

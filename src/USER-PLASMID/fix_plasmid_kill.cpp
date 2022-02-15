@@ -11,6 +11,8 @@
  See the README file in the top-level LAMMPS directory.
  ------------------------------------------------------------------------- */
 
+#include "fix_plasmid_kill.h"
+
 #include <string.h>
 #include "atom.h"
 #include "error.h"
@@ -18,7 +20,6 @@
 #include "group.h"
 #include "update.h"
 #include "atom_masks.h"
-#include "fix_death_plasmid.h"
 #include "fix_property_plasmid.h"
 
 using namespace LAMMPS_NS;
@@ -26,11 +27,11 @@ using namespace FixConst;
 
 /* ---------------------------------------------------------------------- */
 
-FixDeathPlasmid::FixDeathPlasmid(LAMMPS *lmp, int narg, char **arg) :
+FixPlasmidKill::FixPlasmidKill(LAMMPS *lmp, int narg, char **arg) :
     Fix(lmp, narg, arg)
 {
   if (narg < 4)
-    error->all(FLERR, "Illegal nufeb/death/plasmid command");
+    error->all(FLERR, "Illegal nufeb/plasmid/kill command");
   
   idead = group->find(arg[3]);
   if (idead < 0)
@@ -40,14 +41,14 @@ FixDeathPlasmid::FixDeathPlasmid(LAMMPS *lmp, int narg, char **arg) :
   fix_plasmid = nullptr;
 
   int ifix = modify->find_fix_by_style("^nufeb/property/plasmid");
-  if (ifix < 0 ) error->all(FLERR,"Illegal nufeb/death/plasmid command: "
+  if (ifix < 0 ) error->all(FLERR,"Illegal nufeb/plasmid/kill command: "
       "requires fix nufeb/property/plasmid");
   fix_plasmid = (FixPropertyPlasmid *) modify->fix[ifix];
 }
 
 /* ---------------------------------------------------------------------- */
 
-int FixDeathPlasmid::setmask()
+int FixPlasmidKill::setmask()
 {
   int mask = 0;
   mask |= BIOLOGY_NUFEB;
@@ -56,7 +57,7 @@ int FixDeathPlasmid::setmask()
 
 /* ---------------------------------------------------------------------- */
 
-int FixDeathPlasmid::modify_param(int narg, char **arg)
+int FixPlasmidKill::modify_param(int narg, char **arg)
 {
   int iarg = 0;
   while (iarg < narg) {
@@ -73,7 +74,7 @@ int FixDeathPlasmid::modify_param(int narg, char **arg)
 
 /* ---------------------------------------------------------------------- */
 
-void FixDeathPlasmid::biology_nufeb()
+void FixPlasmidKill::biology_nufeb()
 {
   if (update->ntimestep % nevery) return;
   compute();
@@ -81,7 +82,7 @@ void FixDeathPlasmid::biology_nufeb()
 
 /* ---------------------------------------------------------------------- */
 
-void FixDeathPlasmid::compute()
+void FixPlasmidKill::compute()
 {
   int *mask = atom->mask;
   double *radius = atom->radius;

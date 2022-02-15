@@ -21,11 +21,11 @@
 #include "memory.h"
 #include "math_const.h"
 #include "atom_vec_bacillus.h"
-#include "fix_property_plasmid.h"
 #include "group.h"
 #include <stdio.h>
 
 #include "comm.h"
+#include "fix_property_plasmid.h"
 
 using namespace LAMMPS_NS;
 

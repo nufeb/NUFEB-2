@@ -54,7 +54,7 @@ ComputePlasmidMSD::ComputePlasmidMSD(LAMMPS *lmp, int narg, char **arg) :
   // create a new fix STORE style for reference positions
   // id = compute-ID + COMPUTE_STORE, fix group = compute group
 
-  int ncol = fix_plasmid->pmax*3;
+  int ncol = fix_plasmid->plm_max*3;
   std::string fixcmd = id + std::string("_COMPUTE_STORE");
   id_fix = new char[fixcmd.size()+1];
   strcpy(id_fix,fixcmd.c_str());
@@ -90,9 +90,9 @@ void ComputePlasmidMSD::init()
 	  int jx1 = j*3+1;
 	  int jx2 = j*3+2;
 
-	  xpm_original[i][jx0] = fix_plasmid->xpm[i][jx0];
-	  xpm_original[i][jx1] = fix_plasmid->xpm[i][jx1];
-	  xpm_original[i][jx2] = fix_plasmid->xpm[i][jx2];
+	  xpm_original[i][jx0] = fix_plasmid->plm_x[i][jx0];
+	  xpm_original[i][jx1] = fix_plasmid->plm_x[i][jx1];
+	  xpm_original[i][jx2] = fix_plasmid->plm_x[i][jx2];
 	}
       }
     }
@@ -142,9 +142,9 @@ void ComputePlasmidMSD::compute_vector()
 	int jx1 = j*3+1;
 	int jx2 = j*3+2;
 
-	dx = fix_plasmid->xpm[i][jx0] - xpm_original[i][jx0];
-	dy = fix_plasmid->xpm[i][jx1] - xpm_original[i][jx1];
-	dz = fix_plasmid->xpm[i][jx2] - xpm_original[i][jx2];
+	dx = fix_plasmid->plm_x[i][jx0] - xpm_original[i][jx0];
+	dy = fix_plasmid->plm_x[i][jx1] - xpm_original[i][jx1];
+	dz = fix_plasmid->plm_x[i][jx2] - xpm_original[i][jx2];
 
 	msd[0] += dx*dx;
 	msd[1] += dy*dy;
@@ -178,8 +178,8 @@ void ComputePlasmidMSD::set_arrays(int i)
     int jx1 = j*3+1;
     int jx2 = j*3+2;
 
-    xpm_original[i][jx0] = fix_plasmid->xpm[i][jx0];
-    xpm_original[i][jx1] = fix_plasmid->xpm[i][jx1];
-    xpm_original[i][jx2] = fix_plasmid->xpm[i][jx2];
+    xpm_original[i][jx0] = fix_plasmid->plm_x[i][jx0];
+    xpm_original[i][jx1] = fix_plasmid->plm_x[i][jx1];
+    xpm_original[i][jx2] = fix_plasmid->plm_x[i][jx2];
   }
 }
