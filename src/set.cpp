@@ -875,8 +875,9 @@ void Set::set(int keyword)
       // NUFEB specific
       if (atom->bacillus_flag) {
 	avec_bacillus->set_diameter(i,dvalue);
+      } else if (atom->coccus_flag) {
+	atom->outer_radius[i] = 0.5 * dvalue;
       }
-      atom->outer_radius[i] = 0.5 * dvalue;
     }
     else if (keyword == VOLUME) {
       if (dvalue <= 0.0) error->one(FLERR,"Invalid volume in set command");
