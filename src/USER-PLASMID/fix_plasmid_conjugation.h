@@ -13,48 +13,35 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/plasmid/partition,FixPlasmidPartition)
+FixStyle(nufeb/plasmid/conjugate,FixPlasmidConjugation)
 
 #else
 
-#ifndef LMP_FIX_PLASMID_PARTITION_H
-#define LMP_FIX_PLASMID_PARTITION_H
+#ifndef LMP_FIX_PLASMID_CONJUGATION_H
+#define LMP_FIX_PLASMID_CONJUGATION_H
 
 #include "fix.h"
 
 namespace LAMMPS_NS {
 
-class FixPlasmidPartition : public Fix {
+class FixPlasmidConjugation : public Fix {
  public:
-  FixPlasmidPartition(class LAMMPS *, int, char **);
-  ~FixPlasmidPartition();
+  FixPlasmidConjugation(class LAMMPS *, int, char **);
+  ~FixPlasmidConjugation();
 
   void init();
   int setmask();
   void grow_arrays(int);
   void biology_nufeb();
   void compute();
-  double memory_usage();
 
  private:
-  void partition(int);
-  int check_nucleoid(int, int, double);
-  void relocate_plm_x(int, int);
-
-  int nucleoid_flag;
-  int fila_max;             // maximum # of filaments
-  int *nfilas;              // # of filaments
-  int ***fila;              // filament defined as straight line
-  double **tfila;           // filament formation time
-  double tmax_fila, v_fila; // maximum filament formation time, filament formation rate
-  double diff_coef;         // diffusion coefficient for Browian motion
-  double dt;                // timestep for plasmid movement
+  int irecipient, itrans;
   int seed;
 
   class RanPark *random;
-  class AtomVecBacillus *avec;
+
   class FixPropertyPlasmid *fix_plm;
-  class FixDivideBacillusMinicell *fix_div;
 };
 
 }

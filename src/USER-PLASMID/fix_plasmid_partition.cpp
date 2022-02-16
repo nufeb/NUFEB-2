@@ -55,8 +55,8 @@ FixPlasmidPartition::FixPlasmidPartition(LAMMPS *lmp, int narg, char **arg) :
 
   diff_coef = 4e-15;
   dt = 1;
-  ftime = 60;
-  fvel = 0.026e-6;
+  tmax_fila = 60;
+  v_fila = 0.026e-6;
   nucleoid_flag = 1;
   fila_max = 0;
 
@@ -86,10 +86,10 @@ FixPlasmidPartition::FixPlasmidPartition(LAMMPS *lmp, int narg, char **arg) :
       dt = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       iarg += 2;
     } else if (strcmp(arg[iarg], "fdur") == 0) {
-      ftime = utils::numeric(FLERR,arg[iarg+1],true,lmp);
+      tmax_fila = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       iarg += 2;
     }  else if (strcmp(arg[iarg], "fvel") == 0) {
-      fvel = utils::numeric(FLERR,arg[iarg+1],true,lmp);
+      v_fila = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       iarg += 2;
     }  else if (strcmp(arg[iarg], "nflag") == 0) {
       nucleoid_flag = utils::inumeric(FLERR,arg[iarg+1],true,lmp);
@@ -105,11 +105,8 @@ FixPlasmidPartition::FixPlasmidPartition(LAMMPS *lmp, int narg, char **arg) :
 /* ---------------------------------------------------------------------- */
 FixPlasmidPartition:: ~FixPlasmidPartition() {
   memory->destroy(nfilas);
-
-  if (fila_max) {
-    memory->destroy(fila);
-    memory->destroy(tfila);
-  }
+  memory->destroy(fila);
+  memory->destroy(tfila);
 
   delete random;
 }
@@ -199,7 +196,7 @@ void FixPlasmidPartition::partition(int i)
 
     // create filament between plasmids n and m if collision
     for (int n = 0; n < static_cast<int>(fix_plm->vprop[i]); n++) {
-      if (!ftime) break;
+      if (!tmax_fila) break;
 
       int nfila = nfilas[i];
       if (m == n) continue;
@@ -237,7 +234,7 @@ void FixPlasmidPartition::partition(int i)
 	  fila[i][nfila][1] = n;
 	}
 
-	tfila[i][nfila] = ftime;
+	tfila[i][nfila] = tmax_fila;
 	nfilas[i]++;
       }
     }
@@ -268,11 +265,11 @@ void FixPlasmidPartition::partition(int i)
     // pushing by ParM filament
     if (link) {
       if (orient < 0) {
-	pos[0] = plm_x[i][m0] - fvel * dt;
+	pos[0] = plm_x[i][m0] - v_fila * dt;
 	pos[1] = plm_x[i][m1];
 	pos[2] = plm_x[i][m2];
       } else if (orient > 0){
-	pos[0] = plm_x[i][m0] + fvel * dt;
+	pos[0] = plm_x[i][m0] + v_fila * dt;
 	pos[1] = plm_x[i][m1];
 	pos[2] = plm_x[i][m2];
       } else {

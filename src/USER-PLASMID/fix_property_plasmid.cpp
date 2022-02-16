@@ -486,7 +486,7 @@ void FixPropertyPlasmid::relocate_plm_x(int i, int j) {
 }
 
 /* ----------------------------------------------------------------------
-   distance between plasmid and
+   distance between plasmid and host rod (line segment)
 ------------------------------------------------------------------------- */
 void FixPropertyPlasmid::distance_bt_pt_line(double *q, double *xi1, double *xi2, double &d)
 {

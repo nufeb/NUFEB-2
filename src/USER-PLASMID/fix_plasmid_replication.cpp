@@ -80,9 +80,7 @@ FixPlasmidReplication::FixPlasmidReplication(LAMMPS *lmp, int narg, char **arg) 
 
 /* ---------------------------------------------------------------------- */
 FixPlasmidReplication:: ~FixPlasmidReplication() {
-  if (fix_plm->plm_max) {
-    memory->destroy(nproteins);
-  }
+  memory->destroy(nproteins);
   delete random;
 }
 

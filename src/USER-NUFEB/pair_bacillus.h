@@ -67,20 +67,20 @@ class PairBacillus : public Pair {
                              double delx, double dely, double delz, double rsq,
                              double** v, double** f, double radi,
 			     double radj, int evflag);
-  // sphere-edge interaction
+  // sphere-rod interaction
   void sphere_against_rod(int ibody, int jbody, int itype, int jtype,
                            double** x, double** v, double** f, double** torque,
                            double** angmom, AtomVecBacillus::Bonus *&ibonus,
 			   int evflag);
 
-  // edge-edge interactions
+  // rod-rod interactions
   void rod_against_rod(int ibody, int jbody, int itype, int jtype,
 		       double** x, double** v, double** f, double** torque,
 		       double** angmom, AtomVecBacillus::Bonus *&ibonus,
 		       AtomVecBacillus::Bonus *&jbonus, int &num_contacts,
 		       Contact &contact_list, double &evdwl, double* facc);
 
-  // an edge vs. an edge from another body
+  // an edge vs. an rod from another body
   void interaction_rod_to_rod(int ibody, int edge_index_i, double* xmi,
                                double rounded_radius_i, int jbody, int edge_index_j,
                                double* xmj, double rounded_radius_j,
