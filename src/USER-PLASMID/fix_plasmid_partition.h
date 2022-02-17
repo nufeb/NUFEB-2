@@ -54,7 +54,7 @@ class FixPlasmidPartition : public Fix {
   class RanPark *random;
   class AtomVecBacillus *avec;
   class FixPropertyPlasmid *fix_plm;
-  class FixDivideBacillusMinicell *fix_div;
+  class FixDivide *fix_div;
 };
 
 }

@@ -96,41 +96,43 @@ void FixAdhesionBacillus::compute()
 
   for (ii = 0; ii < inum; ii++) {
     i = ilist[ii];
-    xtmp = x[i][0];
-    ytmp = x[i][1];
-    ztmp = x[i][2];
-    jlist = firstneigh[i];
-    jnum = numneigh[i];
+    if (atom->mask[i] & groupbit) {
+      xtmp = x[i][0];
+      ytmp = x[i][1];
+      ztmp = x[i][2];
+      jlist = firstneigh[i];
+      jnum = numneigh[i];
 
-    if (bacillus[i] >= 0) {
-      int index = atom->bacillus[i];
-      ibonus = &avec->bonus[index];
-      leni = ibonus->length/2;
-      radi = ibonus->diameter/2;
-    }
+      if (bacillus[i] >= 0) {
+	int index = atom->bacillus[i];
+	ibonus = &avec->bonus[index];
+	leni = ibonus->length/2;
+	radi = ibonus->diameter/2;
+      }
 
-    for (jj = 0; jj < jnum; jj++) {
-      j = jlist[jj];
-      j &= NEIGHMASK;
+      for (jj = 0; jj < jnum; jj++) {
+	j = jlist[jj];
+	j &= NEIGHMASK;
 
-      delx = xtmp - x[j][0];
-      dely = ytmp - x[j][1];
-      delz = ztmp - x[j][2];
-      rsq = delx*delx + dely*dely + delz*delz;
+	delx = xtmp - x[j][0];
+	dely = ytmp - x[j][1];
+	delz = ztmp - x[j][2];
+	rsq = delx*delx + dely*dely + delz*delz;
 
-      if (bacillus[i] < 0 || bacillus[j] < 0) continue;
+	if (bacillus[i] < 0 || bacillus[j] < 0) continue;
 
-      int index = atom->bacillus[j];
-      jbonus = &avec->bonus[index];
-      lenj = jbonus->length/2;
-      radj = jbonus->diameter/2;
+	int index = atom->bacillus[j];
+	jbonus = &avec->bonus[index];
+	lenj = jbonus->length/2;
+	radj = jbonus->diameter/2;
 
-      // no interaction
-      double r = sqrt(rsq);
-      if (r > radi+radj+leni+lenj+cutoff) continue;
+	// no interaction
+	double r = sqrt(rsq);
+	if (r > radi+radj+leni+lenj+cutoff) continue;
 
-      // rod-rod interaction
-      rod_against_rod(i, j, x, v, f, torque, angmom, rmass, ibonus, jbonus);
+	// rod-rod interaction
+	rod_against_rod(i, j, x, v, f, torque, angmom, rmass, ibonus, jbonus);
+      }
     }
   }
 }
@@ -164,8 +166,7 @@ void FixAdhesionBacillus::rod_against_rod(int i, int j, double** x, double** v,
 
 
 /* ----------------------------------------------------------------------
-  Compute forces and torques between two bodies caused by the interaction
-  between a pair of points on either bodies (similar to sphere-sphere)
+  Compute adhesion forces and torques between two rods
 ------------------------------------------------------------------------- */
 
 void FixAdhesionBacillus::adhesion_force_and_torque(int i, int j,
@@ -300,7 +301,7 @@ void FixAdhesionBacillus::distance_bt_rods(const double* x1,
 }
 
 /* ----------------------------------------------------------------------
-  Accumulate torque to body from the force f=(fx,fy,fz) acting at point x
+  Accumulate torque to rod from the force f=(fx,fy,fz) acting at point x
 ------------------------------------------------------------------------- */
 
 void FixAdhesionBacillus::sum_torque(double* xm, double *x, double fx,

@@ -32,7 +32,6 @@ class FixDivideBacillus : public FixDivide {
   virtual void compute();
   
  private:
-  double maxlength;
   int seed;
 
   class RanPark *random;

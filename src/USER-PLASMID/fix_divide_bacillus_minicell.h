@@ -13,7 +13,7 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/divide/bacillus/minicell,FixDivideBacillusMinicell)
+FixStyle(nufeb/division/bacillus/minicell,FixDivideBacillusMinicell)
 
 #else
 

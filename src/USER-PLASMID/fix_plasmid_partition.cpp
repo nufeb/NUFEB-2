@@ -24,6 +24,8 @@
 
 #include "fix_plasmid_partition.h"
 #include "fix_property_plasmid.h"
+#include "fix_divide.h"
+#include "fix_divide_bacillus.h"
 #include "fix_divide_bacillus_minicell.h"
 
 #include "fix.h"
@@ -68,14 +70,20 @@ FixPlasmidPartition::FixPlasmidPartition(LAMMPS *lmp, int narg, char **arg) :
   if (!avec) error->all(FLERR,"fix nufeb/property/plasmid requires "
       "atom style bacillus");
 
-  int ifix = modify->find_fix_by_style("^nufeb/property/plasmid");
+  int ifix, jfix;
+
+  ifix = modify->find_fix_by_style("^nufeb/property/plasmid");
   if (ifix < 0 ) error->all(FLERR,"Illegal nufeb/plasmid/replication command: "
       "requires fix nufeb/property/plasmid");
   fix_plm = (FixPropertyPlasmid *) modify->fix[ifix];
 
-  ifix = modify->find_fix_by_style("^nufeb/divide/bacillus/minicell");
-  if (ifix < 0 ) error->all(FLERR,"fix nufeb/property/plasmid requires fix ^nufeb/divide/bacillus/minicell");
-  fix_div = (FixDivideBacillusMinicell *) modify->fix[ifix];
+  ifix = modify->find_fix_by_style("^nufeb/division/bacillus/minicell");
+  jfix = modify->find_fix_by_style("^nufeb/division/bacillus");
+  if (ifix < 0 && jfix < 0)
+    error->all(FLERR,"fix nufeb/property/plasmid requires "
+	"fix ^nufeb/divide/bacillus/minicell or fix ^nufeb/divide/bacillus");
+  if (ifix>=0) fix_div = (FixDivideBacillusMinicell *) modify->fix[ifix];
+  if (jfix>=0) fix_div = (FixDivideBacillus *) modify->fix[jfix];
 
   int iarg = 4;
   while (iarg < narg) {
@@ -124,8 +132,8 @@ void FixPlasmidPartition::init() {
 	fila[i][f][0] = -1;
 	fila[i][f][1] = -1;
       }
-      nfilas[i] = 0;
     }
+    nfilas[i] = 0;
   }
 }
 

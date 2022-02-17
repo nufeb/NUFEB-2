@@ -45,9 +45,6 @@ FixPropertyPlasmid::FixPropertyPlasmid(LAMMPS *lmp, int narg, char **arg) :
   if (!avec) error->all(FLERR,"fix nufeb/property/plasmid requires "
       "atom style bacillus");
 
-  int ifix = modify->find_fix_by_style("^nufeb/divide/bacillus/minicell");
-  if (ifix < 0 ) error->all(FLERR,"fix nufeb/property/plasmid requires fix ^nufeb/divide/bacillus/minicell");
-
   if (narg < 3) error->all(FLERR,"Illegal fix nufeb/property/plasmid command");
 
   fila_max = 0;
@@ -89,6 +86,8 @@ FixPropertyPlasmid::FixPropertyPlasmid(LAMMPS *lmp, int narg, char **arg) :
   std::random_device rd;
   std::mt19937 eng(rd());
   for (int i = 0; i < atom->nlocal; i++) {
+    vprop[i] = 0;
+    if (!(atom->mask[i] & groupbit)) continue;
     AtomVecBacillus::Bonus *bouns = &avec->bonus[atom->bacillus[i]];
     vprop[i] = plm_init;
     // initialise plasmid position
@@ -191,13 +190,13 @@ void FixPropertyPlasmid::update_arrays(int i, int j)
   vprop[j] = 0;
 
   for (int m = 0; m < (int)vprop[i]; m++) {
-    double px[3],px1[3],px2[3];
+    double px[3],pole1[3],pole2[3];
     double d,r;
     double idist = sqrt(2*atom->radius[i]*atom->radius[i])-(plm_dia*0.5);
 
     get_plasmid_coords(i, m, px, pre_x[i]);
-    avec->get_pole_coords(i,px1,px2);
-    distance_bt_pt_line(px,px1,px2,d);
+    avec->get_pole_coords(i,pole1,pole2);
+    distance_bt_pt_line(px,pole1,pole2,d);
 
     // plasmid transmission
     if (d > idist) {

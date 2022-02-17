@@ -46,6 +46,7 @@ class FixPropertyPlasmid : public FixProperty {
   void get_plasmid_coords(int, int, double *);
   void relocate_plm_x(int, int);
   void delete_filament(int *, int);
+  void set_plm_x(int, int, double *,double *);
 
   double memory_usage();
   void copy_arrays(int, int, int);
@@ -72,7 +73,6 @@ class FixPropertyPlasmid : public FixProperty {
 
  private:
   void get_cell_boundary(double *, int, int);
-  void set_plm_x(int, int, double *,double *);
   void get_quat(double *, double *, double *);
   void distance_bt_pt_line(double *, double *, double *, double &);
   //void dump();

@@ -27,6 +27,8 @@ class FixDivide : public Fix {
   virtual void biology_nufeb();
   virtual void post_neighbor();
   virtual void compute() = 0;
+
+  double maxlength;
 };
 
 }
