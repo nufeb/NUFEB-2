@@ -37,6 +37,8 @@ action fix_plasmid_replication.cpp
 action fix_plasmid_replication.h
 action fix_plasmid_partition.cpp
 action fix_plasmid_partition.h
+action fix_plasmid_conjugation.cpp
+action fix_plasmid_conjugation.h
 action compute_plasmid_msd.cpp
 action compute_plasmid_msd.h
 action compute_plasmid_copy.cpp
