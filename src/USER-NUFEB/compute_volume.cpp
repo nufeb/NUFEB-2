@@ -53,7 +53,7 @@ double ComputeVolume::compute_scalar()
 	double vsphere = FOURTHIRDSPI * r * r * r;
 	double vcylinder = MY_PI * r * r * bonus->length;
 	scalar += vsphere + vcylinder;
-      } else {
+      } else if (atom->coccus_flag){
 	scalar += FOURTHIRDSPI * r * r * r;
       }
     }

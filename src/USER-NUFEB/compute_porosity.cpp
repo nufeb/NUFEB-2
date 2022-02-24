@@ -29,7 +29,7 @@ using namespace MathConst;
 ComputePorosity::ComputePorosity(LAMMPS *lmp, int narg, char **arg) :
   Compute(lmp, narg, arg)
 {
-  if (narg < 3) error->all(FLERR,"Illegal compute nufeb/volume command");
+  if (narg < 3) error->all(FLERR,"Illegal compute nufeb/porosity command");
   avec = nullptr;
   avec = (AtomVecBacillus *) atom->style_match("bacillus");
 
