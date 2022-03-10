@@ -14,18 +14,18 @@ Input script structure
 This section describes the structure of a typical NUFEB input script. We will take the
 script in NUFEB-dev/examples/biofilm-het directory as an example for the explanation.
 
-A NUFEB input script typically the following parts:
+A NUFEB input script typically consists of the following parts:
 
-1. :ref:`Initialization <init>`
-2. :ref:`System definition <system>`
+1. :ref:`System settings <system>`
+2. :ref:`Initialization <init>`
 3. :ref:`IbM processes <ibm>`
 4. :ref:`Computations and outputs <output>`
 5. :ref:`Run a simulation <run>`
 
 
-.. _init:
+.. _system:
 
-Initialisation
+System settings
 ------------------------------
 
 Set parameters that need to be defined before atoms and substrates are created or read-in from a file.
@@ -46,7 +46,7 @@ Example:
 
 .. code-block:: 
 
-	#-------------------------------------Initialisation--------------------------------------#
+	#-------------------------------------System settings--------------------------------------#
 	
 	units si                                    # using si units
 	atom_style      coccus                      # using nufeb coccus atom style
@@ -68,9 +68,9 @@ Example:
 
 
 
-.. _system:
+.. _init:
 
-System definition
+Initialisation
 ------------------------------
 
 Define substrates, computation domain, and initial atoms (microbes). 
@@ -94,7 +94,7 @@ Example:
 
 .. code-block:: 
 
-	#-------------------------------------System settings--------------------------------------#
+	#-------------------------------------Initialisation--------------------------------------#
 	
 	read_data       atom.in	                   # read atom.in file to initialise domain size 
 	                                           # and initial atoms	                
@@ -182,7 +182,7 @@ Computations and outputs
 
 Define :doc:`computations <list_compute>`  to compute various microbial properties during a simulation.
 
-NUFEB supports output simulation date in various formats: 
+NUFEB supports output simulation date in the following formats: 
 
 1. Plain text (`thermo_style* <https://docs.lammps.org/thermo_style.html>`_ and  `thermo* <https://docs.lammps.org/thermo.html>`_ commands)
 2. VTK (:doc:`dump vtk/grid <dump_vtk_grid>` and `dump vtk* <https://docs.lammps.org/dump_vtk.html>`_ commands)

@@ -45,15 +45,16 @@ send an email to the developers.
    packages
    
 
-.. _programmer_documentation:
+.. _tutorial:
 .. toctree::
    :maxdepth: 2
    :numbered: 3
-   :caption: Programmer Guide
+   :caption: Tutorial
    :name: progdoc
    :includehidden:
 
-   dev_new_growth
+   tut_add_spec
+   tut_add_growth_model
 
 
 .. _command_reference:

@@ -38,7 +38,7 @@ Follow the steps below to install WSL on Windows 10:
    :align: center
    
 5. This opens a dialog with a list of features you can install. 
-   Check the **Windows Subsystem for Linux** option and press *OK*.
+   Check the **Windows Subsystem for Linux** option and press **OK**.
    
 .. image:: images/wsl-dialog.png
    :scale: 75% 
