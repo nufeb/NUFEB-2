@@ -53,7 +53,7 @@ send an email to the developers.
    :name: progdoc
    :includehidden:
 
-   tut_add_spec
+   work_microbe_soil
    tut_add_growth_model
 
 

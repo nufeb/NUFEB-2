@@ -60,14 +60,15 @@ Each Capsule also contains environmental settings (docker file), and a directory
 You can follow the steps below to use NUFEB on Code Ocean:
 
 1. Create a Code Ocean account at https://codeocean.com/
-2. Currently NUFEB is in a private Capsule. To access the code, email your account (Email address) to bowen.li2@newcastle.ac.uk so that we can share the code with you.
-3. Once we share the code, you should be able to see a new Capsule named NUFEB in your profile. Enter the Capsule and create a copy of it by clicking the menu **Capsule -> Duplicate**.
+2. Currently NUFEB is in a private Capsule. To access the code, email your account (Email address) to bowen.li2@newcastle.ac.uk so that we can share the code to you.
+3. You should be able to see a new Capsule named NUFEB in your profile. Enter the Capsule and create a copy of it by clicking the menu **Capsule -> Duplicate**.
 4. The NUFEB capsule provides several examples in the ``/data`` directory. To run one of them, go to the ``run-example`` file and choose the example that you want to run by uncomment corresponding line. 
    Then right click on the file in the left *File* panel, and select **Set as File to Run**.
 5. Click the **Reproducible Run** button in the upper-right corner. During the simulation, information such as total number of individuals and biomass over time are printed in the console panel, 
    and output files are saved in the ``/results`` directory.
 6. The capsule provides a pre-compiled NUFEB executable ``nufeb_serial``. You can also recompile the code by making ``run-install.sh`` as the run file (**Set as File to Run**), 
    then press the **Reproducible Run** button.
+7. To download output files, right click on the ``/results`` directory and select **Download**.
 
 .. image:: images/codeocean.png
    :scale: 60% 
