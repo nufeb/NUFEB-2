@@ -25,12 +25,11 @@ Examples
 Description
 """"""""""""""
 
-Define substrates and mesh in simulation box for use by other Ib processes.
-The grid_style 
+Define substrates and Cartesian mesh in simulation box for use by other Ib processes.
 
 Substrates are growth media that are required by microbes for their metabolism.
-They are modelled as continuous fields in NUFEB due to the possible solubility.
-*nsubs* defines number of substrates in a system, and *subID* assigns an unique string name to each of them.
+They are modelled as continuous fields in NUFEB due to their potential solubility.
+*nsubs* defines number of substrates available in the system, and *subID* assigns an unique string name to each of them.
 The substrate names are used as references by other commands. 
 For example, in order to use :doc:`fix nufeb/growth/aob <fix_growth_aob>` command,
 three substrates must be defined in the grid_style to represent ammonium, oxygen and nitrite.

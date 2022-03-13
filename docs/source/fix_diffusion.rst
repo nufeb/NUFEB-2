@@ -1,4 +1,4 @@
-.. index:: fix nufeb/diffusion_reaction
+.. index:: fix nufeb/diffusion_coeff
 
-fix nufeb/diffusion_reaction command
+fix nufeb/diffusion_coeff command
 ====================================

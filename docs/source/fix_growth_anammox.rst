@@ -19,6 +19,7 @@ Syntax
 * no2-ID = ID of the substrate (nitrite)
 * no2-Ks = half-velocity constant (Ks) of nitrite
 * no3-ID = ID of the substrate (nitrate)
+* zero or more keyword/value pairs may be appended
 * keyword = *growth* or *yield* or *decay* or *maintain* 
 
 	.. parsed-literal::

@@ -14,6 +14,7 @@ Syntax
 * group-ID = ID of the group atoms to apply the fix to
 * sub-ID = ID of the substrate for atom growth
 * sub-Ks = half-velocity constant (Ks) of the substrate
+* zero or more keyword/value pairs may be appended
 * keyword = *growth* or *yield* or *decay* 
 
 	.. parsed-literal::

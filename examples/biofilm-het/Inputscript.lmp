@@ -1,26 +1,24 @@
 # NUFEB simulation - biofilm growth with heterotrophic bacteria and EPS 
 
-#------------------------------------------Initialisation------------------------------------------#
+#-------------------------------------------General settings-------------------------------------------#
 
-units si                                    # using si units
-atom_style      coccus                      # using nufeb coccus atom style
-atom_modify     map array sort 1000 1e-6    # map array: find atoms using indices
-		                            # sort 1000 1e-6: sort every 1000 steps with 1e-6 binsize
-boundary        pp pp ff		     # periodic domain boundaries in x and y fixed boundary in z
-
-newton          off                        # forces between local and ghost atoms are computed
-                                           # in each processor without communication
+units si                                   # using si units
 
 processors      * * 1                      # processor grid
 
-comm_modify     vel yes                    # communicate velocities for ghost atoms
-comm_modify     cutoff 2e-6                # guarantee that enough atoms are
+comm_modify     vel yes cutoff 2e-6        # communicate velocities for ghost atoms
+                                           # guarantee that enough atoms are
                                            # communicated to correctly compute
 
+#------------------------------Microbes, nutrients and simulation box-----------------------------------#
 
-#------------------------------------------System settings------------------------------------------#
+atom_style      coccus                      # using nufeb coccus atom style
+atom_modify     map array sort 1000 1e-6    # map array: find atoms using indices
+		                            # sort 1000 1e-6: sort every 1000 steps with 1e-6 binsize
+		                            
+boundary        pp pp ff		    # periodic domain boundaries in x and y fixed boundary in z
 
-read_data       atom.in	            # read atom.in file to initialise domain size 
+read_data       atom.in	            # read atom.in file which defines box size
                                            # and initial atoms	                
 
 group           het   type 1               # assign type 1 atoms to het group
@@ -89,9 +87,9 @@ variable press equal "(c_ke + c_press) / (3.0 * c_vol)"
 variable mass equal "mass(all)"
 
 # dump vtk files to /vtk folder, require build NUFEB with vtk option
-shell mkdir vtk
-dump du1 all vtk 10 vtk/dump*.vtu id type diameter
-dump du2 all grid/vtk 10 vtk/dump_%_*.vti con rea den gro
+#shell mkdir vtk
+#dump du1 all vtk 10 vtk/dump*.vtu id type diameter
+#dump du2 all grid/vtk 10 vtk/dump_%_*.vti con rea den gro
 
 # dump hdf5 files to /hdf5 folder,  require build NUFEB with hdf5 option
 #shell mkdir hdf5

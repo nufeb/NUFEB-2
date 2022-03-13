@@ -67,9 +67,12 @@ send an email to the developers.
    list_microbe_grid
    list_biology
    list_physics
+   list_post_physics
    list_chemsitry
+   list_post_chemsitry
    list_compute
    list_post
+   list_run
    list_lammps
    
    

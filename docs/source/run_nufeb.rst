@@ -47,7 +47,8 @@ In particular, the `-k on` command-line switch enable Kokkos support; `g 2` spec
 `-pk kokkos newton off neigh half binsize 2e-6` re-define the setting in the inputscript.
 
 You can find more information about `command line options* <https://docs.lammps.org/Run_options.html>`_ and
-`screen and logfile output* <https://docs.lammps.org/Run_output.html>`_ from LAMMPS user manual.
+`screen and logfile output* <https://docs.lammps.org/Run_output.html>`_ 
+in `LAMMPS user manual <https://docs.lammps.org/Manual.html>`_.
 
 
 Run NUFEB on Code Ocean

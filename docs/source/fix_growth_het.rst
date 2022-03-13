@@ -20,6 +20,7 @@ Syntax
 * no2-Ks = half-velocity constant (Ks) of nitrite
 * no3-ID = ID of the substrate (nitrate) for anaerobic growth
 * no3-Ks = half-velocity constant (Ks) of nitrate
+* zero or more keyword/value pairs may be appended
 * keyword = *growth* or *yield* or *decay* or *maintain* 
 
 	.. parsed-literal::

@@ -1,12 +1,17 @@
 Commands
 ============
 
-This section lists all NUFEB commands that can be used
-for (individual-based) modelling of microbial systems. 
-Note that commands with asterisk `*` are inherited from LAMMPS with/without modifications.
+This section lists all NUFEB commands and 
+essential LAMMPS commands (with asterisk `*`) that can be used
+for (individual-based) modelling microbial systems. 
 Some commands are part of NUFEB optional packages,
 which means they cannot be used unless the packages 
 was included when building NUFEB. 
+
+Note that the section only lists the LAMMPS commands which are commonly used for NUFEB modelling.
+Many of the commands not listed here are still compatible with NUFEB package and their descriptions
+are available in `LAMMPS user manual <https://docs.lammps.org/Manual.html>`_.
+
 
 .. contents:: 
 		:local:
@@ -24,30 +29,54 @@ was included when building NUFEB.
 General settings
 -------------------------------------------
 
-+----------------------------------------------------+---------------------------------------+
-| :doc:`run_style nufeb <run_style_nufeb>`: time integrator for NUFEB simulation             |
-+----------------------------------------------------+---------------------------------------+
++--------------------------------------------+---------------------------------------------------------+
+| `comm_modify* <https://docs.lammps.org/comm_modify.html>`_: inter-processor communication settings   |
++--------------------------------------------+---------------------------------------------------------+
+| `processors* <https://docs.lammps.org/processors.html>`_: parallel decomposition scheme              |
++--------------------------------------------+---------------------------------------------------------+
+| `units* <https://docs.lammps.org/units.html>`_:  sets the style of units (NUFEB supports SI only)    |
++--------------------------------------------+---------------------------------------------------------+
 
-Microbes and fields
+Microbes, nutrients and simulation box 
 -------------------------------------------
 
-+--------------------------------------------+-----------------------------------------------+
-| :doc:`atom_style coccus <atom_vec_coccus>`: spherical microbe                              |
-+--------------------------------------------+-----------------------------------------------+
-| :doc:`atom_style bacillus <atom_vec_bacillus>`: rod-shaped microbe                         |
-+--------------------------------------------+-----------------------------------------------+
-| :doc:`fix nufeb/property/cycletime <fix_property_cycletime>`: cell cycle time property     | 
-+--------------------------------------------+-----------------------------------------------+
-| :doc:`fix nufeb/property/generation <fix_property_generation>`: cell generation property   |
-+--------------------------------------------+-----------------------------------------------+
-| :doc:`fix nufeb/property/plasmid <fix_property_plasmid>`: plasmid property                 |
-+--------------------------------------------+-----------------------------------------------+
-| :doc:`grid_modify <grid_modify>`: modify global attributes defined in grid_style           |
-+----------------------------------------------------+---------------------------------------+
-| :doc:`grid_style chemostat <grid_style_chemostat>`: grid style for chemostat coupling      |
-+----------------------------------------------------+---------------------------------------+
-| :doc:`grid_style simple <grid_style_simple>`: simple grid style                            |
-+----------------------------------------------------+---------------------------------------+
++--------------------------------------------+---------------------------------------------------------+
+| :doc:`atom_style coccus <atom_vec_coccus>`: spherical microbe                                        |
++--------------------------------------------+---------------------------------------------------------+
+| :doc:`atom_style bacillus <atom_vec_bacillus>`: rod-shaped microbe                                   |
++--------------------------------------------+---------------------------------------------------------+
+| :doc:`fix nufeb/property/cycletime <fix_property_cycletime>`: microbe attribute: cell cycle time     | 
++--------------------------------------------+---------------------------------------------------------+
+| :doc:`fix nufeb/property/generation <fix_property_generation>`: microbe attribute: cell generation   |
++--------------------------------------------+---------------------------------------------------------+
+| :doc:`fix nufeb/property/plasmid <fix_property_plasmid>`: microbe attribute: plasmid                 |
++--------------------------------------------+---------------------------------------------------------+
+| :doc:`grid_modify <grid_modify>`: modify global attributes defined in grid_style                     |
++----------------------------------------------------+-------------------------------------------------+
+| :doc:`grid_style chemostat <grid_style_chemostat>`: grid style for chemostat coupling                |
++----------------------------------------------------+-------------------------------------------------+
+| :doc:`grid_style simple <grid_style_simple>`: simple grid style                                      |
++--------------------------------------------+---------------------------------------------------------+
+| `atom_modify* <https://docs.lammps.org/atom_modify.html>`_: modify (system) attributes of microbes   |
++----------------------------------------------------+-------------------------------------------------+
+| `boundary* <https://docs.lammps.org/boundary.html>`_: boundaries for simulation box                  | 
++----------------------------------------------------+-------------------------------------------------+
+| `create_atoms* <https://docs.lammps.org/create_atoms.html>`_: creates atoms on a lattice             | 
++----------------------------------------------------+-------------------------------------------------+
+| `create_box* <https://docs.lammps.org/create_box.html>`_: creates a simulation box based on a region | 
++----------------------------------------------------+-------------------------------------------------+
+| `group* <https://docs.lammps.org/group.html>`_: group a collection of microbes                       | 
++--------------------------------------------+---------------------------------------------------------+
+| `lattice* <https://docs.lammps.org/lattice.html>`_: define a lattice stucture over simulation box    | 
++--------------------------------------------+---------------------------------------------------------+
+| `read_data* <https://docs.lammps.org/read_data.html>`_: read external data file                      |
++----------------------------------------------------+-------------------------------------------------+
+| `region* <https://docs.lammps.org/region.html>`_: defines a geometric region of space                |
++----------------------------------------------------+-------------------------------------------------+
+| `neighbor* <https://docs.lammps.org/neighbor.html>`_: parameters for neighbor lists                  |
++----------------------------------------------------+-------------------------------------------------+
+| `neigh_modify* <https://docs.lammps.org/neigh_modify.html>`_: modify parameters for neighbor lists   |
++----------------------------------------------------+-------------------------------------------------+
 
 Biological processes
 -------------------------------------------
@@ -93,9 +122,11 @@ Physical processes
 +--------------------------------------------+------------------------------------------------------+
 | :doc:`pair_style gran/hooke <pair_gran_hooke>`: pairwise interaction for coccus                   |
 +--------------------------------------------+------------------------------------------------------+
-| :doc:`fix nufeb/adhesion <fix_adhesion>`: microbe-microbe adhesion force                          |
+| :doc:`fix nufeb/adhesion <fix_adhesion>`:  adhesion force                                         |
 +--------------------------------------------+------------------------------------------------------+
-| :doc:`fix nufeb/adhesion/eps <fix_eps_adhesion>`: EPS-microbe adhesion force                      |
+| :doc:`fix nufeb/adhesion/eps <fix_adhesion_eps>`: EPS adhesion force                              |
++--------------------------------------------+------------------------------------------------------+
+| :doc:`fix nufeb/adhesion/bacillus <fix_adhesion_bacillus>`: adhesion force for bacillus           |
 +--------------------------------------------+------------------------------------------------------+
 | :doc:`fix nve/bacillus/limit <fix_nve_bacillus_limit>`: constant NVE update for bacillus          |
 +--------------------------------------------+------------------------------------------------------+
@@ -105,6 +136,14 @@ Physical processes
 +--------------------------------------------+------------------------------------------------------+
 | :doc:`fix wall/gran <fix_wall_gran>`: wall-microbe frictional force                               |
 +--------------------------------------------+------------------------------------------------------+
+
+Post-physical processes
+-------------------------------------------
+
++--------------------------------------------+------------------------------------------------------+
+| :doc:`fix nufeb/diffusion_coeff <fix_diffusion_coeff>`: dynamic diffusion coefficient             |
++--------------------------------------------+------------------------------------------------------+
+
 
 Chemical processes
 -------------------------------------------
@@ -119,7 +158,16 @@ Chemical processes
 | :doc:`fix nufeb/reactor/solute_balance <fix_reactor_solute_balance>`: mass balance in solute phase |
 +--------------------------------------------+-------------------------------------------------------+
 
-Compute  
+
+Post-chemical processes
+-------------------------------------------
+
++--------------------------------------------+-------------------------------------------------------+
+| :doc:`fix nufeb/boundary_layer <fix_boundary_layer>`: dynamic diffusion boundary layer             |
++--------------------------------------------+-------------------------------------------------------+
+
+
+Computations
 -------------------------------------------
 
 +--------------------------------------------+-----------------------------------------------------------------+
@@ -139,7 +187,7 @@ Compute
 +--------------------------------------------+-----------------------------------------------------------------+
 
 
-Post-processing  
+Outputs
 -------------------------------------------
 
 +--------------------------------------------+-------------------------------------------------------+
@@ -156,6 +204,13 @@ Post-processing
 | :doc:`dump hdf5 <dump_hdf5>`: dump data in hdf5 format                                             |
 +--------------------------------------------+-------------------------------------------------------+
 
+
+Run
+-------------------------------------------
+
++----------------------------------------------------+---------------------------------------+
+| :doc:`run_style nufeb <run_style_nufeb>`: time integrator for NUFEB simulation             |
++----------------------------------------------------+---------------------------------------+
 
 
 Other LAMMPS commands

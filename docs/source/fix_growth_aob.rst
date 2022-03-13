@@ -17,6 +17,7 @@ Syntax
 * o2-ID = ID of the substrate (oxygen)
 * o2-Ks = half-velocity constant (Ks) of oxygen
 * no2-ID = ID of the substrate (nitrite)
+* zero or more keyword/value pairs may be appended
 * keyword = *growth* or *yield* or *decay* or *maintain* 
 
 	.. parsed-literal::

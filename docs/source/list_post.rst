@@ -1,4 +1,4 @@
-Post-processing
+Outputs
 ######################
 
 .. toctree::

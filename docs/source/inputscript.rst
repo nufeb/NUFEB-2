@@ -16,16 +16,16 @@ script in NUFEB-dev/examples/biofilm-het directory as an example for the explana
 
 A NUFEB input script typically consists of the following parts:
 
-1. :ref:`System settings <system>`
-2. :ref:`Initialization <init>`
+1. :ref:`General settings <settings>`
+2. :ref:`Microbes, nutrients and simulation box <init>`
 3. :ref:`IbM processes <ibm>`
 4. :ref:`Computations and outputs <output>`
 5. :ref:`Run a simulation <run>`
 
 
-.. _system:
+.. _settings:
 
-System settings
+General settings
 ------------------------------
 
 Set parameters that need to be defined before atoms and substrates are created or read-in from a file.
@@ -37,24 +37,22 @@ The relevant commands are
 `units* <https://docs.lammps.org/units.html>`_,
 `newton* <https://docs.lammps.org/newton.html>`_,
 `processors* <https://docs.lammps.org/processors.html>`_, 
-`boundary* <https://docs.lammps.org/boundary.html>`_,
 `atom_modify* <https://docs.lammps.org/atom_modify.html>`_,
 `comm_modify* <https://docs.lammps.org/comm_modify.html>`_.
-(Commands with asterisk `*` are inherited from LAMMPS with/without modifications.)
+(Commands with asterisk `*` are from LAMMPS without modifications.)
 
 Example:
 
 .. code-block:: 
 
-	#-------------------------------------System settings--------------------------------------#
+	#-------------------------------------General settings--------------------------------------#
 	
 	units si                                    # using si units
+	
 	atom_style      coccus                      # using nufeb coccus atom style
 	atom_modify     map array sort 1000 1e-6    # map array: find atoms using indices
                                                     # sort 1000 1e-6: sort every 
                                                     # 1000 steps with 1e-6 binsize
-	boundary        pp pp ff                    # periodic domain boundaries in x and y
-	                                            # fixed boundary in z
 	
 	newton          off                         # forces between local and ghost atoms are 
 	                                            # computed in each processor without communication
@@ -70,14 +68,15 @@ Example:
 
 .. _init:
 
-Initialisation
-------------------------------
+Microbes, nutrients and simulation box 
+---------------------------------------
 
-Define substrates, computation domain, and initial atoms (microbes). 
+Define initial microbes, nutrients (substrates) that can be metabolised by the microbes, 
+and simulation box that microbes reside 
 
 Substrates are defined via grid_style command 
 (:doc:`grid_style chemostat <grid_style_chemostat>` or :doc:`grid_style simple <grid_style_simple>`).
-There are 3 ways to define computational domain and initial atoms in NUFEB. 
+There are 3 ways to define simulation box and initial microbes in NUFEB. 
 Read them in from
 (1) a data file via the `read_data* <https://docs.lammps.org/read_data.html>`_ command,
 (2) a restart file via the 
@@ -94,9 +93,12 @@ Example:
 
 .. code-block:: 
 
-	#-------------------------------------Initialisation--------------------------------------#
+	#---------------------Microbes, nutrients and simulation box----------------------------#
 	
-	read_data       atom.in	                   # read atom.in file to initialise domain size 
+	boundary        pp pp ff                   # periodic domain boundaries in x and y
+	                                           # fixed boundary in z
+	                                            
+	read_data       atom.in	                   # read atom.in file which defines box size
 	                                           # and initial atoms	                
 	
 	group           het   type 1               # assign type 1 atoms to het group
@@ -216,7 +218,7 @@ Example:
 
 .. _run:
 
-Run a simulation
+Run
 ------------------------------
 
 A NUFEB simulation is run using the :doc:`run_style nufeb <run_style_nufeb>` and `run* <https://docs.lammps.org/run.html>`_ commands.
