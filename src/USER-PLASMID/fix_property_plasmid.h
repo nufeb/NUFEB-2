@@ -56,7 +56,7 @@ class FixPropertyPlasmid : public FixProperty {
 
   int plm_max;               // maximum # of plasmid
   int plm_init;              // # of initial plasmid
-  double plm_dia;
+  double plm_dia;            // plasmid diameter
   double **plm_x;            // plasmid position
   double **pre_x;            // previous cell location
 

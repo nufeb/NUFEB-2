@@ -29,7 +29,7 @@ class FixDiffusionCoeff : public Fix {
   FixDiffusionCoeff(class LAMMPS *, int, char **);
   virtual ~FixDiffusionCoeff() {}
   int setmask();
-  virtual void init() {};
+  virtual void init();
   virtual void post_physics_nufeb();
   virtual void compute();
 

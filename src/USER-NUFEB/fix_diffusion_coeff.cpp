@@ -55,7 +55,12 @@ FixDiffusionCoeff::FixDiffusionCoeff(LAMMPS *lmp, int narg, char **arg) :
       error->all(FLERR, "Illegal fix nufeb/diffusion_coeff command");
     }
   }
+}
 
+/* ---------------------------------------------------------------------- */
+
+void FixDiffusionCoeff::init()
+{
   // find corresponding fix nufeb/diffusion/reaction for isub
   for (int i = 0; i < modify->nfix; i++) {
     if (strstr(modify->fix[i]->style, "nufeb/diffusion_reaction")) {
@@ -70,7 +75,6 @@ FixDiffusionCoeff::FixDiffusionCoeff(LAMMPS *lmp, int narg, char **arg) :
 
   const_coeff = fix_diffusion->diff_coeff;
 }
-
 
 /* ---------------------------------------------------------------------- */
 
