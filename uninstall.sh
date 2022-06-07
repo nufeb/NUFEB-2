@@ -9,4 +9,5 @@ currentDir=$PWD
 
 cd $currentDir/lammps/src || exit 1
 make no-all
+make no-kokkos
 make clean-all

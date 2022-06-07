@@ -30,7 +30,7 @@ using namespace MathConst;
 Grid::Grid(LAMMPS *lmp) : Pointers(lmp)
 {
   grid_style = NULL;
-  gvec = NULL;
+  gvec = nullptr;
 
   gvec_map = new GridVecCreatorMap();
 
@@ -182,14 +182,14 @@ GridVec *Grid::gvec_creator(LAMMPS *lmp)
 
 void Grid::init()
 {
-  gvec->init();
+  if (gvec) gvec->init();
 }
 
 /* ---------------------------------------------------------------------- */
 
 void Grid::setup()
 {
-  gvec->setup();
+  if (gvec) gvec->setup();
 }
 
 /* ---------------------------------------------------------------------- */

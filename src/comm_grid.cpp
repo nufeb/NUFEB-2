@@ -80,6 +80,8 @@ CommGrid::~CommGrid()
 
 void CommGrid::init()
 {
+  if (!grid->gvec) return;
+
   size_forward = grid->gvec->size_forward;
   size_exchange = grid->gvec->size_exchange;
   max_size = MAX(size_forward, size_exchange);
@@ -96,6 +98,8 @@ void CommGrid::init()
 
 void CommGrid::setup()
 {
+  if (!grid->gvec) return;
+
   nrecv = 0;
   nsend = 0;
   nrecvproc = 0;
