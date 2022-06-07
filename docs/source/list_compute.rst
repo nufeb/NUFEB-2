@@ -1,4 +1,4 @@
-Compute
+Computes
 ############
 
 .. toctree::

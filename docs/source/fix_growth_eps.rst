@@ -1,4 +1,4 @@
 .. index:: fix nufeb/monod/eps
 
-fix nufeb/monod/eps command
+fix nufeb/growth/eps command
 ============================

@@ -1,4 +1,4 @@
-General settings
+Run
 ################
 
 .. toctree::

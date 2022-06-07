@@ -4,13 +4,15 @@ Commands
 This section lists all NUFEB commands and 
 essential LAMMPS commands (with asterisk `*`) that can be used
 for (individual-based) modelling microbial systems. 
-Some commands are part of NUFEB optional packages,
+Some commands are part of NUFEB or LAMMPS optional packages,
 which means they cannot be used unless the packages 
-was included when building NUFEB. 
+were included when building NUFEB. 
 
-Note that the section only lists the LAMMPS commands which are commonly used for NUFEB modelling.
-Many of the commands not listed here are still compatible with NUFEB package and their descriptions
-are available in `LAMMPS user manual <https://docs.lammps.org/Manual.html>`_.
+ .. note::
+ 
+	The section only lists the LAMMPS commands which are commonly used for microbial modelling.
+	Many of the commands not listed here are also compatible with NUFEB package and their descriptions
+	are available in `LAMMPS user manual <https://docs.lammps.org/Manual.html>`_.
 
 
 .. contents:: 
@@ -29,15 +31,15 @@ are available in `LAMMPS user manual <https://docs.lammps.org/Manual.html>`_.
 General settings
 -------------------------------------------
 
-+--------------------------------------------+---------------------------------------------------------+
-| `comm_modify* <https://docs.lammps.org/comm_modify.html>`_: inter-processor communication settings   |
-+--------------------------------------------+---------------------------------------------------------+
-| `processors* <https://docs.lammps.org/processors.html>`_: parallel decomposition scheme              |
-+--------------------------------------------+---------------------------------------------------------+
-| `units* <https://docs.lammps.org/units.html>`_:  sets the style of units (NUFEB supports SI only)    |
-+--------------------------------------------+---------------------------------------------------------+
++--------------------------------------------+-------------------------------------------------------------+
+| `comm_modify* <https://docs.lammps.org/comm_modify.html>`_: settings for inter-processor communication   |
++--------------------------------------------+-------------------------------------------------------------+
+| `processors* <https://docs.lammps.org/processors.html>`_: parallel decomposition scheme                  |
++--------------------------------------------+-------------------------------------------------------------+
+| `units* <https://docs.lammps.org/units.html>`_:  style of units (NUFEB supports SI only)                 |
++--------------------------------------------+-------------------------------------------------------------+
 
-Microbes, nutrients and simulation box 
+Microbes, substrates and simulation box 
 -------------------------------------------
 
 +--------------------------------------------+---------------------------------------------------------+
@@ -51,21 +53,21 @@ Microbes, nutrients and simulation box
 +--------------------------------------------+---------------------------------------------------------+
 | :doc:`fix nufeb/property/plasmid <fix_property_plasmid>`: microbe attribute: plasmid                 |
 +--------------------------------------------+---------------------------------------------------------+
-| :doc:`grid_modify <grid_modify>`: modify global attributes defined in grid_style                     |
+| :doc:`grid_modify <grid_modify>`: modify grid attributes                                             |
 +----------------------------------------------------+-------------------------------------------------+
 | :doc:`grid_style chemostat <grid_style_chemostat>`: grid style for chemostat coupling                |
 +----------------------------------------------------+-------------------------------------------------+
 | :doc:`grid_style simple <grid_style_simple>`: simple grid style                                      |
 +--------------------------------------------+---------------------------------------------------------+
-| `atom_modify* <https://docs.lammps.org/atom_modify.html>`_: modify (system) attributes of microbes   |
+| `atom_modify* <https://docs.lammps.org/atom_modify.html>`_: modify (system) attributes of atoms      |
 +----------------------------------------------------+-------------------------------------------------+
 | `boundary* <https://docs.lammps.org/boundary.html>`_: boundaries for simulation box                  | 
 +----------------------------------------------------+-------------------------------------------------+
-| `create_atoms* <https://docs.lammps.org/create_atoms.html>`_: creates atoms on a lattice             | 
+| `create_atoms* <https://docs.lammps.org/create_atoms.html>`_: create atoms on a lattice              | 
 +----------------------------------------------------+-------------------------------------------------+
-| `create_box* <https://docs.lammps.org/create_box.html>`_: creates a simulation box based on a region | 
+| `create_box* <https://docs.lammps.org/create_box.html>`_: create a simulation box based on region    | 
 +----------------------------------------------------+-------------------------------------------------+
-| `group* <https://docs.lammps.org/group.html>`_: group a collection of microbes                       | 
+| `group* <https://docs.lammps.org/group.html>`_: group a collection of atoms                          | 
 +--------------------------------------------+---------------------------------------------------------+
 | `lattice* <https://docs.lammps.org/lattice.html>`_: define a lattice stucture over simulation box    | 
 +--------------------------------------------+---------------------------------------------------------+
@@ -106,11 +108,17 @@ Biological processes
 +--------------------------------------------+-------------------------------------------------------+
 | :doc:`fix nufeb/division/bacillus/minicell <fix_divide_minicell>`: abnormal division for bacillus  |
 +--------------------------------------------+-------------------------------------------------------+
-| :doc:`fix nufeb/eps_excretion <fix_eps_excretion>`: EPS excretion from heterotroph                 |
+| :doc:`fix nufeb/eps_extract <fix_eps_extract>`: EPS excretion from heterotroph                     |
 +--------------------------------------------+-------------------------------------------------------+
 | :doc:`fix nufeb/death/diameter <fix_death_diameter>`: microbe death (critical diameter)            |
 +--------------------------------------------+-------------------------------------------------------+
-| :doc:`fix nufeb/death/plasmid <fix_death_plasmid>`: microbe death (critical # of plasmids)         |
+| :doc:`fix nufeb/plasmid/conjugate <fix_plasmid_conjugate>`: conjugation for gram-positive bacteria |
++--------------------------------------------+-------------------------------------------------------+
+| :doc:`fix nufeb/plasmid/kill <fix_plasmid_kill>`: microbe death (critical # of plasmids)           |
++--------------------------------------------+-------------------------------------------------------+
+| :doc:`fix nufeb/plasmid/partition <fix_plasmid_partition>`: type II partitioning system            |
++--------------------------------------------+-------------------------------------------------------+
+| :doc:`fix nufeb/plasmid/replicate <fix_plasmid_replicate>`: mass-based plasmid replication         |
 +--------------------------------------------+-------------------------------------------------------+
 
 
@@ -167,7 +175,7 @@ Post-chemical processes
 +--------------------------------------------+-------------------------------------------------------+
 
 
-Computations
+Computes
 -------------------------------------------
 
 +--------------------------------------------+-----------------------------------------------------------------+
@@ -212,8 +220,3 @@ Run
 | :doc:`run_style nufeb <run_style_nufeb>`: time integrator for NUFEB simulation             |
 +----------------------------------------------------+---------------------------------------+
 
-
-Other LAMMPS commands
--------------------------------------------
-This section lists all LAMMPS commands that are tested to be compatible 
-with NUFEB, but they are not directly related to microbial modelling. 

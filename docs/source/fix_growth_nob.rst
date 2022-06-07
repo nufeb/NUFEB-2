@@ -13,9 +13,9 @@ Syntax
 * ID = user-assigned name for the fix
 * group-ID = ID of the group atoms to apply the fix to
 * o2-ID = ID of the substrate (oxygen)
-* o2-Ks = half-velocity constant (Ks) of oxygen
+* o2-Ks = half-velocity constant (Ks) for oxygen
 * no2-ID = ID of the substrate (nitrite)
-* no2-Ks = half-velocity constant (Ks) of nitrite
+* no2-Ks = half-velocity constant (Ks) for nitrite
 * no3-ID = ID of the substrate (nitrate)
 * zero or more keyword/value pairs may be appended
 * keyword = *growth* or *yield* or *decay* or *maintain* 
@@ -71,7 +71,7 @@ where:
 * :math:`b_{decay}` is the decay rate of the atoms (*decay*)
 * :math:`\mu_{max}` is the maximum growth rate of the atoms (*growth*)
 * :math:`S_{no2}, S_{o2}` are the local concentrations of nitrite and oxygen at the grid cell in which atom resides, respectively
-* :math:`Ks_{no2}, Ks_{o2}` are the half-velocity constants of nitrite (*no2-Ks*) and oxygen (*o2-Ks*), respectively
+* :math:`Ks_{no2}, Ks_{o2}` are the half-velocity constants for nitrite (*no2-Ks*) and oxygen (*o2-Ks*), respectively
 * :math:`b_{maint}` is the maintenance coefficient of the atoms (*maintain*)
   
 The new mass is then used to update diameter of the atom. 

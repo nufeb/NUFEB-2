@@ -13,7 +13,7 @@ Syntax
 * ID = user-assigned name for the fix
 * group-ID = ID of the group atoms to apply the fix to
 * sub-ID = ID of the substrate for atom growth
-* sub-Ks = half-velocity constant (Ks) of the substrate
+* sub-Ks = half-velocity constant (Ks) for the substrate
 * zero or more keyword/value pairs may be appended
 * keyword = *growth* or *yield* or *decay* 
 
@@ -55,7 +55,7 @@ where:
 
 * :math:`\mu_{max}` is the maximum growth rate of the atoms (*growth*)
 * :math:`S_{sub}` is the local substrate concentration at the grid cell in which atom resides
-* :math:`Ks_{sub}` is the half-velocity constant of the substrate (*sub-Ks*)
+* :math:`Ks_{sub}` is the half-velocity constant for the substrate (*sub-Ks*)
 * :math:`b_{decay}` is the decay rate of the atoms (*decay*)
 
 The new mass is then used to update other atom attributes. For a coccus-style atom,

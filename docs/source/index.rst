@@ -73,7 +73,6 @@ send an email to the developers.
    list_compute
    list_post
    list_run
-   list_lammps
    
    
 ******************

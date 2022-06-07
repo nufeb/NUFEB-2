@@ -1,5 +1,5 @@
-Microbes, nutrients and simulation box
-######################################
+Microbes, substrates and simulation box
+#######################################
 
 .. toctree::
    :maxdepth: 1

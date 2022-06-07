@@ -12,14 +12,14 @@ Syntax
 
 * ID = user-assigned name for the fix
 * group-ID = ID of the group atoms to apply the fix to
-* sub-ID = ID of the (organic) substrate for atom growth
-* sub-Ks = half-velocity constant (Ks) of the substrate
+* sub-ID = ID of organic substrate for atom growth
+* sub-Ks = half-velocity constant (Ks) for organic substrate
 * o2-ID = ID of the substrate (oxygen) for aerobic growth
-* o2-Ks = half-velocity constant (Ks) of oxygen
+* o2-Ks = half-velocity constant (Ks) for oxygen
 * no2-ID = ID of the substrate (nitrite) for anaerobic growth
-* no2-Ks = half-velocity constant (Ks) of nitrite
+* no2-Ks = half-velocity constant (Ks) for nitrite
 * no3-ID = ID of the substrate (nitrate) for anaerobic growth
-* no3-Ks = half-velocity constant (Ks) of nitrate
+* no3-Ks = half-velocity constant (Ks) for nitrate
 * zero or more keyword/value pairs may be appended
 * keyword = *growth* or *yield* or *decay* or *maintain* 
 
@@ -99,7 +99,7 @@ where:
 * :math:`Y_{EPS}` is the yield coefficient for EPS secretion of the atoms (*epsyield*)
 * :math:`\mu_{max}` is the maximum growth rate of the atoms (*growth*)
 * :math:`S_{sub}, S_{o2}, S_{no2}, S_{no3}` are the local concentrations of organic substrate, oxygen, nitrite and nitrate at the grid cell in which atom resides, respectively
-* :math:`Ks_{sub}, Ks_{o2}, Ks_{no2}, Ks_{no3}` are the half-velocity constants of the substrate (*sub-Ks*), oxygen (*o2-Ks*), nitrite (*no2-Ks*) and nitrate (*no3-Ks*), respectively
+* :math:`Ks_{sub}, Ks_{o2}, Ks_{no2}, Ks_{no3}` are the half-velocity constants for organic substrate (*sub-Ks*), oxygen (*o2-Ks*), nitrite (*no2-Ks*) and nitrate (*no3-Ks*), respectively
 * :math:`\eta` is the reduction factor of the atoms in anoxic condition (*anoxic*)
 * :math:`b_{maint}` is the maintenance coefficient of the atoms (*maintain*)
 
