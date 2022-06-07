@@ -1,79 +1,74 @@
 # NUFEB simulation with HETs and AOBs
 
-units si                                  # using si units
+units si                                    # using si units
 atom_style      coccus                      # using nufeb atom style
-atom_modify     map array sort 1000 1e-6   # map array: find atoms using indices
-		                           # sort 1000 5.0e-6: sort every 1000
-					   #   steps with 5.0e-6 binsize
+atom_modify     map array sort 1000 3e-6    # map array - find atoms using indices
+		                            # sort 1000 5.0e-6: sort every 1000
+					     #   steps with 5.0e-6 binsize
 boundary        pp pp ff                   # periodic boundaries in x and y
                                            #   fixed boundary in z
 newton          off                        # forces between local and ghost
                                            #   atoms are computed in each
-					   #   processor without communication
+					     #   processor without communication
 processors      * * 1                      # processor grid
 
 comm_modify     vel yes                    # communicate velocities for ghost
                                            # atoms
-comm_modify     cutoff 2e-6                # guarantee that enough atoms are
+comm_modify     cutoff 6e-6                # guarantee that enough atoms are
                                            # communicated to correctly compute
-
 read_data       atom.in					  
 
 ##############Define initial particle distribution##############
 
-lattice sc 5e-6 origin 0 0 0
-region reg block 0 30 0 20 0 1
-region reg3 block 0 30 0 20 28 30
+lattice sc 1e-5 origin 0 0 0
+region reg block 0 60 0 60 0 1
 
-create_atoms 1 random 150 123 reg
-create_atoms 2 random 150 643 reg
-create_atoms 3 random 250 452 reg 
-create_atoms 4 random 250 786 reg
+create_atoms 1 random 500 9876 reg
+create_atoms 2 random 500 1231 reg
+create_atoms 3 random 500 7564 reg 
+create_atoms 4 random 500 1237 reg
 
-set type 1 density 32
-set type 1 diameter 4.5e-6
-set type 1 mass 1.52e-15
+# Diameter must come before density
+# Outer diameter same as diameter
+set type 1 diameter 4e-6              
+set type 1 density 32                   
 
+set type 2 diameter 4e-6
 set type 2 density 32
-set type 2 diameter 4.5e-6
-set type 2 mass 1.52e-15
 
+set type 3 diameter 4e-6
 set type 3 density 32
-set type 3 diameter 4.5e-6
-set type 3 mass 1.52e-15
 
+set type 4 diameter 4e-6
 set type 4 density 32
-set type 4 diameter 4.5e-6
-set type 4 mass 1.52e-15
 
+set type 5 diameter 4e-6
 set type 5 density 32
-set type 5 diameter 4.5e-6
-set type 5 mass 1.52e-15
 
 group           het   type 1            # defining het group
 group           aob   type 2            # defining aob group
 group           nob   type 3            # defining aob group
 group           ana   type 4            # defining aob group
-group           dead  empty
+group           dead  type 5
 
 neighbor        7e-7 bin                # setting neighbour skin distance and
-                                        #   style
+                                        # style
 neigh_modify    check yes               # rebuild neighbour list if any atom
-                                        #   had moved more than half the skin
-					  #   distance
+                                        # had moved more than half the skin
+					  # distance
 
 # select grid style
-grid_style      nufeb/chemostat 5 sub nh4 o2 no2 no3 1e-5
+grid_style      nufeb/chemostat 5 sub nh4 o2 no2 no3 1.25e-5
 
 # set substrates initial concentration
-grid_modify     set sub  pp pp nd  1e-3 1e-3
-grid_modify     set nh4  pp pp nd  1e-2 1e-2 
-grid_modify     set o2   pp pp nd  5e-4 5e-4
-grid_modify     set no2  pp pp nd  1e-4 1e-4
+grid_modify     set sub  pp pp nd  1.2e-3 1.2e-3
+grid_modify     set nh4  pp pp nd  6e-3 6e-3 
+grid_modify     set o2   pp pp nd  0.5e-3 0.5e-3
+grid_modify     set no2  pp pp nd  0 0 
 grid_modify     set no3  pp pp nd  0 0
 
 # define pair style
-pair_style  gran/hooke/history 1e-3 NULL 1e-4 NULL 0.0 1
+pair_style  gran/hooke/history 1e-2 NULL 1e-3 NULL 0.0 1
 pair_coeff  * *
 
 # NVE integration with maximum distance limit
@@ -85,8 +80,8 @@ fix growth_aob aob nufeb/growth/aob nh4 2.4e-3 o2 0.6e-3 no2 growth 2.3727e-5 yi
 fix growth_nob nob nufeb/growth/nob o2 2.2e-3 no2 5.5e-3 no3 growth 1.6782e-5 yield 0.041 maintain 0.694e-6 decay 4.63e-7
 fix growth_ana ana nufeb/growth/anammox nh4 7e-5 o2 1e-5 no2 5e-5 no3 growth 9.26e-7 yield 0.159 maintain 3.5e-8 decay 3e-8
 
-fix div all nufeb/division/coccus 5e-6 30 123421
-fix death all nufeb/death/diameter dead 2e-6
+fix div all nufeb/division/coccus 5e-6 30 987
+fix death all nufeb/death/diameter dead 2e-6 type 5
 
 
 # Chemistry module fixes
@@ -96,12 +91,17 @@ fix diff_o2  all nufeb/diffusion_reaction o2 2.3e-9
 fix diff_no2 all nufeb/diffusion_reaction no2 1.85e-9
 fix diff_no3 all nufeb/diffusion_reaction no3 1.85e-9
 
-fix blayer_sub all nufeb/boundary_layer sub 5e-5
-fix blayer_o2  all nufeb/boundary_layer o2 5e-5
-fix blayer_nh4 all nufeb/boundary_layer nh4 5e-5
-fix blayer_no2 all nufeb/boundary_layer no2 5e-5
-fix blayer_no3 all nufeb/boundary_layer no3 5e-5
+fix blayer_sub all nufeb/boundary_layer sub 0.9e-4
+fix blayer_o2  all nufeb/boundary_layer o2 0.9e-4
+fix blayer_nh4 all nufeb/boundary_layer nh4 0.9e-4
+fix blayer_no2 all nufeb/boundary_layer no2 0.9e-4
+fix blayer_no3 all nufeb/boundary_layer no3 0.9e-4
 
+fix coeff_sub all nufeb/diffusion_coeff sub ratio 0.75
+fix coeff_o2  all nufeb/diffusion_coeff o2 ratio 0.75
+fix coeff_nh4 all nufeb/diffusion_coeff nh4 ratio 0.75
+fix coeff_no2 all nufeb/diffusion_coeff no2 ratio 0.75
+fix coeff_no3 all nufeb/diffusion_coeff no3 ratio 0.75
 
 # Reactor module fixes
 fix balance_sub all nufeb/reactor/solute_balance sub q 2.31e-7 reactor_vol 1.25e-3 reactor_af 0.1 domain_af xy
@@ -110,15 +110,8 @@ fix balance_no2 all nufeb/reactor/solute_balance no2 q 2.31e-7 reactor_vol 1.25e
 fix balance_no3 all nufeb/reactor/solute_balance no3 q 2.31e-7 reactor_vol 1.25e-3 reactor_af 0.1 domain_af xy
 
 # Physics module fixes
-fix wall all wall/gran hooke/history 1e-3 NULL 1e-4 NULL 0 0 zplane 0.0 6e-04
-#fix_modify wall virial yes
-#fix eps_adh all nufeb/adhesion/eps eps 1e6
-#fix_modify eps_adh virial yes
-
-#fix f_adh all nufeb/adhesion 0 1e-6
-#fix_modify f_adh ah * * 1e-17
-
-fix vis all viscous 1e-7
+fix wall all wall/gran hooke/history 0.5 NULL 0.5 NULL 0 0 zplane 0.0 3e-04
+fix vis all viscous 1e-6
 
 # pressure computation
 compute vol all nufeb/volume
@@ -149,11 +142,11 @@ dump du2 all grid/vtk 10 vtk/dump_%_*.vti con rea den gro
 
 # thermo output
 #thermo_style custom step cpu atoms v_press v_mass
-thermo_style custom step cpu atoms v_press v_mass v_nhet v_naob v_nnob v_nana v_ndead 
+thermo_style custom step cpu atoms v_press v_mass v_nhet v_naob v_nnob v_nana v_ndead f_balance_sub f_balance_nh4 f_balance_no2 f_balance_no3
 thermo 1 
 thermo_modify lost ignore
 
 # issue run command
-run_style nufeb diffdt 1e-4 difftol 1e-6 pairdt 1e-2 pairtol 1 pairmax 1000 diffmax 3000
+run_style nufeb diffdt 1e-4 difftol 1e-6 pairdt 1e-2 pairtol 1 pairmax 200 diffmax 2000
 timestep 10800
-run 800
+run 2500

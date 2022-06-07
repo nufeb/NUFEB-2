@@ -84,8 +84,8 @@ variable press equal "(c_ke + c_press) / (3.0 * c_vol)"
 variable mass equal "mass(all)"
 
 # file output
-dump du1 all vtk 10 dump*.vtu id type diameter f_p1[1] f_p1[2] f_p2
-dump du2 all grid/vtk 10 dump_%_*.vti con rea den gro
+#dump du1 all vtk 10 dump*.vtu id type diameter f_p1[1] f_p1[2] f_p2
+#dump du2 all grid/vtk 10 dump_%_*.vti con rea den gro
 #dump du3 all nufeb/hdf5 10 dump.h5 id type x y z vx vy vz fx fy fz radius conc reac 
 
 # thermo output
