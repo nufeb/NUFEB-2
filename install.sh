@@ -9,8 +9,8 @@ rootDir=$PWD
 
 #### Copy package and lib files to LAMMPS directory #####
 echo "Copying packages to LAMMPS.."
-cp -rf $rootDir/src/* $rootDir/lammps/src/
-cp -rf $rootDir/lib/* $rootDir/lammps/lib/
+cp -rpf $rootDir/src/* $rootDir/lammps/src/
+cp -rpf $rootDir/lib/* $rootDir/lammps/lib/
 
 echo "Configuring Makefile.lammps.."
 
