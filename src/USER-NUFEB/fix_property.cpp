@@ -128,7 +128,7 @@ int FixProperty::pack_exchange(int i, double *buf)
   } else {
     buf[0] = vprop[i];
   }
-  return size_peratom_cols;
+  return size_peratom_cols + 1;
 }
 
 /* ----------------------------------------------------------------------
@@ -143,7 +143,7 @@ int FixProperty::unpack_exchange(int nlocal, double *buf)
   } else {
     vprop[nlocal] = buf[0];
   }
-  return size_peratom_cols;
+  return size_peratom_cols + 1;
 }
 
 /* ----------------------------------------------------------------------

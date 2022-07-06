@@ -158,11 +158,10 @@ void FixDivideCoccus::compute()
         atom->outer_mass[j] = jouter_mass;
         atom->outer_radius[j] = jouter_radius;
 
+        modify->create_attribute(j);
+
         for (int m = 0; m < modify->nfix; m++)
           modify->fix[m]->update_arrays(i, j);
-
-        for (int m = 0; m < modify->ncompute; m++)
-          modify->compute[m]->set_arrays(j);
 
         delete[] coord;
       }
