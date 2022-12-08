@@ -584,7 +584,7 @@ void NufebRun::run(int n)
     } while(fabs(press) > pairtol && ((pairmax > 0) ? npair < pairmax : true));
     if (profile)
       fprintf(profile, "%d %e ", npair, get_time()-t);
-    if (comm->me == 0) fprintf(screen, "pair interaction: %d steps (pressure %e N/m2)\n", npair, press);
+    //if (comm->me == 0) fprintf(screen, "pair interaction: %d steps (pressure %e N/m2)\n", npair, press);
 
     // update densities
 
@@ -601,7 +601,7 @@ void NufebRun::run(int n)
     ndiff = diffusion();
     if (profile)
       fprintf(profile, "%d %e\n", ndiff, get_time()-t);
-    if (comm->me == 0) fprintf(screen, "diffusion: %d steps\n", ndiff);
+    //if (comm->me == 0) fprintf(screen, "diffusion: %d steps\n", ndiff);
     
     // all output
 
