@@ -56,7 +56,7 @@ Modify::Modify(LAMMPS *lmp) : Pointers(lmp)
 
   // NUFEB specific
   n_biology_nufeb = n_post_physics_nufeb = 0;
-  n_chemistry_nufeb = n_post_chemistry_nufeb = 0;
+  n_chemistry_nufeb = 0;
   n_reactor_nufeb = 0;
 
 
@@ -76,7 +76,7 @@ Modify::Modify(LAMMPS *lmp) : Pointers(lmp)
 
   // NUFEB specific
   list_biology_nufeb = list_post_physics_nufeb = nullptr;
-  list_chemistry_nufeb = list_post_chemistry_nufeb = nullptr;
+  list_chemistry_nufeb = nullptr;
   list_reactor_nufeb = nullptr;
 
   end_of_step_every = nullptr;
@@ -167,7 +167,6 @@ Modify::~Modify()
   delete [] list_biology_nufeb;
   delete [] list_post_physics_nufeb;
   delete [] list_chemistry_nufeb;
-  delete [] list_post_chemistry_nufeb;
   delete [] list_reactor_nufeb;
 
   delete [] end_of_step_every;
@@ -262,7 +261,6 @@ void Modify::init()
   list_init(BIOLOGY_NUFEB, n_biology_nufeb, list_biology_nufeb);
   list_init(POST_PHYSICS_NUFEB, n_post_physics_nufeb, list_post_physics_nufeb);
   list_init(CHEMISTRY_NUFEB, n_chemistry_nufeb, list_chemistry_nufeb);
-  list_init(POST_CHEMISTRY_NUFEB, n_post_chemistry_nufeb, list_post_chemistry_nufeb);
   list_init(REACTOR_NUFEB, n_reactor_nufeb, list_reactor_nufeb);
 
   // create list of computes that store invocation times
@@ -602,16 +600,6 @@ void Modify::chemistry_nufeb()
 {
   for (int i = 0; i < n_chemistry_nufeb; i++)
     fix[list_chemistry_nufeb[i]]->chemistry_nufeb();
-}
-
-/* ----------------------------------------------------------------------
-   post_chemistry_nufeb call, only for relevant fixes
-------------------------------------------------------------------------- */
-
-void Modify::post_chemistry_nufeb()
-{
-  for (int i = 0; i < n_post_chemistry_nufeb; i++)
-    fix[list_post_chemistry_nufeb[i]]->post_chemistry_nufeb();
 }
 
 /* ----------------------------------------------------------------------

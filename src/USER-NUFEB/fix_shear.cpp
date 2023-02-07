@@ -94,23 +94,25 @@ void FixShear::compute()
   for (int i = 0; i < nlocal; i++) {
     if (mask[i] & groupbit) {
       double diameter = 2 * radius[i];
+      double my_3pi_vd = MY_3PI * viscosity * diameter;
+
       (x[i][2] / layer > 1) ? factor = 1 : factor = x[i][2] / layer;
       if (xflag == 1) {
-	f[i][0] += MY_3PI * viscosity * diameter * (shear_rate * factor - v[i][0]);
-	f[i][1] += MY_3PI * viscosity * diameter * (0.0 - v[i][1]);
-	f[i][2] += MY_3PI * viscosity * diameter * (0.0 - v[i][2]);
+	f[i][0] += my_3pi_vd * (shear_rate * factor - v[i][0]);
+	f[i][1] += my_3pi_vd * (0.0 - v[i][1]);
+	f[i][2] += my_3pi_vd * (0.0 - v[i][2]);
       } else if (xflag == 0){
-	f[i][0] -= MY_3PI * viscosity * diameter * (shear_rate * factor - v[i][0]);
-	f[i][1] += MY_3PI * viscosity * diameter * (0.0 - v[i][1]);
-	f[i][2] += MY_3PI * viscosity * diameter * (0.0 - v[i][2]);
+	f[i][0] -= my_3pi_vd * (shear_rate * factor - v[i][0]);
+	f[i][1] += my_3pi_vd * (0.0 - v[i][1]);
+	f[i][2] += my_3pi_vd * (0.0 - v[i][2]);
       } else if (yflag == 1){
-	f[i][0] += MY_3PI * viscosity * diameter * (0.0 - v[i][0]);
-	f[i][1] += MY_3PI * viscosity * diameter * (shear_rate * factor - v[i][1]);
-	f[i][2] += MY_3PI * viscosity * diameter * (0.0 - v[i][2]);
+	f[i][0] += my_3pi_vd * (0.0 - v[i][0]);
+	f[i][1] += my_3pi_vd * (shear_rate * factor - v[i][1]);
+	f[i][2] += my_3pi_vd * (0.0 - v[i][2]);
       } else if (yflag == 0){
-	f[i][0] += MY_3PI * viscosity * diameter * (0.0 - v[i][0]);
-	f[i][1] -= MY_3PI * viscosity * diameter * (shear_rate * factor - v[i][1]);
-	f[i][2] += MY_3PI * viscosity * diameter * (0.0 - v[i][2]);
+	f[i][0] += my_3pi_vd * (0.0 - v[i][0]);
+	f[i][1] -= my_3pi_vd * (shear_rate * factor - v[i][1]);
+	f[i][2] += my_3pi_vd * (0.0 - v[i][2]);
       }
     }
   }

@@ -32,7 +32,7 @@ class FixBoundaryLayer : public Fix {
   int setmask();
   int modify_param(int, char **);
   virtual void init();
-  virtual void post_chemistry_nufeb();
+  virtual void reactor_nufeb();
   virtual void compute();
 
  protected:

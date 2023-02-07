@@ -447,17 +447,6 @@ void NufebRun::run(int n)
       fprintf(profile, "%d %e ", ndiff, get_time()-t);
     if (info && comm->me == 0) fprintf(screen, "diffusion: %d steps\n", ndiff);
 
-    // reset to biological timestep
-    update->dt = biodt;
-    reset_dt();
-
-    // call all fixes implementing post_chemistry_nufeb()
-    if (modify->n_post_chemistry_nufeb) {
-      timer->stamp();
-      modify->post_chemistry_nufeb();
-      timer->stamp(Timer::MODIFY);
-    }
-
     // run reactor module
     t = get_time();
     module_reactor();

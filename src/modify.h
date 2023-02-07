@@ -41,7 +41,7 @@ class Modify : protected Pointers {
 
   // NUFEB specific
   int n_biology_nufeb, n_post_physics_nufeb;
-  int n_chemistry_nufeb, n_post_chemistry_nufeb;
+  int n_chemistry_nufeb;
   int n_reactor_nufeb;
 
   int restart_pbc_any;       // 1 if any fix sets restart_pbc
@@ -108,7 +108,6 @@ class Modify : protected Pointers {
   virtual void biology_nufeb();
   virtual void post_physics_nufeb();
   virtual void chemistry_nufeb();
-  virtual void post_chemistry_nufeb();
   virtual void reactor_nufeb();
 
   void add_fix(int, char **, int trysuffix=1);
@@ -158,7 +157,7 @@ class Modify : protected Pointers {
 
   // NUFEB specific
   int *list_biology_nufeb, *list_post_physics_nufeb;
-  int *list_chemistry_nufeb, *list_post_chemistry_nufeb;
+  int *list_chemistry_nufeb;
   int *list_reactor_nufeb;
 
   int *end_of_step_every;

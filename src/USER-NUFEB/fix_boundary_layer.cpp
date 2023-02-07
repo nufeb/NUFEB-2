@@ -48,7 +48,7 @@ FixBoundaryLayer::FixBoundaryLayer(LAMMPS *lmp, int narg, char **arg) :
 int FixBoundaryLayer::setmask()
 {
   int mask = 0;
-  mask |= POST_CHEMISTRY_NUFEB;
+  mask |= REACTOR_NUFEB;
   return mask;
 }
 
@@ -77,7 +77,7 @@ void FixBoundaryLayer::init()
 
 /* ---------------------------------------------------------------------- */
 
-void FixBoundaryLayer::post_chemistry_nufeb()
+void FixBoundaryLayer::reactor_nufeb()
 {
   if (update->ntimestep % nevery) return;
   compute();
