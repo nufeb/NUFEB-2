@@ -9,12 +9,12 @@ rootDir=$PWD
 
 #### Copy package and lib files to LAMMPS directory #####
 echo "Copying packages to LAMMPS.."
-cp -rpf $rootDir/src/* $rootDir/lammps/src/
-cp -rpf $rootDir/lib/* $rootDir/lammps/lib/
+cp -rpf $rootDir/src/* $rootDir/lammps_stable_29Oct2020/src/
+cp -rpf $rootDir/lib/* $rootDir/lammps_stable_29Oct2020/lib/
 
 echo "Configuring Makefile.lammps.."
 
-cd $rootDir/lammps/lib/nufeb || exit 1 
+cd $rootDir/lammps_stable_29Oct2020/lib/nufeb || exit 1 
 cp Makefile.lammps_core Makefile.lammps
 
 declare -i vtk_hdf=0
@@ -48,7 +48,7 @@ fi
 #### Build LAMMPS with NUFEB and user defined packages#####
 echo "Installing required packages.."
 
-cd $rootDir/lammps/src || exit 1
+cd $rootDir/lammps_stable_29Oct2020/src || exit 1
 make yes-user-nufeb
 make yes-granular
 
@@ -68,12 +68,12 @@ do
 done
 
 #### Write path to .bashrc#####
-if grep -q  "export PATH=\$PATH:$rootDir" ~/.bashrc; then
-   echo -n
-else
-   echo "Writing NUFEB root path to .bashrc"
-   echo "export PATH=\$PATH:$rootDir" >> ~/.bashrc
-fi
+#if grep -q  "export PATH=\$PATH:$rootDir" ~/.bashrc; then
+#   echo -n
+#else
+#   echo "Writing NUFEB root path to .bashrc"
+#   echo "export PATH=\$PATH:$rootDir" >> ~/.bashrc
+#fi
 
 
 echo "Building NUFEB.."

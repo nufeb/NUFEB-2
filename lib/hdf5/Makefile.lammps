@@ -1,5 +1,5 @@
 # Settings that the LAMMPS build will import when this package library is used
 #
-hdf5_SYSINC = -I../../../NUFEB/thirdparty/hdf5-1_10_5/hdf5/include
-hdf5_SYSLIB = -lhdf5 -L../../../NUFEB/thirdparty/hdf5-1_10_5/hdf5/lib
+hdf5_SYSINC = -I../../../thirdparty/hdf5-1.10.5/hdf5/include
+hdf5_SYSLIB = -lhdf5 -L../../../thirdparty/hdf5-1.10.5/hdf5/lib
 hdf5_SYSPATH = 
