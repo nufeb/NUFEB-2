@@ -53,10 +53,6 @@
 #include <direct.h>
 #endif
 
-// NUFEB specific
-
-#include "grid.h"
-
 using namespace LAMMPS_NS;
 
 #define DELTALINE 256
@@ -765,11 +761,6 @@ int Input::execute_command()
   else if (!strcmp(command,"unfix")) unfix();
   else if (!strcmp(command,"units")) units();
 
-  // NUFEB specific
-  
-  else if (!strcmp(command,"grid_style")) grid_style();
-  else if (!strcmp(command,"grid_modify")) grid_modify();
-  
   else flag = 0;
 
   // return if command was listed above
@@ -1914,24 +1905,4 @@ void Input::units()
   if (domain->box_exist)
     error->all(FLERR,"Units command after simulation box is defined");
   update->set_units(arg[0]);
-}
-
-/* ---------------------------------------------------------------------- */
-
-void Input::grid_style()
-{
-  if (narg < 1) error->all(FLERR,"Illegal grid_style command");
-  if (!domain->box_exist)
-    error->all(FLERR,"Grid_style command before simulation box is defined");
-  grid->create_gvec(arg[0],narg-1,&arg[1],1);
-}
-
-/* ---------------------------------------------------------------------- */
-
-void Input::grid_modify()
-{
-  if (narg < 1) error->all(FLERR,"Illegal grid_modify command");
-  if (!grid->grid_exist)
-    error->all(FLERR,"Grid_modify command before grid is defined");
-  grid->modify_params(narg, arg);
 }

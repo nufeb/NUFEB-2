@@ -49,7 +49,7 @@ class PairGranHookeHistoryKokkos : public PairGranHookeHistory {
   void init_style();
 
   KOKKOS_INLINE_FUNCTION
-   void operator()(TagPairGranHookeHistoryReduce, const int ii) const;
+  void operator()(TagPairGranHookeHistoryReduce, const int ii) const;
 
   template<int NEIGHFLAG, int NEWTON_PAIR, int EVFLAG, int SHEARUPDATE>
   KOKKOS_INLINE_FUNCTION

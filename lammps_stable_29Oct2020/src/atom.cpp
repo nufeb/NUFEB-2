@@ -82,7 +82,6 @@ Atom::Atom(LAMMPS *lmp) : Pointers(lmp)
   nlocal = nghost = nmax = 0;
   ntypes = 0;
   nellipsoids = nlines = ntris = nbodies = 0;
-  nbacilli = 0;
   nbondtypes = nangletypes = ndihedraltypes = nimpropertypes = 0;
   nbonds = nangles = ndihedrals = nimpropers = 0;
 
@@ -118,12 +117,8 @@ Atom::Atom(LAMMPS *lmp) : Pointers(lmp)
   radius = rmass = nullptr;
   ellipsoid = line = tri = body = nullptr;
 
-  // USER-NUFEB
-  outer_radius = outer_mass = nullptr;
-  biomass = nullptr;
-  bacillus = nullptr;
-
   // molecular systems
+
   molecule = nullptr;
   molindex = molatom = nullptr;
 
@@ -470,12 +465,6 @@ void Atom::peratom_create()
   add_peratom("ervelforce",&ervelforce,DOUBLE,0);
   add_peratom("etag",&etag,INT,0);
 
-  // USER-NUFEB
-  add_peratom("biomass",&biomass,DOUBLE,0);
-  add_peratom("outer_mass",&outer_mass,DOUBLE,0);
-  add_peratom("outer_radius",&outer_radius,DOUBLE,0);
-  add_peratom("bacillus",&bacillus,INT,0);
-
   // USER-DPD package
 
   add_peratom("dpdTheta",&dpdTheta,DOUBLE,0);
@@ -629,10 +618,6 @@ void Atom::set_atomflag_defaults()
   mesont_flag = 0;
   contact_radius_flag = smd_data_9_flag = smd_stress_flag = 0;
   eff_plastic_strain_flag = eff_plastic_strain_rate_flag = 0;
-  // USER-NUFEB package
-  bacillus_flag = coccus_flag = 0;
-  outer_radius_flag = outer_mass_flag = 0;
-  biomass_flag = 0;
 
   pdscale = 1.0;
 }
@@ -950,13 +935,13 @@ int Atom::tag_consecutive()
 
 /* ----------------------------------------------------------------------
    check that bonus data settings are valid
-   error if number of atoms with ellipsoid/line/tri/body/bacillus flags
+   error if number of atoms with ellipsoid/line/tri/body flags
    are consistent with global setting.
 ------------------------------------------------------------------------- */
 
 void Atom::bonus_check()
 {
-  bigint local_ellipsoids = 0, local_lines = 0, local_tris = 0, local_bacilli = 0;
+  bigint local_ellipsoids = 0, local_lines = 0, local_tris = 0;
   bigint local_bodies = 0, num_global;
 
   for (int i = 0; i < nlocal; ++i) {
@@ -964,7 +949,6 @@ void Atom::bonus_check()
     if (line && (line[i] >=0)) ++local_lines;
     if (tri && (tri[i] >=0)) ++local_tris;
     if (body && (body[i] >=0)) ++local_bodies;
-    if (bacillus && (bacillus[i] >=0)) ++local_bacilli;
   }
 
   MPI_Allreduce(&local_ellipsoids,&num_global,1,MPI_LMP_BIGINT,MPI_SUM,world);
@@ -986,11 +970,6 @@ void Atom::bonus_check()
   if (nbodies != num_global)
     error->all(FLERR,"Inconsistent 'bodies' header value and number of "
                "atoms with enabled body flags");
-
-  MPI_Allreduce(&local_bacilli,&num_global,1,MPI_LMP_BIGINT,MPI_SUM,world);
-  if (nbacilli != num_global)
-    error->all(FLERR,"Inconsistent 'bacilli' header value and number of "
-               "atoms with enabled bacillus flags");
 }
 
 /* ----------------------------------------------------------------------
@@ -2619,12 +2598,6 @@ void *Atom::extract(const char *name)
   if (strcmp(name,"dpdTheta") == 0) return (void *) dpdTheta;
   if (strcmp(name,"edpd_temp") == 0) return (void *) edpd_temp;
 
-  // USER-NUFEB package
-  if (strcmp(name,"biomass") == 0) return (void *) biomass;
-  if (strcmp(name,"outer_mass") == 0) return (void *) outer_mass;
-  if (strcmp(name,"outer_radius") == 0) return (void *) outer_radius;
-  if (strcmp(name,"bacillus") == 0) return (void *) bacillus;
-
   // end of customization section
   // --------------------------------------------------------------------
 
@@ -2707,12 +2680,6 @@ int Atom::extract_datatype(const char *name)
 
   if (strcmp(name,"dpdTheta") == 0) return LAMMPS_DOUBLE;
   if (strcmp(name,"edpd_temp") == 0) return LAMMPS_DOUBLE;
-
-  // USER-NUFEB package
-  if (strcmp(name,"bacillus") == 0) return LAMMPS_INT;
-  if (strcmp(name,"biomass") == 0) return LAMMPS_DOUBLE;
-  if (strcmp(name,"outer_mass") == 0) return LAMMPS_DOUBLE;
-  if (strcmp(name,"outer_radius") == 0) return LAMMPS_DOUBLE;
 
   // end of customization section
   // --------------------------------------------------------------------

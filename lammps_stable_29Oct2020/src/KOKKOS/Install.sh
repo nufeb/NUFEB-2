@@ -73,8 +73,6 @@ action atom_vec_kokkos.cpp
 action atom_vec_kokkos.h
 action atom_vec_molecular_kokkos.cpp atom_vec_molecular.cpp
 action atom_vec_molecular_kokkos.h atom_vec_molecular.h
-action atom_vec_coccus_kokkos.cpp atom_vec_coccus.cpp
-action atom_vec_coccus_kokkos.h atom_vec_coccus.h
 action atom_vec_sphere_kokkos.cpp atom_vec_sphere.cpp
 action atom_vec_sphere_kokkos.h atom_vec_sphere.h
 action bond_class2_kokkos.cpp bond_class2.cpp
@@ -85,8 +83,6 @@ action bond_harmonic_kokkos.cpp bond_harmonic.cpp
 action bond_harmonic_kokkos.h bond_harmonic.h
 action comm_kokkos.cpp
 action comm_kokkos.h
-action comm_grid_kokkos.cpp
-action comm_grid_kokkos.h
 action comm_tiled_kokkos.cpp
 action comm_tiled_kokkos.h
 action compute_coord_atom_kokkos.cpp
@@ -95,10 +91,6 @@ action compute_orientorder_atom_kokkos.cpp
 action compute_orientorder_atom_kokkos.h
 action compute_temp_kokkos.cpp
 action compute_temp_kokkos.h
-action compute_ke_kokkos.cpp
-action compute_ke_kokkos.h
-action compute_volume_kokkos.cpp compute_volume.cpp
-action compute_volume_kokkos.h compute_volume.h
 action dihedral_charmm_kokkos.cpp dihedral_charmm.cpp
 action dihedral_charmm_kokkos.h dihedral_charmm.h
 action dihedral_class2_kokkos.cpp dihedral_class2.cpp
@@ -112,48 +104,18 @@ action domain_kokkos.h
 action fftdata_kokkos.h fft3d.h
 action fft3d_kokkos.cpp fft3d.cpp
 action fft3d_kokkos.h fft3d.h
-action fix_boundary_layer_kokkos.h fix_boundary_layer.h
-action fix_boundary_layer_kokkos.cpp fix_boundary_layer.cpp
-action fix_death_diameter_kokkos.cpp
-action fix_death_diameter_kokkos.h
 action fix_deform_kokkos.cpp
 action fix_deform_kokkos.h
-action fix_density_kokkos.cpp fix_density.cpp
-action fix_density_kokkos.h fix_density.h
-action fix_diffusion_coeff_kokkos.cpp
-action fix_diffusion_coeff_kokkos.h
-action fix_diffusion_reaction_kokkos.cpp
-action fix_diffusion_reaction_kokkos.h
-action fix_divide_coccus_kokkos.cpp
-action fix_divide_coccus_kokkos.h
-action fix_eps_extract_kokkos.cpp
-action fix_eps_extract_kokkos.h
 action fix_enforce2d_kokkos.cpp
 action fix_enforce2d_kokkos.h
 action fix_eos_table_rx_kokkos.cpp fix_eos_table_rx.cpp
 action fix_eos_table_rx_kokkos.h fix_eos_table_rx.h
-action fix_eps_adhesion_kokkos.cpp fix_adhesion_eps.cpp
-action fix_eps_adhesion_kokkos.h fix_adhesion_eps.h
 action fix_freeze_kokkos.cpp fix_freeze.cpp
 action fix_freeze_kokkos.h fix_freeze.h
 action fix_gravity_kokkos.cpp
 action fix_gravity_kokkos.h
 action fix_langevin_kokkos.cpp
 action fix_langevin_kokkos.h
-action fix_growth_anammox_kokkos.cpp fix_growth_anammox.cpp
-action fix_growth_anammox_kokkos.h fix_growth_anammox.h
-action fix_growth_aob_kokkos.cpp fix_growth_aob.cpp
-action fix_growth_aob_kokkos.h fix_growth_aob.h
-action fix_growth_eps_kokkos.cpp fix_growth_eps.cpp
-action fix_growth_eps_kokkos.h fix_growth_eps.h
-action fix_growth_het_kokkos.cpp fix_growth_het.cpp
-action fix_growth_het_kokkos.h fix_growth_het.h
-action fix_growth_nob_kokkos.cpp fix_growth_nob.cpp
-action fix_growth_nob_kokkos.h fix_growth_nob.h
-action fix_growth_cyano_kokkos.cpp fix_growth_cyano.cpp
-action fix_growth_cyano_kokkos.h fix_growth_cyano.h
-action fix_growth_ecoli_kokkos.cpp fix_growth_ecoli.cpp
-action fix_growth_ecoli_kokkos.h fix_growth_ecoli.h
 action fix_minimize_kokkos.cpp
 action fix_minimize_kokkos.h
 action fix_neigh_history_kokkos.cpp
@@ -166,8 +128,6 @@ action fix_npt_kokkos.cpp
 action fix_npt_kokkos.h
 action fix_nve_kokkos.cpp
 action fix_nve_kokkos.h
-action fix_nve_limit_kokkos.cpp
-action fix_nve_limit_kokkos.h
 action fix_nve_sphere_kokkos.cpp
 action fix_nve_sphere_kokkos.h
 action fix_nvt_kokkos.cpp
@@ -176,8 +136,6 @@ action fix_property_atom_kokkos.cpp
 action fix_property_atom_kokkos.h
 action fix_qeq_reax_kokkos.cpp fix_qeq_reax.cpp
 action fix_qeq_reax_kokkos.h fix_qeq_reax.h
-action fix_reactor_solute_balance_kokkos.h fix_reactor_solute_balance.h
-action fix_reactor_solute_balance_kokkos.cpp fix_reactor_solute_balance.cpp
 action fix_reaxc_bonds_kokkos.cpp fix_reaxc_bonds.cpp
 action fix_reaxc_bonds_kokkos.h fix_reaxc_bonds.h
 action fix_reaxc_species_kokkos.cpp fix_reaxc_species.cpp
@@ -188,27 +146,17 @@ action fix_shardlow_kokkos.cpp fix_shardlow.cpp
 action fix_shardlow_kokkos.h fix_shardlow.h
 action fix_momentum_kokkos.cpp
 action fix_momentum_kokkos.h
-action fix_viscous_kokkos.cpp
-action fix_viscous_kokkos.h
 action fix_wall_lj93_kokkos.cpp
 action fix_wall_lj93_kokkos.h
 action fix_wall_reflect_kokkos.cpp
 action fix_wall_reflect_kokkos.h
-action fix_wall_gran_kokkos.cpp fix_wall_gran.cpp
-action fix_wall_gran_kokkos.h fix_wall_gran.h
 action fix_dpd_energy_kokkos.cpp fix_dpd_energy.cpp
 action fix_dpd_energy_kokkos.h fix_dpd_energy.h
 action fix_rx_kokkos.cpp fix_rx.cpp
 action fix_rx_kokkos.h fix_rx.h
-action fix_wall_gran_kokkos.cpp fix_wall_gran.cpp
-action fix_wall_gran_kokkos.h fix_wall_gran.h
-action grid_kokkos.cpp grid.cpp
-action grid_kokkos.h grid.h
-action grid_vec_kokkos.cpp grid_vec.cpp
-action grid_vec_kokkos.h grid_vec.h
-action grid_vec_chemostat_kokkos.cpp grid_vec_chemostat.cpp
-action grid_vec_chemostat_kokkos.h grid_vec_chemostat.h
-action improper_class2_kokkos.cpp improper_class2.cpp 
+action gridcomm_kokkos.cpp gridcomm.cpp
+action gridcomm_kokkos.h gridcomm.h
+action improper_class2_kokkos.cpp improper_class2.cpp
 action improper_class2_kokkos.h improper_class2.h
 action improper_harmonic_kokkos.cpp improper_harmonic.cpp
 action improper_harmonic_kokkos.h improper_harmonic.h
@@ -242,8 +190,6 @@ action nbin_kokkos.cpp
 action nbin_kokkos.h
 action nbin_ssa_kokkos.cpp nbin_ssa.cpp
 action nbin_ssa_kokkos.h nbin_ssa.h
-action nufeb_run_kokkos.cpp nufeb_run.cpp
-action nufeb_run_kokkos.h nufeb_run.h
 action math_special_kokkos.cpp
 action math_special_kokkos.h
 action min_cg_kokkos.cpp

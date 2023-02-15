@@ -141,13 +141,6 @@ class Fix : protected Pointers {
   virtual void write_restart_file(const char *) {}
   virtual void restart(char *) {}
 
-  // NUFEB specific
-  virtual void biology_nufeb() {}
-  virtual void post_physics_nufeb() {}
-  virtual void chemistry_nufeb() {}
-  virtual void post_chemistry_nufeb() {}
-  virtual void reactor_nufeb() {}
-
   virtual void grow_arrays(int) {}
   virtual void copy_arrays(int, int, int) {}
   virtual void set_arrays(int) {}
@@ -225,7 +218,7 @@ class Fix : protected Pointers {
   virtual void *extract(const char *, int &) {return nullptr;}
 
   virtual double memory_usage() {return 0.0;}
-  
+
  protected:
   int instance_me;        // which Fix class instantiation I am
 
@@ -277,14 +270,6 @@ namespace FixConst {
   static const int MIN_POST_FORCE =          1<<22;
   static const int MIN_ENERGY =              1<<23;
   static const int FIX_CONST_LAST =          1<<24;
-
-  // NUFEB specific
-  static const int BIOLOGY_NUFEB =           1<<25;
-  static const int POST_PHYSICS_NUFEB =      1<<26;
-  static const int CHEMISTRY_NUFEB =         1<<27;
-  static const int POST_CHEMISTRY_NUFEB =    1<<28;
-  static const int REACTOR_NUFEB =           1<<29;
-
 }
 
 }

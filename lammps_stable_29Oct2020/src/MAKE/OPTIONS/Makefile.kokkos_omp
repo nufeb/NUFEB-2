@@ -29,7 +29,7 @@ KOKKOS_DEVICES = OpenMP
 # LAMMPS ifdef settings
 # see possible settings in Section 3.5 of the manual
 
-LMP_INC =	-DLAMMPS_GZIP -DLAMMPS_JPNG
+LMP_INC =	-DLAMMPS_GZIP
 
 # MPI library
 # see discussion in Section 3.4 of the manual
@@ -62,9 +62,9 @@ FFT_LIB =
 # PATH = path(s) for JPEG library and/or PNG library
 # LIB = name(s) of JPEG library and/or PNG library
 
-JPG_INC =       -I/usr/include
-JPG_PATH =      -L/usr/lib
-JPG_LIB =       -lpng
+JPG_INC =
+JPG_PATH =
+JPG_LIB =
 
 # ---------------------------------------------------------------------
 # build rules and dependencies

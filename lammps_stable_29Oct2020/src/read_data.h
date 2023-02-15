@@ -54,9 +54,6 @@ class ReadData : protected Pointers {
   class AtomVecTri *avec_tri;
   bigint nbodies;
   class AtomVecBody *avec_body;
-  // NUFEB-package
-  bigint nbacilli;
-  class AtomVecBacillus *avec_bacillus;
 
   // box info
 

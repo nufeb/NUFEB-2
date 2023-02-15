@@ -55,18 +55,11 @@ class AtomKokkos : public Atom {
   DAT::tdual_float_2d k_dvector;
 
 
-  // USER-DPD package
-
+// USER-DPD package
   DAT::tdual_efloat_1d k_uCond, k_uMech, k_uChem, k_uCG, k_uCGnew,
                        k_rho,k_dpdTheta,k_duChem;
 
 
-  // NUFEB
-
-  DAT::tdual_float_1d k_outer_radius;
-  DAT::tdual_float_1d k_outer_mass;
-  DAT::tdual_float_1d k_biomass;
-  
   AtomKokkos(class LAMMPS *);
   ~AtomKokkos();
 

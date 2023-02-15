@@ -39,11 +39,6 @@ class Modify : protected Pointers {
   int n_min_pre_exchange,n_min_pre_neighbor,n_min_post_neighbor;
   int n_min_pre_force,n_min_pre_reverse,n_min_post_force,n_min_energy;
 
-  // NUFEB specific
-  int n_biology_nufeb, n_post_physics_nufeb;
-  int n_chemistry_nufeb;
-  int n_reactor_nufeb;
-
   int restart_pbc_any;       // 1 if any fix sets restart_pbc
   int nfix_restart_global;   // stored fix global info from restart file
   int nfix_restart_peratom;  // stored fix peratom info from restart file
@@ -103,13 +98,6 @@ class Modify : protected Pointers {
   virtual int min_dof();
   virtual int min_reset_ref();
 
-  // NUFEB specific
-
-  virtual void biology_nufeb();
-  virtual void post_physics_nufeb();
-  virtual void chemistry_nufeb();
-  virtual void reactor_nufeb();
-
   void add_fix(int, char **, int trysuffix=1);
   void add_fix(const std::string &, int trysuffix=1);
   void replace_fix(const char *, int, char **, int trysuffix=1);
@@ -154,11 +142,6 @@ class Modify : protected Pointers {
   int *list_min_pre_exchange,*list_min_pre_neighbor,*list_min_post_neighbor;
   int *list_min_pre_force,*list_min_pre_reverse,*list_min_post_force;
   int *list_min_energy;
-
-  // NUFEB specific
-  int *list_biology_nufeb, *list_post_physics_nufeb;
-  int *list_chemistry_nufeb;
-  int *list_reactor_nufeb;
 
   int *end_of_step_every;
 

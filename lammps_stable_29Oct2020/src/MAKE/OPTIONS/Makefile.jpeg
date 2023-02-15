@@ -7,7 +7,7 @@ SHELL = /bin/sh
 # specify flags and libraries needed for your compiler
 
 CC =		mpicxx
-CCFLAGS =	-g -O0
+CCFLAGS =	-g -O3 
 SHFLAGS =	-fPIC
 DEPFLAGS =	-M
 
@@ -28,7 +28,7 @@ SHLIBFLAGS =	-shared
 # LAMMPS ifdef settings
 # see possible settings in Section 3.5 of the manual
 
-LMP_INC =	-DLAMMPS_GZIP -DLAMMPS_JPEG -DLAMMPS_FFMPEG
+LMP_INC =	-DLAMMPS_GZIP -DLAMMPS_JPEG
 
 # MPI library
 # see discussion in Section 3.4 of the manual
@@ -50,9 +50,9 @@ MPI_LIB =
 # PATH = path for FFT library
 # LIB = name of FFT library
 
-FFT_INC =   -I/usr/include 	
-FFT_PATH = -L/usr/lib 
-FFT_LIB =	
+FFT_INC =
+FFT_PATH =
+FFT_LIB =
 
 # JPEG and/or PNG library
 # see discussion in Section 3.5.4 of manual

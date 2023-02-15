@@ -142,11 +142,6 @@ class Input : protected Pointers {
   void undump();
   void unfix();
   void units();
-
-  // NUFEB specific
-
-  void grid_style();
-  void grid_modify();
 };
 
 }

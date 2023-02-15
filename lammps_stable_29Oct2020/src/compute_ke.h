@@ -30,7 +30,7 @@ class ComputeKE : public Compute {
   void init();
   double compute_scalar();
 
- protected:
+ private:
   double pfactor;
 };
 

@@ -19,7 +19,6 @@
 #include "atom_vec_ellipsoid.h"
 #include "atom_vec_line.h"
 #include "atom_vec_tri.h"
-#include "atom_vec_bacillus.h"
 #include "comm.h"
 #include "domain.h"
 #include "error.h"
@@ -49,9 +48,7 @@ enum{TYPE,TYPE_FRACTION,TYPE_RATIO,TYPE_SUBSET,
      THETA,THETA_RANDOM,ANGMOM,OMEGA,
      DIAMETER,DENSITY,VOLUME,IMAGE,BOND,ANGLE,DIHEDRAL,IMPROPER,
      SPH_E,SPH_CV,SPH_RHO,EDPD_TEMP,EDPD_CV,CC,SMD_MASS_DENSITY,
-     SMD_CONTACT_RADIUS,DPDTHETA,INAME,DNAME,VX,VY,VZ,
-     OUTER_MASS,OUTER_DIAMETER,OUTER_DENSITY,BIOMASS,INERTIA_BACCILUS,
-     POLE_RANDOM,LENGTH_BACILLUS};
+     SMD_CONTACT_RADIUS,DPDTHETA,INAME,DNAME,VX,VY,VZ};
 
 #define BIG INT_MAX
 
@@ -596,91 +593,6 @@ void Set::command(int narg, char **arg)
       set(DNAME);
       iarg += 2;
 
-      // NUFEB specific
-    } else if (strcmp(arg[iarg],"outer_mass") == 0) {
-      if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
-      if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
-      if (!atom->outer_mass_flag)
-        error->all(FLERR,"Cannot set this attribute for this atom style");
-      set(OUTER_MASS);
-      iarg += 2;
-
-    } else if (strcmp(arg[iarg],"outer_diameter") == 0) {
-      if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
-      if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
-      if (!atom->outer_radius_flag)
-        error->all(FLERR,"Cannot set this attribute for this atom style");
-      set(OUTER_DIAMETER);
-      iarg += 2;
-
-    } else if (strcmp(arg[iarg],"outer_density") == 0) {
-      if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
-      if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
-      if (!atom->outer_radius_flag || !atom->outer_mass_flag)
-        error->all(FLERR,"Cannot set this attribute for this atom style");
-      set(OUTER_DENSITY);
-      iarg += 2;
-
-    } else if (strcmp(arg[iarg],"biomass") == 0) {
-      if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
-      if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
-      if (!atom->biomass_flag)
-	error->all(FLERR,"Cannot set this attribute for this atom style");
-      set(BIOMASS);
-      iarg += 2;
-
-    } else if (strcmp(arg[iarg],"bacillus/inertia") == 0) {
-      if (iarg+7 > narg) error->all(FLERR,"Illegal set command");
-      if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else ixx = utils::numeric(FLERR,arg[iarg+1],false,lmp);
-      if (strstr(arg[iarg+2],"v_") == arg[iarg+2]) varparse(arg[iarg+2],2);
-      else iyy = utils::numeric(FLERR,arg[iarg+2],false,lmp);
-      if (strstr(arg[iarg+3],"v_") == arg[iarg+3]) varparse(arg[iarg+3],3);
-      else izz = utils::numeric(FLERR,arg[iarg+3],false,lmp);
-      if (strstr(arg[iarg+4],"v_") == arg[iarg+4]) varparse(arg[iarg+4],4);
-      else ixy = utils::numeric(FLERR,arg[iarg+4],false,lmp);
-      if (strstr(arg[iarg+5],"v_") == arg[iarg+5]) varparse(arg[iarg+5],5);
-      else ixz = utils::numeric(FLERR,arg[iarg+5],false,lmp);
-      if (strstr(arg[iarg+6],"v_") == arg[iarg+6]) varparse(arg[iarg+6],6);
-      else iyz = utils::numeric(FLERR,arg[iarg+6],false,lmp);
-
-      if (!atom->bacillus_flag)
-	error->all(FLERR,"Cannot set this attribute for this atom style");
-      set(INERTIA_BACCILUS);
-      iarg += 7;
-
-    } else if (strcmp(arg[iarg],"bacillus/pole/random") == 0) {
-      if (iarg+3 > narg) error->all(FLERR,"Illegal set command");
-      if (strcmp(arg[iarg+1], "x") == 0) poleflag = 1;
-      else if (strcmp(arg[iarg+1], "y") == 0) poleflag = 2;
-      else if (strcmp(arg[iarg+1], "z") == 0) poleflag = 3;
-      else if (strcmp(arg[iarg+1], "xy") == 0) poleflag = 4;
-      else if (strcmp(arg[iarg+1], "yz") == 0) poleflag = 5;
-      else if (strcmp(arg[iarg+1], "xz") == 0) poleflag = 6;
-      else if (strcmp(arg[iarg+1], "xzy") == 0) poleflag = 7;
-      else error->all(FLERR,"Invalid pole orientation");
-
-      ivalue = utils::inumeric(FLERR,arg[iarg+2],false,lmp);
-      if (ivalue <= 0)
-        error->all(FLERR,"Invalid random number seed in set command");
-      if (!atom->bacillus_flag)
-	error->all(FLERR,"Cannot set this attribute for this atom style");
-      setrandom(POLE_RANDOM);
-      iarg += 3;
-
-    }  else if (strcmp(arg[iarg],"bacillus/length") == 0) {
-      if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
-      if (strstr(arg[iarg+1],"v_") == arg[iarg+1]) varparse(arg[iarg+1],1);
-      else dvalue = utils::numeric(FLERR,arg[iarg+1],false,lmp);
-      if (!atom->bacillus_flag)
-	error->all(FLERR,"Cannot set this attribute for this atom style");
-      set(LENGTH_BACILLUS);
-      iarg += 2;
-
     } else error->all(FLERR,"Illegal set command");
 
     // statistics
@@ -828,7 +740,6 @@ void Set::set(int keyword)
   AtomVecLine *avec_line = (AtomVecLine *) atom->style_match("line");
   AtomVecTri *avec_tri = (AtomVecTri *) atom->style_match("tri");
   AtomVecBody *avec_body = (AtomVecBody *) atom->style_match("body");
-  AtomVecBacillus *avec_bacillus = (AtomVecBacillus *) atom->style_match("bacillus");
 
   int nlocal = atom->nlocal;
   for (int i = 0; i < nlocal; i++) {
@@ -866,18 +777,10 @@ void Set::set(int keyword)
     else if (keyword == MASS) {
       if (dvalue <= 0.0) error->one(FLERR,"Invalid mass in set command");
       atom->rmass[i] = dvalue;
-      // NUFEB specific
-      atom->outer_mass[i] = dvalue;
     }
     else if (keyword == DIAMETER) {
       if (dvalue < 0.0) error->one(FLERR,"Invalid diameter in set command");
       atom->radius[i] = 0.5 * dvalue;
-      // NUFEB specific
-      if (atom->bacillus_flag) {
-	avec_bacillus->set_diameter(i,dvalue);
-      } else if (atom->coccus_flag) {
-	atom->outer_radius[i] = 0.5 * dvalue;
-      }
     }
     else if (keyword == VOLUME) {
       if (dvalue <= 0.0) error->one(FLERR,"Invalid volume in set command");
@@ -927,7 +830,7 @@ void Set::set(int keyword)
 
     else if (keyword == LENGTH) {
       if (dvalue < 0.0) error->one(FLERR,"Invalid length in set command");
-      if (atom->line_flag) avec_line->set_length(i,dvalue);
+      avec_line->set_length(i,dvalue);
     }
 
     // set corners of tri particle
@@ -975,15 +878,6 @@ void Set::set(int keyword)
         double area = 0.5 * MathExtra::len3(norm);
         atom->rmass[i] = area * dvalue;
       } else atom->rmass[i] = dvalue;
-
-      // NUFEB specific
-      if (atom->coccus_flag)
-	atom->outer_mass[i] = atom->rmass[i];
-      if (atom->bacillus_flag){
-      	double r = atom->radius[i];
-      	atom->rmass[i] = dvalue * (4.0*MY_PI/3.0*r*r*r +
-      	      MY_PI*r*r*avec_bacillus->bonus[atom->bacillus[i]].length);
-      }
     }
 
     // set dipole moment
@@ -1084,42 +978,6 @@ void Set::set(int keyword)
       atom->dvector[index_custom][i] = dvalue;
     }
 
-    // NUFEB specific
-
-    else if (keyword == OUTER_MASS) {
-      if (dvalue <= 0.0) error->one(FLERR,"Invalid outer mass in set command");
-      atom->outer_mass[i] = dvalue;
-    }
-
-    else if (keyword == OUTER_DIAMETER) {
-      if (dvalue <= 0.0) error->one(FLERR,"Invalid outer diameter in set command");
-      atom->outer_radius[i] = 0.5 * dvalue;
-    }
-
-    else if (keyword == BIOMASS) {
-      if (dvalue < 0 || dvalue > 1) error->one(FLERR,"Invalid biomass in set command");
-      if (atom->rmass_flag)
-	atom->biomass[i] = dvalue;
-    }
-
-    else if (keyword == OUTER_DENSITY) {
-      if (dvalue <= 0.0) error->one(FLERR,"Invalid density in set command");
-      if (atom->outer_radius_flag && atom->outer_radius[i] > 0.0)
-	atom->outer_mass[i] = 4.0*MY_PI/3.0 *
-	  (atom->outer_radius[i]*atom->outer_radius[i]*atom->outer_radius[i] -
-	   atom->radius[i]*atom->radius[i]*atom->radius[i]) * dvalue;
-    }
-    
-    else if (keyword == INERTIA_BACCILUS) {
-      avec_bacillus->set_quat(i,ixx,iyy,izz,ixy,ixz,iyz);
-    }
-
-    // set length of line particle
-
-    else if (keyword == LENGTH_BACILLUS) {
-      if (dvalue < 0.0) error->one(FLERR,"Invalid length in set command");
-      if (atom->bacillus_flag) avec_bacillus->set_length(i, dvalue);
-    }
     count++;
   }
 
@@ -1130,13 +988,8 @@ void Set::set(int keyword)
                   MPI_LMP_BIGINT,MPI_SUM,world);
   }
   if (keyword == LENGTH) {
-    if (atom->line_flag) {
-      bigint nlocal_bonus = avec_line->nlocal_bonus;
-      MPI_Allreduce(&nlocal_bonus,&atom->nlines,1,MPI_LMP_BIGINT,MPI_SUM,world);
-    } else if (atom->bacillus_flag){
-      bigint nlocal_bonus = avec_bacillus->nlocal_bonus;
-      MPI_Allreduce(&nlocal_bonus,&atom->nbacilli,1,MPI_LMP_BIGINT,MPI_SUM,world);
-    }
+    bigint nlocal_bonus = avec_line->nlocal_bonus;
+    MPI_Allreduce(&nlocal_bonus,&atom->nlines,1,MPI_LMP_BIGINT,MPI_SUM,world);
   }
   if (keyword == TRI) {
     bigint nlocal_bonus = avec_tri->nlocal_bonus;
@@ -1166,7 +1019,6 @@ void Set::setrandom(int keyword)
   AtomVecLine *avec_line = (AtomVecLine *) atom->style_match("line");
   AtomVecTri *avec_tri = (AtomVecTri *) atom->style_match("tri");
   AtomVecBody *avec_body = (AtomVecBody *) atom->style_match("body");
-  AtomVecBacillus *avec_bacillus = (AtomVecBacillus *) atom->style_match("bacillus");
 
   double **x = atom->x;
   int seed = ivalue;
@@ -1386,17 +1238,6 @@ void Set::setrandom(int keyword)
         ranpark->reset(seed,x[i]);
         avec_line->bonus[atom->line[i]].theta = MY_2PI*ranpark->uniform();
         count++;
-      }
-    }
-
-  // NUFEB specific
-  } else if (keyword == POLE_RANDOM) {
-    int nlocal = atom->nlocal;
-    for (i = 0; i < nlocal; i++) {
-      if (select[i]) {
-	ranpark->reset(seed,x[i]);
-	avec_bacillus->set_pole_random(i,poleflag,ranpark->uniform(),ranpark->uniform());
-	count++;
       }
     }
   }

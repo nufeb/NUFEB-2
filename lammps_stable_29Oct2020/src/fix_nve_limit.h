@@ -27,17 +27,16 @@ namespace LAMMPS_NS {
 class FixNVELimit : public Fix {
  public:
   FixNVELimit(class LAMMPS *, int, char **);
-  virtual ~FixNVELimit() {}
   int setmask();
   void init();
-  virtual void initial_integrate(int);
-  virtual void final_integrate();
+  void initial_integrate(int);
+  void final_integrate();
   void initial_integrate_respa(int, int, int);
   void final_integrate_respa(int, int);
   void reset_dt();
-  virtual double compute_scalar();
+  double compute_scalar();
 
- protected:
+ private:
   double dtv,dtf;
   double *step_respa;
   int ncount;

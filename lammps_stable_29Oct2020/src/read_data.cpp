@@ -23,7 +23,6 @@
 #include "atom_vec_ellipsoid.h"
 #include "atom_vec_line.h"
 #include "atom_vec_tri.h"
-#include "atom_vec_bacillus.h"
 #include "bond.h"
 #include "comm.h"
 #include "dihedral.h"
@@ -53,7 +52,7 @@ using namespace LAMMPS_NS;
 #define MAXBODY 32         // max # of lines in one body
 
                            // customize for new sections
-#define NSECTIONS 26       // change when add to header::section_keywords
+#define NSECTIONS 25       // change when add to header::section_keywords
 
 enum{NONE,APPEND,VALUE,MERGE};
 
@@ -89,9 +88,6 @@ ReadData::ReadData(LAMMPS *lmp) : Pointers(lmp)
   avec_tri = (AtomVecTri *) atom->style_match("tri");
   nbodies = 0;
   avec_body = (AtomVecBody *) atom->style_match("body");
-  //NUFEB-package
-  nbacilli = 0;
-  avec_bacillus = (AtomVecBacillus *) atom->style_match("bacillus");
 }
 
 /* ---------------------------------------------------------------------- */
@@ -393,11 +389,11 @@ void ReadData::command(int narg, char **arg)
 
   int atomflag,topoflag;
   int bondflag,angleflag,dihedralflag,improperflag;
-  int ellipsoidflag,lineflag,triflag,bodyflag,bacillusflag;
+  int ellipsoidflag,lineflag,triflag,bodyflag;
 
   atomflag = topoflag = 0;
   bondflag = angleflag = dihedralflag = improperflag = 0;
-  ellipsoidflag = lineflag = triflag = bodyflag = bacillusflag = 0;
+  ellipsoidflag = lineflag = triflag = bodyflag = 0;
 
   // values in this data file
 
@@ -560,16 +556,6 @@ void ReadData::command(int narg, char **arg)
         if (firstpass)
           bonus(nellipsoids,(AtomVec *) avec_ellipsoid,"ellipsoids");
         else skip_lines(nellipsoids);
-        // NUFEB-package
-      }  else if (strcmp(keyword,"Bacilli") == 0) {
-	bacillusflag = 1;
-	if (!avec_bacillus)
-	  error->all(FLERR,"Invalid data file section: Bacilli");
-	if (atomflag == 0)
-	  error->all(FLERR,"Must read Atoms before Bacilli");
-	if (firstpass)
-	  bonus(nbacilli,(AtomVec *) avec_bacillus,"Bacilli");
-	else skip_lines(nbacilli);
       } else if (strcmp(keyword,"Lines") == 0) {
         lineflag = 1;
         if (!avec_line)
@@ -757,7 +743,7 @@ void ReadData::command(int narg, char **arg)
       error->one(FLERR,"Needed molecular topology not in data file");
 
     if ((nellipsoids && !ellipsoidflag) || (nlines && !lineflag) ||
-        (ntris && !triflag) || (nbodies && !bodyflag) || (nbacilli && !bacillusflag))
+        (ntris && !triflag) || (nbodies && !bodyflag))
       error->one(FLERR,"Needed bonus data not in data file");
 
     // break out of loop if no molecular topology in file
@@ -953,7 +939,7 @@ void ReadData::header(int firstpass)
      "Dihedral Coeffs","Improper Coeffs",
      "BondBond Coeffs","BondAngle Coeffs","MiddleBondTorsion Coeffs",
      "EndBondTorsion Coeffs","AngleTorsion Coeffs",
-     "AngleAngleTorsion Coeffs","BondBond13 Coeffs","AngleAngle Coeffs","Bacilli"};
+     "AngleAngleTorsion Coeffs","BondBond13 Coeffs","AngleAngle Coeffs"};
 
   // skip 1st line of file
 
@@ -1022,13 +1008,7 @@ void ReadData::header(int firstpass)
         error->all(FLERR,"Could not parse 'ellipsoids' line in data file header");
       if (addflag == NONE) atom->nellipsoids = nellipsoids;
       else if (firstpass) atom->nellipsoids += nellipsoids;
-    } else if (utils::strmatch(line,"^\\s*\\d+\\s+bacilli\\s")) {
-      if (!avec_bacillus)
-	error->all(FLERR,"No bacilli allowed with this atom style");
-      rv = sscanf(line,BIGINT_FORMAT,&nbacilli);
-      if (rv != 1)
-        error->all(FLERR,"Could not parse 'bacilli' line in data file header");
-      if (addflag == NONE) atom->nbacilli = nbacilli;
+
     } else if (utils::strmatch(line,"^\\s*\\d+\\s+lines\\s")) {
       if (!avec_line)
         error->all(FLERR,"No lines allowed with this atom style");
@@ -1177,7 +1157,6 @@ void ReadData::header(int firstpass)
 
   if (atom->natoms < 0 || atom->natoms >= MAXBIGINT ||
       atom->nellipsoids < 0 || atom->nellipsoids >= MAXBIGINT ||
-      atom->nbacilli < 0 || atom->nbacilli >= MAXBIGINT ||
       atom->nlines < 0 || atom->nlines >= MAXBIGINT ||
       atom->ntris < 0 || atom->ntris >= MAXBIGINT ||
       atom->nbodies < 0 || atom->nbodies >= MAXBIGINT ||

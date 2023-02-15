@@ -28,7 +28,7 @@ SHLIBFLAGS =	-shared
 # LAMMPS ifdef settings
 # see possible settings in Section 3.5 of the manual
 
-LMP_INC =	-DLAMMPS_GZIP -DLAMMPS_JPNG -DLAMMPS_FFMPEG
+LMP_INC =	-DLAMMPS_GZIP -DLAMMPS_PNG
 
 # MPI library
 # see discussion in Section 3.4 of the manual
@@ -50,8 +50,8 @@ MPI_LIB =
 # PATH = path for FFT library
 # LIB = name of FFT library
 
-FFT_INC =   -I/usr/include 	
-FFT_PATH = -L/usr/lib 
+FFT_INC =    	
+FFT_PATH = 
 FFT_LIB =	
 
 # JPEG and/or PNG library

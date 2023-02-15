@@ -57,14 +57,6 @@
 #include "lmpinstalledpkgs.h"
 #include "lmpgitversion.h"
 
-// NUFEB specific
-
-#include "grid.h"
-#include "comm_grid.h"
-#include "style_grid.h"    // IWYU pragma: keep
-
-using namespace LAMMPS_NS;
-
 static void print_style(FILE *fp, const char *str, int &pos);
 
 struct LAMMPS_NS::package_styles_lists {
@@ -77,7 +69,6 @@ struct LAMMPS_NS::package_styles_lists {
   std::map<std::string,std::string> dihedral_styles;
   std::map<std::string,std::string> dump_styles;
   std::map<std::string,std::string> fix_styles;
-  std::map<std::string,std::string> grid_styles;
   std::map<std::string,std::string> improper_styles;
   std::map<std::string,std::string> integrate_styles;
   std::map<std::string,std::string> kspace_styles;
@@ -117,8 +108,7 @@ LAMMPS::LAMMPS(int narg, char **arg, MPI_Comm communicator) :
   memory(nullptr), error(nullptr), universe(nullptr), input(nullptr), atom(nullptr),
   update(nullptr), neighbor(nullptr), comm(nullptr), domain(nullptr), force(nullptr),
   modify(nullptr), group(nullptr), output(nullptr), timer(nullptr), kokkos(nullptr),
-  atomKK(nullptr), memoryKK(nullptr), python(nullptr), citeme(nullptr),
-  grid(nullptr), gridKK(nullptr), comm_grid(nullptr), comm_gridKK(nullptr)
+  atomKK(nullptr), memoryKK(nullptr), python(nullptr), citeme(nullptr)
 {
   memory = new Memory(this);
   error = new Error(this);
@@ -784,14 +774,6 @@ void LAMMPS::create()
   timer = new Timer(this);
 
   python = new Python(this);
-
-  // NUFEB specific
-
-  if (kokkos) grid = new GridKokkos(this);
-  else grid = new Grid(this);
-
-  if (kokkos) comm_grid = new CommGridKokkos(this);
-  else comm_grid = new CommGrid(this);
 }
 
 /* ----------------------------------------------------------------------
@@ -868,19 +850,10 @@ void LAMMPS::init()
                          //   used by fix shear_history::unpack_restart()
                          //     when force->pair->gran_history creates fix
                          //   atom_vec init uses deform_vremap
-
-  // NUFEB specific
-
-  grid->init();
-  
   modify->init();        // modify must come after update, force, atom, domain
   neighbor->init();      // neighbor must come after force, modify
   comm->init();          // comm must come after force, modify, neighbor, atom
   output->init();        // output must come after domain, force, modify
-
-  // NUFEB specific
-
-  comm_grid->init();
 }
 
 /* ----------------------------------------------------------------------
@@ -926,12 +899,6 @@ void LAMMPS::destroy()
 
   delete python;
   python = nullptr;
-
-  delete grid;
-  grid = nullptr;
-
-  delete comm_grid;
-  comm_grid = nullptr;
 }
 
 /* ----------------------------------------------------------------------
@@ -996,12 +963,6 @@ void _noopt LAMMPS::init_pkg_lists()
 #include "packages_fix.h"
 #undef FixStyle
 #undef FIX_CLASS
-#define GRID_CLASS
-#define GridStyle(key,Class)                     \
-  pkg_lists->grid_styles[#key] = PACKAGE;
-#include "packages_grid.h"
-#undef GridStyle
-#undef GRID_CLASS
 #define IMPROPER_CLASS
 #define ImproperStyle(key,Class)                \
   pkg_lists->improper_styles[#key] = PACKAGE;
@@ -1237,7 +1198,7 @@ void _noopt LAMMPS::help()
   fprintf(fp,"\n\n");
 
   pos = 80;
-  fprintf(fp,"* Fix styles:\n");
+  fprintf(fp,"* Fix styles\n");
 #define FIX_CLASS
 #define FixStyle(key,Class) print_style(fp,#key,pos);
 #include "style_fix.h"
@@ -1269,21 +1230,11 @@ void _noopt LAMMPS::help()
   fprintf(fp,"\n\n");
 
   pos = 80;
-  fprintf(fp,"* Command styles:\n");
+  fprintf(fp,"* Command styles\n");
 #define COMMAND_CLASS
 #define CommandStyle(key,Class) print_style(fp,#key,pos);
 #include "style_command.h"
 #undef COMMAND_CLASS
-  fprintf(fp,"\n\n");
-
-  // NUFEB specific
-  
-  pos = 80;
-  fprintf(fp,"* Grid styles:\n");
-#define GRID_CLASS
-#define GridStyle(key,Class) print_style(fp,#key,pos);
-#include "style_grid.h"
-#undef GRID_CLASS
   fprintf(fp,"\n\n");
 
   // close pipe to pager, if active

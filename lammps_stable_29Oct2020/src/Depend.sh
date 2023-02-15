@@ -68,10 +68,10 @@ if (test $1 = "DIPOLE") then
   depend USER-OMP
 fi
 
-# if (test $1 = "GRANULAR") then
-#   depend KOKKOS
-#   depend USER-OMP
-# fi
+if (test $1 = "GRANULAR") then
+  depend KOKKOS
+  depend USER-OMP
+fi
 
 if (test $1 = "KSPACE") then
   depend CORESHELL
@@ -143,10 +143,3 @@ if (test $1 = "USER-REAXC") then
   depend KOKKOS
   depend USER-OMP
 fi
-
-# if (test $1 = "USER-NUFEB") then
-#   depend KOKKOS
-#   depend USER-PLASMID
-#   depend USER-HDF5
-#   depend USER-VTK
-# fi
