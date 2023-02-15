@@ -37,6 +37,7 @@ class FixGrowthAnammox: public FixGrowth {
   int io2;
   int ino2;
   int ino3;
+  int in2;
   
   double nh4_affinity;
   double o2_affinity;

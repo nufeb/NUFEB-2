@@ -42,6 +42,7 @@ FixGrowthAnammox::FixGrowthAnammox(LAMMPS *lmp, int narg, char **arg) :
   io2 = -1;
   ino2 = -1;
   ino3 = -1;
+  in2 = -1;
 
   nh4_affinity = 0.0;
   o2_affinity = 0.0;
@@ -71,7 +72,12 @@ FixGrowthAnammox::FixGrowthAnammox(LAMMPS *lmp, int narg, char **arg) :
   if (ino3 < 0)
     error->all(FLERR, "Can't find substrate name: no3");
 
-  int iarg = 10;
+  in2 = grid->find(arg[10]);
+  if (ino3 < 0)
+    error->all(FLERR, "Can't find substrate name: n2");
+
+  int iarg = 11;
+
   while (iarg < narg) {
     if (strcmp(arg[iarg], "growth") == 0) {
       growth = utils::numeric(FLERR,arg[iarg+1],true,lmp);
@@ -105,8 +111,9 @@ void FixGrowthAnammox::update_cells()
 
     if (!(grid->mask[i] & GHOST_MASK)) {
       reac[inh4][i] -= 1 / yield * tmp1 * dens[igroup][i];
-      reac[ino2][i] -= (1 / yield + 1 / 1.14) * tmp1 * dens[igroup][i];
-      reac[ino3][i] += (1 / 1.14) * tmp1 * dens[igroup][i];
+      reac[ino2][i] -= ( 1 / yield + 1 / 1.14) * tmp1 * dens[igroup][i];
+      reac[ino3][i] += ( 1 / 1.14 ) * tmp1 * dens[igroup][i];
+      reac[in2][i] += ( 2 / yield ) * tmp1 * dens[igroup][i];
     }
   }
 }
