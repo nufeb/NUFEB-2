@@ -26,8 +26,12 @@ namespace LAMMPS_NS {
 
 class FixEPSAdhesion : public Fix {
  public:
+  class NeighList *list;
+
   FixEPSAdhesion(class LAMMPS *, int, char **);
   virtual ~FixEPSAdhesion() {}
+  void init();
+  void init_list(int, class NeighList *);
   int setmask();
   virtual void post_force(int);
 

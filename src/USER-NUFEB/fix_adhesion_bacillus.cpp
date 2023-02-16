@@ -20,6 +20,7 @@
 #include "error.h"
 #include "neigh_list.h"
 #include "neighbor.h"
+#include "neigh_request.h"
 #include "group.h"
 #include "pair.h"
 #include "force.h"
@@ -58,6 +59,20 @@ int FixAdhesionBacillus::setmask()
 
 /* ---------------------------------------------------------------------- */
 
+void FixAdhesionBacillus::init() {
+  int irequest = neighbor->request((void *) this);
+  neighbor->requests[irequest]->pair = 0;
+  neighbor->requests[irequest]->fix = 1;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixAdhesionBacillus::init_list(int id, NeighList *ptr) {
+  list = ptr;
+}
+
+/* ---------------------------------------------------------------------- */
+
 void FixAdhesionBacillus::post_force(int vflag)
 {
   compute();
@@ -86,7 +101,6 @@ void FixAdhesionBacillus::compute()
   AtomVecBacillus::Bonus *ibonus;
   AtomVecBacillus::Bonus *jbonus;
 
-  NeighList *list = force->pair->list;
   int inum = list->inum;
   int *ilist = list->ilist;
   int *numneigh = list->numneigh;
