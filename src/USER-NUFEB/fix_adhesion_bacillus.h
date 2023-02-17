@@ -28,9 +28,13 @@ namespace LAMMPS_NS {
 
 class FixAdhesionBacillus : public Fix {
  public:
+  class NeighList *list;
+
   FixAdhesionBacillus(class LAMMPS *, int, char **);
   virtual ~FixAdhesionBacillus() {}
   int setmask();
+  void init();
+  void init_list(int, class NeighList *);
   virtual void post_force(int);
   void compute();
   // rod-rod interactions

@@ -20,6 +20,7 @@
 #include "error.h"
 #include "neigh_list.h"
 #include "neighbor.h"
+#include "neigh_request.h"
 #include "group.h"
 #include "pair.h"
 #include "force.h"
@@ -76,6 +77,20 @@ int FixEPSAdhesion::setmask()
 
 /* ---------------------------------------------------------------------- */
 
+void FixEPSAdhesion::init() {
+  int irequest = neighbor->request((void *) this);
+  neighbor->requests[irequest]->pair = 0;
+  neighbor->requests[irequest]->fix = 1;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixEPSAdhesion::init_list(int id, NeighList *ptr) {
+  list = ptr;
+}
+
+/* ---------------------------------------------------------------------- */
+
 void FixEPSAdhesion::post_force(int vflag)
 {
   // energy and virial setup
@@ -104,8 +119,7 @@ void FixEPSAdhesion::compute()
   double *outer_radius = atom->outer_radius;
   double **f = atom->f;
   int newton_pair = force->newton_pair;
-  
-  NeighList *list = force->pair->list;
+
   int inum = list->inum;
   int *ilist = list->ilist;
   int *numneigh = list->numneigh;

@@ -21,6 +21,7 @@
 #include "force.h"
 #include "neigh_list.h"
 #include "neighbor.h"
+#include "neigh_request.h"
 #include "group.h"
 #include "memory.h"
 #include "pair.h"
@@ -88,13 +89,6 @@ int FixAdhesion::modify_param(int narg, char **arg)
   return iarg;
 }
 
-/* ---------------------------------------------------------------------- */
-
-void FixAdhesion::init()
-{
-  if (!allocated) error->all(FLERR,"fix adhesion coeffs are not set");
-}
-
 /* ----------------------------------------------------------------------
    allocate all arrays
 ------------------------------------------------------------------------- */
@@ -122,6 +116,22 @@ int FixAdhesion::setmask()
 
 /* ---------------------------------------------------------------------- */
 
+void FixAdhesion::init() {
+  if (!allocated) error->all(FLERR,"fix adhesion coeffs are not set");
+
+  int irequest = neighbor->request((void *) this);
+  neighbor->requests[irequest]->pair = 0;
+  neighbor->requests[irequest]->fix = 1;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixAdhesion::init_list(int id, NeighList *ptr) {
+  list = ptr;
+}
+
+/* ---------------------------------------------------------------------- */
+
 void FixAdhesion::post_force(int vflag)
 {
   // energy and virial setup
@@ -143,7 +153,6 @@ void FixAdhesion::compute()
   double **f = atom->f;
   int newton_pair = force->newton_pair;
   
-  NeighList *list = force->pair->list;
   int inum = list->inum;
   int *ilist = list->ilist;
   int *numneigh = list->numneigh;
