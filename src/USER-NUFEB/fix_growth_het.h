@@ -33,6 +33,8 @@ class FixGrowthHET: public FixGrowth {
   virtual void update_cells();
 
  protected:
+  int eps_flag;
+
   int isub;
   int io2;
   int ino2;
