@@ -59,6 +59,7 @@ FixGrowthHET::FixGrowthHET(LAMMPS *lmp, int narg, char **arg) :
   eps_yield = 0.0;
   anoxic = 0.0;
   eps_dens = 1.0;
+  eps_flag = 0;
 
   isub = grid->find(arg[3]);
   if (isub < 0)
@@ -101,6 +102,7 @@ FixGrowthHET::FixGrowthHET(LAMMPS *lmp, int narg, char **arg) :
       anoxic = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       iarg += 2;
     } else if (strcmp(arg[iarg], "epsdens") == 0) {
+      eps_flag = 1;
       eps_dens = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       iarg += 2;
     } else {
@@ -169,14 +171,17 @@ void FixGrowthHET::update_atoms()
 	(four_thirds_pi * radius[i] * radius[i] * radius[i]);
       // forward Euler to update biomass and rmass
       rmass[i] = rmass[i] * (1 + grid->growth[igroup][cell][0] * dt);
-      outer_mass[i] = four_thirds_pi *
-	(outer_radius[i] * outer_radius[i] * outer_radius[i] -
-	 radius[i] * radius[i] * radius[i]) *
-	eps_dens + grid->growth[igroup][cell][1] * rmass[i] * dt;
       radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
-      outer_radius[i] = pow(three_quarters_pi *
-			    (rmass[i] / density + outer_mass[i] / eps_dens),
-			    third);
+
+      if (eps_flag) {
+	outer_mass[i] = four_thirds_pi *
+	  (outer_radius[i] * outer_radius[i] * outer_radius[i] -
+	   radius[i] * radius[i] * radius[i]) *
+	  eps_dens + grid->growth[igroup][cell][1] * rmass[i] * dt;
+	outer_radius[i] = pow(three_quarters_pi *
+			      (rmass[i] / density + outer_mass[i] / eps_dens),
+			      third);
+      }
     }
   }
 }
