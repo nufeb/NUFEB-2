@@ -43,7 +43,7 @@ FixEPSExtract::FixEPSExtract(LAMMPS *lmp, int narg, char **arg) :
   type = utils::inumeric(FLERR,arg[3],true,lmp);
   ieps = group->find(arg[4]);
   if (ieps < 0)
-    error->all(FLERR, "Can't find group");
+    error->all(FLERR, "Can't find group in fix nufeb/eps_extract command");
   ratio = utils::numeric(FLERR,arg[5],true,lmp);
   eps_density = utils::numeric(FLERR,arg[6],true,lmp);
   seed = utils::inumeric(FLERR,arg[7],true,lmp);

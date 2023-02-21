@@ -30,8 +30,9 @@ FixDeathDiameter::FixDeathDiameter(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 4)
     error->all(FLERR, "Illegal fix nufeb/death/diameter command");
   
-  tdead = -1;
   idead = group->find(arg[3]);
+  if (idead == -1)
+    error->all(FLERR, "Can't find group in fix nufeb/death/diameter");
   idead = 1 | group->bitmask[idead];
 
   if (idead < 0)

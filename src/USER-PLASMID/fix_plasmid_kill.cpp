@@ -35,7 +35,7 @@ FixPlasmidKill::FixPlasmidKill(LAMMPS *lmp, int narg, char **arg) :
   
   idead = group->find(arg[3]);
   if (idead < 0)
-    error->all(FLERR, "Can't find group");
+    error->all(FLERR, "Can't find group in fix nufeb/plasmid/kill");
   idead = 1 | group->bitmask[idead];
 
   fix_plasmid = nullptr;
