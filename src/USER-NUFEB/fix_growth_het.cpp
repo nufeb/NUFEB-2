@@ -171,7 +171,6 @@ void FixGrowthHET::update_atoms()
 	(four_thirds_pi * radius[i] * radius[i] * radius[i]);
       // forward Euler to update biomass and rmass
       rmass[i] = rmass[i] * (1 + grid->growth[igroup][cell][0] * dt);
-      radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
 
       if (eps_flag) {
 	outer_mass[i] = four_thirds_pi *
@@ -182,6 +181,7 @@ void FixGrowthHET::update_atoms()
 			      (rmass[i] / density + outer_mass[i] / eps_dens),
 			      third);
       }
+      radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
     }
   }
 }
