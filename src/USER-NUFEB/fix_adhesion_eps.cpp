@@ -130,7 +130,7 @@ void FixEPSAdhesion::compute()
   for (int i = 0; i < 6; i++)
     virial[i] = 0.0;
   
-  for (int ii = 0; ii < nlocal; ii++) {
+  for (int ii = 0; ii < inum; ii++) {
     int i = ilist[ii];
     if (mask[i] & groupbit) {
       double xtmp = x[i][0];

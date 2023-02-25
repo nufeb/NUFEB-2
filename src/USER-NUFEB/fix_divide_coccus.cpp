@@ -149,9 +149,6 @@ void FixDivideCoccus::compute()
         atom->omega[j][0] = atom->omega[i][0];
         atom->omega[j][1] = atom->omega[i][1];
         atom->omega[j][2] = atom->omega[i][2];
-	atom->torque[j][0] = atom->torque[i][0];
-	atom->torque[j][1] = atom->torque[i][1];
-	atom->torque[j][2] = atom->torque[i][2];
         atom->rmass[j] = jmass;
         atom->biomass[j] = atom->biomass[i];
         atom->radius[j] = jradius;

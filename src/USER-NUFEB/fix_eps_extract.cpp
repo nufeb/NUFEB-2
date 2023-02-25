@@ -138,25 +138,25 @@ void FixEPSExtract::compute()
         double oldz = atom->x[i][2];
 
         // create EPS atom
-        double child_radius = pow(((6 * eps_mass) / (eps_density * MY_PI)), (1.0 / 3.0)) * 0.5;
+        double eps_radius = pow(((6 * eps_mass) / (eps_density * MY_PI)), (1.0 / 3.0)) * 0.5;
         double *coord = new double[3];
-        double newx = oldx - ((child_radius + atom->outer_radius[i]) * cos(theta) * sin(phi) * DELTA);
-        double newy = oldy - ((child_radius + atom->outer_radius[i]) * sin(theta) * sin(phi) * DELTA);
-        double newz = oldz - ((child_radius + atom->outer_radius[i]) * cos(phi) * DELTA);
-        if (newx - child_radius < domain->boxlo[0]) {
-          newx = domain->boxlo[0] + child_radius;
-        } else if (newx + child_radius > domain->boxhi[0]) {
-          newx = domain->boxhi[0] - child_radius;
+        double newx = oldx - ((eps_radius + atom->outer_radius[i]) * cos(theta) * sin(phi) * DELTA);
+        double newy = oldy - ((eps_radius + atom->outer_radius[i]) * sin(theta) * sin(phi) * DELTA);
+        double newz = oldz - ((eps_radius + atom->outer_radius[i]) * cos(phi) * DELTA);
+        if (newx - eps_radius < domain->boxlo[0]) {
+          newx = domain->boxlo[0] + eps_radius;
+        } else if (newx + eps_radius > domain->boxhi[0]) {
+          newx = domain->boxhi[0] - eps_radius;
         }
-        if (newy - child_radius < domain->boxlo[1]) {
-          newy = domain->boxlo[1] + child_radius;
-        } else if (newy + child_radius > domain->boxhi[1]) {
-          newy = domain->boxhi[1] - child_radius;
+        if (newy - eps_radius < domain->boxlo[1]) {
+          newy = domain->boxlo[1] + eps_radius;
+        } else if (newy + eps_radius > domain->boxhi[1]) {
+          newy = domain->boxhi[1] - eps_radius;
         }
-        if (newz - child_radius < domain->boxlo[2]) {
-          newz = domain->boxlo[2] + child_radius;
-        } else if (newz + child_radius > domain->boxhi[2]) {
-          newz = domain->boxhi[2] - child_radius;
+        if (newz - eps_radius < domain->boxlo[2]) {
+          newz = domain->boxlo[2] + eps_radius;
+        } else if (newz + eps_radius > domain->boxhi[2]) {
+          newz = domain->boxhi[2] - eps_radius;
         }
         coord[0] = newx;
         coord[1] = newy;
@@ -176,16 +176,13 @@ void FixEPSExtract::compute()
         atom->omega[n][0] = atom->omega[i][0];
         atom->omega[n][1] = atom->omega[i][1];
         atom->omega[n][2] = atom->omega[i][2];
-	atom->torque[n][0] = atom->torque[i][0];
-	atom->torque[n][1] = atom->torque[i][1];
-	atom->torque[n][2] = atom->torque[i][2];
         atom->rmass[n] = eps_mass;
         atom->biomass[n] = 1.0;
-        atom->radius[n] = child_radius;
+        atom->radius[n] = eps_radius;
         atom->outer_mass[n] = 0;
-        atom->outer_radius[n] = child_radius;
+        atom->outer_radius[n] = eps_radius;
 
- //       modify->create_attribute(n);
+        modify->create_attribute(n);
 
         delete[] coord;
       }
