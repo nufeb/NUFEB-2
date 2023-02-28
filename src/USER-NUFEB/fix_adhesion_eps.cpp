@@ -78,10 +78,10 @@ int FixEPSAdhesion::setmask()
 /* ---------------------------------------------------------------------- */
 
 void FixEPSAdhesion::init() {
-  int irequest = neighbor->request((void *) this);
+  int irequest = neighbor->request(this,instance_me);
   neighbor->requests[irequest]->pair = 0;
   neighbor->requests[irequest]->fix = 1;
-}
+  neighbor->requests[irequest]->size = 1;
 
 /* ---------------------------------------------------------------------- */
 

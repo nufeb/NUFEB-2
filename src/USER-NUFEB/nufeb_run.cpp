@@ -401,7 +401,7 @@ void NufebRun::run(int n)
 
   for (int i = 0; i < n; i++) {
     double step_start = get_time();
-    
+
     if (timer->check_timeout(i)) {
       update->nsteps = i;
       break;

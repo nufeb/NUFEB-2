@@ -119,9 +119,10 @@ int FixAdhesion::setmask()
 void FixAdhesion::init() {
   if (!allocated) error->all(FLERR,"fix adhesion coeffs are not set");
 
-  int irequest = neighbor->request((void *) this);
+  int irequest = neighbor->request(this,instance_me);
   neighbor->requests[irequest]->pair = 0;
   neighbor->requests[irequest]->fix = 1;
+  neighbor->requests[irequest]->size = 1;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -161,7 +162,7 @@ void FixAdhesion::compute()
   for (int i = 0; i < 6; i++)
     virial[i] = 0.0;
   
-  for (int ii = 0; ii < nlocal; ii++) {
+  for (int ii = 0; ii < inum; ii++) {
     int i = ilist[ii];
     double xtmp = x[i][0];
     double ytmp = x[i][1];
@@ -173,58 +174,58 @@ void FixAdhesion::compute()
     int jnum = numneigh[i];
 
     for (int jj = 0; jj < jnum; jj++) {
-      int j = jlist[jj];
-      double delx = xtmp - x[j][0];
-      double dely = ytmp - x[j][1];
-      double delz = ztmp - x[j][2];
-      double rsq = delx * delx + dely * dely + delz * delz;
+        int j = jlist[jj];
+        double delx = xtmp - x[j][0];
+        double dely = ytmp - x[j][1];
+        double delz = ztmp - x[j][2];
+        double rsq = delx * delx + dely * dely + delz * delz;
 
-      int jtype = type[j];
-      double radj = radius[j];
-      double radsum = radi + radj;
-      double ccel = 0;
+        int jtype = type[j];
+        double radj = radius[j];
+        double radsum = radi + radj;
+        double ccel = 0;
 
-      if (rsq < (radsum + smax)*(radsum + smax)){
-	double r = sqrt(rsq);
-	double del = r - radsum;
-	if (del > smin) {
-	  double first = del*del+2*radi*del+2*radj*del;
-	  double second = del*del+2*radi*del+2*radj*del+4*radi*radj;
-	  ccel = -(ah[itype][jtype]*64*radi*radi*radi*radj*radj*radj*(del+radsum)) / (6.0*first*first*second*second);
-	}
-	else if (del >= 0 && del <= smin) {
-	  double first = smin*smin+2*radi*smin+2*radj*smin;
-	  double second = smin*smin+2*radi*smin+2*radj*smin+4*radi*radj;
-	  ccel = -(ah[itype][jtype]*64*radi*radi*radi*radj*radj*radj*(del+radsum)) / (6.0*first*first*second*second);
-	} else
-	  ccel = 0;
+        if (rsq < (radsum + smax)*(radsum + smax)){
+        double r = sqrt(rsq);
+        double del = r - radsum;
+        if (del > smin) {
+          double first = del*del+2*radi*del+2*radj*del;
+          double second = del*del+2*radi*del+2*radj*del+4*radi*radj;
+          ccel = -(ah[itype][jtype]*64*radi*radi*radi*radj*radj*radj*(del+radsum)) / (6.0*first*first*second*second);
+        }
+        else if (del >= 0 && del <= smin) {
+          double first = smin*smin+2*radi*smin+2*radj*smin;
+          double second = smin*smin+2*radi*smin+2*radj*smin+4*radi*radj;
+          ccel = -(ah[itype][jtype]*64*radi*radi*radi*radj*radj*radj*(del+radsum)) / (6.0*first*first*second*second);
+        } else
+          ccel = 0;
 
-	double rinv = 1/r;
+        double rinv = 1/r;
 
-	double ccelx = delx*ccel*rinv;
-	double ccely = dely*ccel*rinv;
-	double ccelz = delz*ccel*rinv;
+        double ccelx = delx*ccel*rinv;
+        double ccely = dely*ccel*rinv;
+        double ccelz = delz*ccel*rinv;
 
-	f[i][0] += ccelx;
-	f[i][1] += ccely;
-	f[i][2] += ccelz;
+        f[i][0] += ccelx;
+        f[i][1] += ccely;
+        f[i][2] += ccelz;
 
-	if (newton_pair || j < nlocal){
-	  f[j][0] -= ccelx;
-	  f[j][1] -= ccely;
-	  f[j][2] -= ccelz;
-	}
+        if (newton_pair || j < nlocal){
+          f[j][0] -= ccelx;
+          f[j][1] -= ccely;
+          f[j][2] -= ccelz;
+        }
 
-	if (evflag) {
-	  double v[6];
-	  v[0] = delx*ccelx;
-	  v[1] = dely*ccely;
-	  v[2] = delz*ccelz;
-	  v[3] = delx*ccely;
-	  v[4] = delx*ccelz;
-	  v[5] = dely*ccelz;
-	  v_tally(i, v);
-	}
+        if (evflag) {
+          double v[6];
+          v[0] = delx*ccelx;
+          v[1] = dely*ccely;
+          v[2] = delz*ccelz;
+          v[3] = delx*ccely;
+          v[4] = delx*ccelz;
+          v[5] = dely*ccelz;
+          v_tally(i, v);
+        }
       }
     }
   }
