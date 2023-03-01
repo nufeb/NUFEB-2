@@ -1,12 +1,12 @@
-# NUFEB simulation with HETs and AOBs
+# NUFEB simulation - Anammox biofilm growth 
 
 units si                                    # using si units
 atom_style      coccus                      # using nufeb atom style
-atom_modify     map array sort 1000 3e-6    # map array - find atoms using indices
-		                            # sort 1000 5.0e-6: sort every 1000
-					     #   steps with 5.0e-6 binsize
+atom_modify     map array sort 10 0        # map array - find atoms using indices
+		                            # sort 10: sort every 10 steps with 5.0e-6 binsize
+					     
 boundary        pp pp ff                   # periodic boundaries in x and y
-                                           #   fixed boundary in z
+                                           #   fixed boundary in z 
 newton          off                        # forces between local and ghost
                                            #   atoms are computed in each
 					     #   processor without communication
@@ -14,11 +14,10 @@ processors      * * 1                      # processor grid
 
 comm_modify     vel yes                    # communicate velocities for ghost
                                            # atoms
-comm_modify     cutoff 6e-6                # guarantee that enough atoms are
-                                           # communicated to correctly compute
+                                           
 read_data       atom.in					  
 
-##############Define initial particle distribution##############
+##############Define initial coccus##############
 
 lattice sc 1e-5 origin 0 0 0
 region reg block 0 60 0 60 0 1
@@ -51,21 +50,22 @@ group           nob   type 3            # defining aob group
 group           ana   type 4            # defining aob group
 group           dead  type 5
 
-neighbor        7e-7 bin                # setting neighbour skin distance and
+neighbor        1e-6 bin                # setting neighbour skin distance and
                                         # style
 neigh_modify    check yes               # rebuild neighbour list if any atom
                                         # had moved more than half the skin
 					  # distance
 
 # select grid style
-grid_style      nufeb/chemostat 5 sub nh4 o2 no2 no3 1.25e-5
+grid_style      nufeb/chemostat 6 sub nh4 o2 no2 no3 n2 1.25e-5
 
 # set substrates initial concentration
-grid_modify     set sub  pp pp nd  1.2e-3 1.2e-3
-grid_modify     set nh4  pp pp nd  6e-3 6e-3 
-grid_modify     set o2   pp pp nd  0.5e-3 0.5e-3
-grid_modify     set no2  pp pp nd  0 0 
-grid_modify     set no3  pp pp nd  0 0
+grid_modify     set sub  pp pp nd  1.2e-3 
+grid_modify     set nh4  pp pp nd  6e-3 
+grid_modify     set o2   pp pp nd  0.5e-3 
+grid_modify     set no2  pp pp nd  1e-8
+grid_modify     set no3  pp pp nd  1e-8
+grid_modify     set n2  pp pp nd   1e-8
 
 # define pair style
 pair_style  gran/hooke/history 1e-2 NULL 1e-3 NULL 0.0 1
@@ -78,7 +78,7 @@ fix nve all nve/limit 1e-7
 fix growth_het het nufeb/growth/het sub 4e-3 o2 2e-4 no2 0.5e-3 no3 0.5e-3 growth 6.9444e-5 yield 0.63 maintain 4.63e-6 decay 9.17e-7 anoxic 0.8
 fix growth_aob aob nufeb/growth/aob nh4 2.4e-3 o2 0.6e-3 no2 growth 2.3727e-5 yield 0.15 maintain 1.505e-6 decay 7.87e-7
 fix growth_nob nob nufeb/growth/nob o2 2.2e-3 no2 5.5e-3 no3 growth 1.6782e-5 yield 0.041 maintain 0.694e-6 decay 4.63e-7
-fix growth_ana ana nufeb/growth/anammox nh4 7e-5 o2 1e-5 no2 5e-5 no3 growth 9.26e-7 yield 0.159 maintain 3.5e-8 decay 3e-8
+fix growth_ana ana nufeb/growth/anammox nh4 7e-5 o2 1e-5 no2 5e-5 no3 n2 growth 9.26e-7 yield 0.159 maintain 3.5e-8 decay 3e-8
 
 fix div all nufeb/division/coccus 5e-6 30 987
 fix death all nufeb/death/diameter dead 2e-6 type 5
@@ -90,12 +90,14 @@ fix diff_nh4 all nufeb/diffusion_reaction nh4 1.97e-9
 fix diff_o2  all nufeb/diffusion_reaction o2 2.3e-9
 fix diff_no2 all nufeb/diffusion_reaction no2 1.85e-9
 fix diff_no3 all nufeb/diffusion_reaction no3 1.85e-9
+fix diff_n2 all nufeb/diffusion_reaction n2 2.3e-9
 
 fix blayer_sub all nufeb/boundary_layer sub 0.9e-4
 fix blayer_o2  all nufeb/boundary_layer o2 0.9e-4
 fix blayer_nh4 all nufeb/boundary_layer nh4 0.9e-4
 fix blayer_no2 all nufeb/boundary_layer no2 0.9e-4
 fix blayer_no3 all nufeb/boundary_layer no3 0.9e-4
+fix blayer_n2 all nufeb/boundary_layer n2 0.9e-4
 
 fix coeff_sub all nufeb/diffusion_coeff sub ratio 0.75
 fix coeff_o2  all nufeb/diffusion_coeff o2 ratio 0.75

@@ -34,6 +34,7 @@ GridVecChemostat::GridVecChemostat(LAMMPS *lmp) : GridVec(lmp)
   dens = nullptr;
   growth = nullptr;
   bulk = nullptr;
+  mw = nullptr;
   boundary = nullptr;
   diff_coeff = nullptr;
   grid->chemostat_flag = 1;
@@ -62,9 +63,10 @@ void GridVecChemostat::grow(int n)
     reac = memory->grow(grid->reac, grid->nsubs, n, "nufeb/chemostat:reac");
     dens = memory->grow(grid->dens, group->ngroup, n, "nufeb/chemostat:dens");
     growth = memory->grow(grid->growth, group->ngroup, n, 2, "nufeb/chemostat:grow");
-    bulk = memory->grow(grid->bulk, grid->nsubs, "nufeb/chemostat:bulk");
     boundary = memory->grow(grid->boundary, grid->nsubs, 6, "nufeb/chemostat:boundary");
     diff_coeff = memory->grow(grid->diff_coeff, grid->nsubs, n, "nufeb/chemostat:diff_coeff");
+    bulk = memory->grow(grid->bulk, grid->nsubs, "nufeb/chemostat:bulk");
+    mw = memory->grow(grid->mw, grid->nsubs, "nufeb/chemostat:bulk");
 
     nmax = n;
     grid->nmax = nmax;
@@ -134,7 +136,7 @@ void GridVecChemostat::unpack_exchange(int n, int *cells, double *buf)
 
 void GridVecChemostat::set(int narg, char **arg)
 {
-  if (narg != 7) error->all(FLERR, "Invalid grid_modify set command");
+  if (narg < 6) error->all(FLERR, "Invalid grid_modify set command");
   int isub = grid->find(arg[1]);
   if (isub < 0) error->all(FLERR,"Cannot find substrate name");
 
@@ -145,14 +147,14 @@ void GridVecChemostat::set(int narg, char **arg)
 
     for (int j = 0; j < 2; j++) {
       if (arg[2+i][j] == 'p') {
-	boundary[isub][2*i+j] = PERIODIC;
-	grid->periodic[i] = 1;
+        boundary[isub][2*i+j] = PERIODIC;
+        grid->periodic[i] = 1;
       } else if (arg[2+i][j] == 'n') {
-	boundary[isub][2*i+j] = NEUMANN;
+        boundary[isub][2*i+j] = NEUMANN;
       } else if (arg[2+i][j] == 'd') {
-	boundary[isub][2*i+j] = DIRICHLET;
+        boundary[isub][2*i+j] = DIRICHLET;
       } else {
-	error->all(FLERR, "Illegal boundary condition: unknown keyword");
+        error->all(FLERR, "Illegal boundary condition: unknown keyword");
       }
     }
   }
@@ -160,8 +162,21 @@ void GridVecChemostat::set(int narg, char **arg)
   double domain = utils::numeric(FLERR,arg[5],true,lmp);
   if (domain < 0) error->all(FLERR, "Illegal initial substrate concentration");
 
-  bulk[isub] = utils::numeric(FLERR,arg[6],true,lmp);
-  if (bulk[isub] < 0) error->all(FLERR, "Illegal initial bulk concentration");
+  bulk[isub] = domain;
+  int iarg = 6;
+  while (iarg < narg) {
+    if (strcmp(arg[iarg], "bulk") == 0) {
+      bulk[isub] = utils::numeric(FLERR, arg[iarg+1], true, lmp);
+      if (bulk[isub] < 0) error->all(FLERR, "Illegal initial bulk concentration");
+      iarg += 2;
+    } else if (strcmp(arg[iarg], "mw") == 0) {
+      mw[isub] = utils::numeric(FLERR, arg[iarg+1], true, lmp);
+      if (mw[isub] <= 0) error->all(FLERR, "Illegal molecular weight value");
+      iarg += 2;
+    } else {
+      error->all(FLERR, "Illegal grid_modify command");
+    }
+  }
 
   set_grid(isub, domain, bulk[isub]);
 }
@@ -179,9 +194,9 @@ void GridVecChemostat::set_grid(int isub, double domain, double bulk)
 	  ((mask[i] & Y_PB_MASK) && (boundary[isub][3] == DIRICHLET)) ||
 	  ((mask[i] & Z_NB_MASK) && (boundary[isub][4] == DIRICHLET)) ||
 	  ((mask[i] & Z_PB_MASK) && (boundary[isub][5] == DIRICHLET))) {
-	conc[isub][i] = bulk;
+        conc[isub][i] = bulk;
       } else {
-	conc[isub][i] = domain;
+    	conc[isub][i] = domain;
       }
     }
     grid->reac[isub][i] = 0.0;

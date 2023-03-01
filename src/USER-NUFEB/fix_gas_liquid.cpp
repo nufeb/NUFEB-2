@@ -37,11 +37,9 @@ FixGasLiquid::FixGasLiquid(LAMMPS *lmp, int narg, char **arg) :
 
   iliquid = -1;
   igas = -1;
-
   kga = 0.0;
   h = 1.0;
   temp = 1.0;
-  mw = 1.0;
   rg = 1.0;
 
   iliquid = grid->find(arg[3]);
@@ -60,27 +58,30 @@ FixGasLiquid::FixGasLiquid(LAMMPS *lmp, int narg, char **arg) :
     } else if (strcmp(arg[iarg], "h") == 0) {
       h = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       if (h <= 0)
-	error->all(FLERR, "Henry's law solubility constant (H) must be positive");
+    	error->all(FLERR, "Henry's law solubility constant (H) must be positive");
       iarg += 2;
     } else if (strcmp(arg[iarg], "temp") == 0) {
       temp = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       if (temp <= 0)
-	error->all(FLERR, "Temperature (temp) must be positive");
+    	error->all(FLERR, "Temperature (temp) must be positive");
       iarg += 2;
     } else if (strcmp(arg[iarg], "rg") == 0) {
       rg = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       if (rg <= 0)
-	error->all(FLERR, "Ideal gas constant must be positive");
-      iarg += 2;
-    } else if (strcmp(arg[iarg], "mw") == 0) {
-      mw = utils::numeric(FLERR,arg[iarg+1],true,lmp);
-      if (mw <= 0)
-	error->all(FLERR, "Molar mass must be positive");
+    	error->all(FLERR, "Ideal gas constant must be positive");
       iarg += 2;
     } else {
       error->all(FLERR, "Illegal fix nufeb/gas_liquid command");
     }
   }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixGasLiquid::init()
+{
+  if (grid->mw = nullptr)
+    error->all(FLERR, "fix nufeb/gas_liquid requires molecular weight (mw) defined");
 }
 
 /* ---------------------------------------------------------------------- */
@@ -110,11 +111,11 @@ void FixGasLiquid::compute()
 
   for (int i = 0; i < grid->ncells; i++) {
     if (!(grid->mask[i] & GHOST_MASK)) {
-      p_g2l = kga * (conc[iliquid][i]/(h * mw) - grid->bulk[igas]);
+      p_g2l = kga * (conc[iliquid][i]/(h * grid->mw[iliquid]) - grid->bulk[igas]);
       n_l2g = -p_g2l / (rg * temp);
       // update reaction rates
       reac[igas][i] += p_g2l;
-      reac[iliquid][i] += n_l2g * mw;
+      reac[iliquid][i] += n_l2g * grid->mw[iliquid];
     }
   }
 }

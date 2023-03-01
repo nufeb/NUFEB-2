@@ -1,20 +1,16 @@
-# NUFEB simulation - biofilm growth with heterotrophic bacteria and EPS 
+# NUFEB simulation - heterotrophic biofilm growth 
 
 #-------------------------------------------General settings-------------------------------------------#
 
-units si                                   # using si units
-
 processors      * * 1                      # processor grid
 
-comm_modify     vel yes cutoff 2e-6        # communicate velocities for ghost atoms
-                                           # guarantee that enough atoms are
-                                           # communicated to correctly compute
+comm_modify     vel yes                    # communicate velocities for ghost atoms
 
 #------------------------------Microbes, nutrients and simulation box-----------------------------------#
 
 atom_style      coccus                      # using nufeb coccus atom style
-atom_modify     map array sort 1000 1e-6    # map array: find atoms using indices
-		                            # sort 1000 1e-6: sort every 1000 steps with 1e-6 binsize
+atom_modify     map array sort 10 0      # map array: find atoms using indices
+		                            # sort 10: sort every 10 steps 
 		                            
 boundary        pp pp ff		    # periodic domain boundaries in x and y fixed boundary in z
 
@@ -25,17 +21,15 @@ group           het   type 1               # assign type 1 atoms to het group
 group           eps   type 2               # assign type 2 atoms to eps group
 
 neighbor        5e-7 bin                   # setting neighbour skin distance and style
-neigh_modify    check yes                  # rebuild neighbour list if any atom
-                                           # had moved more than half the skin distance
 
 # use nufeb/chemostat grid style, define substrate types and diffusion grid size
 grid_style      nufeb/chemostat 4 sub o2 no2 no3 4e-6  
 
 # set diffusion boundary conditions and initial concentrations
-grid_modify     set sub  pp pp nd  1e-4 1e-4
-grid_modify     set o2   pp pp nd  1e-4 1e-4
-grid_modify     set no2  pp pp nd  1e-4 1e-4
-grid_modify     set no3  pp pp nd  1e-4 1e-4
+grid_modify     set sub  pp pp nd  1e-4  
+grid_modify     set o2   pp pp nd  1e-4 
+grid_modify     set no2  pp pp nd  1e-4 
+grid_modify     set no3  pp pp nd  1e-4 
 
 
 #------------------------------------------Biological processes------------------------------------------#
@@ -53,11 +47,11 @@ fix eps_ext het nufeb/eps_extract 2 eps 1.3 30 567418
 #------------------------------------------Physical processes------------------------------------------#
 
 # contact force between atoms
-pair_style  gran/hooke/history 1e-4 NULL 1e-5 NULL 0.0 1
+pair_style  gran/hooke/history 1e-4 NULL 1e-5 NULL 0.0 0
 pair_coeff  * *
 
 # contact force between atoms and domain boundary
-fix wall all wall/gran hooke/history 1e-3 NULL 1e-4 NULL 0 0 zplane 0.0 8e-5
+fix wall all wall/gran hooke/history 1e-3 NULL 1e-4 NULL 0 0 zplane 0.0 1e-04
 
 # viscous damping force between atoms
 fix vis all viscous 1e-5
@@ -83,8 +77,10 @@ variable one equal 1.0
 compute press all pressure NULL pair vol v_one
 variable press equal "(c_ke + c_press) / (3.0 * c_vol)" 
 
-# compute total mass
+# compute biomass and # of atoms
 variable mass equal "mass(all)"
+variable nhet equal "count(het)"
+variable neps equal "count(eps)"
 
 # dump vtk files to /vtk folder, require build NUFEB with vtk option
 #shell mkdir vtk
@@ -96,7 +92,7 @@ variable mass equal "mass(all)"
 #dump du3 all nufeb/hdf5 10 dump.h5 id type x y z vx vy vz fx fy fz radius conc reac 
 
 # screen and log outputs
-thermo_style custom step cpu atoms v_press v_mass
+thermo_style custom step cpu atoms v_nhet v_neps v_mass
 thermo 1
 
 #----------------------------------------------Run------------------------------------------------------#

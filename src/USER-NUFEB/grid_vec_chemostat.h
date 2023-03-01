@@ -46,6 +46,7 @@ class GridVecChemostat : public GridVec {
   double **dens;    // density
   double ***growth; // growth rate
   double *bulk;     // bulk concentration
+  double *mw;       // melecular weight
   int **boundary;   // boundary conditions (-x, +x, -y, +y, -z, +z)
   double **diff_coeff;
 };

@@ -34,12 +34,12 @@ class FixGasLiquid : public Fix {
   int setmask();
   virtual void chemistry_nufeb();
   virtual void compute();
+  virtual void init();
 
  protected:
   double kga;   // gas mass transfer rate s-1
-  double h;	// Henry's solubility constant - mol m-3 Pa-1
+  double h;	    // Henry's solubility constant - mol m-3 Pa-1
   double temp;  // temperature - K
-  double mw;	// molar mass - kg/mol
   double rg;   	// ideal gas constant - m3 Pa K-1 mol-1
 };
 

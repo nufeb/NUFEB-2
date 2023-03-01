@@ -37,12 +37,14 @@ Grid::Grid(LAMMPS *lmp) : Pointers(lmp)
 #define GRID_CLASS
 #define GridStyle(key,Class) \
   (*gvec_map)[#key] = &gvec_creator<Class>;
+
 #include "style_grid.h"
+
 #undef GridStyle
 #undef GRID_CLASS
 
   grid_exist = false;
-  
+
   nmax = 0;
   nsubs = 0;
   sub_names = NULL;
@@ -50,15 +52,16 @@ Grid::Grid(LAMMPS *lmp) : Pointers(lmp)
   box[0] = box[1] = box[2] = 0;
   ncells = 0;
   periodic[0] = periodic[1] = periodic[2] = 0;
-  
+
   mask = NULL;
   conc = NULL;
   reac = NULL;
   dens = NULL;
   growth = NULL;
-  bulk = NULL;
   boundary = NULL;
   diff_coeff = NULL;
+  bulk = NULL;
+  mw = NULL;
 
   simple_flag = 0;
   chemostat_flag = 0;
@@ -68,7 +71,7 @@ Grid::Grid(LAMMPS *lmp) : Pointers(lmp)
 
 Grid::~Grid()
 {
-  delete [] grid_style;
+  delete[] grid_style;
   delete gvec;
   delete gvec_map;
 
@@ -78,8 +81,9 @@ Grid::~Grid()
   memory->destroy(reac);
   memory->destroy(diff_coeff);
   memory->destroy(growth);
-  memory->destroy(bulk);
   memory->destroy(boundary);
+  memory->destroy(bulk);
+  memory->destroy(mw);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -100,7 +104,7 @@ void Grid::modify_params(int narg, char **arg)
 
 void Grid::create_gvec(const char *style, int narg, char **arg, int trysuffix)
 {
-  delete [] grid_style;
+  delete[] grid_style;
   if (gvec) delete gvec;
   grid_style = NULL;
   gvec = NULL;
@@ -172,7 +176,7 @@ GridVec *Grid::new_gvec(const char *style, int trysuffix, int &sflag)
    one instance per GridVec style in style_grid.h
 ------------------------------------------------------------------------- */
 
-template <typename T>
+template<typename T>
 GridVec *Grid::gvec_creator(LAMMPS *lmp)
 {
   return new T(lmp);
@@ -211,8 +215,8 @@ int Grid::cell(double *x)
   const double small = 1e-12;
   for (int i = 0; i < 3; i++) {
     c[i] = static_cast<int>((x[i] - domain->boxlo[i]) /
-			    grid->cell_size + small) - grid->sublo[i];
+          grid->cell_size + small) - grid->sublo[i];
   }
   return c[0] + c[1] * grid->subbox[0] +
-    c[2] * grid->subbox[0] * grid->subbox[1];
+         c[2] * grid->subbox[0] * grid->subbox[1];
 }
