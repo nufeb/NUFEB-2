@@ -12,24 +12,22 @@ newton          off                        # forces between local and ghost
 					     #   processor without communication
 processors      * * 1                      # processor grid
 
-comm_modify     vel yes cutoff 2e-6        # communicate velocities for ghost
+comm_modify     vel yes                    # communicate velocities for ghost
                                            # atoms
 			                    # guarantee that enough atoms are
                                            # communicated to correctly compute
 read_data       atom.in					  
 
+
 ##############Define initial particle distribution##############
 
-lattice custom 1.25e-6 a1 2 0 0 a2 0 1 0 a3 0 0 1 basis 0.6 0.5 0.5 
-region reg block 0 40 0 16 0 8
-create_atoms 1 region reg
+#1.25e-6
+lattice sc 1.25e-6 origin 0 0 0
+region reg block 0 80 0 16 1 2
 
-lattice custom 1.25e-6 a1 2 0 0 a2 0 1 0 a3 0 0 1 basis 0.1 0.5 0.5 
-region reg2 block 0 40 0 16 0 8
-create_atoms 2 region reg2
+create_atoms 1 random 1000 1237 reg
+create_atoms 2 random 2000 4545 reg
 
-# Diameter must come before density
-# Outer diameter same as diameter
 set type 1 diameter 1.2e-6
 set type 1 density 290
 
@@ -48,16 +46,16 @@ neigh_modify    check yes               # rebuild neighbour list if any atom
 					  # distance
 
 # select grid style
-grid_style      nufeb/chemostat 7 nh3 no2 no3 o2 co2 h2o h 2e-6
+grid_style      nufeb/chemostat 7 nh3 no2 no3 o2 co2 h2o h 5e-6
 
-# set substrates initial concentration (liquid:kg/m3 gas:bar)
-grid_modify     set nh3  pp pp nd  0.03 0.03 
-grid_modify     set no2  pp pp nd  0 0
-grid_modify     set no3   pp pp nd  0 0
-grid_modify     set o2  pp pp nd  9e-03 9e-03
-grid_modify     set co2  pp pp nd  0.112 0.112 
-grid_modify     set h2o  pp pp nd  18.015 18.015 
-grid_modify     set h  pp pp nd  0 0
+# set substrates initial concentration (liquid:kg/m3 gas:bar mw:g/mol)
+grid_modify     set nh3  pp pp nd  0.03 mw 17.031
+grid_modify     set no3   pp pp nd  0 mw 62.005
+grid_modify     set no2  pp pp nd  0 mw 46.006
+grid_modify     set o2  pp pp nd  0.009 mw 31.998
+grid_modify     set co2  pp pp nd  0.088 mw 44.01
+grid_modify     set h2o  pp pp nd  1 mw 18.015
+grid_modify     set h  pp pp nd  0 mw 2.016
 
 # define pair style
 pair_style  gran/hooke/history 1e-4 NULL 1e-5 NULL 0.0 1
@@ -70,25 +68,34 @@ fix nve all nve/limit 1e-7
 fix growth_aob AOB nufeb/growth/energy growth_energy.in
 fix growth_nob NOB nufeb/growth/energy growth_energy.in
 
-fix div all nufeb/division/coccus 5e-6 30 987
-fix death all nufeb/death/diameter DEAD 2e-6 type 5
+fix div all nufeb/division/coccus 1.25e-6 30 987
+fix death all nufeb/death/diameter DEAD 5.85e-7 type 3
 
 # Chemistry module fixes
-fix diff_o2  all nufeb/diffusion_reaction o2 2.3e-9
-fix diff_no2 all nufeb/diffusion_reaction no2 1.85e-9
-fix diff_no3 all nufeb/diffusion_reaction no3 1.85e-9
+fix diff_nh3 all nufeb/diffusion_reaction nh3 1.96e-9
+fix diff_no2 all nufeb/diffusion_reaction no2 1.91e-9
+fix diff_no3 all nufeb/diffusion_reaction no3 1.9e-9
+fix diff_o2  all nufeb/diffusion_reaction o2 2.1e-9
+fix diff_co2  all nufeb/diffusion_reaction co2 1.19e-9
 
-fix blayer_o2  all nufeb/boundary_layer o2 0.9e-4
-fix blayer_no2 all nufeb/boundary_layer no2 0.9e-4
-fix blayer_no3 all nufeb/boundary_layer no3 0.9e-4
+fix blayer_nh3  all nufeb/boundary_layer nh3 4e-5
+fix blayer_no2 all nufeb/boundary_layer no2 4e-5
+fix blayer_no3 all nufeb/boundary_layer no3 4e-5
+fix blayer_o2  all nufeb/boundary_layer o2 4e-5
+fix blayer_co2 all nufeb/boundary_layer co2 4e-5
 
-fix coeff_o2  all nufeb/diffusion_coeff o2 ratio 0.75
-fix coeff_no2 all nufeb/diffusion_coeff no2 ratio 0.75
-fix coeff_no3 all nufeb/diffusion_coeff no3 ratio 0.75
+
+fix coeff_nh3  all nufeb/diffusion_coeff nh3 ratio 0.8
+fix coeff_no2 all nufeb/diffusion_coeff no2 ratio 0.8
+fix coeff_no3 all nufeb/diffusion_coeff no3 ratio 0.8
+fix coeff_o2  all nufeb/diffusion_coeff o2 ratio 0.8
+fix coeff_co2  all nufeb/diffusion_coeff co2 ratio 0.8
 
 # Reactor module fixes
-fix balance_no2 all nufeb/reactor/solute_balance no2 q 2.31e-7 reactor_vol 1.25e-3 reactor_af 0.1 domain_af xy
-fix balance_no3 all nufeb/reactor/solute_balance no3 q 2.31e-7 reactor_vol 1.25e-3 reactor_af 0.1 domain_af xy
+#fix balance_nh3 all nufeb/reactor/solute_balance nh3 q 2.31e-7 reactor_vol 1.25e-3 reactor_af 0.1 domain_af xy
+#fix balance_no2 all nufeb/reactor/solute_balance no2 q 2.31e-7 reactor_vol 1.25e-3 reactor_af 0.1 domain_af xy
+#fix balance_no3 all nufeb/reactor/solute_balance no3 q 2.31e-7 reactor_vol 1.25e-3 reactor_af 0.1 domain_af xy
+
 
 # Physics module fixes
 fix wall all wall/gran hooke/history 0.5 NULL 0.5 NULL 0 0 zplane 0.0 3e-04
@@ -101,7 +108,8 @@ variable one equal 1.0
 compute press all pressure NULL pair vol v_one
 variable press equal "(c_ke + c_press) / (3.0 * c_vol)" 
 
-variable mass equal "mass(all)"
+variable maob equal "mass(AOB)"
+variable mnob equal "mass(NOB)"
 variable naob equal "count(AOB)"
 variable nnob equal "count(NOB)"
 variable ndead equal "count(DEAD)"
@@ -109,19 +117,20 @@ variable ndead equal "count(DEAD)"
 # file output
 
 #shell mkdir png
-#dump du0 all image 10 image.*png type diameter size 1280 720
+#dump 1 all image 1 image.*png type diameter size 1280 720
 #dump_modify du0 acolor 1 green acolor 2 red
 
 shell mkdir vtk
-#dump du1 all vtk 10 vtk/dump*.vtu id type diameter
-#dump du2 all grid/vtk 10 vtk/dump_%_*.vti con rea den gro
+dump du1 all vtk 10 vtk/dump*.vtu id type diameter
+dump du2 all grid/vtk 10 vtk/dump_%_*.vti con rea den gro
 
 # thermo output
-thermo_style custom step cpu atoms v_press v_mass v_naob v_nnob v_ndead f_balance_no2 f_balance_no3
+thermo_style custom step cpu atoms v_press v_maob v_mnob v_naob v_nnob v_ndead
 thermo 1 
 thermo_modify lost ignore
 
 # issue run command
-run_style nufeb diffdt 1e-4 difftol 1e-6 pairdt 1e-2 pairtol 1 pairmax 1 diffmax 1
+run_style nufeb diffdt 1e-4 difftol 1e-6 pairdt 1e-2 pairtol 1 pairmax 200 diffmax 2000
+
 timestep 10800
-run 10
+run 2000

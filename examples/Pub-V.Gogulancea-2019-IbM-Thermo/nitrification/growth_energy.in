@@ -2,25 +2,30 @@ Additional parameters for fix nufeb/growth/energy
 
  2 groups
  
- Uptake Rate
+ Uptake Rate  #s
      
      AOB 5.7175e-5
      NOB 1.10776e-4
      
- Ks Coeffs
+ Ks Coeffs    #kg/m3
      
-     AOB nh3 2.11e-6   o2 9.38e-7
-     NOB no2 3.94e-9   o2 1.88e-6
+     AOB nh3 3.6e-5   o2 3e-5
+     NOB no2 1.81e-7  o2 6.02e-5
      
- Decay Rate
+ Decay Rate   #s
 
      AOB 2.2665e-6
      NOB 1.9167e-6
+     
+ Maintenance Rate #s
+ 
+     AOB 0.000001419
+     NOB 0.000001415
 
  Catabolic Coeffs
  
      AOB nh3 -1  no2 1  o2 -1.5  h2o 1  h 1
-     NOB no2 01  no3 1  o2 -0.5  
+     NOB no2 -1  no3 1  o2 -0.5  
      
  Anabolic Coeffs
  
@@ -32,7 +37,7 @@ Additional parameters for fix nufeb/growth/energy
      AOB nh3 0.2   co2 1
      NOB nh3 0.2   co2 1
      
- Substrate Gibbs Energy
+ Substrate Gibbs Energy  #KJ/mol
 
      nh3 -26.57
      no2 -32.20
@@ -42,12 +47,12 @@ Additional parameters for fix nufeb/growth/energy
      h2o -237.18
      h   0
      
- Biomass Gibbs Energy
+ Biomass Gibbs Energy    #KJ/mol
  
      AOB -67
      NOB -67
      
- Dissipation Energy
+ Dissipation Energy    #KJ/mol
    
      AOB 3500
      NOB 3500
