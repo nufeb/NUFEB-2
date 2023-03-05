@@ -65,8 +65,8 @@ void FixDivideCoccus::compute()
   for (int i = 0; i < nlocal; i++) {
     if (atom->mask[i] & groupbit) {
       if (atom->radius[i] * 2 >= diameter) {
-	double density = atom->rmass[i] /
-	  (4.0 * MY_PI / 3.0 * atom->radius[i] * atom->radius[i] * atom->radius[i]);
+    	double density = atom->rmass[i] /
+        (4.0 * MY_PI / 3.0 * atom->radius[i] * atom->radius[i] * atom->radius[i]);
 
         double split = 0.4 + (random->uniform() * 0.2);
         double imass = atom->rmass[i] * split;
@@ -143,9 +143,9 @@ void FixDivideCoccus::compute()
         atom->v[j][0] = atom->v[i][0];
         atom->v[j][1] = atom->v[i][1];
         atom->v[j][2] = atom->v[i][2];
-	atom->f[j][0] = atom->f[i][0];
-	atom->f[j][1] = atom->f[i][1];
-	atom->f[j][2] = atom->f[i][2];
+        atom->f[j][0] = atom->f[i][0];
+        atom->f[j][1] = atom->f[i][1];
+        atom->f[j][2] = atom->f[i][2];
         atom->omega[j][0] = atom->omega[i][0];
         atom->omega[j][1] = atom->omega[i][1];
         atom->omega[j][2] = atom->omega[i][2];

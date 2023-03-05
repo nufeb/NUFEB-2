@@ -433,7 +433,7 @@ void NufebRun::run(int n)
     update->dt = biodt;
     reset_dt();
 
-    // call all fixes implementing post_physcis()
+    // call all fixes implementing post_physics_nufeb()
     if (modify->n_post_physics_nufeb) {
       timer->stamp();
       modify->post_physics_nufeb();
@@ -578,7 +578,7 @@ int NufebRun::module_chemsitry()
       fix_diffusion[i]->compute_initial();
     }
 
-    // call all fixes implementing chemistry_nufebs()
+    // call all fixes implementing chemistry_nufeb()
     if (modify->n_chemistry_nufeb) {
       timer->stamp();
       modify->chemistry_nufeb();

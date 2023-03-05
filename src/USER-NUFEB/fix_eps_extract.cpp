@@ -170,19 +170,22 @@ void FixEPSExtract::compute()
         atom->v[n][0] = atom->v[i][0];
         atom->v[n][1] = atom->v[i][1];
         atom->v[n][2] = atom->v[i][2];
-	atom->f[n][0] = atom->f[i][0];
-	atom->f[n][1] = atom->f[i][1];
-	atom->f[n][2] = atom->f[i][2];
+        atom->f[n][0] = atom->f[i][0];
+        atom->f[n][1] = atom->f[i][1];
+        atom->f[n][2] = atom->f[i][2];
         atom->omega[n][0] = atom->omega[i][0];
         atom->omega[n][1] = atom->omega[i][1];
         atom->omega[n][2] = atom->omega[i][2];
         atom->rmass[n] = eps_mass;
-        atom->biomass[n] = 1.0;
+        atom->biomass[n] = eps_mass;
         atom->radius[n] = eps_radius;
-        atom->outer_mass[n] = 0;
+        atom->outer_mass[n] = 0.0;
         atom->outer_radius[n] = eps_radius;
 
         modify->create_attribute(n);
+
+        for (int m = 0; m < modify->nfix; m++)
+          modify->fix[m]->update_arrays(i, n);
 
         delete[] coord;
       }

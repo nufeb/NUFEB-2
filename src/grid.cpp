@@ -53,15 +53,15 @@ Grid::Grid(LAMMPS *lmp) : Pointers(lmp)
   ncells = 0;
   periodic[0] = periodic[1] = periodic[2] = 0;
 
-  mask = NULL;
-  conc = NULL;
-  reac = NULL;
-  dens = NULL;
-  growth = NULL;
-  boundary = NULL;
-  diff_coeff = NULL;
-  bulk = NULL;
-  mw = NULL;
+  mask = nullptr;
+  conc = nullptr;
+  reac = nullptr;
+  dens = nullptr;
+  growth = nullptr;
+  boundary = nullptr;
+  diff_coeff = nullptr;
+  bulk = nullptr;
+  mw = nullptr;
 
   simple_flag = 0;
   chemostat_flag = 0;

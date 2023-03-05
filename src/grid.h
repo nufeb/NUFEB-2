@@ -65,7 +65,7 @@ namespace LAMMPS_NS {
     double **diff_coeff; //diffusion Coefficient
     double ***growth; // growth rate
     double *bulk;     // bulk concentration
-    double *mw;       // molecular weight
+    double *mw;       // molecular weight g/mol
     int **boundary;   // boundary conditions (-x, +x, -y, +y, -z, +z)
 
   private:

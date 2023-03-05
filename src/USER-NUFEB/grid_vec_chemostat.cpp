@@ -66,7 +66,7 @@ void GridVecChemostat::grow(int n)
     boundary = memory->grow(grid->boundary, grid->nsubs, 6, "nufeb/chemostat:boundary");
     diff_coeff = memory->grow(grid->diff_coeff, grid->nsubs, n, "nufeb/chemostat:diff_coeff");
     bulk = memory->grow(grid->bulk, grid->nsubs, "nufeb/chemostat:bulk");
-    mw = memory->grow(grid->mw, grid->nsubs, "nufeb/chemostat:bulk");
+    mw = memory->grow(grid->mw, grid->nsubs, "nufeb/chemostat:mw");
 
     nmax = n;
     grid->nmax = nmax;
@@ -77,6 +77,7 @@ void GridVecChemostat::grow(int n)
     grid->dens = dens;
     grid->growth = growth;
     grid->bulk = bulk;
+    grid->mw = mw;
     grid->boundary = boundary;
     grid->diff_coeff = diff_coeff;
   }

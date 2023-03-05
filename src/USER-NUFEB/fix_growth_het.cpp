@@ -173,13 +173,14 @@ void FixGrowthHET::update_atoms()
       rmass[i] = rmass[i] * (1 + grid->growth[igroup][cell][0] * dt);
 
       if (eps_flag) {
-	outer_mass[i] = four_thirds_pi *
-	  (outer_radius[i] * outer_radius[i] * outer_radius[i] -
-	   radius[i] * radius[i] * radius[i]) *
-	  eps_dens + grid->growth[igroup][cell][1] * rmass[i] * dt;
-	outer_radius[i] = pow(three_quarters_pi *
-			      (rmass[i] / density + outer_mass[i] / eps_dens),
-			      third);
+        outer_mass[i] = four_thirds_pi *
+          (outer_radius[i] * outer_radius[i] * outer_radius[i] -
+           radius[i] * radius[i] * radius[i]) *
+          eps_dens + grid->growth[igroup][cell][1] * rmass[i] * dt;
+
+        outer_radius[i] = pow(three_quarters_pi *
+                      (rmass[i] / density + outer_mass[i] / eps_dens),
+                      third);
       }
       radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
     }

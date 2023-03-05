@@ -73,7 +73,7 @@ FixGrowthAnammox::FixGrowthAnammox(LAMMPS *lmp, int narg, char **arg) :
     error->all(FLERR, "Can't find substrate name: no3");
 
   in2 = grid->find(arg[10]);
-  if (ino3 < 0)
+  if (in2 < 0)
     error->all(FLERR, "Can't find substrate name: n2");
 
   int iarg = 11;

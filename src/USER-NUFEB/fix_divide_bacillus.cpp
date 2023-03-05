@@ -45,7 +45,7 @@ FixDivideBacillus::FixDivideBacillus(LAMMPS *lmp, int narg, char **arg) :
 
   if (narg < 5)
     error->all(FLERR, "Illegal fix nufeb/divide/bacillus command");
-  
+
   maxlength = utils::numeric(FLERR,arg[3],true,lmp);
   if (maxlength <= 0)
     error->all(FLERR, "Max division length cannot be less or equal to 0");
@@ -65,7 +65,7 @@ FixDivideBacillus::~FixDivideBacillus()
 /* ---------------------------------------------------------------------- */
 
 void FixDivideBacillus::compute()
-{  
+{
   int nlocal = atom->nlocal;
   const double four_thirds_pi = 4.0 * MY_PI / 3.0;
 
