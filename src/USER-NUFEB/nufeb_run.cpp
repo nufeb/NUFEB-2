@@ -558,9 +558,9 @@ int NufebRun::module_chemsitry()
   update->dt = diffdt;
   reset_dt();
   
-  for (int i = 0; i < nfix_diffusion; i++) {
-    fix_diffusion[i]->closed_system_initial();
-  }
+//  for (int i = 0; i < nfix_diffusion; i++) {
+//    fix_diffusion[i]->closed_system_initial();
+//  }
 
   int niter = 0;
   bool conv_flag;
