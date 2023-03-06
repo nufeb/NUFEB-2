@@ -40,7 +40,6 @@ class FixMergeAtom : public Fix {
   double max_dia;
   double eps_den;
   int seed;
-  int eps_flag;
 
   void compute();
   class RanPark *random;

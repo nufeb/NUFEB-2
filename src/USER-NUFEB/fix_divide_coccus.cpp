@@ -61,12 +61,15 @@ FixDivideCoccus::~FixDivideCoccus()
 void FixDivideCoccus::compute()
 {  
   int nlocal = atom->nlocal;
+  const double third = 1.0 / 3.0;
+  const double four_thirds_pi = 4.0 * MY_PI / 3.0;
+  const double three_quarters_pi = (3.0 / (4.0 * MY_PI));
 
   for (int i = 0; i < nlocal; i++) {
     if (atom->mask[i] & groupbit) {
       if (atom->radius[i] * 2 >= diameter) {
     	double density = atom->rmass[i] /
-        (4.0 * MY_PI / 3.0 * atom->radius[i] * atom->radius[i] * atom->radius[i]);
+        (four_thirds_pi * atom->radius[i] * atom->radius[i] * atom->radius[i]);
 
         double split = 0.4 + (random->uniform() * 0.2);
         double imass = atom->rmass[i] * split;
@@ -85,8 +88,8 @@ void FixDivideCoccus::compute()
         // update daughter cell i
         atom->rmass[i] = imass;
         atom->outer_mass[i] = iouter_mass;
-        atom->radius[i] = pow(((6 * atom->rmass[i]) / (density * MY_PI)), (1.0 / 3.0)) * 0.5;
-        atom->outer_radius[i] = pow((3.0 / (4.0 * MY_PI)) * ((atom->rmass[i] / density) + (iouter_mass / eps_density)), (1.0 / 3.0));
+        atom->radius[i] = pow(((6 * atom->rmass[i]) / (density * MY_PI)), third) * 0.5;
+        atom->outer_radius[i] = pow(three_quarters_pi * ((atom->rmass[i] / density) + (iouter_mass / eps_density)), third);
         double newx = oldx + (atom->radius[i] * cos(theta) * sin(phi) * DELTA);
         double newy = oldy + (atom->radius[i] * sin(theta) * sin(phi) * DELTA);
         double newz = oldz + (atom->radius[i] * cos(phi) * DELTA);
@@ -110,8 +113,8 @@ void FixDivideCoccus::compute()
         atom->x[i][2] = newz;
 
         // create daughter cell j
-        double jradius = pow(((6 * jmass) / (density * MY_PI)), (1.0 / 3.0)) * 0.5;
-        double jouter_radius = pow((3.0 / (4.0 * MY_PI)) * ((jmass / density) + (jouter_mass / eps_density)), (1.0 / 3.0));
+        double jradius = pow(((6 * jmass) / (density * MY_PI)), third) * 0.5;
+        double jouter_radius = pow(three_quarters_pi * ((jmass / density) + (jouter_mass / eps_density)), third);
         double *coord = new double[3];
         newx = oldx - (jradius * cos(theta) * sin(phi) * DELTA);
         newy = oldy - (jradius * sin(theta) * sin(phi) * DELTA);

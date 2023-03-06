@@ -23,6 +23,7 @@
 #include "neigh_request.h"
 #include "pair.h"
 #include "update.h"
+#include "memory.h"
 #include "force.h"
 #include "math_const.h"
 #include "random_park.h"
@@ -34,14 +35,13 @@ using namespace MathConst;
 /* ---------------------------------------------------------------------- */
 
 FixMergeAtom::FixMergeAtom(LAMMPS *lmp, int narg, char **arg) :
-  Fix(lmp, narg, arg)
+    Fix(lmp, narg, arg)
 {
   if (narg < 5)
     error->all(FLERR, "Illegal fix nufeb/merge_eps command");
 
   list = nullptr;
-  eps_flag = 0;
-  eps_den = 0.0;
+  eps_den = 30;
 
   max_dia = utils::numeric(FLERR,arg[3],true,lmp);
   if (max_dia < 0)
@@ -51,7 +51,6 @@ FixMergeAtom::FixMergeAtom(LAMMPS *lmp, int narg, char **arg) :
   int iarg = 5;
   while (iarg < narg) {
     if (strcmp(arg[iarg], "epsdens") == 0) {
-      eps_flag = 1;
       eps_den = utils::numeric(FLERR, arg[iarg + 1], true, lmp);
       iarg += 2;
     }
@@ -136,9 +135,13 @@ void FixMergeAtom::compute()
 
   double delx,dely,delz,rsq,min;
 
+  int *dlist;
+  memory->create(dlist,nlocal,"merge_eps:dlist");
+  for (int i = 0; i < nlocal; i++) dlist[i] = 0;
+
   for (int ii = 0; ii < inum; ii++) {
     int i = ilist[ii];
-    if (!(mask[i] & groupbit)) continue;
+    if (!(mask[i] & groupbit) || dlist[i] == 1) continue;
 
     if (atom->radius[i] * 2 < max_dia) {
       // pick the closest neighbor to merge
@@ -149,7 +152,7 @@ void FixMergeAtom::compute()
 
       for (int jj = 0; jj < jnum; jj++) {
         int j = jlist[jj];
-        if (!(mask[j] & groupbit)) continue;
+        if (!(mask[j] & groupbit) || dlist[j] == 1) continue;
 
         delx = x[i][0]-x[j][0];
         dely = x[i][1]-x[j][1];
@@ -169,9 +172,7 @@ void FixMergeAtom::compute()
       double new_outer_mass = atom->outer_mass[i] + atom->outer_mass[j];
       double new_biomass = atom->biomass[i] + atom->biomass[j];
       double new_rad = pow(three_quarters_pi * new_mass / density, third);
-      double new_outer_rad;
-      if (eps_flag) new_outer_rad = pow(three_quarters_pi * new_outer_mass / eps_den, third);
-      else new_outer_rad = pow(three_quarters_pi * new_outer_mass / density, third);
+      double new_outer_rad  = pow(three_quarters_pi * ((new_mass / density) + (new_outer_mass / eps_den)), third);
 
       // randomly choose atom i or j as new atom's attributes
       if (random->uniform() > 0.5) {
@@ -189,27 +190,33 @@ void FixMergeAtom::compute()
         atom->omega[i][2] = atom->omega[j][2];
       }
 
+      dlist[j] = 1;
       atom->rmass[i] = new_mass;
       atom->radius[i] = new_rad;
       atom->biomass[i] = new_biomass;
       atom->outer_mass[i] = new_outer_mass;
       atom->outer_radius[i] = new_outer_rad;
-
-      // delete atom j
-      avec->copy(nlocal-1,j,1);
-      nlocal--;
-      atom->nlocal = nlocal;
     }
   }
 
-  // reset atom->natoms
+  int i = 0;
+  while (i < nlocal) {
+    if (dlist[i]) {
+      avec->copy(nlocal-1,i,1);
+      dlist[i] = dlist[nlocal-1];
+      nlocal--;
+    } else i++;
+  }
 
+  atom->nlocal = nlocal;
+  memory->destroy(dlist);
+
+  // reset atom->natoms
   bigint nblocal = atom->nlocal;
   MPI_Allreduce(&nblocal,&atom->natoms,1,MPI_LMP_BIGINT,MPI_SUM,world);
 
   // reset atom->map if it exists
   // set nghost to 0 so old ghosts of deleted atoms won't be mapped
-
   if (atom->map_style != Atom::MAP_NONE) {
     atom->nghost = 0;
     atom->map_init();
