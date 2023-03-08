@@ -118,6 +118,7 @@ void FixMergeAtom::post_neighbor()
 void FixMergeAtom::compute()
 {
   int nlocal = atom->nlocal;
+  int nall = nlocal + atom->nghost;
   int *mask = atom->mask;
   double **x = atom->x;
   double *radius = atom->radius;
@@ -136,8 +137,8 @@ void FixMergeAtom::compute()
   double delx,dely,delz,rsq,min;
 
   int *dlist;
-  memory->create(dlist,nlocal,"merge_eps:dlist");
-  for (int i = 0; i < nlocal; i++) dlist[i] = 0;
+  memory->create(dlist,nall,"merge_eps:dlist");
+  for (int i = 0; i < nall; i++) dlist[i] = 0;
 
   for (int ii = 0; ii < inum; ii++) {
     int i = ilist[ii];
@@ -152,7 +153,7 @@ void FixMergeAtom::compute()
 
       for (int jj = 0; jj < jnum; jj++) {
         int j = jlist[jj];
-        if (!(mask[j] & groupbit) || dlist[j] == 1) continue;
+        if (!(mask[j] & groupbit) || dlist[j] == 1 || j >= nlocal) continue;
 
         delx = x[i][0]-x[j][0];
         dely = x[i][1]-x[j][1];
