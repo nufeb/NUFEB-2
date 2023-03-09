@@ -181,7 +181,6 @@ dump du2 all grid/vtk 20 vtk/dump_%_*.vti con rea den gro                    # r
 thermo_style custom step cpu atoms v_press v_mass v_nhet v_naob v_nnob v_nana v_ndead
 #thermo_style custom step cpu atoms v_press v_mass v_nhet v_naob v_nnob v_nana v_ndead f_balance_sub f_balance_nh4 f_balance_no2 f_balance_no3
 
-log log.nufeb
 thermo 1 
 thermo_modify lost warn
 

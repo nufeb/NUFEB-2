@@ -1,0 +1,120 @@
+#-----------------------------------------------------------------------------#
+#              NUFEB Simulation: Cyanobacteria and E.Coli consortium          #
+#-----------------------------------------------------------------------------#
+
+
+#-----------------------------System Settings---------------------------------#
+
+units si                                    # using si units (m, s, kg)
+atom_style      coccus                      # using nufeb coccus atom style
+atom_modify     map array sort 10 0         # map array - find atoms using indices
+		                            # sort 10 5.0e-6: sort every 10
+
+boundary        ff ff ff                    # fixed boundary in x y z
+
+newton          off                         # forces between local and ghost
+                                            # atoms are computed in each
+					    # processor without communication
+
+processors      * * 1                       # processor grid
+
+comm_modify     vel yes                     # communicate velocities for ghost atoms
+
+
+read_data       atom.in	                    # read atom.in file which defines domain size
+                                            # and initial atoms
+
+
+#-----------------------------Microbial Atoms---------------------------------#
+
+group           CYANO type 1                # assign type 1 atoms to CYANO group
+group           ECW   type 2                # assign type 2 atoms to ECW group
+
+neighbor        1e-6 bin                    # setting neighbour skin distance and style
+
+neigh_modify    check yes                   # rebuild neighbour list if any atom
+                                            # had moved more than half the skin distance
+
+
+#--------------------------Mesh Grid and Substrates--------------------------#
+
+# defining grid sytle, substrate names, and grid size
+grid_style      nufeb/chemostat 5 light o2 suc co2 gco2 2e-6
+
+# set diffusion boundary conditions and initial concentrations (liquid:kg/m3, gas:bar)
+# consider as a closed system (non-dirichlet boundary)
+grid_modify     set light  nn nn nn 0.1    
+grid_modify     set o2     nn nn nn 9e-3   
+grid_modify     set suc    nn nn nn 3.42e-20    
+grid_modify     set co2    nn nn nn 4.40e+01        
+grid_modify     set gco2   nn nn nn 0.0
+
+
+#--------------------------Biological Processes-------------------------------#
+
+# cyanobacteria growth
+fix monod_cyano CYANO nufeb/growth/cyano light 3.5e-04 o2 co2 2e-4 suc gco2 &
+growth 1.67e-05 yield 0.55 suc_exp 0.285 
+
+# E.coli (wild) growth
+fix monod_ecw ECW nufeb/growth/ecoli suc 3.6 o2 0.001 co2 & 
+growth 0.00027 yield 0.43 maintain 9.5e-07 decay 2e-05
+
+# cyanobacteria division, division diameter: 1.96e-6   
+fix div_cya CYANO nufeb/division/coccus 1.96e-6 1234     
+
+# E.coli (wild) division, division diameter: 1.04e-6              
+fix div_ecw ECW nufeb/division/coccus 1.04e-6  2345                  
+
+
+#---------------------------Physical Processes--------------------------------#
+
+pair_style  gran/hooke/history 1e-4 NULL 1e-5 NULL 0.0 0             # pairwise interaction
+pair_coeff  * *                                                      # between atoms
+
+
+fix nve all nve/limit 1e-7                                           # NVE integration with maximum distance limit
+
+# pairwise interaction between z-wall and atoms
+fix wall all wall/gran hooke/history 1e-4 NULL 1e-5 NULL 0 0 zplane 0.0 1e-5
+
+fix vis all viscous 1.14e-8                                          # viscous damping force
+
+
+#---------------------------Chemical Processes---------------------------------#
+
+fix diff_o2  all nufeb/diffusion_reaction o2  2.3e-09                # diffusion reaction for updating
+fix diff_suc all nufeb/diffusion_reaction suc 5.2e-10                # distribusion of substrate concentration
+fix diff_co2 all nufeb/diffusion_reaction co2 1.9e-09 
+
+
+#--------------------------Computations and Outputs----------------------------#
+              
+variable mass equal "mass(all)"                                      # total mass
+variable ncyano equal "count(CYANO)"                                 # total # of CYANO
+variable necoli equal "count(ECW)"                                   # total # of ECW
+
+compute mycon all nufeb/ave_conc                                     # halt simulation if average
+variable co2 equal c_mycon[4]                                        # co2 concentration is below 1e-19
+fix f_myhalt all halt 1 v_co2 <= 1e-19
+
+shell mkdir vtk  
+dump 1 all vtk 1 vtk/dump*.vtu id type diameter #vx vy vz fx fy fz   # dump vtk files to /vtk folder
+dump 2 all grid/vtk 1 vtk/dump_%_*.vti con                           # require build NUFEB with vtk option
+
+thermo_style custom step atoms v_mass v_ncyano v_necoli c_mycon[*]   # screen and log outputs
+thermo 1
+
+
+#-----------------------------------Run----------------------------------------#
+
+# issue run command, define timesteps for physical (pairdt) and chemical (diffdt) processes
+run_style nufeb diffdt 1e-4 difftol 1e-11 pairdt 1e-2 pairtol 10 diffmax 1000000
+
+
+timestep 1000                                                        # define biological timesteps (1000s)
+
+run 350                                                              # growing bacteria for 350x1000s
+
+
+

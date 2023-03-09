@@ -38,13 +38,20 @@ using namespace MathConst;
 FixDivideCoccus::FixDivideCoccus(LAMMPS *lmp, int narg, char **arg) :
   FixDivide(lmp, narg, arg)
 {
-  if (narg < 6)
+  if (narg < 5)
     error->all(FLERR, "Illegal fix nufeb/division/coccus command");
-  
+
+  eps_density = 30;    //default EPS density
   diameter = utils::numeric(FLERR,arg[3],true,lmp);
-  eps_density = utils::numeric(FLERR,arg[4],true,lmp);
-  seed = utils::inumeric(FLERR,arg[5],true,lmp);
-  
+  seed = utils::inumeric(FLERR,arg[4],true,lmp);
+
+  int iarg = 5;
+  while (iarg < narg) {
+  if (strcmp(arg[iarg], "epsdens") == 0) {
+    eps_density = utils::numeric(FLERR,arg[iarg+1],true,lmp);
+    iarg += 2;
+    }
+  }
   // Random number generator, same for all procs
   random = new RanPark(lmp, seed);
 }
