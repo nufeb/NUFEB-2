@@ -48,27 +48,31 @@ FixGrowthEnergy::FixGrowthEnergy(LAMMPS *lmp, int narg, char **arg) :
   gibbs_anab = nullptr;
   yield = nullptr;
 
+  sub_gibbs = nullptr;
+  ks_coeff = nullptr;
+  cata_coeff = nullptr;
+  anab_coeff = nullptr;
+  decay_coeff = nullptr;
+
   // read energy file
   EnergyFileReader * reader = nullptr;
-  if (comm->me == 0) {
-    reader = new EnergyFileReader(lmp, arg[3]);
-    reader->read_file(arg[1]);
+  reader = new EnergyFileReader(lmp, arg[3]);
+  reader->read_file(arg[1]);
 
-    uptake = reader->uptake;
-    decay = reader->decay;
-    maintain = reader->maintain;
-    dissipation = reader->dissipation;
-    biomass_gibbs = reader->biomass_gibbs;
-    sub_gibbs = reader->sub_gibbs;
-    ks_coeff = reader->ks_coeff;
-    cata_coeff = reader->cata_coeff;
-    anab_coeff = reader->anab_coeff;
-    decay_coeff = reader->decay_coeff;
+  uptake = reader->uptake;
+  decay = reader->decay;
+  maintain = reader->maintain;
+  dissipation = reader->dissipation;
+  biomass_gibbs = reader->biomass_gibbs;
+  sub_gibbs = reader->sub_gibbs;
+  ks_coeff = reader->ks_coeff;
+  cata_coeff = reader->cata_coeff;
+  anab_coeff = reader->anab_coeff;
+  decay_coeff = reader->decay_coeff;
 
-    if (sub_gibbs == nullptr || ks_coeff == nullptr || cata_coeff == nullptr ||
-        anab_coeff == nullptr || decay_coeff == nullptr)
-      error->all(FLERR, "Insufficient parameter sections defined in energy file");
-  }
+  if (sub_gibbs == nullptr || ks_coeff == nullptr || cata_coeff == nullptr ||
+      anab_coeff == nullptr || decay_coeff == nullptr)
+    error->all(FLERR, "Insufficient parameter sections defined in energy file");
 
   int iarg = 4;
   while (iarg < narg) {

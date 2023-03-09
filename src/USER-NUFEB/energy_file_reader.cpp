@@ -31,10 +31,7 @@ using namespace LAMMPS_NS;
 EnergyFileReader::EnergyFileReader(LAMMPS *lmp, char *filename) :
         Pointers(lmp),
         filename(filename) {
-  if (comm->me != 0) {
-    error->one(FLERR, "FileReader should only be called by proc 0!");
-  }
-
+  MPI_Comm_rank(world,&me);
   ngroups = 0;
 
   line = new char[MAXLINE];
@@ -78,12 +75,16 @@ EnergyFileReader::~EnergyFileReader()
 
 void EnergyFileReader::read_file(char *group_id)
 {
+  MPI_Barrier(world);
   int firstpass = 1;
 
   while (1) {
     // open file on proc 0
-    if (firstpass) utils::logmesg(lmp, "Reading energy data file ...\n");
-    open(filename);
+    if (me == 0) {
+      if (firstpass)
+        utils::logmesg(lmp, "Reading energy data file ...\n");
+      open(filename);
+    } else fp = nullptr;
 
     // read header info
     header(firstpass);
@@ -139,13 +140,17 @@ void EnergyFileReader::read_file(char *group_id)
     }
 
     // close file
-    if (compressed) pclose(fp);
-    else fclose(fp);
-    fp = nullptr;
+    if (me == 0) {
+      if (compressed) pclose(fp);
+      else fclose(fp);
+      fp = nullptr;
+    }
 
     // done if this was 2nd pass
     if (!firstpass) break;
     firstpass = 0;
+
+    MPI_Barrier(world);
   }
 }
 
@@ -524,6 +529,10 @@ void EnergyFileReader::substrate_energy()
 
   sub_gibbs = memory->create(sub_gibbs, grid->nsubs, "energy_file_reader:sub_gibbs");
 
+  for (int i = 0; i < grid->nsubs; i++) {
+    sub_gibbs[i] = 0.0;
+  }
+
   int eof = comm->read_lines_from_file(fp, grid->nsubs, MAXLINE, buf);
   if (eof) error->all(FLERR, "Unexpected end of data file");
 
@@ -703,15 +712,20 @@ void EnergyFileReader::header(int firstpass)
 
   // skip 1st line of file
 
-  char *eof = fgets(line, MAXLINE, fp);
-  if (eof == nullptr) error->one(FLERR, "Unexpected end of data file");
+  if (me == 0) {
+    char *eof = fgets(line,MAXLINE,fp);
+    if (eof == nullptr) error->one(FLERR,"Unexpected end of data file");
+  }
 
   while (1) {
 
     // read a line and bcast length
 
-    if (fgets(line, MAXLINE, fp) == nullptr) n = 0;
-    else n = strlen(line) + 1;
+    if (me == 0) {
+      if (fgets(line,MAXLINE,fp) == nullptr) n = 0;
+      else n = strlen(line) + 1;
+    }
+    MPI_Bcast(&n,1,MPI_INT,0,world);
 
     // if n = 0 then end-of-file so return with blank line
 
@@ -719,6 +733,8 @@ void EnergyFileReader::header(int firstpass)
       line[0] = '\0';
       return;
     }
+
+    MPI_Bcast(line,n,MPI_CHAR,0,world);
 
     // trim anything from '#' onward
     // if line is blank, continue
@@ -775,10 +791,11 @@ void EnergyFileReader::parse_coeffs(char *line)
 
 void EnergyFileReader::skip_lines(bigint n)
 {
+  if (me) return;
   if (n <= 0) return;
   char *eof = nullptr;
-  for (bigint i = 0; i < n; i++) eof = fgets(line, MAXLINE, fp);
-  if (eof == nullptr) error->one(FLERR, "Unexpected end of data file");
+  for (bigint i = 0; i < n; i++) eof = fgets(line,MAXLINE,fp);
+  if (eof == nullptr) error->one(FLERR,"Unexpected end of data file");
 }
 
 /* ----------------------------------------------------------------------
@@ -799,18 +816,20 @@ void EnergyFileReader::parse_keyword(int first)
   // proc 0 reads upto non-blank line plus 1 following line
   // eof is set to 1 if any read hits end-of-file
 
-  if (!first) {
-    if (fgets(line, MAXLINE, fp) == nullptr) eof = 1;
-  }
-  while (eof == 0 && done == 0) {
-    int blank = strspn(line, " \t\n\r");
-    if ((blank == (int) strlen(line)) || (line[blank] == '#')) {
-      if (fgets(line, MAXLINE, fp) == nullptr) eof = 1;
-    } else done = 1;
-  }
-  if (fgets(buffer, MAXLINE, fp) == nullptr) {
-    eof = 1;
-    buffer[0] = '\0';
+  if (me == 0) {
+    if (!first) {
+      if (fgets(line,MAXLINE,fp) == nullptr) eof = 1;
+    }
+    while (eof == 0 && done == 0) {
+      int blank = strspn(line," \t\n\r");
+      if ((blank == (int)strlen(line)) || (line[blank] == '#')) {
+        if (fgets(line,MAXLINE,fp) == nullptr) eof = 1;
+      } else done = 1;
+    }
+    if (fgets(buffer,MAXLINE,fp) == nullptr) {
+      eof = 1;
+      buffer[0] = '\0';
+    }
   }
 
   // if eof, set keyword empty and return
@@ -824,7 +843,7 @@ void EnergyFileReader::parse_keyword(int first)
   // bcast keyword line to all procs
 
   int n;
-  n = strlen(line) + 1;
+  if (me == 0) n = strlen(line) + 1;
   MPI_Bcast(&n, 1, MPI_INT, 0, world);
   MPI_Bcast(line, n, MPI_CHAR, 0, world);
 

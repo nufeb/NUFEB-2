@@ -30,7 +30,7 @@ namespace LAMMPS_NS {
       double *decay_coeff;   // decay coeffs
 
   private:
-      int compressed;
+      int me, compressed;
       char *line, *keyword, *buffer, *style;
       FILE *fp;
       char *filename;
