@@ -167,20 +167,19 @@ void FixGrowthHET::update_atoms()
   for (int i = 0; i < atom->nlocal; i++) {
     if (atom->mask[i] & groupbit) {
       const int cell = grid->cell(x[i]);
+      // skip atoms in ghost cells
+      if (grid->mask[cell] & GHOST_MASK) continue;
+
       const double density = rmass[i] /
-	(four_thirds_pi * radius[i] * radius[i] * radius[i]);
+          (four_thirds_pi * radius[i] * radius[i] * radius[i]);
       // forward Euler to update biomass and rmass
       rmass[i] = rmass[i] * (1 + grid->growth[igroup][cell][0] * dt);
 
       if (eps_flag) {
-        outer_mass[i] = four_thirds_pi *
-          (outer_radius[i] * outer_radius[i] * outer_radius[i] -
-           radius[i] * radius[i] * radius[i]) *
-          eps_dens + grid->growth[igroup][cell][1] * rmass[i] * dt;
+        outer_mass[i] = four_thirds_pi * (outer_radius[i] * outer_radius[i] * outer_radius[i] -
+            radius[i] * radius[i] * radius[i]) * eps_dens + grid->growth[igroup][cell][1] * rmass[i] * dt;
 
-        outer_radius[i] = pow(three_quarters_pi *
-                      (rmass[i] / density + outer_mass[i] / eps_dens),
-                      third);
+        outer_radius[i] = pow(three_quarters_pi * (rmass[i] / density + outer_mass[i] / eps_dens), third);
       }
       radius[i] = pow(three_quarters_pi * (rmass[i] / density), third);
     }

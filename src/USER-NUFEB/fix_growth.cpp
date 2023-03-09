@@ -22,7 +22,7 @@
 #include "math_const.h"
 #include "atom_vec_bacillus.h"
 #include "fix_growth.h"
-
+#include "grid_masks.h"
 using namespace LAMMPS_NS;
 using namespace FixConst;
 using namespace MathConst;
@@ -109,8 +109,10 @@ void FixGrowth::update_atoms_coccus()
   for (int i = 0; i < atom->nlocal; i++) {
     if (atom->mask[i] & groupbit) {
       const int cell = grid->cell(x[i]);
-      const double density = rmass[i] /
-    (four_thirds_pi * radius[i] * radius[i] * radius[i]);
+      // skip atoms in ghost cells
+      if (grid->mask[cell] & GHOST_MASK) continue;
+
+      const double density = rmass[i] / (four_thirds_pi * radius[i] * radius[i] * radius[i]);
       double growth = grid->growth[igroup][cell][0];
       // forward Euler to update rmass
       rmass[i] = rmass[i] * (1 + growth * dt);
@@ -141,6 +143,9 @@ void FixGrowth::update_atoms_bacillus(AtomVecBacillus *&avec)
 
       double new_length;
       const int cell = grid->cell(x[i]);
+      // skip atoms in ghost cells
+      if (grid->mask[cell] & GHOST_MASK) continue;
+
       const double density = rmass[i] /	(vsphere + acircle * bonus->length);
       double growth = grid->growth[igroup][cell][0];
       // forward Eular to update rmass
