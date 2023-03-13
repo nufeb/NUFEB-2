@@ -2,25 +2,30 @@ Additional parameters used for fix nufeb/growth/energy
 
  2 groups
  
- Uptake Rate  #s
+ Uptake Rate  #kg m-3 s-1
      
-     AOB 5.7175e-5
-     NOB 1.10776e-4
+     AOB 2.18667e-4
+     NOB 2.11833e-4
      
+ Yield # kg-X/kg-N
+ 
+     AOB 0.273
+     NOB 0.137
+
  Ks Coeffs    #kg/m3
      
      AOB nh3 3.6e-5   o2 3e-5
      NOB no2 1.81e-7  o2 6.02e-5
      
- Decay Rate   #s
+ Decay Rate   #kg m-3 s-1
 
-     AOB 2.2665e-6
+     AOB 5.5756e-5
      NOB 1.9167e-6
      
- Maintenance Rate #s
+ Maintenance Rate #kg m-3 s-1
  
-     AOB 0.000001419
-     NOB 0.000001415
+     AOB 3.4066e-5
+     NOB 3.3969e-5
 
  Catabolic Coeffs
  

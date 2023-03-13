@@ -26,7 +26,7 @@ using namespace LAMMPS_NS;
 #define MAXLINE 256
 #define CHUNK 1024
 #define DELTA 4            // must be 2 or larger
-#define NSECTIONS 10       // change when add to header::section_keywords
+#define NSECTIONS 11       // change when add to header::section_keywords
 
 EnergyFileReader::EnergyFileReader(LAMMPS *lmp, char *filename) :
         Pointers(lmp),
@@ -43,6 +43,7 @@ EnergyFileReader::EnergyFileReader(LAMMPS *lmp, char *filename) :
   arg = nullptr;
 
   uptake = 0.0;
+  max_yield = 1.0;
   decay = 0.0;
   maintain = 0.0;
   dissipation = 0.0;
@@ -95,6 +96,10 @@ void EnergyFileReader::read_file(char *group_id)
 
       if (strcmp(keyword, "Uptake Rate") == 0) {
         if (firstpass) uptake_rate(group_id);
+        else skip_lines(ngroups);
+
+      } else if (strcmp(keyword, "Yield") == 0) {
+        if (firstpass) calc_yield(group_id);
         else skip_lines(ngroups);
 
       } else if (strcmp(keyword, "Ks Coeffs") == 0) {
@@ -193,6 +198,52 @@ int EnergyFileReader::set_uptake(char *str, char *group_id)
     pass = 1;
     uptake = uptake_one;
     if (uptake < 0) error->all(FLERR, "Invalid uptake rate value");
+  }
+
+  delete[] name;
+
+  return pass;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void EnergyFileReader::calc_yield(char *group_id)
+{
+  char *next;
+  char *buf = new char[ngroups * MAXLINE];
+
+  int eof = comm->read_lines_from_file(fp, ngroups, MAXLINE, buf);
+  if (eof) error->all(FLERR, "Unexpected end of data file");
+
+  char *original = buf;
+  for (int i = 0; i < ngroups; i++) {
+    next = strchr(buf, '\n');
+    *next = '\0';
+    int pass = set_yield(buf, group_id);
+    buf = next + 1;
+    if (pass) break;
+  }
+  delete[] original;
+}
+
+/* ---------------------------------------------------------------------- */
+
+int EnergyFileReader::set_yield(char *str, char *group_id)
+{
+  int pass = 0;
+  char *name;
+  double yield_one;
+  int len = strlen(str) + 1;
+  name = new char[len];
+
+  int n = sscanf(str, "%s %lg", name, &yield_one);
+
+  if (n != 2) error->all(FLERR, "Invalid yield line in data file");
+
+  if (strcmp(group_id, name) == 0) {
+    pass = 1;
+    max_yield = yield_one;
+    if (max_yield < 0) error->all(FLERR, "Invalid yield value");
   }
 
   delete[] name;
@@ -705,7 +756,7 @@ void EnergyFileReader::header(int firstpass)
   // customize for new sections
 
   const char *section_keywords[NSECTIONS] =
-          {"Uptake Rate", "Growth Rate", "Ks Coeffs", "Decay Rate",
+          {"Uptake Rate", "Yield", "Growth Rate", "Ks Coeffs", "Decay Rate",
            "Maintenance Rate", "Catabolic Coeffs", "Anabolic Coeffs",
            "Decay Coeffs", "Gibbs Energy", "Dissipation Energy"
           };

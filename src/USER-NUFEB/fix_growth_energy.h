@@ -44,11 +44,13 @@ class FixGrowthEnergy: public FixGrowth {
   double *decay_coeff;           // decay coeffs
 
   double uptake;                 // substrate update rate
+  double max_yield;              // maximum yield
   double decay;	                 // decay rate
   double maintain;               // maintenance rate
   double dissipation;            // dissipation energy
   double biomass_gibbs;          // biomass Gibbs energy
-  double temp, gas_const;        // temperature and ideal gas constant
+  double temp, gas_const;        // temperature (K) and ideal gas constant (KJ/mol.K)
+  double mw_biomass;             // biomass molecular weight (g/mol)
 
   double dgo_cata, dgo_anab;     // standard catabolic and anabolic Gibbs energy
   double *gibbs_cata;            // Gibbs free energy for catabolic reaction
