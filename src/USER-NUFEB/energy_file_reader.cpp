@@ -26,7 +26,7 @@ using namespace LAMMPS_NS;
 #define MAXLINE 256
 #define CHUNK 1024
 #define DELTA 4            // must be 2 or larger
-#define NSECTIONS 11       // change when add to header::section_keywords
+#define NSECTIONS 12       // change when add to header::section_keywords
 
 EnergyFileReader::EnergyFileReader(LAMMPS *lmp, char *filename) :
         Pointers(lmp),
@@ -48,6 +48,7 @@ EnergyFileReader::EnergyFileReader(LAMMPS *lmp, char *filename) :
   maintain = 0.0;
   dissipation = 0.0;
   biomass_gibbs = 0.0;
+  e_donor = -1;
 
   ks_coeff = nullptr;
   sub_gibbs = nullptr;
@@ -100,6 +101,10 @@ void EnergyFileReader::read_file(char *group_id)
 
       } else if (strcmp(keyword, "Yield") == 0) {
         if (firstpass) calc_yield(group_id);
+        else skip_lines(ngroups);
+
+      } else if (strcmp(keyword, "Electron Donor") == 0) {
+        if (firstpass) electron_donor(group_id);
         else skip_lines(ngroups);
 
       } else if (strcmp(keyword, "Ks Coeffs") == 0) {
@@ -244,6 +249,53 @@ int EnergyFileReader::set_yield(char *str, char *group_id)
     pass = 1;
     max_yield = yield_one;
     if (max_yield < 0) error->all(FLERR, "Invalid yield value");
+  }
+
+  delete[] name;
+
+  return pass;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void EnergyFileReader::electron_donor(char *group_id)
+{
+  char *next;
+  char *buf = new char[ngroups * MAXLINE];
+
+  int eof = comm->read_lines_from_file(fp, ngroups, MAXLINE, buf);
+  if (eof) error->all(FLERR, "Unexpected end of data file");
+
+  char *original = buf;
+  for (int i = 0; i < ngroups; i++) {
+    next = strchr(buf, '\n');
+    *next = '\0';
+    parse_coeffs(buf);
+    if (narg == 0)
+      error->all(FLERR,"Unexpected empty line in Electron Donor section");
+    int pass = set_edonor(arg, group_id);
+    buf = next + 1;
+    if (pass) break;
+  }
+  delete[] original;
+}
+
+/* ---------------------------------------------------------------------- */
+
+int EnergyFileReader::set_edonor(char **arg, char *group_id)
+{
+  int pass = 0;
+  char *name;
+  int len = strlen(arg[0]) + 1;
+  name = new char[len];
+  strcpy(name,arg[0]);
+
+  if (strcmp(group_id, name) == 0) {
+    pass = 1;
+    int isub = grid->find(arg[1]);
+    if (isub == -1)
+      error->all(FLERR,"Invalid substrate name in Electron Donor section");
+    e_donor = isub;
   }
 
   delete[] name;
@@ -756,8 +808,9 @@ void EnergyFileReader::header(int firstpass)
   // customize for new sections
 
   const char *section_keywords[NSECTIONS] =
-          {"Uptake Rate", "Yield", "Growth Rate", "Ks Coeffs", "Decay Rate",
-           "Maintenance Rate", "Catabolic Coeffs", "Anabolic Coeffs",
+          {"Uptake Rate", "Yield", "Growth Rate", "Electron Donor",
+           "Ks Coeffs", "Decay Rate", "Maintenance Rate",
+           "Catabolic Coeffs", "Anabolic Coeffs",
            "Decay Coeffs", "Gibbs Energy", "Dissipation Energy"
           };
 

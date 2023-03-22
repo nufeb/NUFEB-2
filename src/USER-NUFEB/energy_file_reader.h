@@ -23,7 +23,8 @@ namespace LAMMPS_NS {
       double maintain;       // maintenance rate
       double dissipation;    // dissipation energy
       double biomass_gibbs;  // biomass Gibbs energy
-      double max_yield;          // calculated yield
+      double max_yield;      // calculated yield
+      int e_donor;           // electron donor
       double *sub_gibbs;     // substrate Gibbs energy
       double *ks_coeff;      // ks coeffs
       double *cata_coeff;    // catabolic coeffs
@@ -51,6 +52,9 @@ namespace LAMMPS_NS {
 
       void calc_yield(char *);
       int set_yield(char *, char *);
+
+      void electron_donor(char *);
+      int set_edonor(char **, char *);
 
       void decay_rate(char *);
       int set_decay(char *, char *);

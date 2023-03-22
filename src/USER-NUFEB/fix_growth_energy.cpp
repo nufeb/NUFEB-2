@@ -29,7 +29,7 @@
 using namespace LAMMPS_NS;
 using namespace FixConst;
 
-#define MW_N 14.01
+#define MAINT_ENERGY 0.00125 // maintenance energy KJ/mol·s, derived from 4.5KJ/mol·h
 
 /* ---------------------------------------------------------------------- */
 
@@ -47,6 +47,12 @@ FixGrowthEnergy::FixGrowthEnergy(LAMMPS *lmp, int narg, char **arg) :
   dgo_cata = 0.0;
   dgo_anab = 0.0;
 
+  uptake = 0.0;
+  decay = 0.0;
+  dissipation = 0.0;
+  biomass_gibbs = 0.0;
+  e_donor = -1;
+
   gibbs_cata = nullptr;
   gibbs_anab = nullptr;
   yield = nullptr;
@@ -63,9 +69,7 @@ FixGrowthEnergy::FixGrowthEnergy(LAMMPS *lmp, int narg, char **arg) :
   reader->read_file(arg[1]);
 
   uptake = reader->uptake;
-  max_yield = reader->max_yield;
   decay = reader->decay;
-  maintain = reader->maintain;
   dissipation = reader->dissipation;
   biomass_gibbs = reader->biomass_gibbs;
   sub_gibbs = reader->sub_gibbs;
@@ -73,6 +77,7 @@ FixGrowthEnergy::FixGrowthEnergy(LAMMPS *lmp, int narg, char **arg) :
   cata_coeff = reader->cata_coeff;
   anab_coeff = reader->anab_coeff;
   decay_coeff = reader->decay_coeff;
+  e_donor = reader->e_donor;
 
   if (sub_gibbs == nullptr || ks_coeff == nullptr || cata_coeff == nullptr ||
       anab_coeff == nullptr || decay_coeff == nullptr)
@@ -95,6 +100,8 @@ FixGrowthEnergy::FixGrowthEnergy(LAMMPS *lmp, int narg, char **arg) :
     } else if  (strcmp(arg[iarg], "mw_biomass") == 0) {
       mw_biomass = utils::numeric(FLERR, arg[iarg + 1], true, lmp);
       iarg += 2;
+    } else {
+      error->all(FLERR, "Illegal fix nufeb/growth/energy command");
     }
   }
 
@@ -219,38 +226,42 @@ void FixGrowthEnergy::update_cells()
 {
   double **reac = grid->reac;
   double **dens = grid->dens;
+  double *mw = grid->mw;
 
   for (int i = 0; i < grid->ncells; i++) {
     if (grid->mask[i] & GHOST_MASK) continue;
     double inv_yield;
-    double spec_growth, max_growth;
-    double monod;
-    double m_req;
+    double spec_growth;
+    double m_req, q_cat;
     double meta_coeff;
 
-    // convert yield unit mol-X/mol-N to kg-X/kg-N
-    yield[i] = -gibbs_cata[i] / (gibbs_anab[i] + dissipation) * (mw_biomass / MW_N) ;
+    yield[i] = -gibbs_cata[i] / (gibbs_anab[i] + dissipation);
     // inverse yield
     if (yield[i] != 0.0)
       inv_yield = 1 / yield[i];
     else
       inv_yield = 0.0;
 
-    m_req = -maintain / gibbs_cata[i];
-    monod = compute_monod(i);
-    spec_growth = uptake * yield[i] * monod - m_req;
-    max_growth = uptake * max_yield * monod;
+    // Specific substrate uptake rate for catabolism
+    // unit mole-eD/molCx·s
+    q_cat = uptake * compute_monod(i);
+    // specific substrate consumption required for maintenance
+    // unit = mol-eD / mol-X·s
+    m_req = -MAINT_ENERGY / gibbs_cata[i];
+    spec_growth = (q_cat - m_req) * yield[i];
 
     // update substrate reaction term
     for (int j = 0; j < grid->nsubs; j++) {
-      if (max_growth > alfa * m_req) {
+      if (q_cat > alfa * m_req) {
         meta_coeff = inv_yield * cata_coeff[j] + anab_coeff[j];
+        // convert unit mol-eD/mol-X to kg-eD/kg-X
+        meta_coeff *= mw[e_donor] / mw_biomass;
         reac[j][i] += spec_growth * meta_coeff * dens[igroup][i];
 
-      } else if (max_growth <= alfa * m_req && max_growth >= beta * m_req) {
+      } else if (q_cat <= alfa * m_req && q_cat >= beta * m_req) {
         reac[j][i] += spec_growth * cata_coeff[j] * dens[igroup][i];
 
-      } else if (max_growth < beta * m_req) {
+      } else if (q_cat < beta * m_req) {
         reac[j][i] -= spec_growth * decay_coeff[j] * dens[igroup][i];
       }
     }
@@ -263,26 +274,27 @@ void FixGrowthEnergy::update_atoms()
 {
   for (int i = 0; i < grid->ncells; i++) {
     if (grid->mask[i] & GHOST_MASK) continue;
-    double spec_growth, max_growth;
-    double monod;
-    double m_req;
+    double spec_growth;
+    double m_req, q_cat;
+    // yield unit = mol-X/mol-eD
+    yield[i] = -gibbs_cata[i] / (gibbs_anab[i] + dissipation);
 
-    // compute yield, covert unit from mol -> kg
-    yield[i] = -gibbs_cata[i] / (gibbs_anab[i] + dissipation) * (mw_biomass / MW_N) ;
+    // specific substrate uptake rate for catabolism
+    // unit mole-eD/mol-x·s
+    q_cat = uptake * compute_monod(i);
+    // specific substrate consumption required for maintenance
+    // unit = mol-eD / mol-X·s
+    m_req = -MAINT_ENERGY / gibbs_cata[i];
+    spec_growth = (q_cat - m_req) * yield[i];
 
-    m_req = -maintain / gibbs_cata[i];
-    monod = compute_monod(i);
-    spec_growth = uptake * yield[i] * monod - m_req;
-    max_growth = uptake * max_yield * monod;
-
-    if (max_growth > alfa * m_req) {
+    if (q_cat > alfa * m_req) {
       grid->growth[igroup][i][0] = spec_growth;
 
-    } else if (max_growth <= alfa * m_req && max_growth > beta * m_req) {
+    } else if (q_cat <= alfa * m_req && q_cat > beta * m_req) {
       grid->growth[igroup][i][0] = 0.0;
 
-    } else if (max_growth <= beta * m_req) {
-      grid->growth[igroup][i][0] = -decay;
+    } else if (q_cat <= beta * m_req) {
+      grid->growth[igroup][i][0] = -decay * (m_req - q_cat) / m_req;
     }
   }
 
