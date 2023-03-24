@@ -2,20 +2,20 @@ Additional parameters used for fix nufeb/growth/energy
 
  2 groups
  
- Uptake Rate  #kg m-3 s-1
+ Uptake Rate  # mol-eD/mol-X·s
      
-     AOB 2.18667e-4
-     NOB 2.11833e-4
+     AOB 1.38889e-4
+     NOB 4.16667e-4
 
  Ks Coeffs    #kg/m3
      
      AOB nh3 3.6e-5   o2 3e-5
      NOB no2 1.81e-7  o2 6.02e-5
      
- Decay Rate   #kg m-3 s-1
+ Decay Rate   #kg m-3 s
 
-     AOB 5.5756e-5
-     NOB 1.9167e-6
+     AOB 1.27314e-6
+     NOB 1.27314e-6
      
  Electron Donor
  

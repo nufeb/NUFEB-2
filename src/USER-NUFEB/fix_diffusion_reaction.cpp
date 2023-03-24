@@ -27,6 +27,8 @@
 using namespace LAMMPS_NS;
 using namespace FixConst;
 
+#define THRESHOLD_CONC 1E-20
+
 /* ---------------------------------------------------------------------- */
 
 FixDiffusionReaction::FixDiffusionReaction(LAMMPS *lmp, int narg, char **arg) :
@@ -212,7 +214,7 @@ void FixDiffusionReaction::compute_final()
       double dpz = grid->diff_coeff[isub][i] * (prev[pz] - prev[i]) / grid->cell_size;
       double ddz = (dpz - dnz) / grid->cell_size;
       // prevent negative concentrations
-      grid->conc[isub][i] = MAX(0, prev[i] + dt * (ddx + ddy + ddz + grid->reac[isub][i]));
+      grid->conc[isub][i] = MAX(THRESHOLD_CONC, prev[i] + dt * (ddx + ddy + ddz + grid->reac[isub][i]));
     }
   }
 }

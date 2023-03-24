@@ -173,7 +173,6 @@ void FixGrowthEnergy::compute_dgr()
   double rt = temp * gas_const;
 
   for (int i = 0; i < grid->ncells; i++) {
-    if (grid->mask[i] & GHOST_MASK) continue;
     // standard Gibbs free energy
     gibbs_cata[i] = dgo_cata;
     gibbs_anab[i] = dgo_anab;
@@ -188,13 +187,13 @@ void FixGrowthEnergy::compute_dgr()
       // convert concentrations from kg/m3 to mol/L
       if (cata_coeff[j] > 0) {
         q_cata *= pow(conc[j][i]/mw[j], cata_coeff[j]);
-      } else if (cata_coeff[j] < 0){
+      } else if (cata_coeff[j] < 0) {
         q_cata /= pow(conc[j][i]/mw[j], -cata_coeff[j]);
       }
 
       if (anab_coeff[j] > 0) {
         q_anab *= pow(conc[j][i]/mw[j], anab_coeff[j]);
-      } else if (anab_coeff[j] < 0){
+      } else if (anab_coeff[j] < 0) {
         q_anab /= pow(conc[j][i]/mw[j], -anab_coeff[j]);
       }
     }
@@ -263,6 +262,7 @@ void FixGrowthEnergy::update_cells()
 
       } else if (q_cat < beta * m_req) {
         reac[j][i] -= spec_growth * decay_coeff[j] * dens[igroup][i];
+
       }
     }
   }
@@ -273,7 +273,6 @@ void FixGrowthEnergy::update_cells()
 void FixGrowthEnergy::update_atoms()
 {
   for (int i = 0; i < grid->ncells; i++) {
-    if (grid->mask[i] & GHOST_MASK) continue;
     double spec_growth;
     double m_req, q_cat;
     // yield unit = mol-X/mol-eD

@@ -51,7 +51,7 @@ neigh_modify    check yes                  # rebuild neighbour list if any atom
 #--------------------------Mesh Grid and Substrates--------------------------#
 
 # defining grid sytle, substrate names, and grid size
-grid_style      nufeb/chemostat 7 nh3 no2 no3 o2 co2 h2o h 2.5e-6
+grid_style      nufeb/chemostat 7 nh3 no2 no3 o2 co2 h2o h 5e-6
 
 
 # substrate initial concentrations and molecular weight (liquid:kg/m3 mw:g/mol)
@@ -67,7 +67,7 @@ grid_modify     set h   pp pp nd  0     mw 2.016
 #--------------------------Biological Processes-------------------------------#
 
 fix growth_aob AOB nufeb/growth/energy growth_energy.in    # energy-based growth model
-#fix growth_nob NOB nufeb/growth/energy growth_energy.in    # additional params defined in 
+fix growth_nob NOB nufeb/growth/energy growth_energy.in    # additional params defined in 
                                                            # growth_energy.in file
 
 fix div all nufeb/division/coccus 1.25e-6 1234             # division diameter: 1.25e-6m
@@ -126,9 +126,9 @@ fix diff_co2 all nufeb/diffusion_reaction co2 1.19e-9
 # q = inlet flow rate; reactor_af = biofilm surface area in reactor; 
 # domain_af = biofilm surface area in simulation domain
 
-#fix balance_nh3 all nufeb/reactor/solute_balance nh3 q 2.31e-7 reactor_vol 1.25e-3 reactor_af 0.1 domain_af xy
-#fix balance_no2 all nufeb/reactor/solute_balance no2 q 2.31e-7 reactor_vol 1.25e-3 reactor_af 0.1 domain_af xy
-#fix balance_no3 all nufeb/reactor/solute_balance no3 q 2.31e-7 reactor_vol 1.25e-3 reactor_af 0.1 domain_af xy
+fix balance_nh3 all nufeb/reactor/solute_balance nh3 q 2.31e-7 reactor_vol 1.25e-3 reactor_af 0.1 domain_af xy
+fix balance_no2 all nufeb/reactor/solute_balance no2 q 2.31e-7 reactor_vol 1.25e-3 reactor_af 0.1 domain_af xy
+fix balance_no3 all nufeb/reactor/solute_balance no3 q 2.31e-7 reactor_vol 1.25e-3 reactor_af 0.1 domain_af xy
 
 
 #--------------------------Computations and Outputs----------------------------#
@@ -141,11 +141,10 @@ variable ndead equal "count(DEAD)"                            # total # of DEAD 
 
 shell mkdir vtk                                               # dump simulation data in vtk format
 dump du1 all vtk 10 vtk/dump*.vtu id type diameter            # require build NUFEB with vtk option
-#dump du2 all grid/vtk 10 vtk/dump_%_*.vti con rea den gro
+dump du2 all grid/vtk 10 vtk/dump_%_*.vti con rea den gro
 
 # screen and log outputs
-#thermo_style custom step cpu atoms v_maob v_mnob v_naob v_nnob v_ndead f_balance_nh3 f_balance_no2 f_balance_no3
-thermo_style custom step cpu atoms v_maob v_mnob v_naob v_nnob v_ndead
+thermo_style custom step cpu atoms v_maob v_mnob v_naob v_nnob v_ndead f_balance_nh3 f_balance_no2 f_balance_no3
 
 thermo 1 
 thermo_modify lost warn
@@ -154,11 +153,11 @@ thermo_modify lost warn
 #---------------------------------Run------------------------------------------#
 
 # issue run command, define timesteps for physical (pairdt) and chemical (diffdt) processes
-run_style nufeb diffdt 1e-4 difftol 1e-6 pairdt 1e-2 pairtol 1 pairmax 600 diffmax 3000
+run_style nufeb diffdt 1e-4 difftol 1e-6 pairdt 1e-2 pairtol 1 pairmax 500 diffmax 2000
 
 timestep 3600                                                 # define biological timesteps (3600s)
 
-run 1440                                                      # growing biofilm for 100 days (3600x2400s)
+run 2400                                                      # growing biofilm for 100 days (3600x2400s)
 
 
 

@@ -22,6 +22,7 @@
 #include "group.h"
 #include "update.h"
 #include "atom_masks.h"
+#include "grid_masks.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -87,15 +88,16 @@ void FixDensity::compute()
   //   which were updated during initial integrate
   for (int i = 0; i < atom->nlocal + atom->nghost; i++) {
     if (atom->x[i][0] >= domain->sublo[0] && atom->x[i][0] < domain->subhi[0] &&
-	atom->x[i][1] >= domain->sublo[1] && atom->x[i][1] < domain->subhi[1] &&
-	atom->x[i][2] >= domain->sublo[2] && atom->x[i][2] < domain->subhi[2]) {
+        atom->x[i][1] >= domain->sublo[1] && atom->x[i][1] < domain->subhi[1] &&
+        atom->x[i][2] >= domain->sublo[2] && atom->x[i][2] < domain->subhi[2]) {
       int cell = grid->cell(atom->x[i]);
 
       double d = atom->biomass[i] * atom->rmass[i] / vol;
       grid->dens[0][cell] += d;
-      for (int igroup = 0; igroup < group->ngroup; igroup++)
-	if (atom->mask[i] & group->bitmask[igroup])
-	  grid->dens[igroup][cell] += d;
+      for (int igroup = 0; igroup < group->ngroup; igroup++) {
+        if (atom->mask[i] & group->bitmask[igroup])
+          grid->dens[igroup][cell] += d;
+      }
     }
   }
 }

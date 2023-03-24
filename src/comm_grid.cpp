@@ -72,7 +72,7 @@ CommGrid::~CommGrid()
   memory->destroy(recv_cells_self);
   memory->destroy(send_cells_self);
   memory->destroy(buf_self);
-  
+
   delete [] requests;
 }
 
@@ -123,230 +123,230 @@ void CommGrid::setup()
       int n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
 			0, -1, 0, 0, 0, lo, hi, false);
       if (n > 0) {
-	recvproc[nrecvproc] = p;
-	recv_begin[nrecvproc] = nrecv;
-	nrecv += n;
-	recv_end[nrecvproc++] = nrecv;
-	recvlist.add(p, lo, hi, n);
+        recvproc[nrecvproc] = p;
+        recv_begin[nrecvproc] = nrecv;
+        nrecv += n;
+        recv_end[nrecvproc++] = nrecv;
+        recvlist.add(p, lo, hi, n);
       }
       n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
 		    -1, 0, 0, 0, 0, lo, hi, false);
       if (n > 0) {
-	sendproc[nsendproc] = p;
-	send_begin[nsendproc] = nsend;
-	nsend += n;
-	send_end[nsendproc++] = nsend;
-	sendlist.add(p, lo, hi, n);
+        sendproc[nsendproc] = p;
+        send_begin[nsendproc] = nsend;
+        nsend += n;
+        send_end[nsendproc++] = nsend;
+        sendlist.add(p, lo, hi, n);
       }
     }
     if (grid->periodic[0]) {
       int n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
 			0, -1, -grid->box[0], 0, 0, lo, hi, false);
       if (n > 0) {
-	if (comm->me != p) {
-	  if (nrecvproc > 0 && recvproc[nrecvproc-1] == p) {
-	    recv_end[nrecvproc-1] += n;
-	  } else {
-	    recvproc[nrecvproc] = p;
-	    recv_begin[nrecvproc] = nrecv;
-	    recv_end[nrecvproc++] = nrecv + n;
-	  }
-	  nrecv += n;
-	} else {
-	  nrecv_self += n;
-	}
-	recvlist.add(p, lo, hi, n);
+        if (comm->me != p) {
+          if (nrecvproc > 0 && recvproc[nrecvproc-1] == p) {
+            recv_end[nrecvproc-1] += n;
+          } else {
+            recvproc[nrecvproc] = p;
+            recv_begin[nrecvproc] = nrecv;
+            recv_end[nrecvproc++] = nrecv + n;
+          }
+          nrecv += n;
+        } else {
+          nrecv_self += n;
+        }
+        recvlist.add(p, lo, hi, n);
       }
       n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
 		    -1, 0, grid->box[0], 0, 0, lo, hi, false);
       if (n > 0) {
-	if (comm->me != p) {
-	  if (nsendproc > 0 && sendproc[nsendproc-1] == p) {
-	    send_end[nsendproc-1] += n;
-	  } else {
-	    sendproc[nsendproc] = p;
-	    send_begin[nsendproc] = nsend;
-	    send_end[nsendproc++] = nsend + n;
-	  }
-	  nsend += n;
-	} else {
-	  nsend_self += n;
-	}
-	sendlist.add(p, lo, hi, n);
+        if (comm->me != p) {
+          if (nsendproc > 0 && sendproc[nsendproc-1] == p) {
+            send_end[nsendproc-1] += n;
+          } else {
+            sendproc[nsendproc] = p;
+            send_begin[nsendproc] = nsend;
+            send_end[nsendproc++] = nsend + n;
+          }
+          nsend += n;
+        } else {
+          nsend_self += n;
+        }
+        sendlist.add(p, lo, hi, n);
       }
       n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
 		    0, -1, grid->box[0], 0, 0, lo, hi, false);
       if (n > 0) {
-	if (comm->me != p) {
-	  if (nrecvproc > 0 && recvproc[nrecvproc-1] == p) {
-	    recv_end[nrecvproc-1] += n;
-	  } else {
-	    recvproc[nrecvproc] = p;
-	    recv_begin[nrecvproc] = nrecv;
-	    recv_end[nrecvproc++] = nrecv + n;
-	  }
-	  nrecv += n;
-	} else {
-	  nrecv_self += n;
-	}
-	recvlist.add(p, lo, hi, n);
+        if (comm->me != p) {
+          if (nrecvproc > 0 && recvproc[nrecvproc-1] == p) {
+            recv_end[nrecvproc-1] += n;
+          } else {
+            recvproc[nrecvproc] = p;
+            recv_begin[nrecvproc] = nrecv;
+            recv_end[nrecvproc++] = nrecv + n;
+          }
+          nrecv += n;
+        } else {
+          nrecv_self += n;
+        }
+        recvlist.add(p, lo, hi, n);
       }
       n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
 		    -1, 0, -grid->box[0], 0, 0, lo, hi, false);
       if (n > 0) {
-	if (comm->me != p) {
-	  if (nsendproc > 0 && sendproc[nsendproc-1] == p) {
-	    send_end[nsendproc-1] += n;
-	  } else {
-	    sendproc[nsendproc] = p;
-	    send_begin[nsendproc] = nsend;
-	    send_end[nsendproc++] = nsend + n;
-	  }
-	  nsend += n;
-	} else {
-	  nsend_self += n;
-	}
-	sendlist.add(p, lo, hi, n);
+        if (comm->me != p) {
+          if (nsendproc > 0 && sendproc[nsendproc-1] == p) {
+            send_end[nsendproc-1] += n;
+          } else {
+            sendproc[nsendproc] = p;
+            send_begin[nsendproc] = nsend;
+            send_end[nsendproc++] = nsend + n;
+          }
+          nsend += n;
+        } else {
+          nsend_self += n;
+        }
+        sendlist.add(p, lo, hi, n);
       }
     }
     if (grid->periodic[1]) {
       int n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
 			0, -1, 0, -grid->box[1], 0, lo, hi, false);
       if (n > 0) {
-	if (comm->me != p) {
-	  if (nrecvproc > 0 && recvproc[nrecvproc-1] == p) {
-	    recv_end[nrecvproc-1] += n;
-	  } else {
-	    recvproc[nrecvproc] = p;
-	    recv_begin[nrecvproc] = nrecv;
-	    recv_end[nrecvproc++] = nrecv + n;
-	  }
-	  nrecv += n;
-	} else {
-	  nrecv_self += n;
-	}
-	recvlist.add(p, lo, hi, n);
+        if (comm->me != p) {
+          if (nrecvproc > 0 && recvproc[nrecvproc-1] == p) {
+            recv_end[nrecvproc-1] += n;
+          } else {
+            recvproc[nrecvproc] = p;
+            recv_begin[nrecvproc] = nrecv;
+            recv_end[nrecvproc++] = nrecv + n;
+          }
+          nrecv += n;
+        } else {
+          nrecv_self += n;
+        }
+        recvlist.add(p, lo, hi, n);
       }
       n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
 		    -1, 0, 0, grid->box[1], 0, lo, hi, false);
       if (n > 0) {
-	if (comm->me != p) {
-	  if (nsendproc > 0 && sendproc[nsendproc-1] == p) {
-	    send_end[nsendproc-1] += n;
-	  } else {
-	    sendproc[nsendproc] = p;
-	    send_begin[nsendproc] = nsend;
-	    send_end[nsendproc++] = nsend + n;
-	  }
-	  nsend += n;
-	} else {
-	  nsend_self += n;
-	}
-	sendlist.add(p, lo, hi, n);
+        if (comm->me != p) {
+          if (nsendproc > 0 && sendproc[nsendproc-1] == p) {
+            send_end[nsendproc-1] += n;
+          } else {
+            sendproc[nsendproc] = p;
+            send_begin[nsendproc] = nsend;
+            send_end[nsendproc++] = nsend + n;
+          }
+          nsend += n;
+        } else {
+          nsend_self += n;
+        }
+        sendlist.add(p, lo, hi, n);
       }
       n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
 		    0, -1, 0, grid->box[1], 0, lo, hi, false);
       if (n > 0) {
-	if (comm->me != p) {
-	  if (nrecvproc > 0 && recvproc[nrecvproc-1] == p) {
-	    recv_end[nrecvproc-1] += n;
-	  } else {
-	    recvproc[nrecvproc] = p;
-	    recv_begin[nrecvproc] = nrecv;
-	    recv_end[nrecvproc++] = nrecv + n;
-	  }
-	  nrecv += n;
-	} else {
-	  nrecv_self += n;
-	}
-	recvlist.add(p, lo, hi, n);
+        if (comm->me != p) {
+          if (nrecvproc > 0 && recvproc[nrecvproc-1] == p) {
+            recv_end[nrecvproc-1] += n;
+          } else {
+            recvproc[nrecvproc] = p;
+            recv_begin[nrecvproc] = nrecv;
+            recv_end[nrecvproc++] = nrecv + n;
+          }
+          nrecv += n;
+        } else {
+          nrecv_self += n;
+        }
+        recvlist.add(p, lo, hi, n);
       }
       n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
 		    -1, 0, 0, -grid->box[1], 0, lo, hi, false);
       if (n > 0) {
-	if (comm->me != p) {
-	  if (nsendproc > 0 && sendproc[nsendproc-1] == p) {
-	    send_end[nsendproc-1] += n;
-	  } else {
-	    sendproc[nsendproc] = p;
-	    send_begin[nsendproc] = nsend;
-	    send_end[nsendproc++] = nsend + n;
-	  }
-	  nsend += n;
-	} else {
-	  nsend_self += n;
-	}
-	sendlist.add(p, lo, hi, n);
+        if (comm->me != p) {
+          if (nsendproc > 0 && sendproc[nsendproc-1] == p) {
+            send_end[nsendproc-1] += n;
+          } else {
+            sendproc[nsendproc] = p;
+            send_begin[nsendproc] = nsend;
+            send_end[nsendproc++] = nsend + n;
+          }
+          nsend += n;
+        } else {
+          nsend_self += n;
+        }
+        sendlist.add(p, lo, hi, n);
       }
     }
     if (grid->periodic[2]) {
       int n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
 			0, -1, 0, 0, -grid->box[2], lo, hi, false);
       if (n > 0) {
-	if (comm->me != p) {
-	  if (nrecvproc > 0 && recvproc[nrecvproc-1] == p) {
-	    recv_end[nrecvproc-1] += n;
-	  } else {
-	    recvproc[nrecvproc] = p;
-	    recv_begin[nrecvproc] = nrecv;
-	    recv_end[nrecvproc++] = nrecv + n;
-	  }
-	  nrecv += n;
-	} else {
-	  nrecv_self += n;
-	}
-	recvlist.add(p, lo, hi, n);
+        if (comm->me != p) {
+          if (nrecvproc > 0 && recvproc[nrecvproc-1] == p) {
+            recv_end[nrecvproc-1] += n;
+          } else {
+            recvproc[nrecvproc] = p;
+            recv_begin[nrecvproc] = nrecv;
+            recv_end[nrecvproc++] = nrecv + n;
+          }
+          nrecv += n;
+        } else {
+          nrecv_self += n;
+        }
+        recvlist.add(p, lo, hi, n);
       }
       n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
 		    -1, 0, 0, 0, grid->box[2], lo, hi, false);
       if (n > 0) {
-	if (comm->me != p) {
-	  if (nsendproc > 0 && sendproc[nsendproc-1] == p) {
-	    send_end[nsendproc-1] += n;
-	  } else {
-	    sendproc[nsendproc] = p;
-	    send_begin[nsendproc] = nsend;
-	    send_end[nsendproc++] = nsend + n;
-	  }
-	  nsend += n;
-	} else {
-	  nsend_self += n;
-	}
-	sendlist.add(p, lo, hi, n);
+        if (comm->me != p) {
+          if (nsendproc > 0 && sendproc[nsendproc-1] == p) {
+            send_end[nsendproc-1] += n;
+          } else {
+            sendproc[nsendproc] = p;
+            send_begin[nsendproc] = nsend;
+            send_end[nsendproc++] = nsend + n;
+          }
+          nsend += n;
+        } else {
+          nsend_self += n;
+        }
+        sendlist.add(p, lo, hi, n);
       }
       n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
 		    0, -1, 0, 0, grid->box[2], lo, hi, false);
       if (n > 0) {
-	if (comm->me != p) {
-	  if (nrecvproc > 0 && recvproc[nrecvproc-1] == p) {
-	    recv_end[nrecvproc-1] += n;
-	  } else {
-	    recvproc[nrecvproc] = p;
-	    recv_begin[nrecvproc] = nrecv;
-	    recv_end[nrecvproc++] = nrecv + n;
-	  }
-	  nrecv += n;
-	} else {
-	  nrecv_self += n;
-	}
-	recvlist.add(p, lo, hi, n);
+        if (comm->me != p) {
+          if (nrecvproc > 0 && recvproc[nrecvproc-1] == p) {
+            recv_end[nrecvproc-1] += n;
+          } else {
+            recvproc[nrecvproc] = p;
+            recv_begin[nrecvproc] = nrecv;
+            recv_end[nrecvproc++] = nrecv + n;
+          }
+          nrecv += n;
+        } else {
+          nrecv_self += n;
+        }
+        recvlist.add(p, lo, hi, n);
       }
       n = intersect(grid->sublo, grid->subhi, &boxlo[3*p], &boxhi[3*p],
 		    -1, 0, 0, 0, -grid->box[2], lo, hi, false);
       if (n > 0) {
-	if (comm->me != p) {
-	  if (nsendproc > 0 && sendproc[nsendproc-1] == p) {
-	    send_end[nsendproc-1] += n;
-	  } else {
-	    sendproc[nsendproc] = p;
-	    send_begin[nsendproc] = nsend;
-	    send_end[nsendproc++] = nsend + n;
-	  }
-	  nsend += n;
-	} else {
-	  nsend_self += n;
-	}
-	sendlist.add(p, lo, hi, n);
+        if (comm->me != p) {
+          if (nsendproc > 0 && sendproc[nsendproc-1] == p) {
+            send_end[nsendproc-1] += n;
+          } else {
+            sendproc[nsendproc] = p;
+            send_begin[nsendproc] = nsend;
+            send_end[nsendproc++] = nsend + n;
+          }
+          nsend += n;
+        } else {
+          nsend_self += n;
+        }
+        sendlist.add(p, lo, hi, n);
       }
     }
   }
@@ -363,17 +363,17 @@ void CommGrid::setup()
   for (int i = 0; i < recvlist.n; i++) {
     for (int z = recvlist.boxlo[3*i+2]; z < recvlist.boxhi[3*i+2]; z++) {
       for (int y = recvlist.boxlo[3*i+1]; y < recvlist.boxhi[3*i+1]; y++) {
-	for (int x = recvlist.boxlo[3*i]; x < recvlist.boxhi[3*i]; x++) {
-	  if (comm->me != recvlist.procs[i]) {
-	    recv_cells[irecv++] = x - grid->sublo[0] +
-	      (y - grid->sublo[1]) * grid->subbox[0] +
-	      (z - grid->sublo[2]) * grid->subbox[0] * grid->subbox[1];
-	  } else {
-	    recv_cells_self[irecv_self++] = x - grid->sublo[0] +
-	      (y - grid->sublo[1]) * grid->subbox[0] +
-	      (z - grid->sublo[2]) * grid->subbox[0] * grid->subbox[1];
-	  }
-  	}
+        for (int x = recvlist.boxlo[3*i]; x < recvlist.boxhi[3*i]; x++) {
+          if (comm->me != recvlist.procs[i]) {
+            recv_cells[irecv++] = x - grid->sublo[0] +
+              (y - grid->sublo[1]) * grid->subbox[0] +
+              (z - grid->sublo[2]) * grid->subbox[0] * grid->subbox[1];
+          } else {
+            recv_cells_self[irecv_self++] = x - grid->sublo[0] +
+              (y - grid->sublo[1]) * grid->subbox[0] +
+              (z - grid->sublo[2]) * grid->subbox[0] * grid->subbox[1];
+          }
+        }
       }
     }
   }
@@ -383,17 +383,17 @@ void CommGrid::setup()
   for (int i = 0; i < sendlist.n; i++) {
     for (int z = sendlist.boxlo[3*i+2]; z < sendlist.boxhi[3*i+2]; z++) {
       for (int y = sendlist.boxlo[3*i+1]; y < sendlist.boxhi[3*i+1]; y++) {
-	for (int x = sendlist.boxlo[3*i]; x < sendlist.boxhi[3*i]; x++) {
-	  if (comm->me != sendlist.procs[i]) {
-	    send_cells[isend++] = x - grid->sublo[0] +
-	      (y - grid->sublo[1]) * grid->subbox[0] +
-	      (z - grid->sublo[2]) * grid->subbox[0] * grid->subbox[1];
-	  } else {
-	    send_cells_self[isend_self++] = x - grid->sublo[0] +
-	      (y - grid->sublo[1]) * grid->subbox[0] +
-	      (z - grid->sublo[2]) * grid->subbox[0] * grid->subbox[1];
-	  }
-  	}
+        for (int x = sendlist.boxlo[3*i]; x < sendlist.boxhi[3*i]; x++) {
+          if (comm->me != sendlist.procs[i]) {
+            send_cells[isend++] = x - grid->sublo[0] +
+              (y - grid->sublo[1]) * grid->subbox[0] +
+              (z - grid->sublo[2]) * grid->subbox[0] * grid->subbox[1];
+          } else {
+            send_cells_self[isend_self++] = x - grid->sublo[0] +
+              (y - grid->sublo[1]) * grid->subbox[0] +
+              (z - grid->sublo[2]) * grid->subbox[0] * grid->subbox[1];
+          }
+        }
       }
     }
   }
@@ -423,6 +423,7 @@ void CommGrid::forward_comm()
 			    &recv_cells[recv_begin[p]],
 			    &buf_recv[recv_begin[p] * size_forward]);
   }
+
   grid->gvec->pack_comm(nsend_self, send_cells_self, buf_self);
   grid->gvec->unpack_comm(nrecv_self, recv_cells_self, buf_self);
 }
@@ -507,17 +508,17 @@ void CommGrid::migrate()
   for (int i = 0; i < recvlist.n; i++) {
     for (int z = recvlist.boxlo[3*i+2]; z < recvlist.boxhi[3*i+2]; z++) {
       for (int y = recvlist.boxlo[3*i+1]; y < recvlist.boxhi[3*i+1]; y++) {
-	for (int x = recvlist.boxlo[3*i]; x < recvlist.boxhi[3*i]; x++) {
-	  if (comm->me != recvlist.procs[i]) {
-	    recv_cells_[irecv++] = x - newsublo[0] +
-	      (y - newsublo[1]) * newsubbox[0] +
-	      (z - newsublo[2]) * newsubbox[0] * newsubbox[1];
-	  } else {
-	    recv_cells_self_[irecv_self++] = x - newsublo[0] +
-	      (y - newsublo[1]) * newsubbox[0] +
-	      (z - newsublo[2]) * newsubbox[0] * newsubbox[1];
-	  }
-  	}
+        for (int x = recvlist.boxlo[3*i]; x < recvlist.boxhi[3*i]; x++) {
+          if (comm->me != recvlist.procs[i]) {
+            recv_cells_[irecv++] = x - newsublo[0] +
+              (y - newsublo[1]) * newsubbox[0] +
+              (z - newsublo[2]) * newsubbox[0] * newsubbox[1];
+          } else {
+            recv_cells_self_[irecv_self++] = x - newsublo[0] +
+              (y - newsublo[1]) * newsubbox[0] +
+              (z - newsublo[2]) * newsubbox[0] * newsubbox[1];
+          }
+        }
       }
     }
   }
@@ -545,7 +546,7 @@ void CommGrid::migrate()
   double *buf_recv_ = memory->create(buf_recv_, nrecv_ * size_exchange, "comm_grid:buf_recv_");
   double *buf_send_ = memory->create(buf_send_, nsend_ * size_exchange, "comm_grid:buf_send_");
   double *buf_self_ = memory->create(buf_self_, nrecv_self_ * size_exchange, "comm_grid:buf_self_");
-  
+
   int nrequest = 0;
   for (int p = 0; p < recvlist.n; p++) {
     if (comm->me != recvlist.procs[p]) {
@@ -656,5 +657,6 @@ int CommGrid::intersect(int *lo1, int *hi1,
   }
   if (size[0] <= 0 || size[1] <= 0 || size[2] <= 0)
     return 0;
+
   return size[0] * size[1] * size[2];
 }

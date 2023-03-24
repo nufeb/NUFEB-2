@@ -188,18 +188,17 @@ void GridVecChemostat::set(int narg, char **arg)
 void GridVecChemostat::set_grid(int isub, double domain, double bulk)
 {
   for (int i = 0; i < grid->ncells; i++) {
-    if (!(mask[i] & CORNER_MASK)) {
-      if (((mask[i] & X_NB_MASK) && (boundary[isub][0] == DIRICHLET)) ||
-	  ((mask[i] & X_PB_MASK) && (boundary[isub][1] == DIRICHLET)) ||
-	  ((mask[i] & Y_NB_MASK) && (boundary[isub][2] == DIRICHLET)) ||
-	  ((mask[i] & Y_PB_MASK) && (boundary[isub][3] == DIRICHLET)) ||
-	  ((mask[i] & Z_NB_MASK) && (boundary[isub][4] == DIRICHLET)) ||
-	  ((mask[i] & Z_PB_MASK) && (boundary[isub][5] == DIRICHLET))) {
-        conc[isub][i] = bulk;
-      } else {
-    	conc[isub][i] = domain;
-      }
+    if (((mask[i] & X_NB_MASK) && (boundary[isub][0] == DIRICHLET)) ||
+    ((mask[i] & X_PB_MASK) && (boundary[isub][1] == DIRICHLET)) ||
+    ((mask[i] & Y_NB_MASK) && (boundary[isub][2] == DIRICHLET)) ||
+    ((mask[i] & Y_PB_MASK) && (boundary[isub][3] == DIRICHLET)) ||
+    ((mask[i] & Z_NB_MASK) && (boundary[isub][4] == DIRICHLET)) ||
+    ((mask[i] & Z_PB_MASK) && (boundary[isub][5] == DIRICHLET))) {
+      conc[isub][i] = bulk;
+    } else {
+      conc[isub][i] = domain;
     }
+
     grid->reac[isub][i] = 0.0;
     grid->diff_coeff[isub][i] = 0.0;
   }
