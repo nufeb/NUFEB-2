@@ -48,6 +48,14 @@ void GridVecChemostat::init()
 
   size_forward = grid->nsubs;
   size_exchange = grid->nsubs;
+
+  for (int i = 0; i < grid->ncells; i++) {
+    for (int igroup = 0; igroup < group->ngroup; igroup++) {
+      grid->dens[igroup][i] = 0.0;
+      grid->growth[igroup][i][0] = 0.0;
+      grid->growth[igroup][i][1] = 0.0;
+    }
+  }
 }
 
 /* ---------------------------------------------------------------------- */
@@ -193,7 +201,8 @@ void GridVecChemostat::set_grid(int isub, double domain, double bulk)
     ((mask[i] & Y_NB_MASK) && (boundary[isub][2] == DIRICHLET)) ||
     ((mask[i] & Y_PB_MASK) && (boundary[isub][3] == DIRICHLET)) ||
     ((mask[i] & Z_NB_MASK) && (boundary[isub][4] == DIRICHLET)) ||
-    ((mask[i] & Z_PB_MASK) && (boundary[isub][5] == DIRICHLET))) {
+    ((mask[i] & Z_PB_MASK) && (boundary[isub][5] == DIRICHLET)) ||
+    (mask[i] & BLAYER_MASK)) {
       conc[isub][i] = bulk;
     } else {
       conc[isub][i] = domain;

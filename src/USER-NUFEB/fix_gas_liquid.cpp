@@ -110,7 +110,7 @@ void FixGasLiquid::compute()
   double vol = grid->cell_size * grid->cell_size * grid->cell_size;
 
   for (int i = 0; i < grid->ncells; i++) {
-    if (!(grid->mask[i] & GHOST_MASK)) {
+    if (grid->mask[i] & GRID_MASK) {
       p_g2l = kga * (conc[iliquid][i]/(h * grid->mw[iliquid]) - grid->bulk[igas]);
       n_l2g = -p_g2l / (rg * temp);
       // update reaction rates

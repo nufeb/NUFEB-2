@@ -112,12 +112,9 @@ fix vis all viscous 1e-6                                                      # 
 
 #---------------------------Post-Physical Processes---------------------------#
 
-fix blayer_sub all nufeb/boundary_layer sub 0.9e-4                            # dynamic boundary layer
-fix blayer_o2  all nufeb/boundary_layer o2  0.9e-4                            # layer height: 4e-5
-fix blayer_nh4 all nufeb/boundary_layer nh4 0.9e-4                            # from biofilm surface to bulk region
-fix blayer_no2 all nufeb/boundary_layer no2 0.9e-4
-fix blayer_no3 all nufeb/boundary_layer no3 0.9e-4
-fix blayer_n2  all nufeb/boundary_layer n2  0.9e-4
+fix blayer all nufeb/boundary_layer 0.9e-4 1 xhi                              # dynamic boundary layer layer height: 4e-5
+                                                                              # from biofilm surface to bulk region
+
 
 fix coeff_sub all nufeb/diffusion_coeff sub ratio 0.75                        # defining diffusion coeff in the biofilm  
 fix coeff_o2  all nufeb/diffusion_coeff o2  ratio 0.75                        # region is 75% of the value in liquid

@@ -103,12 +103,12 @@ void FixGrowthEcoli::update_cells()
   double **dens = grid->dens;
 
   for (int i = 0; i < grid->ncells; i++) {
-    // cyanobacterial growth rate based on light(sub) and co2
-    double tmp1 = growth * conc[isuc][i] / (suc_affinity + conc[isuc][i]) * conc[io2][i] / (o2_affinity + conc[io2][i]);
-    // sucrose export-induced growth reduction
-    double tmp2 = maintain * conc[io2][i] / (o2_affinity + conc[io2][i]);
+    if (grid->mask[i] & GRID_MASK) {
+      // cyanobacterial growth rate based on light(sub) and co2
+      double tmp1 = growth * conc[isuc][i] / (suc_affinity + conc[isuc][i]) * conc[io2][i] / (o2_affinity + conc[io2][i]);
+      // sucrose export-induced growth reduction
+      double tmp2 = maintain * conc[io2][i] / (o2_affinity + conc[io2][i]);
 
-    if (!(grid->mask[i] & GHOST_MASK)) {
       // nutrient utilization
       reac[isuc][i] -= 1 / yield * tmp1 * dens[igroup][i];
       reac[io2][i] -= 0.399 * (tmp1 + tmp2) * dens[igroup][i];

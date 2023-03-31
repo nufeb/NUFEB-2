@@ -173,6 +173,7 @@ void FixGrowthEnergy::compute_dgr()
   double rt = temp * gas_const;
 
   for (int i = 0; i < grid->ncells; i++) {
+    if (grid->mask[i] & BLAYER_MASK) continue;
     // standard Gibbs free energy
     gibbs_cata[i] = dgo_cata;
     gibbs_anab[i] = dgo_anab;
@@ -228,12 +229,14 @@ void FixGrowthEnergy::update_cells()
   double *mw = grid->mw;
 
   for (int i = 0; i < grid->ncells; i++) {
-    if (grid->mask[i] & GHOST_MASK) continue;
+    if (!(grid->mask[i] & GRID_MASK)) continue;
+
     double inv_yield;
     double spec_growth;
     double m_req, q_cat;
     double meta_coeff;
 
+    // yield unit = mol-X/mol-eD
     yield[i] = -gibbs_cata[i] / (gibbs_anab[i] + dissipation);
     // inverse yield
     if (yield[i] != 0.0)
@@ -289,10 +292,10 @@ void FixGrowthEnergy::update_atoms()
     if (q_cat > alfa * m_req) {
       grid->growth[igroup][i][0] = spec_growth;
 
-    } else if (q_cat <= alfa * m_req && q_cat > beta * m_req) {
+    } else if (q_cat <= alfa * m_req && q_cat >= beta * m_req) {
       grid->growth[igroup][i][0] = 0.0;
 
-    } else if (q_cat <= beta * m_req) {
+    } else if (q_cat < beta * m_req) {
       grid->growth[igroup][i][0] = -decay * (m_req - q_cat) / m_req;
     }
   }

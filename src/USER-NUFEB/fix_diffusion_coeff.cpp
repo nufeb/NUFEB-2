@@ -106,7 +106,7 @@ void FixDiffusionCoeff::compute()
   for (int i = 0; i < ncells; i++) {
     if (coeff_flag == RATIO) {
       if (dens[0][i] > 0) {
-	coeff[isub][i] = const_coeff * ratio;
+	    coeff[isub][i] = const_coeff * ratio;
       }
     } else if (coeff_flag == DYNAMICS) {
       coeff[isub][i] = const_coeff * (1 - (0.43 * pow(dens[0][i]/vol,0.92)) /

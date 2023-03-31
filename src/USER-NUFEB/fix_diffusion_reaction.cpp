@@ -116,7 +116,7 @@ double FixDiffusionReaction::compute_scalar()
 {
   double result = 0.0;
   for (int i = 0; i < grid->ncells; i++) {
-    if (!(grid->mask[i] & GHOST_MASK)) {
+    if (grid->mask[i] & GRID_MASK) {
       double res = fabs((grid->conc[isub][i] - prev[i]) / prev[i]);
       if (closed_system) {
         double res2 = fabs((prev[i] - penult[i]) / penult[i]);
@@ -160,6 +160,8 @@ void FixDiffusionReaction::compute_initial()
       grid->conc[isub][i] = grid->bulk[isub];
     } else if (grid->mask[i] & Z_PB_MASK && boundary[5] == DIRICHLET) {
       grid->conc[isub][i] = grid->bulk[isub];
+    } else if (grid->mask[i] & BLAYER_MASK) {
+      grid->conc[isub][i] = grid->bulk[isub];
     }
     grid->reac[isub][i] = 0.0;
   }
@@ -197,7 +199,7 @@ void FixDiffusionReaction::compute_final()
   }
 
   for (int i = 0; i < grid->ncells; i++) {
-    if (!(grid->mask[i] & GHOST_MASK)) {
+    if (grid->mask[i] & GRID_MASK) {
       int nx = i - 1;
       int px = i + 1;
       int ny = i - grid->subbox[0];
@@ -227,7 +229,7 @@ void FixDiffusionReaction::closed_system_initial()
   if (!closed_system) return;
   double ave_conc = 0;
   for (int i = 0; i < grid->ncells; i++) {
-    if (!(grid->mask[i] & GHOST_MASK)) {
+    if (grid->mask[i] & GRID_MASK) {
       ave_conc += grid->conc[isub][i];
     }
   }

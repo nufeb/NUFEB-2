@@ -106,10 +106,10 @@ void FixGrowthAnammox::update_cells()
   double **dens = grid->dens;
 
   for (int i = 0; i < grid->ncells; i++) {
-    double tmp1 = growth * conc[inh4][i] / (nh4_affinity + conc[inh4][i]) * conc[ino2][i] / (no2_affinity + conc[ino2][i]) *
-	o2_affinity / (o2_affinity + conc[io2][i]);
+    if (grid->mask[i] & GRID_MASK) {
+      double tmp1 = growth * conc[inh4][i] / (nh4_affinity + conc[inh4][i]) * conc[ino2][i] / (no2_affinity + conc[ino2][i]) *
+      o2_affinity / (o2_affinity + conc[io2][i]);
 
-    if (!(grid->mask[i] & GHOST_MASK)) {
       reac[inh4][i] -= 1 / yield * tmp1 * dens[igroup][i];
       reac[ino2][i] -= ( 1 / yield + 1 / 1.14) * tmp1 * dens[igroup][i];
       reac[ino3][i] += ( 1 / 1.14 ) * tmp1 * dens[igroup][i];

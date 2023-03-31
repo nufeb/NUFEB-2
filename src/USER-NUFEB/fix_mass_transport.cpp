@@ -66,7 +66,7 @@ void FixMassTransport::compute()
   // compute average substrate consumption
   double ave_reac = 0.0;
   for (int i = 0; i < grid->ncells; i++) {
-    if (!(grid->mask[i] & GHOST_MASK)) {
+    if (grid->mask[i] & GRID_MASK) {
       ave_reac += grid->reac[isub][i];
     }
   }
@@ -75,7 +75,7 @@ void FixMassTransport::compute()
 
   // update substrate concentration
   for (int i = 0; i < grid->ncells; i++) {
-    if (!(grid->mask[i] & GHOST_MASK)) {
+    if (grid->mask[i] & GRID_MASK) {
       grid->conc[isub][i] -= ave_reac;
     }
   }

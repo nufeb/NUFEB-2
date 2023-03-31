@@ -120,13 +120,13 @@ void FixGrowthCyano::update_cells()
   double **dens = grid->dens;
 
   for (int i = 0; i < grid->ncells; i++) {
-    // cyanobacterial growth rate based on light(sub) and co2
-    double tmp1 = growth * conc[ilight][i] / (light_affinity + conc[ilight][i]) * conc[ico2][i] / (co2_affinity + conc[ico2][i]);
-    // sucrose export-induced growth reduction
-    double tmp2 = 0.2 * tmp1 * suc_exp;
-    double tmp3 = 4 * tmp1 * suc_exp;
+    if (grid->mask[i] & GRID_MASK) {
+      // cyanobacterial growth rate based on light(sub) and co2
+      double tmp1 = growth * conc[ilight][i] / (light_affinity + conc[ilight][i]) * conc[ico2][i] / (co2_affinity + conc[ico2][i]);
+      // sucrose export-induced growth reduction
+      double tmp2 = 0.2 * tmp1 * suc_exp;
+      double tmp3 = 4 * tmp1 * suc_exp;
 
-    if (!(grid->mask[i] & GHOST_MASK)) {
       // nutrient utilization
       reac[ilight][i] -= 1 / yield * (tmp1 + tmp3) * dens[igroup][i];
       reac[ico2][i] -= 1 / yield * (tmp1 + tmp3) * dens[igroup][i];

@@ -57,8 +57,8 @@ void ComputeAveConc::compute_vector()
   for(int isub = 0; isub < size_vector; isub++){
     double sum = 0;
     for (int i = 0; i < grid->ncells; i++) {
-      if (!(grid->mask[i] & GHOST_MASK)) {
-	sum += grid->conc[isub][i];
+      if (grid->mask[i] & GRID_MASK) {
+	    sum += grid->conc[isub][i];
       }
     }
 

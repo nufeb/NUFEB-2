@@ -1,2 +1,2 @@
 rm -rf vtk
-rm log.nufeb
+rm log.lammps

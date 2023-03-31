@@ -138,8 +138,8 @@ void FixReactorGasBalance::compute()
     int j = fix_gas_liquid[i]->igas;
 
     for (int i = 0; i < grid->ncells; i++) {
-      if (!(grid->mask[i] & GHOST_MASK)) {
-	subq += grid->reac[j][i];
+      if (grid->mask[i] & GRID_MASK) {
+	    subq += grid->reac[j][i];
       }
     }
     MPI_Allreduce(MPI_IN_PLACE, &subq, 1, MPI_DOUBLE, MPI_SUM, world);
@@ -147,7 +147,7 @@ void FixReactorGasBalance::compute()
   }
 
   for (int i = 0; i < grid->ncells; i++) {
-    if (!(grid->mask[i] & GHOST_MASK)) {
+    if (grid->mask[i] & GRID_MASK) {
       sum_reac += reac[igas][i];
     }
   }

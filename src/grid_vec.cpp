@@ -125,52 +125,57 @@ void GridVec::setup()
   for (int z = 0; z < grid->subbox[2]; z++) {
     for (int y = 0; y < grid->subbox[1]; y++) {
       for (int x = 0; x < grid->subbox[0]; x++) {
-	int m = 0;
-	if (x == 0 || y == 0 || z == 0 ||
-	    x == grid->subbox[0] - 1 ||
-	    y == grid->subbox[1] - 1 ||
-	    z == grid->subbox[2] - 1)
-	  m |= GHOST_MASK;
-	if ((x == 0 && y == 0 &&
-	     grid->sublo[0] < 0 && grid->sublo[1] < 0) ||
-	    (x == 0 && z == 0 &&
-	     grid->sublo[0] < 0 && grid->sublo[2] < 0) ||
-	    (x == 0 && y == grid->subbox[1] - 1 &&
-	     grid->sublo[0] < 0 && grid->subhi[1] > grid->box[1]) ||
-	    (x == 0 && z == grid->subbox[2] - 1 &&
-	     grid->sublo[0] < 0 && grid->subhi[2] > grid->box[2]) ||
-	    (x == grid->subbox[0] - 1 && y == 0 &&
-	     grid->subhi[0] > grid->box[0] && grid->sublo[1] < 0) ||
-	    (x == grid->subbox[0] - 1 && z == 0 &&
-	     grid->subhi[0] > grid->box[0] && grid->sublo[2] < 0) ||
-	    (x == grid->subbox[0] - 1 && y == grid->subbox[1] - 1 &&
-	     grid->subhi[0] > grid->box[0] && grid->subhi[1] > grid->box[1]) ||
-	    (x == grid->subbox[0] - 1 && z == grid->subbox[2] - 1 &&
-	     grid->subhi[0] > grid->box[0] && grid->subhi[2] > grid->box[2]) ||
-	    (y == 0 && z == 0 &&
-	     grid->sublo[1] < 0 && grid->sublo[2] < 0) ||
-	    (y == 0 && z == grid->subbox[2] - 1 &&
-	     grid->sublo[1] < 0 && grid->subhi[2] > grid->box[2]) ||
-	    (y == grid->subbox[1] - 1 && z == 0 &&
-	     grid->subhi[1] > grid->box[1] && grid->sublo[2] < 0) ||
-	    (y == grid->subbox[1] - 1 && z == grid->subbox[2] - 1 &&
-	     grid->subhi[1] > grid->box[1] && grid->subhi[2] > grid->box[2]))
-	  m |= CORNER_MASK;
-	else {
-	  if (grid->sublo[0] < 0 && x == 0)
-	    m |= X_NB_MASK;
-	  if (grid->subhi[0] > grid->box[0] && x == grid->subbox[0] - 1)
-	    m |= X_PB_MASK;
-	  if (grid->sublo[1] < 0 && y == 0)
-	    m |= Y_NB_MASK;
-	  if (grid->subhi[1] > grid->box[1] && y == grid->subbox[1] - 1)
-	    m |= Y_PB_MASK;
-	  if (grid->sublo[2] < 0 && z == 0)
-	    m |= Z_NB_MASK;
-	  if (grid->subhi[2] > grid->box[2] && z == grid->subbox[2] - 1)
-	    m |= Z_PB_MASK;
-	}
-	mask[x + y * grid->subbox[0] + z * grid->subbox[0] * grid->subbox[1]] = m;
+        int m = 0;
+        if (x == 0 || y == 0 || z == 0 ||
+            x == grid->subbox[0] - 1 ||
+            y == grid->subbox[1] - 1 ||
+            z == grid->subbox[2] - 1) {
+          m |= GHOST_MASK;
+        } else {
+          m |= GRID_MASK;
+        }
+
+        if ((x == 0 && y == 0 &&
+             grid->sublo[0] < 0 && grid->sublo[1] < 0) ||
+            (x == 0 && z == 0 &&
+             grid->sublo[0] < 0 && grid->sublo[2] < 0) ||
+            (x == 0 && y == grid->subbox[1] - 1 &&
+             grid->sublo[0] < 0 && grid->subhi[1] > grid->box[1]) ||
+            (x == 0 && z == grid->subbox[2] - 1 &&
+             grid->sublo[0] < 0 && grid->subhi[2] > grid->box[2]) ||
+            (x == grid->subbox[0] - 1 && y == 0 &&
+             grid->subhi[0] > grid->box[0] && grid->sublo[1] < 0) ||
+            (x == grid->subbox[0] - 1 && z == 0 &&
+             grid->subhi[0] > grid->box[0] && grid->sublo[2] < 0) ||
+            (x == grid->subbox[0] - 1 && y == grid->subbox[1] - 1 &&
+             grid->subhi[0] > grid->box[0] && grid->subhi[1] > grid->box[1]) ||
+            (x == grid->subbox[0] - 1 && z == grid->subbox[2] - 1 &&
+             grid->subhi[0] > grid->box[0] && grid->subhi[2] > grid->box[2]) ||
+            (y == 0 && z == 0 &&
+             grid->sublo[1] < 0 && grid->sublo[2] < 0) ||
+            (y == 0 && z == grid->subbox[2] - 1 &&
+             grid->sublo[1] < 0 && grid->subhi[2] > grid->box[2]) ||
+            (y == grid->subbox[1] - 1 && z == 0 &&
+             grid->subhi[1] > grid->box[1] && grid->sublo[2] < 0) ||
+            (y == grid->subbox[1] - 1 && z == grid->subbox[2] - 1 &&
+             grid->subhi[1] > grid->box[1] && grid->subhi[2] > grid->box[2]))
+          m |= CORNER_MASK;
+        else {
+          if (grid->sublo[0] < 0 && x == 0)
+            m |= X_NB_MASK;
+          if (grid->subhi[0] > grid->box[0] && x == grid->subbox[0] - 1)
+            m |= X_PB_MASK;
+          if (grid->sublo[1] < 0 && y == 0)
+            m |= Y_NB_MASK;
+          if (grid->subhi[1] > grid->box[1] && y == grid->subbox[1] - 1)
+            m |= Y_PB_MASK;
+          if (grid->sublo[2] < 0 && z == 0)
+            m |= Z_NB_MASK;
+          if (grid->subhi[2] > grid->box[2] && z == grid->subbox[2] - 1)
+            m |= Z_PB_MASK;
+        }
+
+        mask[x + y * grid->subbox[0] + z * grid->subbox[0] * grid->subbox[1]] = m;
       }
     }
   }

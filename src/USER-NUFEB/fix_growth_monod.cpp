@@ -90,9 +90,9 @@ void FixGrowthMonod::update_cells()
   double **dens = grid->dens;
 
   for (int i = 0; i < grid->ncells; i++) {
-    double tmp1 = growth * conc[isub][i] / (sub_affinity + conc[isub][i]);
+    if (grid->mask[i] & GRID_MASK) {
+      double tmp1 = growth * conc[isub][i] / (sub_affinity + conc[isub][i]);
 
-    if (!(grid->mask[i] & GHOST_MASK)) {
       // nutrient utilization
       reac[isub][i] -= 1 / yield * tmp1 * dens[igroup][i];
     }

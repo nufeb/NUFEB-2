@@ -31,14 +31,15 @@ class FixBoundaryLayer : public Fix {
 
   int setmask();
   int modify_param(int, char **);
-  virtual void init();
+  virtual void init() {};
   virtual void reactor_nufeb();
   virtual void compute();
 
  protected:
   int isub;
   double height;
-  int *boundary;
+  int nlayers;
+  int xlo, xhi, ylo, yhi, zlo, zhi;
 
   int layerhi[3], layerlo[3];           // boundary layer in xlo xhi ylo yhi zlo zhi
   int sublayerhi[3], sublayerlo[3];     // local boundary layer

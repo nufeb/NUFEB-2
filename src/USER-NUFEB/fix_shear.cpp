@@ -55,7 +55,7 @@ FixShear::FixShear(LAMMPS *lmp, int narg, char **arg) :
       double input;
       input = utils::numeric(FLERR,arg[iarg+1],false,lmp);
       if(input > layer || input < 0)
-	 error->all(FLERR,"Illegal fix nufeb/shear command");
+	    error->all(FLERR,"Illegal fix nufeb/shear command");
       layer = input;
       iarg += 2;
     }
@@ -98,21 +98,21 @@ void FixShear::compute()
 
       (x[i][2] / layer > 1) ? factor = 1 : factor = x[i][2] / layer;
       if (xflag == 1) {
-	f[i][0] += my_3pi_vd * (shear_rate * factor - v[i][0]);
-	f[i][1] += my_3pi_vd * (0.0 - v[i][1]);
-	f[i][2] += my_3pi_vd * (0.0 - v[i][2]);
+        f[i][0] += my_3pi_vd * (shear_rate * factor - v[i][0]);
+        f[i][1] += my_3pi_vd * (0.0 - v[i][1]);
+        f[i][2] += my_3pi_vd * (0.0 - v[i][2]);
       } else if (xflag == 0){
-	f[i][0] -= my_3pi_vd * (shear_rate * factor - v[i][0]);
-	f[i][1] += my_3pi_vd * (0.0 - v[i][1]);
-	f[i][2] += my_3pi_vd * (0.0 - v[i][2]);
+        f[i][0] -= my_3pi_vd * (shear_rate * factor - v[i][0]);
+        f[i][1] += my_3pi_vd * (0.0 - v[i][1]);
+        f[i][2] += my_3pi_vd * (0.0 - v[i][2]);
       } else if (yflag == 1){
-	f[i][0] += my_3pi_vd * (0.0 - v[i][0]);
-	f[i][1] += my_3pi_vd * (shear_rate * factor - v[i][1]);
-	f[i][2] += my_3pi_vd * (0.0 - v[i][2]);
+        f[i][0] += my_3pi_vd * (0.0 - v[i][0]);
+        f[i][1] += my_3pi_vd * (shear_rate * factor - v[i][1]);
+        f[i][2] += my_3pi_vd * (0.0 - v[i][2]);
       } else if (yflag == 0){
-	f[i][0] += my_3pi_vd * (0.0 - v[i][0]);
-	f[i][1] -= my_3pi_vd * (shear_rate * factor - v[i][1]);
-	f[i][2] += my_3pi_vd * (0.0 - v[i][2]);
+        f[i][0] += my_3pi_vd * (0.0 - v[i][0]);
+        f[i][1] -= my_3pi_vd * (shear_rate * factor - v[i][1]);
+        f[i][2] += my_3pi_vd * (0.0 - v[i][2]);
       }
     }
   }

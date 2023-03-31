@@ -25,10 +25,11 @@
 #define Z_PB_MASK      0x00000020 // Z positive boundary
 #define CORNER_MASK    0x00000100
 #define GHOST_MASK     0x00000200
-
+#define BLAYER_MASK    0x00000400 // bulk region
+#define GRID_MASK      0x00000800 // non-ghost non-bulk Cartesian grid mask
 #define GMASK_MASK     0x00001000
 
-// chemostat
+// KOKKOS MASK
 
 #define CONC_MASK      0x00010000
 #define REAC_MASK      0x00020000
