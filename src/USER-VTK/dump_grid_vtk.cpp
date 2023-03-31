@@ -45,7 +45,7 @@ void DumpGridVTK::init_style() {
 
   if (!grid)
     error->all(FLERR, "No grid defined for dump grid/vtk");
-  
+
   for (auto it = fields.begin(); it != fields.end(); ++it) {
     if (*it == "con") {
       packs.push_back(std::bind(&DumpGridVTK::pack_concentration, this, _1));
@@ -145,7 +145,7 @@ void DumpGridVTK::pack_tuple1(vtkSmartPointer<vtkImageData> image, const char *n
     array->SetNumberOfComponents(1);
     for (int i = 0; i < grid->ncells; i++) {
       if (!(grid->mask[i] & GHOST_MASK))
-	array->InsertNextTuple1(data[n][i]);
+        array->InsertNextTuple1(data[n][i]);
     }
     image->GetCellData()->AddArray(array);
   }
@@ -161,10 +161,10 @@ void DumpGridVTK::pack_tuple(vtkSmartPointer<vtkImageData> image, const char *na
     array->SetNumberOfComponents(N);
     for (int i = 0; i < grid->ncells; i++) {
       if (!(grid->mask[i] & GHOST_MASK)) {
-	double tuple[N];
-	for (int j = 0; j < N; j++)
-	  tuple[j] = data[n][i][j];
-	array->InsertNextTuple(tuple);
+        double tuple[N];
+        for (int j = 0; j < N; j++)
+          tuple[j] = data[n][i][j];
+        array->InsertNextTuple(tuple);
       }
     }
     image->GetCellData()->AddArray(array);

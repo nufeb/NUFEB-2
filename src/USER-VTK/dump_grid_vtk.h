@@ -40,6 +40,7 @@ class DumpGridVTK : public Dump {
   void pack(tagint *) {}
   void write_data(int, double *) {}
   int parse_fields(int narg, char **arg);
+  double memory_usage() {return 0;}
 
   void pack_concentration(vtkSmartPointer<vtkImageData>);
   void pack_reaction(vtkSmartPointer<vtkImageData>);
