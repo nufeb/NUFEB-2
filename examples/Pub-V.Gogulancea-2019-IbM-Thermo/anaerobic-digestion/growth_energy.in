@@ -1,0 +1,69 @@
+Additional parameters used for fix nufeb/growth/energy 
+
+ 3 groups
+ 
+ Uptake Rate  # mol-eD/mol-X·s
+     
+     GLU-FERM 0.00008804
+     HYD-METH 0.00016055
+     ACE-METH 0.00043124
+
+ Ks Coeffs    #kg/m3
+     
+     GLU-FERM glu 2.59e-1   
+     HYD-METH h2  1.74e-3
+     ACE-METH ach 3.00e-3
+     
+ Decay Rate   #s
+
+     GLU-FERM 0.000009259
+     HYD-METH 0.000002636
+     ACE-METH 0.000000855
+     
+ Electron Donor
+ 
+     GLU-FERM glu
+     HYD-METH h2
+     ACE-METH ach
+
+ Catabolic Coeffs
+ 
+     GLU-FERM glu -1    ach 2      co2 2  h2 4      h2o -4   h 4
+     HYD-METH ch4 0.25  co2 -0.25  h2 -1  h2o 0.75  h -0.25
+     ACE-METH ach -1    ch4 1      co2 1  h2o -1
+     
+ Anabolic Coeffs
+ 
+     GLU-FERM glu -0.175  nh3 -0.2  co2 0.05  h2o 0.4  h 0.05
+     HYD-METH nh3 -0.2    co2 -1    h2 -2.1   h2o 2.5  h -1
+     ACE-METH ach -0.525  nh3 -0.2  ch4 0.05  h2o 0.4  h -0.475
+       
+ Decay Coeffs
+ 
+     GLU-FERM glu 0.167
+     HYD-METH co2 1
+     ACE-METH ach 1
+     
+ Substrate Gibbs Energy  #KJ/mol
+
+     glu  -916
+     ach  -369
+     nh3  -26.6
+     ch4   34.4
+     co2  -586.85
+     h2    17.6
+     h2o  -237
+     h     0
+     
+ Biomass Gibbs Energy    #KJ/mol
+ 
+     GLU-FERM -67
+     HYD-METH -67
+     ACE-METH -67
+     
+ Dissipation Energy    #KJ/mol
+   
+     GLU-FERM 236.05
+     HYD-METH 700 
+     ACE-METH 500
+

@@ -1,0 +1,177 @@
+#-----------------------------------------------------------------------------#
+#                NUFEB Simulation: Anaerobic Digestion                        #
+#-----------------------------------------------------------------------------#
+
+
+#-----------------------------System Settings---------------------------------#
+
+units si                                    # using si units (m, s, kg)
+atom_style      coccus                      # using nufeb coccus atom style
+atom_modify     map array sort 10 0         # map array - find atoms using indices
+		                             # sort 10 5.0e-6: sort every 10
+
+boundary        pp pp ff                    # periodic boundaries in x and y
+                                            # fixed boundary in z
+newton          off                         # forces between local and ghost
+                                            # atoms are computed in each
+					     # processor without communication
+					     
+processors      * * 1                       # processor grid
+
+comm_modify     vel yes                     # communicate velocities for ghost atoms
+
+
+region simu_domain block 0.0 1e-4 0.0 2e-5 0.0 3e-4 units box
+create_box 4 simu_domain                   # create simulation domain
+
+
+#-----------------------------Microbial Atoms---------------------------------#
+
+lattice sc 1.25e-6 origin 0.5 0.5 0.5
+region reg_glu1 block 0 13  0 16 0 2
+region reg_hyd  block 13 40 0 16 0 2
+region reg_ace  block 40 67 0 16 0 2
+region reg_glu2 block 67 80 0 16 0 2
+
+create_atoms 1 region reg_glu1             # create GLU-FERM in region
+create_atoms 2 region reg_hyd              # create HYD-METH in region
+create_atoms 3 region reg_ace              # create ACE-METH in region
+create_atoms 1 region reg_glu2             # create GLU-FERM in region
+
+
+set type 1 diameter 1.2e-6                 # defining atom diameter and density
+set type 1 density 290                     # diameter must come before density   
+                                           # no need to specify mass
+set type 2 diameter 1.2e-6             
+set type 2 density 290
+
+set type 3 diameter 1.2e-6             
+set type 3 density 290
+
+group           GLU-FERM   type 1          # assign type 1 atoms to GLU-FERM group
+group           HYD-METH   type 2          # assign type 2 atoms to HYD-METH group
+group           ACE-METH   type 3          # assign type 3 atoms to ACE-METH group
+group           DEAD       type 4          # assign type 4 atoms to DEAD     group
+
+neighbor        5e-7 bin                   # setting neighbour skin distance and style
+                         
+neigh_modify    check yes                  # rebuild neighbour list if any atom
+                                           # had moved more than half the skin distance
+
+#--------------------------Mesh Grid and Substrates--------------------------#
+
+# defining grid sytle, substrate names, and grid size
+grid_style      nufeb/chemostat 8 glu ach nh3 ch4 co2 h2 h2o h 4e-6
+
+
+# substrate initial concentrations and molecular weight (liquid:kg/m3 mw:g/mol)
+grid_modify     set glu  pp pp nd  9.4e-2 mw 180.156
+grid_modify     set ach  pp pp nd  0.6e-3 mw 60.052
+grid_modify     set nh3  pp pp nd  1.7e-3 mw 17.031
+grid_modify     set ch4  pp pp nd  0.0    mw 16.04
+grid_modify     set co2  pp pp nd  4.4e-3 mw 44.01
+grid_modify     set h2   pp pp nd  1.3e-6 mw 2.016
+grid_modify     set h2o  pp pp nd  1.0    mw 18.015
+grid_modify     set h    pp pp nd  0.0    mw 1.00784
+
+
+#--------------------------Biological Processes-------------------------------#
+
+fix growth_glu GLU-FERM nufeb/growth/energy growth_energy.in  # energy-based growth model
+fix growth_hyd HYD-METH nufeb/growth/energy growth_energy.in  # additional params defined in 
+fix growth_ace ACE-METH nufeb/growth/energy growth_energy.in  # growth_energy.in file
+
+fix div all nufeb/division/coccus 1.25e-6 1234             # division diameter: 1.25e-6m
+
+fix death all nufeb/death/diameter DEAD 5.85e-7 type 3     # death diameter: 5.85e-7m
+                                                           # also need to specify dead atom type
+ 
+#---------------------------Physical Processes--------------------------------#
+
+pair_style  gran/hooke/history 1e-4 NULL 1e-5 NULL 0.0 0   # pairwise interaction
+pair_coeff  * *                                            # between atoms
+
+fix nve all nve/limit 1e-7                                 # NVE integration with maximum 
+                                                           # distance limit
+
+# pairwise interaction between z-wall and atoms
+fix wall all wall/gran hooke/history 2000 NULL 500 NULL 0 0 zplane 0.0 3e-04
+
+fix fv all viscous 1e-5                                    # viscous damping force
+
+# defining removal region from height 2.5e-4 above
+region reg_sweeper block EDGE EDGE EDGE EDGE 2.5e-4 EDGE units box
+
+# remove all atoms in the region every 5 physical timesteps
+fix f_sweeper all evaporate 5 100000 reg_sweeper 4321
+
+
+#---------------------------Post-Physical Processes---------------------------#
+
+fix blayer all nufeb/boundary_layer 4e-5 1 zhi             # dynamic boundary layer layer height: 4e-5
+                                                           # from biofilm surface to bulk region
+
+fix coeff_glu all nufeb/diffusion_coeff glu ratio 0.8      # defining diffusion coeff in the biofilm  
+fix coeff_ach all nufeb/diffusion_coeff ach ratio 0.8      # region is 80% of the value in liquid
+fix coeff_nh3 all nufeb/diffusion_coeff nh3 ratio 0.8
+fix coeff_ch4 all nufeb/diffusion_coeff ch4 ratio 0.8
+fix coeff_co2 all nufeb/diffusion_coeff co2 ratio 0.8
+fix coeff_h2  all nufeb/diffusion_coeff h2  ratio 0.8
+
+
+#---------------------------Chemical Processes---------------------------------# 
+
+fix diff_glu all nufeb/diffusion_reaction glu 6.69444e-10   # diffusion reaction for updating
+fix diff_ach all nufeb/diffusion_reaction ach 1.288889e-9   # distribusion of substrate concentrations
+fix diff_nh3 all nufeb/diffusion_reaction nh3 1.638889e-9    
+fix diff_ch4 all nufeb/diffusion_reaction ch4 1.488889e-9
+fix diff_co2 all nufeb/diffusion_reaction co2 1.186111e-9
+fix diff_h2  all nufeb/diffusion_reaction h2  4.5e-9
+
+
+#---------------------------Reactor Processes----------------------------------#
+
+# reactor mass balance 
+# q = inlet flow rate; reactor_af = biofilm surface area in reactor; 
+# domain_af = biofilm surface area in simulation domain
+
+fix balance_glu all nufeb/reactor/solute_balance glu q 2.31e-7 reactor_vol 1.25e-3 reactor_af 0.1 domain_af xy
+fix balance_ach all nufeb/reactor/solute_balance ach q 2.31e-7 reactor_vol 1.25e-3 reactor_af 0.1 domain_af xy
+fix balance_nh3 all nufeb/reactor/solute_balance nh3 q 2.31e-7 reactor_vol 1.25e-3 reactor_af 0.1 domain_af xy
+fix balance_ch4 all nufeb/reactor/solute_balance ch4 q 2.31e-7 reactor_vol 1.25e-3 reactor_af 0.1 domain_af xy
+fix balance_h2  all nufeb/reactor/solute_balance h2  q 2.31e-7 reactor_vol 1.25e-3 reactor_af 0.1 domain_af xy
+
+
+#--------------------------Computations and Outputs----------------------------#
+
+variable mglu  equal "mass(GLU-FERM)"                          # total mass
+variable mhyd  equal "mass(HYD-METH)"                          
+variable mace  equal "mass(ACE-METH)"
+variable mdead equal "mass(DEAD)"             
+                  
+variable nglu  equal "count(GLU-FERM)"                         # total # of atoms
+variable nhyd  equal "count(HYD-METH)"                             
+variable nace  equal "count(ACE-METH)"                            
+variable ndead equal "count(DEAD)" 
+
+shell mkdir vtk                                                # dump simulation data in vtk format
+dump du1 all vtk 10 vtk/dump*.vtu id type diameter             # require build NUFEB with vtk option
+dump du2 all grid/vtk 10 vtk/dump_%_*.vti con rea den gro
+
+# screen and log outputs
+thermo_style custom step cpu atoms v_mglu v_mhyd v_mace v_mdead v_nglu v_nhyd v_nace v_ndead f_balance_glu f_balance_ach f_balance_nh3 f_balance_ch4 f_balance_h2
+thermo 1 
+thermo_modify lost warn
+
+
+#---------------------------------Run------------------------------------------#
+
+# issue run command, define timesteps for physical (pairdt) and chemical (diffdt) processes
+run_style nufeb diffdt 1e-4 difftol 1e-6 pairdt 1e-2 pairtol 1 pairmax 500 diffmax 3000
+
+timestep 900                                                  # define biological timesteps (900s)
+
+run 4800                                                      # growing biofilm for 50 days (4800x900s)
+
+
+
