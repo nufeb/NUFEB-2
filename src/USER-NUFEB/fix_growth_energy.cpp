@@ -238,6 +238,7 @@ void FixGrowthEnergy::update_cells()
 
     // yield unit = mol-X/mol-eD
     yield[i] = -gibbs_cata[i] / (gibbs_anab[i] + dissipation);
+
     // inverse yield
     if (yield[i] != 0.0)
       inv_yield = 1 / yield[i];
@@ -261,10 +262,12 @@ void FixGrowthEnergy::update_cells()
         reac[j][i] += spec_growth * meta_coeff * dens[igroup][i];
 
       } else if (q_cat <= alfa * m_req && q_cat >= beta * m_req) {
-        reac[j][i] += spec_growth * cata_coeff[j] * dens[igroup][i];
+        double cata = cata_coeff[j] * mw[j] / mw_biomass;
+        reac[j][i] += spec_growth * cata * dens[igroup][i];
 
       } else if (q_cat < beta * m_req) {
-        reac[j][i] -= spec_growth * decay_coeff[j] * dens[igroup][i];
+        double decay = decay_coeff[j] * mw[j] / mw_biomass;
+        reac[j][i] -= spec_growth * decay * dens[igroup][i];
 
       }
     }
