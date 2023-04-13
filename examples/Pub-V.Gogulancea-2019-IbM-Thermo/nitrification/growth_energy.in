@@ -14,13 +14,8 @@ Additional parameters used for fix nufeb/growth/energy
      
  Decay Rate   #s
 
-     AOB 1.27314e-6
-     NOB 1.27314e-6
-     
- Electron Donor
- 
-     AOB nh3
-     NOB no2
+     AOB 2.778e-6
+     NOB 2.444e-6
 
  Catabolic Coeffs
  
@@ -41,7 +36,7 @@ Additional parameters used for fix nufeb/growth/energy
 
      nh3 -26.57
      no2 -32.20
-     no3 -111.30
+     no3 -103.70
      o2  16.4
      co2 -586.7
      h2o -237.18

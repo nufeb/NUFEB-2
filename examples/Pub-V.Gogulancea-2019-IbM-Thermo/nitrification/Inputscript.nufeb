@@ -55,13 +55,13 @@ grid_style      nufeb/chemostat 7 nh3 no2 no3 o2 co2 h2o h 5e-6
 
 
 # substrate initial concentrations and molecular weight (liquid:kg/m3 mw:g/mol)
-grid_modify     set nh3 pp pp nd  0.03  mw 17.031
-grid_modify     set no3 pp pp nd  0     mw 62.005
-grid_modify     set no2 pp pp nd  0     mw 46.006
-grid_modify     set o2  pp pp nd  0.009 mw 31.998
-grid_modify     set co2 pp pp nd  0.088 mw 44.01
-grid_modify     set h2o pp pp nd  1     mw 18.015
-grid_modify     set h   pp pp nd  0     mw 2.016
+grid_modify     set nh3 pp pp nd  0.03   mw 17.031
+grid_modify     set no3 pp pp nd  0      mw 62.005
+grid_modify     set no2 pp pp nd  0      mw 46.006
+grid_modify     set o2  pp pp nd  0.009  mw 31.998
+grid_modify     set co2 pp pp nd  0.088  mw 44.01
+grid_modify     set h2o pp pp nd  18.015 mw 18.015
+grid_modify     set h   pp pp nd  0      mw 2.016
 
 
 #--------------------------Biological Processes-------------------------------#
@@ -151,7 +151,7 @@ thermo_modify lost warn
 #---------------------------------Run------------------------------------------#
 
 # issue run command, define timesteps for physical (pairdt) and chemical (diffdt) processes
-run_style nufeb diffdt 1e-4 difftol 1e-6 pairdt 1e-2 pairtol 1 pairmax 1000 diffmax 3000
+run_style nufeb diffdt 1e-4 difftol 1e-6 pairdt 1e-2 pairtol 1 pairmax 100 diffmax 3000
 
 timestep 900                                                  # define biological timesteps (900s)
 

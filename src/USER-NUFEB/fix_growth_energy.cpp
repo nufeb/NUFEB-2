@@ -51,7 +51,6 @@ FixGrowthEnergy::FixGrowthEnergy(LAMMPS *lmp, int narg, char **arg) :
   decay = 0.0;
   dissipation = 0.0;
   biomass_gibbs = 0.0;
-  e_donor = -1;
 
   gibbs_cata = nullptr;
   gibbs_anab = nullptr;
@@ -77,7 +76,6 @@ FixGrowthEnergy::FixGrowthEnergy(LAMMPS *lmp, int narg, char **arg) :
   cata_coeff = reader->cata_coeff;
   anab_coeff = reader->anab_coeff;
   decay_coeff = reader->decay_coeff;
-  e_donor = reader->e_donor;
 
   if (sub_gibbs == nullptr || ks_coeff == nullptr || cata_coeff == nullptr ||
       anab_coeff == nullptr || decay_coeff == nullptr)
@@ -246,7 +244,7 @@ void FixGrowthEnergy::update_cells()
       inv_yield = 0.0;
 
     // Specific substrate uptake rate for catabolism
-    // unit mole-eD/molCx·s
+    // unit mol-eD/mol-X·s
     q_cat = uptake * compute_monod(i);
     // specific substrate consumption required for maintenance
     // unit = mol-eD / mol-X·s
@@ -255,19 +253,18 @@ void FixGrowthEnergy::update_cells()
 
     // update substrate reaction term
     for (int j = 0; j < grid->nsubs; j++) {
+      // unit conversion mol/L to kg/m3
+      double mol2kg = mw[j] / mw_biomass;
+
       if (q_cat > alfa * m_req) {
-        meta_coeff = inv_yield * cata_coeff[j] + anab_coeff[j];
-        // convert unit mol-eD/mol-X to kg-eD/kg-X
-        meta_coeff *= mw[e_donor] / mw_biomass;
-        reac[j][i] += spec_growth * meta_coeff * dens[igroup][i];
+        meta_coeff = inv_yield * cata_coeff[j]  + anab_coeff[j];
+        reac[j][i] += spec_growth * meta_coeff * dens[igroup][i] * mol2kg;
 
       } else if (q_cat <= alfa * m_req && q_cat >= beta * m_req) {
-        double cata = cata_coeff[j] * mw[j] / mw_biomass;
-        reac[j][i] += spec_growth * cata * dens[igroup][i];
+        reac[j][i] += spec_growth * cata_coeff[j]  * dens[igroup][i] * mol2kg;
 
       } else if (q_cat < beta * m_req) {
-        double decay = decay_coeff[j] * mw[j] / mw_biomass;
-        reac[j][i] -= spec_growth * decay * dens[igroup][i];
+        reac[j][i] -= spec_growth * decay_coeff[j] * dens[igroup][i] * mol2kg;
 
       }
     }

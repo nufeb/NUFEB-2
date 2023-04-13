@@ -4,27 +4,22 @@ Additional parameters used for fix nufeb/growth/energy
  
  Uptake Rate  # mol-eD/mol-X·s
      
-     GLU-FERM 0.000057778
-     HYD-METH 0.0000175
-     ACE-METH 0.000027778
+     GLU-FERM 0.000088076
+     HYD-METH 0.00016055
+     ACE-METH 0.000434028
 
  Ks Coeffs    #kg/m3
      
-     GLU-FERM glu 2.59e-1   
+     GLU-FERM glu 2.59e-1
      HYD-METH h2  1.74e-3
-     ACE-METH ach 3.00e-3
+     ACE-METH ach 3e-3
      
  Decay Rate   #s
 
      GLU-FERM 0.000009259
-     HYD-METH 0.000002636
-     ACE-METH 0.000000855
-     
- Electron Donor
- 
-     GLU-FERM glu
-     HYD-METH h2
-     ACE-METH ach
+     HYD-METH 0.000003472
+     ACE-METH 0.000000579
+
 
  Catabolic Coeffs
  
