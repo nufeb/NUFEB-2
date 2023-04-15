@@ -243,9 +243,13 @@ void NufebRun::setup(int flag)
   if (comm->me == 0 && screen) {
     fprintf(screen,"Setting up NUFEB run ...\n");
     if (flag) {
-      fprintf(screen,"  Unit style    : %s\n",update->unit_style);
-      fprintf(screen,"  Current step  : " BIGINT_FORMAT "\n",update->ntimestep);
-      fprintf(screen,"  Time step     : %g\n",update->dt);
+      fprintf(screen,"  Unit style           : %s\n",update->unit_style);
+      fprintf(screen,"  Current step         : " BIGINT_FORMAT "\n",update->ntimestep);
+      fprintf(screen,"  Biological time step : %g\n",update->dt);
+      fprintf(screen,"  Chemical time step   : %g\n",diffdt);
+      fprintf(screen,"  Physical time step   : %g\n",pairdt);
+      fprintf(screen,"  Grid mesh            : %i x %i x %i \n",
+              grid->box[0], grid->box[1], grid->box[2]);
       timer->print_timeout(screen);
     }
   }
@@ -281,7 +285,7 @@ void NufebRun::setup(int flag)
 
   grid->setup();
   comm_grid->setup();
-  
+
   // compute all forces
 
   force->setup();
