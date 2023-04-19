@@ -32,7 +32,7 @@ using namespace MathConst;
 FixGrowthAnammox::FixGrowthAnammox(LAMMPS *lmp, int narg, char **arg) :
   FixGrowth(lmp, narg, arg)
 {
-  if (narg < 9)
+  if (narg < 11)
     error->all(FLERR, "Illegal fix nufeb/growth/anammox command");
 
   if (!grid->chemostat_flag)
@@ -77,7 +77,6 @@ FixGrowthAnammox::FixGrowthAnammox(LAMMPS *lmp, int narg, char **arg) :
     error->all(FLERR, "Can't find substrate name: n2");
 
   int iarg = 11;
-
   while (iarg < narg) {
     if (strcmp(arg[iarg], "growth") == 0) {
       growth = utils::numeric(FLERR,arg[iarg+1],true,lmp);

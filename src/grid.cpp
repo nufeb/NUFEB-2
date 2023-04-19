@@ -62,6 +62,8 @@ Grid::Grid(LAMMPS *lmp) : Pointers(lmp)
   diff_coeff = nullptr;
   bulk = nullptr;
   mw = nullptr;
+  ph = nullptr;
+  act = nullptr;
 
   simple_flag = 0;
   chemostat_flag = 0;
@@ -84,6 +86,8 @@ Grid::~Grid()
   memory->destroy(boundary);
   memory->destroy(bulk);
   memory->destroy(mw);
+  if (ph != nullptr) memory->destroy(ph);
+  if (act != nullptr) memory->destroy(act);
 }
 
 /* ---------------------------------------------------------------------- */

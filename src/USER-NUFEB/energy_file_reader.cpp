@@ -15,6 +15,7 @@
 #include "energy_file_reader.h"
 
 #include <string.h>
+#include <float.h>
 #include "error.h"
 #include "atom.h"
 #include "memory.h"
@@ -26,7 +27,7 @@ using namespace LAMMPS_NS;
 #define MAXLINE 256
 #define CHUNK 1024
 #define DELTA 4            // must be 2 or larger
-#define NSECTIONS 12       // change when add to header::section_keywords
+#define NSECTIONS 15       // change when add to header::section_keywords
 
 EnergyFileReader::EnergyFileReader(LAMMPS *lmp, char *filename) :
         Pointers(lmp),
@@ -55,6 +56,10 @@ EnergyFileReader::EnergyFileReader(LAMMPS *lmp, char *filename) :
   cata_coeff = nullptr;
   anab_coeff = nullptr;
   decay_coeff = nullptr;
+
+  sstc_gibbs = nullptr;
+  ncharges = nullptr;
+  form_id = nullptr;
 }
 
 
@@ -71,11 +76,14 @@ EnergyFileReader::~EnergyFileReader()
   if (cata_coeff != nullptr) memory->destroy(cata_coeff);
   if (anab_coeff != nullptr) memory->destroy(anab_coeff);
   if (decay_coeff != nullptr) memory->destroy(decay_coeff);
+  if (sstc_gibbs != nullptr) memory->destroy(sstc_gibbs);
+  if (ncharges != nullptr) memory->destroy(ncharges);
+  if (form_id != nullptr) memory->destroy(form_id);
 }
 
 /* ---------------------------------------------------------------------- */
 
-void EnergyFileReader::read_file(char *group_id)
+void EnergyFileReader::read_file(char *group_id, char *fix_name)
 {
   MPI_Barrier(world);
   int firstpass = 1;
@@ -83,8 +91,6 @@ void EnergyFileReader::read_file(char *group_id)
   while (1) {
     // open file on proc 0
     if (me == 0) {
-      if (firstpass)
-        utils::logmesg(lmp, "Reading energy data file ...\n");
       open(filename);
     } else fp = nullptr;
 
@@ -143,9 +149,21 @@ void EnergyFileReader::read_file(char *group_id)
         if (firstpass) dissipation_energy(group_id);
         else skip_lines(ngroups);
 
-      } else
-        error->all(FLERR,fmt::format("Unknown identifier in data file: {}",
-                                          keyword));
+      } else if (strcmp(keyword, "Substance Gibbs Energy") == 0) {
+        if (firstpass) substance_energy();
+        else skip_lines(grid->nsubs);
+
+      } else if (strcmp(keyword, "Charge Numbers") == 0) {
+        if (firstpass) charge_numbers();
+        else skip_lines(grid->nsubs);
+
+      } else if (strcmp(keyword, "Uptake Form") == 0) {
+        if (firstpass) uptake_form();
+        else skip_lines(grid->nsubs);
+
+      } else {
+        error->all(FLERR, fmt::format("Unknown identifier in data file: {}", keyword));
+      }
       parse_keyword(0);
     }
 
@@ -761,6 +779,169 @@ int EnergyFileReader::set_dissipation(char *str, char *group_id)
   return pass;
 }
 
+/* ---------------------------------------------------------------------- */
+
+void EnergyFileReader::substance_energy()
+{
+  char *next;
+  char *buf = new char[grid->nsubs * MAXLINE];
+
+  int eof = comm->read_lines_from_file(fp, grid->nsubs, MAXLINE, buf);
+  if (eof) error->all(FLERR, "Unexpected end of data file");
+
+  sstc_gibbs = memory->create(sstc_gibbs, grid->nsubs, 5, "energy_file_reader:sstc_gibbs");
+
+  for (int i = 0; i < grid->nsubs; i++) {
+    for (int j = 0; j < 5; j++)
+     sstc_gibbs[i][j] = DBL_MAX;
+  }
+
+  char *original = buf;
+  for (int i = 0; i < grid->nsubs; i++) {
+    next = strchr(buf, '\n');
+    *next = '\0';
+    parse_coeffs(buf);
+    if (narg == 0)
+      error->all(FLERR,"Unexpected empty line in Substance Gibbs Energy section");
+    set_substance_energy(narg, arg);
+    buf = next + 1;
+  }
+  delete[] original;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void EnergyFileReader::set_substance_energy(int narg, char **arg)
+{
+  int isub = grid->find(arg[0]);
+  if (isub == -1)
+    error->all(FLERR,"Invalid substrate name in Substance Gibbs Energy section");
+
+  int iarg = 1;
+  while (iarg < narg) {
+    if (strcmp(arg[iarg], "NHF") == 0) {
+      sstc_gibbs[isub][0] = utils::numeric(FLERR,arg[iarg+1],true,lmp);
+    } else if (strcmp(arg[iarg], "HF") == 0) {
+      sstc_gibbs[isub][1] = utils::numeric(FLERR,arg[iarg+1],true,lmp);
+    } else if (strcmp(arg[iarg], "1DP") == 0) {
+      sstc_gibbs[isub][2] = utils::numeric(FLERR,arg[iarg+1],true,lmp);
+    } else if (strcmp(arg[iarg], "2DP") == 0) {
+      sstc_gibbs[isub][3] = utils::numeric(FLERR,arg[iarg+1],true,lmp);
+    } else if (strcmp(arg[iarg], "3DP") == 0) {
+      sstc_gibbs[isub][4] = utils::numeric(FLERR,arg[iarg+1],true,lmp);
+    } else
+      error->all(FLERR,"Invalid protonation name in Substance Gibbs Energy section");
+    iarg += 2;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void EnergyFileReader::charge_numbers()
+{
+  char *next;
+  char *buf = new char[grid->nsubs * MAXLINE];
+
+  int eof = comm->read_lines_from_file(fp, grid->nsubs, MAXLINE, buf);
+  if (eof) error->all(FLERR, "Unexpected end of data file");
+
+  ncharges = memory->create(ncharges, grid->nsubs, 5, "energy_file_reader:ncharges");
+
+  for (int i = 0; i < grid->nsubs; i++) {
+    for (int j = 0; j < 5; j++)
+      ncharges[i][j] = 0;
+  }
+
+  char *original = buf;
+  for (int i = 0; i < grid->nsubs; i++) {
+    next = strchr(buf, '\n');
+    *next = '\0';
+    parse_coeffs(buf);
+    if (narg == 0)
+      error->all(FLERR,"Unexpected empty line in Charge Numbers section");
+    set_charge_numbers(narg, arg);
+    buf = next + 1;
+  }
+  delete[] original;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void EnergyFileReader::set_charge_numbers(int narg, char **arg)
+{
+  int isub = grid->find(arg[0]);
+  if (isub == -1)
+    error->all(FLERR,"Invalid substrate name in Substance Gibbs Energy section");
+
+  int iarg = 1;
+  while (iarg < narg) {
+    if (strcmp(arg[iarg], "NHF") == 0) {
+      ncharges[isub][0] = utils::inumeric(FLERR,arg[iarg+1],true,lmp);
+    } else if (strcmp(arg[iarg], "HF") == 0) {
+      ncharges[isub][1] = utils::inumeric(FLERR,arg[iarg+1],true,lmp);
+    } else if (strcmp(arg[iarg], "1DP") == 0) {
+      ncharges[isub][2] = utils::inumeric(FLERR,arg[iarg+1],true,lmp);
+    } else if (strcmp(arg[iarg], "2DP") == 0) {
+      ncharges[isub][3] = utils::inumeric(FLERR,arg[iarg+1],true,lmp);
+    } else if (strcmp(arg[iarg], "3DP") == 0) {
+      ncharges[isub][4] = utils::inumeric(FLERR,arg[iarg+1],true,lmp);
+    } else
+      error->all(FLERR,"Invalid protonation name in Charge Numbers section");
+    iarg += 2;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void EnergyFileReader::uptake_form()
+{
+  char *next;
+  char *buf = new char[grid->nsubs * MAXLINE];
+
+  form_id = memory->create(form_id, grid->nsubs, "energy_file_reader:form_id");
+
+  int eof = comm->read_lines_from_file(fp, grid->nsubs, MAXLINE, buf);
+  if (eof) error->all(FLERR, "Unexpected end of data file");
+
+  char *original = buf;
+  for (int i = 0; i < grid->nsubs; i++) {
+    next = strchr(buf, '\n');
+    *next = '\0';
+    parse_coeffs(buf);
+    if (narg == 0)
+      error->all(FLERR,"Unexpected empty line in Uptake Form section");
+    set_uptake_form(narg, arg);
+    buf = next + 1;
+  }
+  delete[] original;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void EnergyFileReader::set_uptake_form(int narg, char **arg)
+{
+  int isub = grid->find(arg[0]);
+  if (isub == -1)
+    error->all(FLERR,"Invalid substrate name in Uptake Form section");
+
+  int iarg = 1;
+  while (iarg < narg) {
+    if (strcmp(arg[iarg], "NHF") == 0) {
+      form_id[isub] = 0;
+    } else if (strcmp(arg[iarg], "HF") == 0) {
+      form_id[isub] = 1;
+    } else if (strcmp(arg[iarg], "1DP") == 0) {
+      form_id[isub] = 2;
+    } else if (strcmp(arg[iarg], "2DP") == 0) {
+      form_id[isub] = 3;
+    } else if (strcmp(arg[iarg], "3DP") == 0) {
+      form_id[isub] = 4;
+    } else
+      error->all(FLERR,"Invalid protonation name in Uptake Form section");
+    iarg += 2;
+  }
+}
+
 /* ----------------------------------------------------------------------
    proc 0 opens data file
    test if gzipped
@@ -811,7 +992,8 @@ void EnergyFileReader::header(int firstpass)
           {"Uptake Rate", "Yield", "Growth Rate", "Electron Donor",
            "Ks Coeffs", "Decay Rate", "Maintenance Rate",
            "Catabolic Coeffs", "Anabolic Coeffs",
-           "Decay Coeffs", "Gibbs Energy", "Dissipation Energy"
+           "Decay Coeffs", "Gibbs Energy", "Dissipation Energy",
+           "Substance Gibbs Energy", "Charge Numbers", "Uptake Form"
           };
 
   // skip 1st line of file

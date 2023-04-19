@@ -29,18 +29,18 @@
 using namespace LAMMPS_NS;
 using namespace FixConst;
 
-#define MAINT_ENERGY 0.00125 // maintenance energy KJ/mol·s, derived from 4.5KJ/mol·h
+#define MAINT_ENERGY 0.00125  // maintenance energy KJ/mol·s, derived from 4.5KJ/mol·h
+#define GAS_CONST 0.0083144   // ideal gas constant (KJ/mol.K)
 
 /* ---------------------------------------------------------------------- */
 
 FixGrowthEnergy::FixGrowthEnergy(LAMMPS *lmp, int narg, char **arg) :
   FixGrowth(lmp, narg, arg)
 {
-  if (narg < 3)
+  if (narg < 4)
     error->all(FLERR, "Illegal fix nufeb/growth/energy command");
 
   temp = 298.15;
-  gas_const = 0.0083144;
   alfa = 1.2;
   beta = 0.8;
   mw_biomass = 24.6;
@@ -65,7 +65,7 @@ FixGrowthEnergy::FixGrowthEnergy(LAMMPS *lmp, int narg, char **arg) :
   // read energy file
   EnergyFileReader * reader = nullptr;
   reader = new EnergyFileReader(lmp, arg[3]);
-  reader->read_file(arg[1]);
+  reader->read_file(arg[1], arg[2]);
 
   uptake = reader->uptake;
   decay = reader->decay;
@@ -79,21 +79,18 @@ FixGrowthEnergy::FixGrowthEnergy(LAMMPS *lmp, int narg, char **arg) :
 
   if (sub_gibbs == nullptr || ks_coeff == nullptr || cata_coeff == nullptr ||
       anab_coeff == nullptr || decay_coeff == nullptr)
-    error->all(FLERR, "Insufficient parameter sections defined in energy file");
+    error->all(FLERR, "Insufficient parameter sections in data file");
 
   int iarg = 4;
   while (iarg < narg) {
     if (strcmp(arg[iarg], "temperature") == 0) {
       temp = utils::numeric(FLERR, arg[iarg + 1], true, lmp);
       iarg += 2;
-    } else if  (strcmp(arg[iarg], "gas_const") == 0) {
-      gas_const = utils::numeric(FLERR, arg[iarg + 1], true, lmp);
-      iarg += 2;
     } else if  (strcmp(arg[iarg], "alfa") == 0) {
-      gas_const = utils::numeric(FLERR, arg[iarg + 1], true, lmp);
+      alfa = utils::numeric(FLERR, arg[iarg + 1], true, lmp);
       iarg += 2;
     } else if  (strcmp(arg[iarg], "beta") == 0) {
-      gas_const = utils::numeric(FLERR, arg[iarg + 1], true, lmp);
+      beta = utils::numeric(FLERR, arg[iarg + 1], true, lmp);
       iarg += 2;
     } else if  (strcmp(arg[iarg], "mw_biomass") == 0) {
       mw_biomass = utils::numeric(FLERR, arg[iarg + 1], true, lmp);
@@ -166,9 +163,14 @@ void FixGrowthEnergy::compute_dgo()
 
 void FixGrowthEnergy::compute_dgr()
 {
-  double **conc = grid->conc;
   double *mw = grid->mw;
-  double rt = temp * gas_const;
+  double rt = temp * GAS_CONST;
+  double **conc;
+  // use activity of substrate protonation from if fix nufeb/ph is defined
+  if (grid->act == nullptr)
+    conc = grid->conc;
+  else
+    conc = grid->act;
 
   for (int i = 0; i < grid->ncells; i++) {
     if (grid->mask[i] & BLAYER_MASK) continue;
@@ -205,10 +207,9 @@ void FixGrowthEnergy::compute_dgr()
 
 /* ---------------------------------------------------------------------- */
 
-double FixGrowthEnergy::compute_monod(int cell)
+double FixGrowthEnergy::compute_monod(int cell, double **conc)
 {
   double monod = 1.0;
-  double **conc = grid->conc;
 
   for (int i = 0; i < grid->nsubs; i++) {
     if (ks_coeff[i] > 0)
@@ -225,6 +226,12 @@ void FixGrowthEnergy::update_cells()
   double **reac = grid->reac;
   double **dens = grid->dens;
   double *mw = grid->mw;
+  double **conc;
+
+  if (grid->act == nullptr)
+    conc = grid->conc;
+  else
+    conc = grid->act;
 
   for (int i = 0; i < grid->ncells; i++) {
     if (!(grid->mask[i] & GRID_MASK)) continue;
@@ -245,7 +252,7 @@ void FixGrowthEnergy::update_cells()
 
     // Specific substrate uptake rate for catabolism
     // unit mol-eD/mol-X·s
-    q_cat = uptake * compute_monod(i);
+    q_cat = uptake * compute_monod(i, conc);
     // specific substrate consumption required for maintenance
     // unit = mol-eD / mol-X·s
     m_req = -MAINT_ENERGY / gibbs_cata[i];
@@ -275,6 +282,13 @@ void FixGrowthEnergy::update_cells()
 
 void FixGrowthEnergy::update_atoms()
 {
+  double **conc;
+
+  if (grid->act == nullptr)
+    conc = grid->conc;
+  else
+    conc = grid->act;
+
   for (int i = 0; i < grid->ncells; i++) {
     double spec_growth;
     double m_req, q_cat;
@@ -283,7 +297,7 @@ void FixGrowthEnergy::update_atoms()
 
     // specific substrate uptake rate for catabolism
     // unit mole-eD/mol-x·s
-    q_cat = uptake * compute_monod(i);
+    q_cat = uptake * compute_monod(i, conc);
     // specific substrate consumption required for maintenance
     // unit = mol-eD / mol-X·s
     m_req = -MAINT_ENERGY / gibbs_cata[i];

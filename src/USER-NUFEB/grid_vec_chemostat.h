@@ -49,6 +49,8 @@ class GridVecChemostat : public GridVec {
   double *mw;       // molecular weight g/mol
   int **boundary;   // boundary conditions (-x, +x, -y, +y, -z, +z)
   double **diff_coeff;
+  double *ph;
+  double *act;      // activity of substrate form for microbe uptakingw
 };
 
 }

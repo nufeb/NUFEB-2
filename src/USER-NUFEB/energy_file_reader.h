@@ -16,20 +16,28 @@ namespace LAMMPS_NS {
   public:
       EnergyFileReader(class LAMMPS *lmp, char *filename);
       virtual ~EnergyFileReader();
-      virtual void read_file(char *group);
+      virtual void read_file(char *group, char *fix_name);
 
       double uptake;         // substrate uptake rate
       double decay;	         // decay rate
-      double maintain;       // maintenance rate
       double dissipation;    // dissipation energy
       double biomass_gibbs;  // biomass Gibbs energy
-      double max_yield;      // calculated yield
-      int e_donor;           // electron donor
       double *sub_gibbs;     // substrate Gibbs energy
       double *ks_coeff;      // ks coeffs
       double *cata_coeff;    // catabolic coeffs
       double *anab_coeff;    // anabolic coeffs
       double *decay_coeff;   // decay coeffs
+
+      double **sstc_gibbs;   // Gibbs energy for the substrate in 5 forms
+                             // 0:Non-Hydrated, 1:Hydrated, 2:1st Deprotonation
+                             // 3:2nd Deprotonation, 4:3rd Deprotonation
+      int **ncharges;         // charge numbers for substrate in 5 forms
+      int *form_id;         // substrate form for microbial utilisation
+
+      // not used
+      double maintain;       // maintenance rate
+      double max_yield;      // calculated yield
+      int e_donor;           // electron donor
 
   private:
       int me, compressed;
@@ -82,6 +90,15 @@ namespace LAMMPS_NS {
 
       void dissipation_energy(char *);
       int set_dissipation(char *, char *);
+
+      void substance_energy();
+      void set_substance_energy(int, char **);
+
+      void charge_numbers();
+      void set_charge_numbers(int, char **);
+
+      void uptake_form();
+      void set_uptake_form(int, char **);
   };
 
 } // namespace LAMMPS_NS

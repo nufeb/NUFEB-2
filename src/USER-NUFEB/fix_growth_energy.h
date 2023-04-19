@@ -48,7 +48,7 @@ class FixGrowthEnergy: public FixGrowth {
   double maintain;               // maintenance rate
   double dissipation;            // dissipation energy
   double biomass_gibbs;          // biomass Gibbs energy
-  double temp, gas_const;        // temperature (K) and ideal gas constant (KJ/mol.K)
+  double temp;                   // temperature (K)
   double mw_biomass;             // biomass molecular weight (g/mol)
   int e_donor;                    // electron donor
 
@@ -62,7 +62,7 @@ class FixGrowthEnergy: public FixGrowth {
 
   void compute_dgo();
   void compute_dgr();
-  double compute_monod(int);
+  double compute_monod(int, double **);
 };
 
 }

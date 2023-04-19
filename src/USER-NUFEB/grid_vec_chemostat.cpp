@@ -37,6 +37,8 @@ GridVecChemostat::GridVecChemostat(LAMMPS *lmp) : GridVec(lmp)
   mw = nullptr;
   boundary = nullptr;
   diff_coeff = nullptr;
+  ph = nullptr;
+  act = nullptr;
   grid->chemostat_flag = 1;
 }
 
@@ -66,7 +68,7 @@ void GridVecChemostat::grow(int n)
     error->one(FLERR,"Per-processor system is too big");
 
   if (n > nmax) {
-    mask = memory->grow(grid->mask, n, "nufeb/monod:mask");
+    mask = memory->grow(grid->mask, n, "nufeb/chemostat:mask");
     conc = memory->grow(grid->conc, grid->nsubs, n, "nufeb/chemostat:conc");
     reac = memory->grow(grid->reac, grid->nsubs, n, "nufeb/chemostat:reac");
     dens = memory->grow(grid->dens, group->ngroup, n, "nufeb/chemostat:dens");

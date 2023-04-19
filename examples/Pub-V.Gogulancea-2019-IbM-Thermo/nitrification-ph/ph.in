@@ -1,0 +1,34 @@
+Additional parameters used in fix nufeb/ph
+
+
+   Substance Gibbs Energy  # KJ/mol, Non-Hydrated, Hydrated, 1st, 2nd & 3rd Deprotonation
+
+    nh3  HF  -79.37  1DP -26.57 
+    no2  HF  -50.6   1DP -32.2   
+    no3  HF  -103.7  1DP -111.3  
+    o2   1DP  16.4   
+    co2  NHF -386    HF  -623.16   1DP -586.85   2DP -527.8 
+    h2o  HF  -237.18 1DP -157.3  
+    h    HF   0      
+ 
+ 
+   Charge Numbers
+   
+    nh3  HF  1  1DP  0
+    no2  HF  0  1DP -1
+    no3  HF  0  1DP -1  
+    o2   1DP 0 
+    co2  NHF 0   HF  0  1DP -1   2DP -2
+    h2o  HF  0  1DP -1
+    h    HF  1  
+    
+ 
+   Uptake Form  
+  
+    nh3  1DP
+    no2  HF
+    no3  HF
+    o2   HF
+    co2  1DP
+    h2o  HF
+    h    HF

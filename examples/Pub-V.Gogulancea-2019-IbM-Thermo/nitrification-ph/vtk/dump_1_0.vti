@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<VTKFile type="ImageData" version="0.1" byte_order="LittleEndian" header_type="UInt32" compressor="vtkZLibDataCompressor">
+  <ImageData WholeExtent="0 3 0 4 0 60" Origin="1.5e-05 0 0" Spacing="5e-06 5e-06 5e-06">
+    <Piece Extent="0 3 0 4 0 60"                                                      >
+      <PointData>
+      </PointData>
+      <CellData>
+        <DataArray type="Float64" Name="nh3 concentration" format="appended" RangeMin="0.03"                 RangeMax="0.03"                 offset="0"                   />
+        <DataArray type="Float64" Name="no2 concentration" format="appended" RangeMin="0"                    RangeMax="0"                    offset="84"                  />
+        <DataArray type="Float64" Name="no3 concentration" format="appended" RangeMin="0"                    RangeMax="0"                    offset="148"                 />
+        <DataArray type="Float64" Name="o2 concentration" format="appended" RangeMin="0.009"                RangeMax="0.009"                offset="212"                 />
+        <DataArray type="Float64" Name="co2 concentration" format="appended" RangeMin="0.088"                RangeMax="0.088"                offset="296"                 />
+        <DataArray type="Float64" Name="h2o concentration" format="appended" RangeMin="18.015"               RangeMax="18.015"               offset="384"                 />
+        <DataArray type="Float64" Name="h concentration" format="appended" RangeMin="0"                    RangeMax="0"                    offset="472"                 />
+        <DataArray type="Float64" Name="nh3 reaction" format="appended" RangeMin="0"                    RangeMax="0"                    offset="536"                 />
+        <DataArray type="Float64" Name="no2 reaction" format="appended" RangeMin="0"                    RangeMax="0"                    offset="600"                 />
+        <DataArray type="Float64" Name="no3 reaction" format="appended" RangeMin="0"                    RangeMax="0"                    offset="664"                 />
+        <DataArray type="Float64" Name="o2 reaction" format="appended" RangeMin="0"                    RangeMax="0"                    offset="728"                 />
+        <DataArray type="Float64" Name="co2 reaction" format="appended" RangeMin="0"                    RangeMax="0"                    offset="792"                 />
+        <DataArray type="Float64" Name="h2o reaction" format="appended" RangeMin="0"                    RangeMax="0"                    offset="856"                 />
+        <DataArray type="Float64" Name="h reaction" format="appended" RangeMin="0"                    RangeMax="0"                    offset="920"                 />
+        <DataArray type="Float64" Name="all density" format="appended" RangeMin="0"                    RangeMax="0"                    offset="984"                 />
+        <DataArray type="Float64" Name="AOB density" format="appended" RangeMin="0"                    RangeMax="0"                    offset="1048"                />
+        <DataArray type="Float64" Name="NOB density" format="appended" RangeMin="0"                    RangeMax="0"                    offset="1112"                />
+        <DataArray type="Float64" Name="DEAD density" format="appended" RangeMin="0"                    RangeMax="0"                    offset="1176"                />
+        <DataArray type="Float64" Name="all growth" NumberOfComponents="2" format="appended" RangeMin="0"                    RangeMax="0"                    offset="1240"                />
+        <DataArray type="Float64" Name="AOB growth" NumberOfComponents="2" format="appended" RangeMin="0"                    RangeMax="0"                    offset="1312"                />
+        <DataArray type="Float64" Name="NOB growth" NumberOfComponents="2" format="appended" RangeMin="0"                    RangeMax="0"                    offset="1384"                />
+        <DataArray type="Float64" Name="DEAD growth" NumberOfComponents="2" format="appended" RangeMin="0"                    RangeMax="0"                    offset="1456"                />
+      </CellData>
+    </Piece>
+  </ImageData>
+  <AppendedData encoding="base64">
+   _AQAAAACAAACAFgAALQAAAA==eJztxcEAADAMBDCTqoyhUNUoxzlNYhJ7Jp+k5nb2xLZt27Zt27btjz8FwbxmAQAAAACAAACAFgAAHAAAAA==eJztwTEBAAAAwqD1T20JT6AAAAAAAOBvFoAAAQ==AQAAAACAAACAFgAAHAAAAA==eJztwTEBAAAAwqD1T20JT6AAAAAAAOBvFoAAAQ==AQAAAACAAACAFgAALQAAAA==eJztxSEBADAIALBgiEegCSHw18Sjyktcbmaxeaf6hG3btm3btm3bH3+JuoFXAQAAAACAAACAFgAALgAAAA==eJztxTENADAIALCEe04QwT1lc8SBupngbJ/OPZGva2zbtm3btm3bXvwDT+Kl6g==AQAAAACAAACAFgAALgAAAA==eJztxTENADAIALCDb3L4SZA0UXjCzkzsbJ/OrbORPbZt27Zt27Ztf/wBGbZ2Gg==AQAAAACAAACAFgAAHAAAAA==eJztwTEBAAAAwqD1T20JT6AAAAAAAOBvFoAAAQ==AQAAAACAAACAFgAAHAAAAA==eJztwTEBAAAAwqD1T20JT6AAAAAAAOBvFoAAAQ==AQAAAACAAACAFgAAHAAAAA==eJztwTEBAAAAwqD1T20JT6AAAAAAAOBvFoAAAQ==AQAAAACAAACAFgAAHAAAAA==eJztwTEBAAAAwqD1T20JT6AAAAAAAOBvFoAAAQ==AQAAAACAAACAFgAAHAAAAA==eJztwTEBAAAAwqD1T20JT6AAAAAAAOBvFoAAAQ==AQAAAACAAACAFgAAHAAAAA==eJztwTEBAAAAwqD1T20JT6AAAAAAAOBvFoAAAQ==AQAAAACAAACAFgAAHAAAAA==eJztwTEBAAAAwqD1T20JT6AAAAAAAOBvFoAAAQ==AQAAAACAAACAFgAAHAAAAA==eJztwTEBAAAAwqD1T20JT6AAAAAAAOBvFoAAAQ==AQAAAACAAACAFgAAHAAAAA==eJztwTEBAAAAwqD1T20JT6AAAAAAAOBvFoAAAQ==AQAAAACAAACAFgAAHAAAAA==eJztwTEBAAAAwqD1T20JT6AAAAAAAOBvFoAAAQ==AQAAAACAAACAFgAAHAAAAA==eJztwTEBAAAAwqD1T20JT6AAAAAAAOBvFoAAAQ==AQAAAACAAACAFgAAHAAAAA==eJztwTEBAAAAwqD1T20JT6AAAAAAAOBvFoAAAQ==AQAAAACAAAAALQAAIgAAAA==eJztwQENAAAAwqD3T20ON6AAAAAAAAAAAAAAAD4MLQAAAQ==AQAAAACAAAAALQAAIgAAAA==eJztwQENAAAAwqD3T20ON6AAAAAAAAAAAAAAAD4MLQAAAQ==AQAAAACAAAAALQAAIgAAAA==eJztwQENAAAAwqD3T20ON6AAAAAAAAAAAAAAAD4MLQAAAQ==AQAAAACAAAAALQAAIgAAAA==eJztwQENAAAAwqD3T20ON6AAAAAAAAAAAAAAAD4MLQAAAQ==
+  </AppendedData>
+</VTKFile>

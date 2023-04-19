@@ -66,6 +66,8 @@ namespace LAMMPS_NS {
     double ***growth; // growth rate
     double *bulk;     // bulk concentration
     double *mw;       // molecular weight g/mol
+    double *ph;       // ph
+    double **act;     // activity of substrate form for microbial uptaking
     int **boundary;   // boundary conditions (-x, +x, -y, +y, -z, +z)
 
   private:
