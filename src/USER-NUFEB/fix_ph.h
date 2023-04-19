@@ -53,11 +53,11 @@ class FixPH : public Fix {
 
   double **act;             // activities of chemical forms for microbe uptaking
   double ***act_all;        // activities of 5 substrate forms
-  double *ph;
+  double *ph, *sh;
 
   void init_keq();
   void compute_ph(int, int);
-  void compute_activity(double);
+  void compute_activity(int, int, double);
   void buffer_ph();
 };
 

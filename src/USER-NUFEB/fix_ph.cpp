@@ -104,6 +104,7 @@ FixPH::~FixPH()
 {
   memory->destroy(keq);
   memory->destroy(act_all);
+  memory->destroy(sh);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -124,6 +125,7 @@ void FixPH::init()
 
   keq = memory->create(keq, nsubs, 4, "nufeb/ph:keq");
   act_all = memory->create(act_all, nsubs, 5, ncells, "nufeb/act_all");
+  sh = memory->create(sh, ncells, "nufeb/ph:sh");
   ph = memory->create(ph, ncells, "nufeb/ph:ph");
   act = memory->create(act, nsubs, ncells, "nufeb/ph:act");
 
@@ -131,7 +133,7 @@ void FixPH::init()
   grid->act = act;
 
   init_keq();
-  compute_activity(iph);
+  compute_activity(0, ncells, iph);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -169,6 +171,7 @@ void FixPH::init_keq() {
       } else {
         keq[i][j] = 0.0;
       }
+      //printf("keq[%i][%i] = %e \n", i, j, keq[i][j]);
     }
   }
 }
@@ -177,33 +180,32 @@ void FixPH::init_keq() {
  compute activities of five substrate protonation forms
  ------------------------------------------------------------------------- */
 
-void FixPH::compute_activity(double iph) {
+void FixPH::compute_activity(int first, int last, double iph) {
   int nsubs = grid->nsubs;
   int ncells = grid->ncells;
-  double *ph = grid->ph;
   double **conc = grid->conc;
 
   double *theta = memory->create(theta,nsubs,"ph:theta");
-  double sh = pow(10, -iph);
-  double sh2 = sh * sh;
-  double sh3 = sh * sh2;
+  double gsh = pow(10, -iph);
+  double gsh2 = gsh * gsh;
+  double gsh3 = gsh * gsh2;
 
-  for (int i = 1; i < nsubs; i++) {
-    theta[i] = (1 + keq[i][0]) * sh3 + keq[i][1] * sh2 + keq[i][2] * keq[i][3] * sh
-        + keq[i][3] * keq[i][2] * keq[i][1];
+  for (int i = 0; i < nsubs; i++) {
+    theta[i] = (1 + keq[i][0]) * gsh3 + keq[i][1] * gsh2 + keq[i][2] * keq[i][3] * gsh
+               + keq[i][3] * keq[i][2] * keq[i][1];
     if (theta[i] == 0) {
       lmp->error->all(FLERR, "theta returns a zero value");
     }
     double tmp[5];
-    tmp[0] = keq[i][0] * sh3 / theta[i];
-    tmp[1] = sh3 / theta[i];
-    tmp[2] = sh2 * keq[i][1] / theta[i];
-    tmp[3] = sh * keq[i][1] * keq[i][2] / theta[i];
+    tmp[0] = keq[i][0] * gsh3 / theta[i];
+    tmp[1] = gsh3 / theta[i];
+    tmp[2] = gsh2 * keq[i][1] / theta[i];
+    tmp[3] = gsh * keq[i][1] * keq[i][2] / theta[i];
     tmp[4] = keq[i][1] * keq[i][2] * keq[i][3] / theta[i];
 
-    for (int j = 0; j < ncells; j++) {
+    for (int j = first; j < last; j++) {
       if (grid->mask[j] & BLAYER_MASK) continue;
-      ph[j] = -log(sh);
+        sh[j] = gsh;
       // not hydrated form acitivity
       act_all[i][0][j] = conc[i][j] * tmp[0];
       // fully protonated form activity
@@ -216,7 +218,7 @@ void FixPH::compute_activity(double iph) {
       act_all[i][4][j] = conc[i][j] * tmp[4];
 
       if (i == ih) {
-        act_all[i][1][j] = sh;
+        act_all[i][1][j] = gsh;
       }
       int form = form_id[i];
       grid->act[i][j] = act_all[i][form][j];
@@ -228,15 +230,15 @@ void FixPH::compute_activity(double iph) {
 /* ---------------------------------------------------------------------- */
 
 inline double sum_activity(double ***act_all, double **keq, double **conc, int **ncharges,
-                           double theta, double *sh, int i, int j) {
+                           double theta, double *gsh, int i, int j) {
   // not hydrated form acitivity
-  act_all[i][0][j] = keq[i][0] * conc[i][j] * sh[2] / theta;
+  act_all[i][0][j] = keq[i][0] * conc[i][j] * gsh[2] / theta;
   // fully protonated form activity
-  act_all[i][1][j] = conc[i][j] * sh[2] / theta;
+  act_all[i][1][j] = conc[i][j] * gsh[2] / theta;
   // 1st deprotonated form activity
-  act_all[i][2][j] = conc[i][j] * sh[1] * keq[i][1] / theta;
+  act_all[i][2][j] = conc[i][j] * gsh[1] * keq[i][1] / theta;
   // 2nd deprotonated form activity
-  act_all[i][3][j] = conc[i][j] * sh[0] * keq[i][1] * keq[i][2] / theta;
+  act_all[i][3][j] = conc[i][j] * gsh[0] * keq[i][1] * keq[i][2] / theta;
   // 3rd deprotonated form activity
   act_all[i][4][j] = conc[i][j] * keq[i][1] * keq[i][2] * keq[i][3] / theta;
 
@@ -252,10 +254,10 @@ inline double sum_activity(double ***act_all, double **keq, double **conc, int *
 
 /* ---------------------------------------------------------------------- */
 
-inline void set_sh(double *sh, double value) {
-  sh[0] = value;
-  sh[1] = sh[0] * sh[0];
-  sh[2] = sh[1] * sh[0];
+inline void set_gsh(double *gsh, double value) {
+  gsh[0] = value;
+  gsh[1] = gsh[0] * gsh[0];
+  gsh[2] = gsh[1] * gsh[0];
 }
 
 /* ---------------------------------------------------------------------- */
@@ -267,7 +269,6 @@ void FixPH::compute_ph(int first, int last) {
   int nsubs = grid->nsubs;
   int ncells = grid->ncells;
   double **conc = grid->conc;
-  double *ph = grid->ph;
 
   double *fa = memory->create(fa, ncells, "nufeb/ph:fa");
   double *fb = memory->create(fb, ncells, "nufeb/ph:fb");
@@ -283,30 +284,30 @@ void FixPH::compute_ph(int first, int last) {
     fb[j] = b;
   }
 
-  double sh[3];
-  set_sh(sh, a);
-  for (int i = 1; i < nsubs; i++) {
-    double theta = (1 + keq[i][0]) * sh[2] + keq[i][1] * sh[1] + keq[i][2] * keq[i][1] * sh[0]
-        + keq[i][3] * keq[i][2] * keq[i][1];
+  double gsh[3];
+  set_gsh (gsh, a);
+  for (int i = 0; i < nsubs; i++) {
+    double theta = (1 + keq[i][0]) * gsh[2] + keq[i][1] * gsh[1] + keq[i][2] * keq[i][1] * gsh[0]
+                   + keq[i][3] * keq[i][2] * keq[i][1];
     if (theta <= 0) {
       lmp->error->all(FLERR, "theta returns a zero value");
     }
     for (int j = first; j < last; j++) {
       if (grid->mask[j] & BLAYER_MASK) continue;
-      fa[j] += sum_activity(act_all, keq, conc, ncharges, theta, sh, i, j);
+      fa[j] += sum_activity(act_all, keq, conc, ncharges, theta, gsh, i, j);
     }
   }
 
-  set_sh(sh, b);
-  for (int i = 1; i < nsubs; i++) {
-    double theta = (1 + keq[i][0]) * sh[2] + keq[i][1] * sh[1] + keq[i][2] * keq[i][1] * sh[0]
-        + keq[i][3] * keq[i][2] * keq[i][1];
+  set_gsh (gsh, b);
+  for (int i = 0; i < nsubs; i++) {
+    double theta = (1 + keq[i][0]) * gsh[2] + keq[i][1] * gsh[1] + keq[i][2] * keq[i][1] * gsh[0]
+                   + keq[i][3] * keq[i][2] * keq[i][1];
     if (theta <= 0) {
       lmp->error->all(FLERR, "theta returns a zero value");
     }
     for (int j = first; j < last; j++) {
       if (grid->mask[j] & BLAYER_MASK) continue;
-      fb[j] += sum_activity(act_all, keq, conc, ncharges, theta, sh, i, j);
+      fb[j] += sum_activity(act_all, keq, conc, ncharges, theta, gsh, i, j);
     }
   }
 
@@ -328,21 +329,21 @@ void FixPH::compute_ph(int first, int last) {
       df[j] = 1;
     }
 
-    for (int i = 1; i < nsubs; i++) {
+    for (int i = 0; i < nsubs; i++) {
       for (int j = first; j < last; j++) {
         if (grid->mask[j] & BLAYER_MASK) continue;
-        set_sh(sh, sh[j]);
-        double theta = (1 + keq[i][0]) * sh[2] + keq[i][1] * sh[1] + keq[i][2] * keq[i][1] * sh[0]
-            + keq[i][3] * keq[i][2] * keq[i][1];
-        f[j] += sum_activity(act_all, keq, conc, ncharges, theta, sh, i, j);
+        set_gsh (gsh, sh[j]);
+        double theta = (1 + keq[i][0]) * gsh[2] + keq[i][1] * gsh[1] + keq[i][2] * keq[i][1] * gsh[0]
+                       + keq[i][3] * keq[i][2] * keq[i][1];
+        f[j] += sum_activity(act_all, keq, conc, ncharges, theta, gsh, i, j);
 
         double dtheta = theta * theta;
-        double aux = 3 * sh[1] * (keq[i][0] + 1) + 2 * sh[0] * keq[i][1] + keq[i][1] * keq[i][2];
+        double aux = 3 * gsh[1] * (keq[i][0] + 1) + 2 * gsh[0] * keq[i][1] + keq[i][1] * keq[i][2];
         double tmp[5];
-        tmp[0] = ncharges[i][0] * ((3 * sh[1] * keq[i][0] * conc[i][j]) / theta - (keq[i][0] * conc[i][j] * sh[2] * aux) / dtheta);
-        tmp[1] = ncharges[i][1] * ((3 * sh[1] * conc[i][j]) / theta - (conc[i][j] * sh[2] * aux) / dtheta);
-        tmp[2] = ncharges[i][2] * ((2 * sh[0] * keq[i][1] * conc[i][j]) / theta - (keq[i][1] * conc[i][j] * sh[1] * aux) / dtheta);
-        tmp[3] = ncharges[i][3] * ((keq[i][1] * keq[i][2] * conc[i][j]) / theta - (keq[i][1] * keq[i][2] * conc[i][j] * sh[0] * aux) / dtheta);
+        tmp[0] = ncharges[i][0] * ((3 * gsh[1] * keq[i][0] * conc[i][j]) / theta - (keq[i][0] * conc[i][j] * gsh[2] * aux) / dtheta);
+        tmp[1] = ncharges[i][1] * ((3 * gsh[1] * conc[i][j]) / theta - (conc[i][j] * gsh[2] * aux) / dtheta);
+        tmp[2] = ncharges[i][2] * ((2 * gsh[0] * keq[i][1] * conc[i][j]) / theta - (keq[i][1] * conc[i][j] * gsh[1] * aux) / dtheta);
+        tmp[3] = ncharges[i][3] * ((keq[i][1] * keq[i][2] * conc[i][j]) / theta - (keq[i][1] * keq[i][2] * conc[i][j] * gsh[0] * aux) / dtheta);
         tmp[4] = ncharges[i][4] * (-(keq[i][1] * keq[i][2] * keq[i][3] * conc[i][j] * aux) / dtheta);
         df[j] += tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4];
       }
@@ -362,12 +363,12 @@ void FixPH::compute_ph(int first, int last) {
       if (grid->mask[j] & BLAYER_MASK) continue;
       if (fabs(f[j]) >= tol) {
         double d = f[j] / df[j];
-        // Prevent sh below 1e-14. That can happen because sometimes the Newton
-        // method overshoots to a negative sh value, due to a small derivative
+        // Prevent gsh below 1e-14. That can happen because sometimes the Newton
+        // method overshoots to a negative gsh value, due to a small derivative
         // value.
         if (d >= sh[j] - 1e-14)
           d = sh[j] / 2;
-        sh[j] -= d;
+        ph[j] += log(d);
       }
     }
 
@@ -376,21 +377,75 @@ void FixPH::compute_ph(int first, int last) {
 
   for (int j = first; j < last; j++) {
     if (grid->mask[j] & BLAYER_MASK) continue;
-    ph[j] = -log(sh[j]);
-
     for (int i = 0; i < nsubs; i++) {
       int form = form_id[i];
       act[i][j] = act_all[i][form][j];
 
       if (i == ih) {
-        act_all[ih][1][j] = sh[j];
+        act_all[ih][1][j] =sh[j];
         act[i][j] = sh[j];
       }
     }
+    grid->ph[j] = -log(sh[j]);
   }
 
   memory->destroy(fa);
   memory->destroy(fb);
   memory->destroy(f);
   memory->destroy(df);
+}
+
+/* ----------------------------------------------------------------------
+ buffer ph if the value is not in defined range
+ ------------------------------------------------------------------------- */
+
+void  FixPH::buffer_ph() {
+  int nsubs = grid->nsubs;
+  int ncells = grid->ncells;
+
+  double prv_sh, eva_sh, ph_unbuffer;
+  int eva_cell = -1;
+  int ext_cell = -1;
+
+  for (int i = ncells-1; i >= 0; i--) {
+    if (grid->mask[i] & BLAYER_MASK) continue;
+      if (ext_cell < 0) {
+        ext_cell = i;
+        continue;
+      }
+      eva_cell = i;
+      break;
+  }
+
+  // always take the last grid
+  prv_sh = sh[eva_cell];
+  // evaluate with dynamic ph
+  compute_ph(eva_cell, ext_cell);
+  eva_sh = sh[eva_cell];
+  ph_unbuffer = grid->ph[eva_cell];
+  sh[eva_cell] = prv_sh;
+
+  if (ph_unbuffer < phlo || ph_unbuffer > phhi) {
+    double minus = 0;
+    double plus = 0;
+    compute_activity(eva_cell, ext_cell, iph);
+
+    for (int i = 0; i < nsubs; i++) {
+      for (int j = 0; j < 5; j++) {
+        double diff, act, chr;
+        act = act_all[i][j][eva_cell];
+        chr = ncharges[i][j];
+
+        if (chr == 0) continue;
+        diff = act * chr;
+
+        if (diff > 0) plus += diff;
+        else if (diff < 0) minus -= diff;
+      }
+        sh[eva_cell] = prv_sh;
+      }
+
+      grid->bulk[ina] += minus;
+      grid->bulk[icl] += plus + eva_sh;
+    }
 }
