@@ -11,23 +11,28 @@
 
 #ifdef COMPUTE_CLASS
 
-ComputeStyle(nufeb/ave_conc,ComputeAveConc)
+ComputeStyle(nufeb/ave_grid,ComputeAveGrid)
 
 #else
 
-#ifndef LMP_COMPUTE_AVE_CONC_H
-#define LMP_COMPUTE_AVE_CONC_H
+#ifndef LMP_COMPUTE_AVE_GRID_H
+#define LMP_COMPUTE_AVE_GRID_H
 
 #include "compute.h"
 
 namespace LAMMPS_NS {
 
-class ComputeAveConc : public Compute {
- public:
-  ComputeAveConc(class LAMMPS *, int, char **);
-  ~ComputeAveConc();
-  void init() {}
-  void compute_vector();
+class ComputeAveGrid : public Compute {
+  public:
+    ComputeAveGrid(class LAMMPS *, int, char **);
+    ~ComputeAveGrid();
+    void init() {}
+    void compute_vector();
+
+  protected:
+    int con_flag, gro_flag, den_flag, rea_flag;
+    int ph_flag, act_flag;
+
 };
 
 }
