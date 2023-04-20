@@ -31,6 +31,7 @@ class FixPH : public Fix {
 
   int setmask();
   void chemistry_nufeb();
+  void reactor_nufeb();
   virtual void init();
   virtual void compute();
 
@@ -59,6 +60,8 @@ class FixPH : public Fix {
   void compute_ph(int, int);
   void compute_activity(int, int, double);
   void buffer_ph();
+  void to_mol();
+  void to_kg();
 };
 
 }

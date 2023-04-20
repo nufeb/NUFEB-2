@@ -51,17 +51,19 @@ neigh_modify    check yes                  # rebuild neighbour list if any atom
 #--------------------------Mesh Grid and Substrates--------------------------#
 
 # defining grid sytle, substrate names, and grid size
-grid_style      nufeb/chemostat 7 nh3 no2 no3 o2 co2 h2o h 5e-6
+grid_style      nufeb/chemostat 9 nh3 no2 no3 o2 co2 h2o h na cl 5e-6
 
 
 # substrate initial concentrations and molecular weight (liquid:kg/m3 mw:g/mol)
-grid_modify     set nh3 pp pp nd  0.03   mw 17.031
-grid_modify     set no3 pp pp nd  0      mw 62.005
-grid_modify     set no2 pp pp nd  0      mw 46.006
-grid_modify     set o2  pp pp nd  0.009  mw 31.998
-grid_modify     set co2 pp pp nd  0.088  mw 44.01
-grid_modify     set h2o pp pp nd  18.015 mw 18.015
-grid_modify     set h   pp pp nd  0      mw 2.016
+grid_modify     set nh3 pp pp nd  0.03     mw 17.031
+grid_modify     set no3 pp pp nd  0        mw 62.005
+grid_modify     set no2 pp pp nd  0        mw 46.006
+grid_modify     set o2  pp pp nd  0.009    mw 31.998
+grid_modify     set co2 pp pp nd  0.088    mw 44.01
+grid_modify     set h2o pp pp nd  18.015   mw 18.015
+grid_modify     set h   pp pp nd  0        mw 2.016
+grid_modify     set na  pp pp nd  2.3e-4   mw 23
+grid_modify     set cl  pp pp nd  3.545e-4 mw 35.45
 
 
 #--------------------------Biological Processes-------------------------------#
@@ -106,7 +108,8 @@ fix coeff_no2 all nufeb/diffusion_coeff no2 ratio 0.8      # region is 80% of th
 fix coeff_no3 all nufeb/diffusion_coeff no3 ratio 0.8
 fix coeff_o2  all nufeb/diffusion_coeff o2  ratio 0.8
 fix coeff_co2 all nufeb/diffusion_coeff co2 ratio 0.8
-
+fix coeff_na  all nufeb/diffusion_coeff na  ratio 0.8
+fix coeff_cl  all nufeb/diffusion_coeff cl  ratio 0.8
 
 #---------------------------Chemical Processes---------------------------------#
 
@@ -115,6 +118,10 @@ fix diff_no2 all nufeb/diffusion_reaction no2 1.91e-9      # distribusion of sub
 fix diff_no3 all nufeb/diffusion_reaction no3 1.9e-9       
 fix diff_o2  all nufeb/diffusion_reaction o2  2.1e-9
 fix diff_co2 all nufeb/diffusion_reaction co2 1.19e-9
+fix diff_na  all nufeb/diffusion_reaction na  1.3e-9
+fix diff_cl  all nufeb/diffusion_reaction cl  2.03e-9
+
+fix ph all nufeb/ph ph.in 7.0 h buffer na cl 6.5 9         # dynamic ph with buffer
 
 
 #---------------------------Reactor Processes----------------------------------#
@@ -126,6 +133,7 @@ fix diff_co2 all nufeb/diffusion_reaction co2 1.19e-9
 fix balance_nh3 all nufeb/reactor/solute_balance nh3 q 2.31e-7 reactor_vol 1.25e-3 reactor_af 0.1 domain_af xy
 fix balance_no2 all nufeb/reactor/solute_balance no2 q 2.31e-7 reactor_vol 1.25e-3 reactor_af 0.1 domain_af xy
 fix balance_no3 all nufeb/reactor/solute_balance no3 q 2.31e-7 reactor_vol 1.25e-3 reactor_af 0.1 domain_af xy
+fix balance_h   all nufeb/reactor/solute_balance h   q 2.31e-7 reactor_vol 1.25e-3 reactor_af 0.1 domain_af xy
 
 
 #--------------------------Computations and Outputs----------------------------#
@@ -136,13 +144,14 @@ variable naob equal "count(AOB)"                              # total # of AOB
 variable nnob equal "count(NOB)"                              # total # of NOB
 variable ndead equal "count(DEAD)"                            # total # of DEAD atoms
 
+compute ave_grid all nufeb/ave_grid ph                        # compute average ph
+
 shell mkdir vtk                                               # dump simulation data in vtk format
 dump du1 all vtk 10 vtk/dump*.vtu id type diameter            # require build NUFEB with vtk option
 dump du2 all grid/vtk 10 vtk/dump_%_*.vti con rea den gro
 
 # screen and log outputs
-thermo_style custom step cpu atoms v_maob v_mnob v_naob v_nnob v_ndead f_balance_nh3 f_balance_no2 f_balance_no3
-#thermo_style custom step cpu atoms v_maob v_mnob v_naob v_nnob v_ndead
+thermo_style custom step cpu atoms v_maob v_mnob v_naob v_nnob v_ndead f_balance_nh3 f_balance_no2 f_balance_no3 f_balance_h c_ave_grid[1]
 
 thermo 1 
 thermo_modify lost warn

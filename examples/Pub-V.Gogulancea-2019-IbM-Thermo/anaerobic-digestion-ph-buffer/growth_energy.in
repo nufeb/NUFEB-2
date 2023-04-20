@@ -44,11 +44,13 @@ Additional parameters used in fix nufeb/growth/energy
      glu  -916
      ach  -369
      nh3  -26.6
-     ch4  -34.4
+     ch4   34.4
      co2  -586.85
      h2    17.6
      h2o  -237
      h     0
+     na    0
+     cl    0
      
  Biomass Gibbs Energy    #KJ/mol
  

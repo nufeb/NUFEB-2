@@ -113,6 +113,7 @@ int FixPH::setmask()
 {
   int mask = 0;
   mask |= CHEMISTRY_NUFEB;
+  mask |= REACTOR_NUFEB;
   return mask;
 }
 
@@ -126,9 +127,9 @@ void FixPH::init()
   keq = memory->create(keq, nsubs, 4, "nufeb/ph:keq");
   act_all = memory->create(act_all, nsubs, 5, ncells, "nufeb/act_all");
   sh = memory->create(sh, ncells, "nufeb/ph:sh");
+
   ph = memory->create(ph, ncells, "nufeb/ph:ph");
   act = memory->create(act, nsubs, ncells, "nufeb/ph:act");
-
   grid->ph = ph;
   grid->act = act;
 
@@ -145,9 +146,22 @@ void FixPH::chemistry_nufeb()
 
 /* ---------------------------------------------------------------------- */
 
+void FixPH::reactor_nufeb()
+{
+  if (buff_flag) {
+    to_mol();
+    buffer_ph();
+    to_kg();
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
 void FixPH::compute()
 {
+  to_mol();
   compute_ph(0, grid->ncells);
+  to_kg();
 }
 
 /* ---------------------------------------------------------------------- */
@@ -171,7 +185,6 @@ void FixPH::init_keq() {
       } else {
         keq[i][j] = 0.0;
       }
-      //printf("keq[%i][%i] = %e \n", i, j, keq[i][j]);
     }
   }
 }
@@ -222,6 +235,7 @@ void FixPH::compute_activity(int first, int last, double iph) {
       }
       int form = form_id[i];
       grid->act[i][j] = act_all[i][form][j];
+      grid->ph[j] = -log10(sh[j]);
     }
   }
   memory->destroy(theta);
@@ -285,7 +299,7 @@ void FixPH::compute_ph(int first, int last) {
   }
 
   double gsh[3];
-  set_gsh (gsh, a);
+  set_gsh(gsh, a);
   for (int i = 0; i < nsubs; i++) {
     double theta = (1 + keq[i][0]) * gsh[2] + keq[i][1] * gsh[1] + keq[i][2] * keq[i][1] * gsh[0]
                    + keq[i][3] * keq[i][2] * keq[i][1];
@@ -363,15 +377,14 @@ void FixPH::compute_ph(int first, int last) {
       if (grid->mask[j] & BLAYER_MASK) continue;
       if (fabs(f[j]) >= tol) {
         double d = f[j] / df[j];
-        // Prevent gsh below 1e-14. That can happen because sometimes the Newton
+        // Prevent sh below 1e-14. That can happen because sometimes the Newton
         // method overshoots to a negative gsh value, due to a small derivative
         // value.
         if (d >= sh[j] - 1e-14)
           d = sh[j] / 2;
-        ph[j] += log(d);
+        sh[j] -= d;
       }
     }
-
     iter++;
   }
 
@@ -386,7 +399,7 @@ void FixPH::compute_ph(int first, int last) {
         act[i][j] = sh[j];
       }
     }
-    grid->ph[j] = -log(sh[j]);
+    grid->ph[j] = -log10(sh[j]);
   }
 
   memory->destroy(fa);
@@ -404,48 +417,85 @@ void  FixPH::buffer_ph() {
   int ncells = grid->ncells;
 
   double prv_sh, eva_sh, ph_unbuffer;
-  int eva_cell = -1;
-  int ext_cell = -1;
+  double prv_act_all[5], prv_act;
+  int eva = -1;
+  int ext = -1;
 
   for (int i = ncells-1; i >= 0; i--) {
-    if (grid->mask[i] & BLAYER_MASK) continue;
-      if (ext_cell < 0) {
-        ext_cell = i;
+    if (grid->mask[i] & GRID_MASK) {
+      if (ext < 0) {
+        ext = i;
         continue;
       }
-      eva_cell = i;
+      eva = i;
       break;
+    }
+  }
+  // domain with single grid
+  if (eva < 0) {
+    eva = ext;
+    ext++;
   }
 
-  // always take the last grid
-  prv_sh = sh[eva_cell];
+  prv_sh = sh[eva];
   // evaluate with dynamic ph
-  compute_ph(eva_cell, ext_cell);
-  eva_sh = sh[eva_cell];
-  ph_unbuffer = grid->ph[eva_cell];
-  sh[eva_cell] = prv_sh;
+  compute_ph(eva, ext);
+  eva_sh = sh[eva];
+  ph_unbuffer = grid->ph[eva];
+  sh[eva] = prv_sh;
 
   if (ph_unbuffer < phlo || ph_unbuffer > phhi) {
     double minus = 0;
     double plus = 0;
-    compute_activity(eva_cell, ext_cell, iph);
+    compute_activity(eva, ext, iph);
 
     for (int i = 0; i < nsubs; i++) {
       for (int j = 0; j < 5; j++) {
-        double diff, act, chr;
-        act = act_all[i][j][eva_cell];
-        chr = ncharges[i][j];
-
-        if (chr == 0) continue;
-        diff = act * chr;
+        double diff, act;
+        act = act_all[i][j][eva];
+        diff = act * ncharges[i][j];
 
         if (diff > 0) plus += diff;
         else if (diff < 0) minus -= diff;
       }
-        sh[eva_cell] = prv_sh;
-      }
-
-      grid->bulk[ina] += minus;
-      grid->bulk[icl] += plus + eva_sh;
+      sh[eva] = prv_sh;
     }
+    // convert concentrations from mol/L to kg/m3
+    grid->bulk[ina] += minus;
+    grid->bulk[icl] += plus + eva_sh;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixPH::to_mol()
+{
+  int nsubs = grid->nsubs;
+  int ncells = grid->ncells;
+  double *mw = grid->mw;
+  double **conc = grid->conc;
+
+  for (int i = 0; i < nsubs; i++) {
+    for (int j = 0; j < ncells; j++) {
+      conc[i][j] /= mw[i];;
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+void FixPH::to_kg()
+{
+  int nsubs = grid->nsubs;
+  int ncells = grid->ncells;
+  double *mw = grid->mw;
+  double **conc = grid->conc;
+  double **act = grid->act;
+
+  for (int i = 0; i < nsubs; i++) {
+    for (int j = 0; j < ncells; j++) {
+      conc[i][j] *= mw[i];
+      act[i][j] *= mw[i];
+    }
+  }
 }

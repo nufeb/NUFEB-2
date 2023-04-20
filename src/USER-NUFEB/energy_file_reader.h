@@ -47,7 +47,7 @@ namespace LAMMPS_NS {
       char **arg;
       int narg, maxarg;
 
-      int ngroups;    // # of groups and substrates in data file
+      int ngroups;    // # of groups in data file
 
       void open(char *);
       void header(int);
