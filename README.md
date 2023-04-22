@@ -50,22 +50,26 @@ sudo yum update
 sudo yum install cmake git gcc-c++ openmpi openmpi-devel libpng-dev ffmpeg
 </pre>
 
+On Windows:
+
+Follow the [tutorial](https://nufeb.readthedocs.io/en/master/install_win.html) to use NUFEB on Windows (via WSL).
+
 ### Getting source
-Get NUFEB source code and submodules for its thirdparty libraries:
+Get NUFEB source code:
 <pre>
 git clone https://github.com/nufeb/NUFEB-dev
 </pre>
 
-Build NUFEB:
+### Building
 <pre>
 ./install.sh
 </pre>
 
 ### Running
-Run a case in /examples after building NUFEB, for example:
+Run an example simulation (heterotrophic biofilm growth):
 <pre>
 cd examples/biofilm-heterotroph
-mpirun -np 4 ../../nufeb_mpi -in Inputscript.lammps
+mpirun -np 4 ../../nufeb_mpi -in Inputscript.nufeb
 </pre>
 
 ---------------------------------------------------------------------------
