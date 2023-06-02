@@ -131,7 +131,7 @@ their execution orders in the NUFEB integration procedure
 1. :doc:`Biological processes <list_biology>` 
 2. :doc:`Physical processes <list_physics>` 
 3. Post-physical processes 
-4. :doc:`Chemical processes <list_chemsitry>` 
+4. :doc:`Chemical processes <list_chemistry>`
 5. Post-chemical processes 
 6. Reactor processes 
 

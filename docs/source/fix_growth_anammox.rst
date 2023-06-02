@@ -49,7 +49,7 @@ in spherical shape without outer mass and outer diameter
 The model assumes anammox can transform ammonium and nitrite into nitrigen gas as well as low
 nitrate production, and it takes also into account the related decay and endogenous respiration processes.
 
-The fix is called in each biological step (see :doc:`run_style nufeb <run_style_nufeb>`)
+The fix is called at each biological step (see :doc:`run_style nufeb <run_style_nufeb>`)
 to update atom and grid attributes.
 The following forward Euler method is implemented to update the mass 
 (*m*) of each atom in the group:

@@ -9,6 +9,7 @@ Biological processes
    fix_growth_aob
    fix_growth_cyano
    fix_growth_ecoli
+   fix_growth_energy
    fix_growth_eps
    fix_growth_het
    fix_growth_monod

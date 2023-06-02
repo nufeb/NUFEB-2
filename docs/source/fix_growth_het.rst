@@ -61,7 +61,7 @@ The model assumes heterotrophs grow by consuming organic substrate in
 oxygenated conditions or nitrate in anoxic denitrifying conditions,
 and takes also into account the related decay and endogenous respiration processes.
 
-The fix is called in each biological step (see :doc:`run_style nufeb <run_style_nufeb>`)
+The fix is called at each biological step (see :doc:`run_style nufeb <run_style_nufeb>`)
 to update atom and grid attributes.
 The following forward Euler method is implemented to update the mass 
 (*m*) and outer mass (*om*) of each atom in the group:
@@ -75,10 +75,7 @@ The following forward Euler method is implemented to update the mass
 The specific growth rates :math:`\mu` and EPS secretion rate :math:`\mu_{EPS}` are
 calculated based on the equations described in :ref:`(Ofiteru, I.D., et al, 2013) <ofiteru13>`: 
 
-.. math::
-  \mu & = r1 + r2 + r3 - r4 - r5 - r6 - b_{decay}
-  
-  \mu_{EPS} & = \frac{Y_{EPS}}{Y} (r1 + r2 +r3)
+Y
     
   r1 & = \mu_{max} \frac{S_{sub}}{S_{sub} + Ks_{sub}} \frac{S_{o2}}{S_{o2} + Ks_{o2}} 
   

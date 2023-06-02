@@ -84,29 +84,31 @@ Biological processes
 -------------------------------------------
 
 +--------------------------------------------+-------------------------------------------------------+
-| :doc:`fix nufeb/growth/anammox <fix_growth_anammox>`: growth for anammox bacteria                  |
+| :doc:`fix nufeb/growth/anammox <fix_growth_anammox>`: growth model for Anammox bacteria            |
 +--------------------------------------------+-------------------------------------------------------+
-| :doc:`fix nufeb/growth/aob <fix_growth_aob>`: growth for ammonia-oxidizing bacteria                |
+| :doc:`fix nufeb/growth/aob <fix_growth_aob>`: growth model for Ammonia-Oxidizing Bacteria          |
 +--------------------------------------------+-------------------------------------------------------+
-| :doc:`fix nufeb/growth/cyano <fix_growth_cyano>`: growth for cyanobacteria                         |
+| :doc:`fix nufeb/growth/cyano <fix_growth_cyano>`: growth model for cyanobacteria                   |
 +--------------------------------------------+-------------------------------------------------------+
-| :doc:`fix nufeb/growth/ecoli <fix_growth_ecoli>`: growth for E.coli                                |
+| :doc:`fix nufeb/growth/ecoli <fix_growth_ecoli>`: growth model for E.coli                          |
 +--------------------------------------------+-------------------------------------------------------+
-| :doc:`fix nufeb/growth/eps <fix_growth_eps>`: extracellular polymeric substances decay             |
+| :doc:`fix nufeb/growth/energy <fix_growth_energy>`: energy-based growth model                      |
 +--------------------------------------------+-------------------------------------------------------+
-| :doc:`fix nufeb/growth/het <fix_growth_het>`: growth for heterotroph                               |
+| :doc:`fix nufeb/growth/eps <fix_growth_eps>`: growth model for Extracellular Polymeric Substances  |
 +--------------------------------------------+-------------------------------------------------------+
-| :doc:`fix nufeb/growth/monod <fix_growth_monod>`: monod-based growth                               |
+| :doc:`fix nufeb/growth/het <fix_growth_het>`: growth model for heterotroph                         |
 +--------------------------------------------+-------------------------------------------------------+
-| :doc:`fix nufeb/growth/nob <fix_growth_nob>`: growth for nitrite-oxidizing bacteria                |
+| :doc:`fix nufeb/growth/monod <fix_growth_monod>`: simple Monod-based growth model                  |
 +--------------------------------------------+-------------------------------------------------------+
-| :doc:`fix nufeb/growth/simple <fix_growth_simple>`: simple linear growth                           |
+| :doc:`fix nufeb/growth/nob <fix_growth_nob>`: growth model for Nitrite-Oxidizing Bacteria          |
 +--------------------------------------------+-------------------------------------------------------+
-| :doc:`fix nufeb/division/coccus <fix_divide_coccus>`: microbe division for coccus                  |
+| :doc:`fix nufeb/growth/simple <fix_growth_simple>`: exponential growth model                       |
 +--------------------------------------------+-------------------------------------------------------+
-| :doc:`fix nufeb/division/bacillus <fix_divide_bacillus>`: microbe division for bacillus            |
+| :doc:`fix nufeb/division/coccus <fix_divide_coccus>`: division for coccus                          |
 +--------------------------------------------+-------------------------------------------------------+
-| :doc:`fix nufeb/division/bacillus/minicell <fix_divide_minicell>`: abnormal division for bacillus  |
+| :doc:`fix nufeb/division/bacillus <fix_divide_bacillus>`: division for bacillus                    |
++--------------------------------------------+-------------------------------------------------------+
+| :doc:`fix nufeb/division/bacillus/minicell <fix_divide_minicell>`: abnormal bacillus division      |
 +--------------------------------------------+-------------------------------------------------------+
 | :doc:`fix nufeb/eps_extract <fix_eps_extract>`: EPS excretion from heterotroph                     |
 +--------------------------------------------+-------------------------------------------------------+
@@ -167,7 +169,7 @@ Chemical processes
 +--------------------------------------------+-------------------------------------------------------+
 
 
-Post-chemical processes
+Reactor processes
 -------------------------------------------
 
 +--------------------------------------------+-------------------------------------------------------+
