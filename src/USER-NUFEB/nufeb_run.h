@@ -1,4 +1,4 @@
-/* -*- c++ -*- ----------------------------------------------------------
+:/* -*- c++ -*- ----------------------------------------------------------
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
    http://lammps.sandia.gov, Sandia National Laboratories
    Steve Plimpton, sjplimp@sandia.gov
@@ -63,8 +63,9 @@ class NufebRun : public Integrate {
   FILE *profile;
   
   virtual void module_biology();
-  virtual int module_chemsitry();
+  virtual int module_chemistry();
   virtual double module_physics();
+  virtual void module_post_physics();
   virtual void module_reactor();
   double get_time();
 };
