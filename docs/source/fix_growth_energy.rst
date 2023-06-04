@@ -19,8 +19,8 @@ Syntax
 	.. parsed-literal::
 	
 	    *temperature* value = temperature (default: 298.15K)
-	    *alfa* value = relaxation parameter for maintenance (default: 1.2)
-	    *beta* value = relaxation parameter for local environment (default: 0.8)
+	    *alfa* value = maximum relaxation parameter for maintenance (default: 1.2)
+	    *beta* value = minimum relaxation parameter for maintenance (default: 0.8)
 	    *mw_biomass* value = molecular weight of biomass (default: 24.6g/mol)
 
          
@@ -29,58 +29,104 @@ Examples
 
 .. code-block::
 
-   group bac type 1
+   group AOB type 1
+   group NOB type 2
 
-   fix f_bac bac nufeb/growth/energy energy.in
-   fix f_bac bac nufeb/growth/energy energy.in alfa 1.1 beta 0.9
+   fix f_gaob AOB nufeb/growth/energy energy.in
+   fix f_gnob NOB nufeb/growth/energy energy.in
 
 Description
 """""""""""
 Perform energy-based microbial growth to the atoms defined in *group-ID*.
 The fix implements the model presented in
-:ref:`(Gogulancea, V., et al 2019) <Gogulancea19>`,
-and is called at each biological step (see :doc:`run_style nufeb <run_style_nufeb>`)
+:ref:`(Gogulancea, V., et al 2019) <Gogulancea19>` :ref:`(González-Cabaleiro, R., et al 2015) <Cabaleiro15>`.
+It is called at each biological step (see :doc:`run_style nufeb <run_style_nufeb>`)
 to update atom and grid attributes.
 
+In contract to the fix nufeb/monod/* command set, where the growth model of
+each microbial functional group is directly embedded into the source code,
+the fix employs a generalizable framework allows users to create model with customizable
+(thermodynamic) parameters without modifying the underlying code.
+
+The fix requires a separate data *file* containing information about kinetic and thermodynamic
+parameters. The file must be in ASCII text format,
+and the specific format of the data file is detailed in the next section.
+
+.. note::
+
+   The fix is capable of automatic unit conversion as
+   some parameters used are in moles (mol).
+   However, the molecular weight of each substrate must be provided in :doc:`grid_modify <grid_modify>`
+   using the *mw* keyword.
+
 The growth process is modeled using thermodynamic
-principles, enabling the estimation of growth yields according
-to the chemical energy of the environment. More specifically,
-the growth yield *Y* (mol-X/mol-eD) is estimated as:
+principles, enabling the estimation of growth yields  :math:`Y` according
+to the chemical energy of the environment:
 
 .. math::
-  Y & = \frac{\Delta G_{cat}{\Delta G_{ana} + \Delta G_{dis}}
+
+  Y & = \frac{ \Delta G_{cat}}{ \Delta G_{ana} + \Delta G_{dis} }
 
 where:
 
-* :math:`\Delta G_{cat}` is the free energy required for microbial anabolic pathway
+* :math:`\Delta G_{cat}` is the free energy required for microbial anabolic pathway, using its absolute value
 * :math:`\Delta G_{ana}` is the energy available from microbial catabolic pathway
 * :math:`\Delta G_{dis}` is the *Dissipation Energy* for maintenance requirements defined in the data *file*
 
-The anabolic and catabolic energies are calculated using the reaction quotient
-and the standard *Substrate Gibbs Energy* change (defined in the data *file*) at certain
-*temperature*.
-
-In addition, the metabolic rate *q_cat* and maintenance energy *m_req* of each
-microbial group are calculated as:
+:math:`\Delta G_{cat}` and :math:`\Delta G_{ana}` are calculated using
+gas constant :math:`R` (0.0083144KJ/mol.K), *temperature* :math:`T`, reaction quotient :math:`Q`,
+as well as the standard *Substrate Gibbs Energy* change defined in the data *file*:
 
 .. math::
 
-  q_cat & = q_max * \frac{S_{sub-X}}{S_{sub-X} + Ks_{sub-X}}
+    \Delta G & = \Delta G^{o} + RT ln(Q)
 
-  m_req & = \frac{0.00125}{\Delta G_{cat}}
+In addition, the catabolic rate :math:`q_{cat}` (mol-eD/mol-X·s),
+maintenance rate :math:`m_{req}` (mol-eD / mol-X·s),
+and specific growth rate :math:`\mu` of the
+functional group are calculated as:
 
-*q_cat* depends on the maximum substrate *Uptake Rate* defined in the data *file*
-and the availability of the limiting substrate. A constant value of 0.00125KJ/mol.s is assumed
-for the maintenance energy of all the microbial groups.
+.. math::
 
+  & q_{cat} =  q_{max} \frac{S_{sub_i}}{S_{sub_i} + Ks_{sub_i}}
 
+  & m_{req} = -\frac{m_{G}}{\Delta G_{cat}}
 
-Given the above, the growth model assumes mixed kinetic–thermodynamic
-limitation, considering three possible scenarios for
-microbial growth:
+  & \mu  = (q_{cat} - m_{req}) \cdot Y
 
+where:
 
+* :math:`q_{cat}` depends on the maximum substrate *Uptake Rate* (:math:`q_{max}`) defined in the data *file* and the availability of the limiting substrate concentrations. Monod-like microbial kinetic model is adopted.
+* :math:`m_{req}` is a fraction of the catabolic energy which is diverted from growth to maintenance purposes. It is assumed only temperature dependent and a constant value :math:`m_{G}` = 0.00125KJ/mol.s is considered.
+* :math:`\mu` is the positive net growth occurring when the rate of energy harvest exceeds that required for the maintenance.
 
+Given the above results, the growth model assumes mixed kinetic–thermodynamic
+limitation, considering three possible scenarios for updating the biomass :math:`m` of each atom in the group.
+
+.. math::
+
+    \frac{dm}{dt} & = \mu  \cdot m   &  \text{if } q_{cat} > \alpha \cdot m_{req}
+
+    \frac{dm}{dt} & =  0   &  \text{if } \beta \cdot m_{req} \le q_{cat} \le \alpha \cdot m_{req}
+
+    \frac{dm}{dt} & = -D_{decay} \cdot \frac{(m_{req} - q_{cat})}{m_{req}} \cdot Y \cdot m   &  \text{if } q_{cat} < \beta \cdot m_{req}
+
+If :doc:`fix nufeb/diffusion_reaction <fix_diffusion>` is
+applied, the fix also update substrate utilization (reaction) rates R at each affected grid cell using the following
+equations:
+
+.. math::
+
+   R_{sub} & =  \mu \cdot (\frac{1}{Y} \cdot a_{cat} + a_{ana}) \cdot X   &  \text{if } q_{cat} > \alpha \cdot m_{req}
+
+   R_{sub}  & = \mu  \cdot a_{cat} \cdot X &  \text{if } \beta \cdot m_{req} \le q_{cat} \le \alpha \cdot m_{req}
+
+   R_{sub}  &= - \mu \cdot a_{decay} \cdot X  & \text{if } q_{cat} < \beta \cdot m_{req}
+
+where:
+
+ * :math:`a_{cat}`, :math:`a_{ana}`, and :math:`a_{decay}` are the catabolic, anabolic, and decay coefficients defined in the data *file*,
+ * :math:`X` is the biomass density in grid cell
 
 ----------
 
@@ -239,7 +285,7 @@ dissipated for microbial maintenance requirements.
          NOB no2 1.81e-7  o2 6.02e-5
 
 Define half-velocity coefficients (Ks) of each group.
-*sub-X* is the substrate ID defined in :doc:`grid_style chemostat <grid_style_chemostat>`
+*sub-i* is the substrate ID defined in :doc:`grid_style chemostat <grid_style_chemostat>`
 or :doc:`grid_style simple <grid_style_simple>` command.
 The value in this section must be positive.
 
@@ -263,7 +309,7 @@ The value in this section must be positive.
 Define microbial catabolic coefficients of each group.
 The coefficients indicate the stoichiometric relationship between the
 substrates and products in the microbial catabolic reaction.
-*sub-X* is the substrate ID defined in :doc:`grid_style chemostat <grid_style_chemostat>`
+*sub-i* is the substrate ID defined in :doc:`grid_style chemostat <grid_style_chemostat>`
 or :doc:`grid_style simple <grid_style_simple>` command.
 
 
@@ -287,7 +333,7 @@ or :doc:`grid_style simple <grid_style_simple>` command.
 Define microbial anabolic coefficients of each group.
 The coefficients indicate the stoichiometric relationship between the
 substrates and products in the microbial anabolic reaction.
-*sub-X* is the substrate ID defined in :doc:`grid_style chemostat <grid_style_chemostat>`
+*sub-i* is the substrate ID defined in :doc:`grid_style chemostat <grid_style_chemostat>`
 or :doc:`grid_style simple <grid_style_simple>` command.
 
 ----------
@@ -310,7 +356,7 @@ or :doc:`grid_style simple <grid_style_simple>` command.
 Define microbial decay coefficients of each group.
 The coefficients indicate the relative amount of substrates released to the environment
 during the microbial decay.
-*sub-X* is the substrate ID defined in :doc:`grid_style chemostat <grid_style_chemostat>`
+*sub-i* is the substrate ID defined in :doc:`grid_style chemostat <grid_style_chemostat>`
 or :doc:`grid_style simple <grid_style_simple>` command.
 
 ----------
@@ -320,3 +366,9 @@ or :doc:`grid_style simple <grid_style_simple>` command.
 **(Gogulancea, V., et al 2019)** Gogulancea, V., et al.,
 Individual Based Model Links Thermodynamics, Chemical Speciation and
 Environmental Conditions to Microbial Growth, Frontiers in Microbiology (2019)
+
+.. _cabaleiro15:
+
+**(González-Cabaleiro, R., et al 2015)** González-Cabaleiro, R., et al.,
+Microbial catabolic activities are naturally selected by metabolic energy harvest rate,
+ISME J (2015)

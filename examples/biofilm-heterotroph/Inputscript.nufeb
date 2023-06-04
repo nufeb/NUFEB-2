@@ -15,13 +15,13 @@ boundary        pp pp ff                    # periodic boundaries in x and y
 
 newton          off                         # forces between local and ghost
                                             # atoms are computed in each
-					    # processor without communication
+					     # processor without communication
 					     
 processors      * * 1                       # processor grid
 
 comm_modify     vel yes                     # communicate velocities for ghost atoms
 
-read_data       atom.in	                    # read atom.in file which defines domain size
+read_data       atom.in	             # read atom.in file which defines domain size
                                             # and initial atoms	
 
 
@@ -93,9 +93,14 @@ variable mass equal "mass(all)"                             # total mass
 variable nhet equal "count(HET)"                            # total # of HET
 variable neps equal "count(EPS)"                            # total # of EPS
 
-shell mkdir vtk                                             # dump vtk files to /vtk folder
-dump du1 all vtk 10 vtk/dump*.vtu id type diameter          # require build NUFEB with vtk option
-dump du2 all grid/vtk 10 vtk/dump_%_*.vti con rea den gro
+#shell mkdir vtk                                            # dump vtk files to /vtk folder
+#dump du1 all vtk 10 vtk/dump*.vtu id type diameter         # require build NUFEB with vtk option
+#dump du2 all grid/vtk 10 vtk/dump_%_*.vti con rea den gro
+
+
+dump du3 all movie 10 movie.avi type diameter view 80 60    # dump video
+dump_modify du3 acolor 1 blue acolor 2 lightgrey framerate 10
+
 
                                                             # dump hdf5 files to /hdf5 folder
 #shell mkdir hdf5                                           # require build NUFEB with hdf5 option
@@ -111,5 +116,5 @@ run_style nufeb diffdt 1e-4 difftol 1e-6 pairdt 1e-2 pairtol 1 pairmax 1000 diff
 
 timestep 1000                                               # define biological timesteps (1000s)
 
-run 900                                                     # growing biofilm for 900x1000s
+run 900                                                    # growing biofilm for 900x1000s
 

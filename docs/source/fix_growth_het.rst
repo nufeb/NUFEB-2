@@ -73,10 +73,14 @@ The following forward Euler method is implemented to update the mass
   om' & = om + \mu_{EPS} \Delta t
   
 The specific growth rates :math:`\mu` and EPS secretion rate :math:`\mu_{EPS}` are
-calculated based on the equations described in :ref:`(Ofiteru, I.D., et al, 2013) <ofiteru13>`: 
+calculated based on the equations described in :ref:`(Ofiteru, I.D., et al, 2013) <ofiteru13>`:
 
-Y
-    
+.. math::
+
+  \mu & = r1 + r2 + r3 - r4 - r5 - r6 - b_{decay}
+
+  \mu_{EPS} & = \frac{Y_{EPS}}{Y} (r1 + r2 +r3)
+
   r1 & = \mu_{max} \frac{S_{sub}}{S_{sub} + Ks_{sub}} \frac{S_{o2}}{S_{o2} + Ks_{o2}} 
   
   r2 & = \eta \mu_{max} \frac{S_{sub}}{S_{sub} + Ks_{sub}} \frac{S_{no3}}{S_{no3} + Ks_{no3}} \frac{Ks_{o2}}{S_{o2} + Ks_{o2}} 

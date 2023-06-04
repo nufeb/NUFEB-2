@@ -119,7 +119,7 @@ FixGrowthEnergy::~FixGrowthEnergy() {
 void FixGrowthEnergy::init()
 {
   if (grid->mw == nullptr)
-    error->all(FLERR, "fix nufeb/growth/energy requires molecular weight (mw) defined");
+    error->all(FLERR, "fix nufeb/growth/energy requires molecular weight (mw) to be defined in grid_modify");
 
   dt = update->dt;
 
