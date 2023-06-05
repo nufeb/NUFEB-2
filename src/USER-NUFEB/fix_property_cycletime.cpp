@@ -88,7 +88,7 @@ void FixPropertyCycletime::set_arrays(int j)
 void FixPropertyCycletime::update_arrays(int i, int j)
 {
   // no need to update j here as this has been done in set_arrary
-  // when cell divides, record cell age (cycle time)
+  // when cell divides, record cell cycle time and reset to 0
   aprop[i][1] = aprop[i][0];
   aprop[i][0] = 0.0;
 }

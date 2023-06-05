@@ -41,7 +41,7 @@ FixPropertyGeneration::FixPropertyGeneration(LAMMPS *lmp, int narg, char **arg) 
 void FixPropertyGeneration::init()
 {
   for (int i = 0; i < atom->nlocal; i++) {
-    vprop[i] = 0.0;
+    vprop[i] = 1.0;
   }
 }
 
@@ -58,7 +58,7 @@ int FixPropertyGeneration::setmask()
 
 void FixPropertyGeneration::set_arrays(int j)
 {
-  vprop[j] = 0.0;
+  vprop[j] = 1.0;
 }
 
 /* ----------------------------------------------------------------------
