@@ -57,6 +57,7 @@ substrate concentration is fixed and well-mixed.
 The combinations of boundary conditions allow to model various simulation scenarios.
 
 For example,
+
 *  *nn nn nn* often used to model a system where microbes grow in a complete insulated micro well (closed system).
 *  *pp pp nd* models a representative volume of the full-scale bioreactor, where microbes grows on the bottom surface of the bioreactor.
 *  *dd dd dd* can be applied to model a microbial cluster (floc) floating in water.

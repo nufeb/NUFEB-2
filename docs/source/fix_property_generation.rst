@@ -22,4 +22,11 @@ Examples
    
 Description
 """""""""""
-Assign cell generation attribute to each atom defined in *group-ID* .... TODO
+Assign cell generation attribute to each atom defined in *group-ID*
+The attribute tracks the cell generation count. The count is initialised to 1 whenever
+a new cell is created or enters to the system
+(e.g, through `create_atom* <https://docs.lammps.org/create_atom.html>`_
+or :doc:`fix nufeb/divide/coccus <fix_divide_coccus>`).
+Once the cell divide, each daughter cell has its generation count incremented.
+
+The pre-atom attribute can be dumped into various file formats (e.g, via `dump_vtk* <https://docs.lammps.org/dump_vtk.html>`_ command)
