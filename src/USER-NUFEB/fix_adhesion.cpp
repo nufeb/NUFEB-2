@@ -37,7 +37,7 @@ FixAdhesion::FixAdhesion(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 5)
     error->all(FLERR, "Illegal fix nufeb/adhesion command");
 
-  virial_flag = 1;
+  virial_global_flag = 1;
   smin = 0.0;
   smax = 0.0;
   allocated = 0;

@@ -9,12 +9,12 @@ rootDir=$PWD
 
 #### Copy package and lib files to LAMMPS directory #####
 echo "Copying packages to LAMMPS.."
-cp -rpf $rootDir/src/* $rootDir/lammps_stable_29Oct2020/src/
-cp -rpf $rootDir/lib/* $rootDir/lammps_stable_29Oct2020/lib/
+cp -rpf $rootDir/src/* $rootDir/lammps_stable_23Jun2022/src/
+cp -rpf $rootDir/lib/* $rootDir/lammps_stable_23Jun2022/lib/
 
 echo "Configuring Makefile.lammps.."
 
-cd $rootDir/lammps_stable_29Oct2020/lib/nufeb || exit 1 
+cd $rootDir/lammps_stable_23Jun2022/lib/nufeb || exit 1 
 cp Makefile.lammps_core Makefile.lammps
 
 declare -i vtk_hdf=0
@@ -48,7 +48,7 @@ fi
 #### Build LAMMPS with NUFEB and user defined packages#####
 echo "Installing required packages.."
 
-cd $rootDir/lammps_stable_29Oct2020/src || exit 1
+cd $rootDir/lammps_stable_23Jun2022/src || exit 1
 make yes-user-nufeb
 make yes-granular
 

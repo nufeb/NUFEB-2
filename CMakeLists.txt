@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 # Set source directories
 set(SRC_DIR_NUFEB ${CMAKE_CURRENT_SOURCE_DIR}/src)
-set(SRC_DIR_LAMMPS ${CMAKE_CURRENT_SOURCE_DIR}/lammps_stable_29Oct2020/src)
+set(SRC_DIR_LAMMPS ${CMAKE_CURRENT_SOURCE_DIR}/lammps_stable_23Jun2022/src)
 
 include_directories(${SRC_DIR_NUFEB})
 include_directories(${SRC_DIR_LAMMPS})
