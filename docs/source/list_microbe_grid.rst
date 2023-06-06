@@ -12,6 +12,7 @@ Microbes, substrates and simulation box
    grid_modify
    grid_style_chemostat
    grid_style_simple
+   set
    atom_modify* <https://docs.lammps.org/atom_modify.html>
    boundary* <https://docs.lammps.org/boundary.html>
    create_atoms* <https://docs.lammps.org/create_atoms.html>
