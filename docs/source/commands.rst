@@ -59,6 +59,8 @@ Microbes, substrates and simulation box
 +----------------------------------------------------+-------------------------------------------------+
 | :doc:`grid_style simple <grid_style_simple>`: simple grid style                                      |
 +--------------------------------------------+---------------------------------------------------------+
+| :doc:`set <set>`: set one or more properties of atoms                                                |
++--------------------------------------------+---------------------------------------------------------+
 | `atom_modify* <https://docs.lammps.org/atom_modify.html>`_: modify (system) attributes of atoms      |
 +----------------------------------------------------+-------------------------------------------------+
 | `boundary* <https://docs.lammps.org/boundary.html>`_: boundaries for simulation box                  | 

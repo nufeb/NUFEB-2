@@ -25,11 +25,11 @@ This command must be used before a simulation is setup via a
    
 For the *coccus* style, atoms are represented as spheres that model
 spherical-shaped microbes.
-Each microbe stores a set per-atom attributes,
+Each microbe stores a set per-atom attributes, including:
 including *mass*, *biomass*, *outer_mass*, *diameter*, *outer_diameter*, *coordinate*,
-as well as mechanical attributes used in physical (DEM) processes (e.g, *force*, *velocity*, etc).
- 
-The *diameter* and *outer_diameter* attributes specify the inner and outer sizes of a spherical microbe.
+as well as mechanical attributes used in physical (DEM) processes (e.g, *force*, *velocity*, etc):
+
+The *diameter* and *outer_diameter* attributes specify the inner and outer sizes of a spherical microbe, respectively.
 Some microorganism excrete extracellular polymeric
 substances (EPS) which is initially accumulated as an extra shell beyond the microbes.
 The *outer_diameter* is defined as the sum of EPS shell depth and the inner diameter,
@@ -39,5 +39,5 @@ The *mass* and *biomass* attributes correspond to the wet and dry weights of mic
 Initial microbes and their attributes can be specified in 3 ways:
 
 * use `read_data* <https://docs.lammps.org/read_data.html>`_ command to explicitly create each individual microbe with the initial attributes from a data file;
-* use `create_atom* <https://docs.lammps.org/create_atom.html>`_ command to create microbes on a lattice, or a single microbe, or a random collection of microbes;
+* use `create_atom* <https://docs.lammps.org/create_atom.html>`_ and :doc:`set <set>` commands to create microbes on a lattice, or a single microbe, or a random collection of microbes;
 * use `read_restart* <https://docs.lammps.org/read_restart.html>`_ command to read previously saved system configuration from a restart file.
