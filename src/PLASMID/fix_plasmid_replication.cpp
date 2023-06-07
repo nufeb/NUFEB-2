@@ -53,10 +53,10 @@ FixPlasmidReplication::FixPlasmidReplication(LAMMPS *lmp, int narg, char **arg) 
   // Random number generator, same for all procs
   random = new RanPark(lmp, seed);
 
-  int ifix = modify->find_fix_by_style("^nufeb/property/plasmid");
-  if (ifix < 0 ) error->all(FLERR,"Illegal nufeb/plasmid/replication command: "
-      "requires fix nufeb/property/plasmid");
-  fix_plm = (FixPropertyPlasmid *) modify->fix[ifix];
+  auto fixlist = modify->get_fix_by_style("^nufeb/property/plasmid");
+  if (fixlist.size() != 1)
+    error->all(FLERR, "There must be exactly one fix nufeb/property/plasmid defined for fix plasmid/replicatio");
+  fix_plm = dynamic_cast<FixPropertyPlasmid *>(fixlist.front());
 
   int iarg = 4;
   while (iarg < narg) {

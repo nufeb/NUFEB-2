@@ -14,7 +14,7 @@
 #ifndef LMP_FIX_H
 #define LMP_FIX_H
 
-#include "pointers.h"  // IWYU pragma: export
+#include "pointers.h"    // IWYU pragma: export
 
 namespace LAMMPS_NS {
 
@@ -166,7 +166,6 @@ class Fix : protected Pointers {
   virtual void biology_nufeb() {}
   virtual void post_physics_nufeb() {}
   virtual void chemistry_nufeb() {}
-  virtual void post_chemistry_nufeb() {}
   virtual void reactor_nufeb() {}
 
   virtual void grow_arrays(int) {}
@@ -317,7 +316,13 @@ namespace FixConst {
     MIN_PRE_FORCE = 1 << 19,
     MIN_PRE_REVERSE = 1 << 20,
     MIN_POST_FORCE = 1 << 21,
-    MIN_ENERGY = 1 << 22
+    MIN_ENERGY = 1 << 22,
+
+    // NUFEB specific
+    BIOLOGY_NUFEB =  1<<23,
+    POST_PHYSICS_NUFEB = 1<<24,
+    CHEMISTRY_NUFEB = 1<<25,
+    REACTOR_NUFEB = 1<<26,
   };
 }
 

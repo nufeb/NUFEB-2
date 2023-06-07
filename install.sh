@@ -49,19 +49,18 @@ fi
 echo "Installing required packages.."
 
 cd $rootDir/lammps_stable_23Jun2022/src || exit 1
-make yes-user-nufeb
-make yes-granular
+make yes-nufeb
 
 for var in "$@"
 do 
     if [ $var == "--enable-vtk" ]; then
-	make yes-user-vtk
+	make yes-vtk
     elif [ $var == "--enable-hdf5" ]; then
-	make yes-user-hdf5
+	make yes-hdf5
     elif [ $var == "--enable-misc" ]; then
 	make yes-misc
     elif [ $var == "--enable-plasmid" ]; then
-	make yes-user-plasmid
+	make yes-plasmid
     elif [ $var == "--gpu" ]; then
 	make yes-kokkos
     fi

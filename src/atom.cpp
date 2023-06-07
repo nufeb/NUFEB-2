@@ -125,7 +125,7 @@ Atom::Atom(LAMMPS *lmp) : Pointers(lmp)
   ellipsoid = line = tri = body = nullptr;
   quat = nullptr;
 
-  // USER-NUFEB
+  // NUFEB
   outer_radius = outer_mass = nullptr;
   biomass = nullptr;
   bacillus = nullptr;
@@ -634,7 +634,7 @@ void Atom::set_atomflag_defaults()
   mesont_flag = 0;
   contact_radius_flag = smd_data_9_flag = smd_stress_flag = 0;
   eff_plastic_strain_flag = eff_plastic_strain_rate_flag = 0;
-  // USER-NUFEB package
+  // NUFEB package
   bacillus_flag = coccus_flag = 0;
   outer_radius_flag = outer_mass_flag = 0;
   biomass_flag = 0;
@@ -2752,7 +2752,7 @@ void *Atom::extract(const char *name)
   if (strcmp(name,"curvature") == 0) return (void *) curvature;
   if (strcmp(name,"q_unscaled") == 0) return (void *) q_unscaled;
 
-  // USER-NUFEB package
+  // NUFEB package
   if (strcmp(name,"biomass") == 0) return (void *) biomass;
   if (strcmp(name,"outer_mass") == 0) return (void *) outer_mass;
   if (strcmp(name,"outer_radius") == 0) return (void *) outer_radius;
@@ -2879,7 +2879,7 @@ int Atom::extract_datatype(const char *name)
   if (strcmp(name,"curvature") == 0) return LAMMPS_DOUBLE;
   if (strcmp(name,"q_unscaled") == 0) return LAMMPS_DOUBLE;
 
-  // USER-NUFEB package
+  // NUFEB package
   if (strcmp(name,"bacillus") == 0) return LAMMPS_INT;
   if (strcmp(name,"biomass") == 0) return LAMMPS_DOUBLE;
   if (strcmp(name,"outer_mass") == 0) return LAMMPS_DOUBLE;

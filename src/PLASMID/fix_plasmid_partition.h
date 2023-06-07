@@ -50,11 +50,13 @@ class FixPlasmidPartition : public Fix {
   double diff_coef;         // diffusion coefficient for Browian motion
   double dt;                // timestep for plasmid movement
   int seed;
+  int divflag;
 
   class RanPark *random;
   class AtomVecBacillus *avec;
   class FixPropertyPlasmid *fix_plm;
-  class FixDivide *fix_div;
+  class FixDivideBacillus *fix_div;
+  class FixDivideBacillusMinicell *fix_div_mini;
 };
 
 }

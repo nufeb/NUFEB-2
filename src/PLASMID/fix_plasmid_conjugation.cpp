@@ -11,83 +11,95 @@
  See the README file in the top-level LAMMPS directory.
  ------------------------------------------------------------------------- */
 
-#include "fix_adhesion_bacillus.h"
-
-#include <math.h>
 #include <string.h>
+#include <math.h>
 #include "atom.h"
-#include "atom_vec.h"
 #include "error.h"
+#include "modify.h"
+#include "group.h"
+#include "update.h"
+#include "memory.h"
+#include "atom_masks.h"
+#include "math_extra.h"
 #include "neigh_list.h"
 #include "neighbor.h"
-#include "neigh_request.h"
-#include "group.h"
 #include "pair.h"
 #include "force.h"
+
+#include "fix_plasmid_conjugation.h"
+#include "fix_property_plasmid.h"
 #include "atom_vec_bacillus.h"
+
+#include "fix.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
 
 #define EPSILON 1e-30
+#define PLM_TRANSFER_DIST 5e-7
+#define CUTOFF 1e-7
 
 /* ---------------------------------------------------------------------- */
 
-FixAdhesionBacillus::FixAdhesionBacillus(LAMMPS *lmp, int narg, char **arg) :
+FixPlasmidConjugation::FixPlasmidConjugation(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
   if (narg < 4)
-    error->all(FLERR, "Illegal fix nufeb/adhesion/eps command");
+    error->all(FLERR, "Illegal nufeb/plasmid/conjugate command");
 
-  ke = utils::numeric(FLERR,arg[3],true,lmp);
-  cutoff = utils::numeric(FLERR,arg[4],true,lmp);
-  if (cutoff < 0) error->all(FLERR, "Illegal value for cutoff parameter in fix nufeb/adhesion/bacillus");
+  fix_plm = nullptr;
+  tflag = 0;
+
+  auto fixlist = modify->get_fix_by_style("^nufeb/property/plasmid");
+  if (fixlist.size() != 1)
+    error->all(FLERR, "There must be exactly one fix nufeb/property/plasmid defined for fix plasmid/conjugation");
+  fix_plm = dynamic_cast<FixPropertyPlasmid *>(fixlist.front());
+
+  irecip = group->find(arg[3]);
+  irecipbit = group->bitmask[irecip];
+  itrans = group->find(arg[4]);
+  itransbit = group->bitmask[itrans];
 
   avec = (AtomVecBacillus *) atom->style_match("bacillus");
-  if (!avec) error->all(FLERR,"Pair bacillus requires "
+  if (!avec) error->all(FLERR,"fix nufeb/plasmid/conjugate requires "
                         "atom style bacillus");
+  int iarg = 5;
+  while (iarg < narg) {
+    if (strcmp(arg[iarg], "type") == 0) {
+      ttrans = utils::inumeric(FLERR,arg[iarg+1],true,lmp);
+      tflag = 1;
+      iarg += 2;
+    } else {
+      error->all(FLERR, "Illegal fix nufeb/plasmid/conjugate command");
+    }
+  }
 }
 
 /* ---------------------------------------------------------------------- */
 
-int FixAdhesionBacillus::setmask()
+int FixPlasmidConjugation::setmask()
 {
   int mask = 0;
-  mask |= POST_FORCE;
+  mask |= BIOLOGY_NUFEB;
   return mask;
 }
 
 /* ---------------------------------------------------------------------- */
 
-void FixAdhesionBacillus::init() {
-  int irequest = neighbor->request(this,instance_me);
-  neighbor->requests[irequest]->pair = 0;
-  neighbor->requests[irequest]->fix = 1;
-  neighbor->requests[irequest]->size = 1;
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixAdhesionBacillus::init_list(int id, NeighList *ptr) {
-  list = ptr;
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixAdhesionBacillus::post_force(int vflag)
+void FixPlasmidConjugation::biology_nufeb()
 {
   compute();
 }
 
 /* ---------------------------------------------------------------------- */
 
-void FixAdhesionBacillus::compute()
+void FixPlasmidConjugation::compute()
 {
   int i,j,ii,jj,jnum;
-  double xtmp,ytmp,ztmp,delx,dely,delz;
+  double xtmp,ytmp,ztmp;
   double rsq, leni, lenj, radi, radj;
   int *jlist;
-  
+
   double **x = atom->x;
   double **v = atom->v;
   double **f = atom->f;
@@ -102,6 +114,7 @@ void FixAdhesionBacillus::compute()
   AtomVecBacillus::Bonus *ibonus;
   AtomVecBacillus::Bonus *jbonus;
 
+  NeighList *list = force->pair->list;
   int inum = list->inum;
   int *ilist = list->ilist;
   int *numneigh = list->numneigh;
@@ -111,122 +124,126 @@ void FixAdhesionBacillus::compute()
 
   for (ii = 0; ii < inum; ii++) {
     i = ilist[ii];
-    if (atom->mask[i] & groupbit) {
-      xtmp = x[i][0];
-      ytmp = x[i][1];
-      ztmp = x[i][2];
-      jlist = firstneigh[i];
-      jnum = numneigh[i];
+    if (!(atom->mask[i] & groupbit)) continue;
+    xtmp = x[i][0];
+    ytmp = x[i][1];
+    ztmp = x[i][2];
+    jlist = firstneigh[i];
+    jnum = numneigh[i];
 
-      if (bacillus[i] >= 0) {
-	int index = atom->bacillus[i];
-	ibonus = &avec->bonus[index];
-	leni = ibonus->length/2;
-	radi = ibonus->diameter/2;
-      }
+    if (bacillus[i] >= 0) {
+      int index = atom->bacillus[i];
+      ibonus = &avec->bonus[index];
+      leni = ibonus->length/2;
+      radi = ibonus->diameter/2;
+    }
 
-      for (jj = 0; jj < jnum; jj++) {
-	j = jlist[jj];
-	j &= NEIGHMASK;
+    for (jj = 0; jj < jnum; jj++) {
+      j = jlist[jj];
+      if (!(atom->mask[j] & irecipbit)) continue;
 
-	delx = xtmp - x[j][0];
-	dely = ytmp - x[j][1];
-	delz = ztmp - x[j][2];
+      double r, contact_dist;
+      double xi1[3],xi2[3],xpj1[3],xpj2[3];
+      double t1,t2,h1[3],h2[3];
+      double delx,dely,delz;
+      double R;
+
+      double *vprop = fix_plm->vprop;
+      double *plm_x = fix_plm->plm_x[i];
+      double px[3], dmin;
+      int plm;
+
+      j &= NEIGHMASK;
+
+      delx = xtmp - x[j][0];
+      dely = ytmp - x[j][1];
+      delz = ztmp - x[j][2];
+      rsq = delx*delx + dely*dely + delz*delz;
+
+      if (bacillus[i] < 0 || bacillus[j] < 0) continue;
+
+      int index = atom->bacillus[j];
+      jbonus = &avec->bonus[index];
+      lenj = jbonus->length/2;
+      radj = jbonus->diameter/2;
+
+      // no interaction
+      r = sqrt(rsq);
+      if (r > radi+radj+leni+lenj) continue;
+
+      avec->get_pole_coords(i, xi1, xi2);
+      avec->get_pole_coords(j, xpj1, xpj2);
+
+      contact_dist = (ibonus->diameter + jbonus->diameter)/2;
+      distance_bt_rods(xpj1, xpj2, xi1, xi2, h2, h1, t2, t1, r);
+      // rod-rod interaction
+      R = r - contact_dist;
+      dmin = 1e10;
+
+      for (int m = 0; m < static_cast<int>(vprop[i]); m++) {
+	fix_plm->get_plasmid_coords(i, m, px);
+	delx = px[0] - h1[0];
+	dely = px[1] - h1[1];
+	delz = px[2] - h1[2];
 	rsq = delx*delx + dely*dely + delz*delz;
 
-	if (bacillus[i] < 0 || bacillus[j] < 0) continue;
-
-	int index = atom->bacillus[j];
-	jbonus = &avec->bonus[index];
-	lenj = jbonus->length/2;
-	radj = jbonus->diameter/2;
-
-	// no interaction
-	double r = sqrt(rsq);
-	if (r > radi+radj+leni+lenj+cutoff) continue;
-
-	// rod-rod interaction
-	rod_against_rod(i, j, x, v, f, torque, angmom, rmass, ibonus, jbonus);
+	if (rsq < PLM_TRANSFER_DIST && rsq < dmin) {
+	  dmin = rsq;
+	  plm = m;
+	}
       }
+
+      if (R < CUTOFF) conjugate(j, h2);
     }
   }
 }
-
-/* ----------------------------------------------------------------------*/
-void FixAdhesionBacillus::rod_against_rod(int i, int j, double** x, double** v,
-			           double** f, double** torque, double** angmom, double* rmass,
-				   AtomVecBacillus::Bonus *&ibonus,
-				   AtomVecBacillus::Bonus *&jbonus)
-{
-  double xi1[3],xi2[3],xpj1[3],xpj2[3];
-  double r,t1,t2,h1[3],h2[3];
-  double contact_dist, energy;
-
-  avec->get_pole_coords(i, xi1, xi2);
-  avec->get_pole_coords(j, xpj1, xpj2);
-
-  contact_dist = (ibonus->diameter + jbonus->diameter)/2;
-
-  int jflag = 1;
-
-  distance_bt_rods(xpj1, xpj2, xi1, xi2, h2, h1, t2, t1, r);
-
-  // include the vertices for interactions
-  if (t1 >= 0 && t1 <= 1 && t2 >= 0 && t2 <= 1 &&
-      r < contact_dist + cutoff) {
-
-    adhesion_force_and_torque(j, i, h2, h1, r, contact_dist, x, v, f, torque, angmom, rmass);
-  }
-}
-
 
 /* ----------------------------------------------------------------------
-  Compute adhesion forces and torques between two rods
+   transfer plasmid m from bacillus i to bacillus j
 ------------------------------------------------------------------------- */
+void FixPlasmidConjugation::conjugate(int j, double* h2) {
+  double* vprop = fix_plm->vprop;
+  double** nproteins = fix_plm->nproteins;
 
-void FixAdhesionBacillus::adhesion_force_and_torque(int i, int j,
-                 double* pi, double* pj, double r, double contact_dist,
-		 double** x, double** v, double** f, double** torque,
-		 double** angmom, double *rmass)
-{
-  double delx,dely,delz,R,fx,fy,fz;
-  double del, rinv, ccel;
-  double masssum;
-  int newton_pair = force->newton_pair;
+  int n = static_cast<int>(fix_plm->vprop[j]);
+  if (fix_plm->rep_flag) nproteins[j][n] = 0;
+  fix_plm->set_plm_x(j, n, h2, atom->x[j]);
+  vprop[j]++;
 
-  delx = pi[0] - pj[0];
-  dely = pi[1] - pj[1];
-  delz = pi[2] - pj[2];
-  R = r - contact_dist;
-  masssum = rmass[i] + rmass[j];
+  atom->mask[j] = itrans;
+  if (tflag)
+   atom->type[j] = ttrans;
+}
 
-  if (R > 0) {
-    rinv = 1 / r;
-    ccel = -masssum * ke * R;
+/* ----------------------------------------------------------------------
+   get quaternion from two vectors
+------------------------------------------------------------------------- */
+void FixPlasmidConjugation::get_quat(double *vec1, double *vec2, double *q){
+  double ans1[3], ans2[3], cross[3];
+  ans1[0] = ans1[1] = ans1[2] = 0.0;
+  ans2[0] = ans2[1] = ans2[2] = 0.0;
 
-    fx = delx * ccel * rinv;
-    fy = dely * ccel * rinv;
-    fz = delz * ccel * rinv;
+  MathExtra::normalize3(vec1,ans2);
+  MathExtra::normalize3(vec2,ans1);
+  MathExtra::cross3(ans1, ans2, cross);
 
-    f[i][0] += fx;
-    f[i][1] += fy;
-    f[i][2] += fz;
-    sum_torque(x[i], pi, fx, fy, fz, torque[i]);
+  double d = MathExtra::dot3(ans1, ans2);
+  double s = sqrt((1+d)*2);
+  double invs = 1 / s;
 
-    if (newton_pair) {
-      f[j][0] -= fx;
-      f[j][1] -= fy;
-      f[j][2] -= fz;
-      sum_torque(x[j], pj, -fx, -fy, -fz, torque[j]);
-    }
-  }
+  q[0] = s*0.5;
+  q[1] = cross[0]*invs;
+  q[2] = cross[1]*invs;
+  q[3] = cross[2]*invs;
+
+  MathExtra::qnormalize(q);
 }
 
 /* ----------------------------------------------------------------------
  compute the shortest distance between two rods (line segments)
 ------------------------------------------------------------------------- */
 
-void FixAdhesionBacillus::distance_bt_rods(const double* x1,
+void FixPlasmidConjugation::distance_bt_rods(const double* x1,
 		  const double* x2, const double* x3, const double* x4,
 		  double* h1, double* h2, double& t1, double& t2, double& r)
 {
@@ -313,22 +330,4 @@ void FixAdhesionBacillus::distance_bt_rods(const double* x1,
     h2[0] = x3[0] + (x4[0] - x3[0]) * t2;
     h2[1] = x3[1] + (x4[1] - x3[1]) * t2;
     h2[2] = x3[2] + (x4[2] - x3[2]) * t2;
-}
-
-/* ----------------------------------------------------------------------
-  Accumulate torque to rod from the force f=(fx,fy,fz) acting at point x
-------------------------------------------------------------------------- */
-
-void FixAdhesionBacillus::sum_torque(double* xm, double *x, double fx,
-                                      double fy, double fz, double* torque)
-{
-  double rx = x[0] - xm[0];
-  double ry = x[1] - xm[1];
-  double rz = x[2] - xm[2];
-  double tx = ry * fz - rz * fy;
-  double ty = rz * fx - rx * fz;
-  double tz = rx * fy - ry * fx;
-  torque[0] += tx;
-  torque[1] += ty;
-  torque[2] += tz;
 }

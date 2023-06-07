@@ -17,7 +17,6 @@
 #include "force.h"
 #include "neighbor.h"
 #include "neigh_list.h"
-#include "neigh_request.h"
 #include "error.h"
 #include "modify.h"
 #include "fix_neigh_history_kokkos.h"

@@ -189,7 +189,7 @@ void EnergyFileReader::uptake_rate(char *group_id)
   char *next;
   char *buf = new char[ngroups * MAXLINE];
 
-  int eof = comm->read_lines_from_file(fp, ngroups, MAXLINE, buf);
+  int eof = utils::read_lines_from_file(fp,ngroups,MAXLINE,buf,me,world);
   if (eof) error->all(FLERR, "Unexpected end of data file");
 
   char *original = buf;
@@ -235,7 +235,7 @@ void EnergyFileReader::calc_yield(char *group_id)
   char *next;
   char *buf = new char[ngroups * MAXLINE];
 
-  int eof = comm->read_lines_from_file(fp, ngroups, MAXLINE, buf);
+  int eof = utils::read_lines_from_file(fp,ngroups,MAXLINE,buf,me,world);
   if (eof) error->all(FLERR, "Unexpected end of data file");
 
   char *original = buf;
@@ -281,7 +281,7 @@ void EnergyFileReader::electron_donor(char *group_id)
   char *next;
   char *buf = new char[ngroups * MAXLINE];
 
-  int eof = comm->read_lines_from_file(fp, ngroups, MAXLINE, buf);
+  int eof = utils::read_lines_from_file(fp,ngroups,MAXLINE,buf,me,world);
   if (eof) error->all(FLERR, "Unexpected end of data file");
 
   char *original = buf;
@@ -328,7 +328,7 @@ void EnergyFileReader::decay_rate(char *group_id)
   char *next;
   char *buf = new char[ngroups * MAXLINE];
 
-  int eof = comm->read_lines_from_file(fp, ngroups, MAXLINE, buf);
+  int eof = utils::read_lines_from_file(fp,ngroups,MAXLINE,buf,me,world);
   if (eof) error->all(FLERR, "Unexpected end of data file");
 
   char *original = buf;
@@ -374,7 +374,7 @@ void EnergyFileReader::maintain_rate(char *group_id)
   char *next;
   char *buf = new char[ngroups * MAXLINE];
 
-  int eof = comm->read_lines_from_file(fp, ngroups, MAXLINE, buf);
+  int eof = utils::read_lines_from_file(fp,ngroups,MAXLINE,buf,me,world);
   if (eof) error->all(FLERR, "Unexpected end of data file");
 
   char *original = buf;
@@ -420,7 +420,7 @@ void EnergyFileReader::ks_coeffs(char *group_id)
   char *next;
   char *buf = new char[ngroups * MAXLINE];
 
-  int eof = comm->read_lines_from_file(fp, ngroups, MAXLINE, buf);
+  int eof = utils::read_lines_from_file(fp,ngroups,MAXLINE,buf,me,world);
   if (eof) error->all(FLERR, "Unexpected end of data file");
 
   ks_coeff = memory->create(ks_coeff, grid->nsubs, "energy_file_reader:ks");
@@ -477,7 +477,7 @@ void EnergyFileReader::cata_coeffs(char *group_id)
   char *next;
   char *buf = new char[ngroups * MAXLINE];
 
-  int eof = comm->read_lines_from_file(fp, ngroups, MAXLINE, buf);
+  int eof = utils::read_lines_from_file(fp,ngroups,MAXLINE,buf,me,world);
   if (eof) error->all(FLERR, "Unexpected end of data file");
 
   cata_coeff = memory->create(cata_coeff, grid->nsubs, "energy_file_reader:cata_coeff");
@@ -534,7 +534,7 @@ void EnergyFileReader::anab_coeffs(char *group_id)
   char *next;
   char *buf = new char[ngroups * MAXLINE];
 
-  int eof = comm->read_lines_from_file(fp, ngroups, MAXLINE, buf);
+  int eof = utils::read_lines_from_file(fp,ngroups,MAXLINE,buf,me,world);
   if (eof) error->all(FLERR, "Unexpected end of data file");
 
   anab_coeff = memory->create(anab_coeff, grid->nsubs, "energy_file_reader:anab_coeff");
@@ -591,7 +591,7 @@ void EnergyFileReader::decay_coeffs(char *group_id)
   char *next;
   char *buf = new char[ngroups * MAXLINE];
 
-  int eof = comm->read_lines_from_file(fp, ngroups, MAXLINE, buf);
+  int eof = utils::read_lines_from_file(fp,ngroups,MAXLINE,buf,me,world);
   if (eof) error->all(FLERR, "Unexpected end of data file");
 
   decay_coeff = memory->create(decay_coeff, grid->nsubs, "energy_file_reader:decay_coeff");
@@ -654,7 +654,7 @@ void EnergyFileReader::substrate_energy()
     sub_gibbs[i] = 0.0;
   }
 
-  int eof = comm->read_lines_from_file(fp, grid->nsubs, MAXLINE, buf);
+  int eof = utils::read_lines_from_file(fp,grid->nsubs,MAXLINE,buf,me,world);
   if (eof) error->all(FLERR, "Unexpected end of data file");
 
   char *original = buf;
@@ -695,7 +695,7 @@ void EnergyFileReader::biomass_energy(char *group_id)
   char *next;
   char *buf = new char[ngroups * MAXLINE];
 
-  int eof = comm->read_lines_from_file(fp, ngroups, MAXLINE, buf);
+  int eof = utils::read_lines_from_file(fp,ngroups,MAXLINE,buf,me,world);
   if (eof) error->all(FLERR, "Unexpected end of data file");
 
   char *original = buf;
@@ -740,7 +740,7 @@ void EnergyFileReader::dissipation_energy(char *group_id)
   char *next;
   char *buf = new char[ngroups * MAXLINE];
 
-  int eof = comm->read_lines_from_file(fp, ngroups, MAXLINE, buf);
+  int eof = utils::read_lines_from_file(fp,ngroups,MAXLINE,buf,me,world);
   if (eof) error->all(FLERR, "Unexpected end of data file");
 
   char *original = buf;
@@ -786,7 +786,7 @@ void EnergyFileReader::substance_energy()
   char *next;
   char *buf = new char[grid->nsubs * MAXLINE];
 
-  int eof = comm->read_lines_from_file(fp, grid->nsubs, MAXLINE, buf);
+  int eof = utils::read_lines_from_file(fp,ngroups,MAXLINE,buf,me,world);
   if (eof) error->all(FLERR, "Unexpected end of data file");
 
   sstc_gibbs = memory->create(sstc_gibbs, grid->nsubs, 5, "energy_file_reader:sstc_gibbs");
@@ -842,7 +842,7 @@ void EnergyFileReader::charge_numbers()
   char *next;
   char *buf = new char[grid->nsubs * MAXLINE];
 
-  int eof = comm->read_lines_from_file(fp, grid->nsubs, MAXLINE, buf);
+  int eof = utils::read_lines_from_file(fp,grid->nsubs,MAXLINE,buf,me,world);
   if (eof) error->all(FLERR, "Unexpected end of data file");
 
   ncharges = memory->create(ncharges, grid->nsubs, 5, "energy_file_reader:ncharges");
@@ -900,7 +900,7 @@ void EnergyFileReader::uptake_form()
 
   form_id = memory->create(form_id, grid->nsubs, "energy_file_reader:form_id");
 
-  int eof = comm->read_lines_from_file(fp, grid->nsubs, MAXLINE, buf);
+  int eof = utils::read_lines_from_file(fp,grid->nsubs,MAXLINE,buf,me,world);
   if (eof) error->all(FLERR, "Unexpected end of data file");
 
   char *original = buf;

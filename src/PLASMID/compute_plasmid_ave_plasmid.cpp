@@ -36,9 +36,10 @@ ComputePlasmidAvePlasmid::ComputePlasmidAvePlasmid(LAMMPS *lmp, int narg, char *
   if (narg < 3) error->all(FLERR,"Illegal nufeb/plasmid/nbirth command");
   fix_plasmid = nullptr;
 
-  int ifix = modify->find_fix_by_style("^nufeb/property/plasmid");
-  if (ifix < 0 ) error->all(FLERR,"Illegal nufeb/plasmid/nbirth command: requires fix nufeb/property/plasmid");
-  fix_plasmid = (FixPropertyPlasmid *) modify->fix[ifix];
+  auto fixlist = modify->get_fix_by_style("^nufeb/property/plasmid");
+  if (fixlist.size() != 1)
+    error->all(FLERR, "There must be exactly one fix nufeb/property/plasmid defined for compute plasmid/ave_plasmid");
+  fix_plasmid = dynamic_cast<FixPropertyPlasmid *>(fixlist.front());
 
   vector_flag = 1;
   extvector = 0;

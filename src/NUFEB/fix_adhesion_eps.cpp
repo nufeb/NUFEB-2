@@ -20,7 +20,6 @@
 #include "error.h"
 #include "neigh_list.h"
 #include "neighbor.h"
-#include "neigh_request.h"
 #include "group.h"
 #include "pair.h"
 #include "force.h"
@@ -38,7 +37,7 @@ FixEPSAdhesion::FixEPSAdhesion(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 5)
     error->all(FLERR, "Illegal fix nufeb/adhesion/eps command");
 
-  virial_flag = 1;
+  virial_global_flag = 1;
   
   ieps = -1;
   ke = 0.0;
@@ -78,10 +77,7 @@ int FixEPSAdhesion::setmask()
 /* ---------------------------------------------------------------------- */
 
 void FixEPSAdhesion::init() {
-  int irequest = neighbor->request(this, instance_me);
-  neighbor->requests[irequest]->pair = 0;
-  neighbor->requests[irequest]->fix = 1;
-  neighbor->requests[irequest]->size = 1;
+  neighbor->add_request(this,NeighConst::REQ_DEFAULT);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -150,61 +146,61 @@ void FixEPSAdhesion::compute()
 	epsi = outer_mass[i];
 
       for (int jj = 0; jj < jnum; jj++) {
-	int j = jlist[jj];
-	double delx = xtmp - x[j][0];
-	double dely = ytmp - x[j][1];
-	double delz = ztmp - x[j][2];
-	double rsq = delx * delx + dely * dely + delz * delz;
+        int j = jlist[jj];
+        double delx = xtmp - x[j][0];
+        double dely = ytmp - x[j][1];
+        double delz = ztmp - x[j][2];
+        double rsq = delx * delx + dely * dely + delz * delz;
 
-	double radj = radius[j];
-	double oradj = outer_radius[j];
+        double radj = radius[j];
+        double oradj = outer_radius[j];
 
-	double epsj = 0;
-	if (mask[j] & epsmask)
-	  epsj = rmass[j];
-	else
-	  epsj = outer_mass[j];
+        double epsj = 0;
+        if (mask[j] & epsmask)
+          epsj = rmass[j];
+        else
+          epsj = outer_mass[j];
 
-	double radsum = radi + radj;
-	double oradsum = oradi + oradj;
-	double masssum = epsi + epsj;
-	double r = sqrt(rsq);
-	// double del = r - radsum;
-	double del = r - 0.5 * (radsum + oradsum);
-	double rinv = 1 / r;
+        double radsum = radi + radj;
+        double oradsum = oradi + oradj;
+        double masssum = epsi + epsj;
+        double r = sqrt(rsq);
+        // double del = r - radsum;
+        double del = r - 0.5 * (radsum + oradsum);
+        double rinv = 1 / r;
 
-	double ccel = 0;
-	if (r > radsum && r < oradsum) {
-	  if (DISP == DEFAULT)
-	    ccel = -masssum * ke * del;
-	  if (DISP == SQUARE)
-	    ccel = -masssum * ke * (radsum / r) * (radsum / r);
-	}
+        double ccel = 0;
+        if (r > radsum && r < oradsum) {
+          if (DISP == DEFAULT)
+            ccel = -masssum * ke * del;
+          if (DISP == SQUARE)
+            ccel = -masssum * ke * (radsum / r) * (radsum / r);
+        }
 
-	double ccelx = delx * ccel * rinv;
-	double ccely = dely * ccel * rinv;
-	double ccelz = delz * ccel * rinv;
+        double ccelx = delx * ccel * rinv;
+        double ccely = dely * ccel * rinv;
+        double ccelz = delz * ccel * rinv;
 
-	f[i][0] += ccelx;
-	f[i][1] += ccely;
-	f[i][2] += ccelz;
+        f[i][0] += ccelx;
+        f[i][1] += ccely;
+        f[i][2] += ccelz;
 
-	if (newton_pair || j < nlocal) {
-	  f[j][0] -= ccelx;
-	  f[j][1] -= ccely;
-	  f[j][2] -= ccelz;
-	}
+        if (newton_pair || j < nlocal) {
+          f[j][0] -= ccelx;
+          f[j][1] -= ccely;
+          f[j][2] -= ccelz;
+        }
 
-	if (evflag) {
-	  double v[6];
-	  v[0] = delx*ccelx;
-	  v[1] = dely*ccely;
-	  v[2] = delz*ccelz;
-	  v[3] = delx*ccely;
-	  v[4] = delx*ccelz;
-	  v[5] = dely*ccelz;
-	  v_tally(i, v);
-	}
+        if (evflag) {
+          double v[6];
+          v[0] = delx*ccelx;
+          v[1] = dely*ccely;
+          v[2] = delz*ccelz;
+          v[3] = delx*ccely;
+          v[4] = delx*ccelz;
+          v[5] = dely*ccelz;
+          v_tally(i, v);
+        }
       }
     }
   }

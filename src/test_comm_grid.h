@@ -10,11 +10,10 @@
 
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
-
 #ifdef INTEGRATE_CLASS
-
+// clang-format off
 IntegrateStyle(test/comm_grid,TestCommGrid)
-
+// clang-format on
 #else
 
 #ifndef LMP_TEST_COMM_GRID_H
@@ -27,11 +26,13 @@ namespace LAMMPS_NS {
 class TestCommGrid : public Integrate {
  public:
   TestCommGrid(class LAMMPS *, int, char **);
-  virtual ~TestCommGrid() {}
-  virtual void init();
-  virtual void setup(int flag);
-  virtual void setup_minimal(int);
-  virtual void run(int);
+  ~TestCommGrid() {}
+  void init() override;
+  void setup(int flag) override;
+  void setup_minimal(int) override;
+  void run(int) override;
+  void force_clear() {};
+  void cleanup() override;
 
  private:
   bool check();

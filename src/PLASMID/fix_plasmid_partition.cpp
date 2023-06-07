@@ -61,6 +61,7 @@ FixPlasmidPartition::FixPlasmidPartition(LAMMPS *lmp, int narg, char **arg) :
   v_fila = 0.026e-6;
   nucleoid_flag = 1;
   fila_max = 0;
+  divflag = -1;
 
   seed = utils::inumeric(FLERR,arg[3],true,lmp);
   // Random number generator, same for all procs
@@ -70,20 +71,23 @@ FixPlasmidPartition::FixPlasmidPartition(LAMMPS *lmp, int narg, char **arg) :
   if (!avec) error->all(FLERR,"fix nufeb/property/plasmid requires "
       "atom style bacillus");
 
-  int ifix, jfix;
+  auto fixlist = modify->get_fix_by_style("^nufeb/property/plasmid");
+  if (fixlist.size() != 1)
+    error->all(FLERR, "There must be exactly one fix nufeb/property/plasmid defined for fix plasmid/replicatio");
+  fix_plm = dynamic_cast<FixPropertyPlasmid *>(fixlist.front());
 
-  ifix = modify->find_fix_by_style("^nufeb/property/plasmid");
-  if (ifix < 0 ) error->all(FLERR,"Illegal nufeb/plasmid/replication command: "
-      "requires fix nufeb/property/plasmid");
-  fix_plm = (FixPropertyPlasmid *) modify->fix[ifix];
+  auto fixlist2 = modify->get_fix_by_style("^nufeb/division/bacillus/minicell");
+  auto fixlist3 = modify->get_fix_by_style("^nufeb/division/bacillus");
 
-  ifix = modify->find_fix_by_style("^nufeb/division/bacillus/minicell");
-  jfix = modify->find_fix_by_style("^nufeb/division/bacillus");
-  if (ifix < 0 && jfix < 0)
-    error->all(FLERR,"fix nufeb/property/plasmid requires "
-	"fix ^nufeb/divide/bacillus/minicell or fix ^nufeb/divide/bacillus");
-  if (ifix>=0) fix_div = (FixDivideBacillusMinicell *) modify->fix[ifix];
-  if (jfix>=0) fix_div = (FixDivideBacillus *) modify->fix[jfix];
+  if (fixlist2.size() != 1 || fixlist3.size() != 1)
+    error->all(FLERR, "There must be exactly one fix nufeb/division/bacillus/* defined for fix plasmid/partition");
+  if (fixlist2.size() == 1) {
+    divflag = 0;
+    fix_div_mini = static_cast<FixDivideBacillusMinicell *>(fixlist2.front());
+  } else if (fixlist3.size() == 1) {
+    fix_div = static_cast<FixDivideBacillus *>(fixlist3.front());
+    divflag = 1;
+  }
 
   int iarg = 4;
   while (iarg < narg) {
@@ -335,7 +339,11 @@ int FixPlasmidPartition::check_nucleoid(int i, int j, double xpm0)
     error->one(FLERR,"Assigning bacillus parameters to non-bacillus atom");
 
   AtomVecBacillus::Bonus *bouns = &avec->bonus[atom->bacillus[i]];
-  double lb = fix_div->maxlength;
+  double lb;
+  if (divflag)
+    lb = fix_div_mini->maxlength;
+  else
+    lb = fix_div->maxlength;
   double l = bouns->length;
   double ln = lb * NUCLEOID_LEN_RATIO;
 

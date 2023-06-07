@@ -16,8 +16,7 @@
 #include "atom.h"
 #include "atom_vec.h"
 #include "atom_vec_body.h"
-// NUFEB
-#include "atom_vec_bacillus.h"
+#include "atom_vec_bacillus.h" // NUFEB specific
 #include "atom_vec_line.h"
 #include "atom_vec_tri.h"
 #include "body.h"
@@ -59,13 +58,12 @@ enum{NO=0,YES=1};
 /* ---------------------------------------------------------------------- */
 
 DumpImage::DumpImage(LAMMPS *lmp, int narg, char **arg) :
-  // NUFEB
   DumpCustom(lmp, narg, arg), thetastr(nullptr), phistr(nullptr), cxstr(nullptr),
   cystr(nullptr), czstr(nullptr), upxstr(nullptr), upystr(nullptr), upzstr(nullptr),
   zoomstr(nullptr), diamtype(nullptr), diamelement(nullptr),
   bdiamtype(nullptr), colortype(nullptr), colorelement(nullptr), bcolortype(nullptr),
   avec_line(nullptr), avec_tri(nullptr), avec_body(nullptr), fixptr(nullptr), image(nullptr),
-  chooseghost(nullptr), bufcopy(nullptr), avec_bacillus(nullptr)
+  chooseghost(nullptr), bufcopy(nullptr), avec_bacillus(nullptr)   // NUFEB specific
 {
   if (binary || multiproc) error->all(FLERR,"Invalid dump image filename");
 
@@ -221,9 +219,9 @@ DumpImage::DumpImage(LAMMPS *lmp, int narg, char **arg) :
       if (strcmp(arg[iarg+1],"type") == 0) bacilluscolor = TYPE;
       else error->all(FLERR,"Illegal dump image command");
       if (strcmp(arg[iarg+2],"plasmid") == 0) {
-	if (strcmp(arg[iarg+3], "yes") == 0) plasmidflag = 1;
-	else if (strcmp(arg[iarg+3], "no") == 0) plasmidflag = 0;
-	else error->all(FLERR,"Illegal dump image command");
+        if (strcmp(arg[iarg+3], "yes") == 0) plasmidflag = 1;
+        else if (strcmp(arg[iarg+3], "no") == 0) plasmidflag = 0;
+        else error->all(FLERR,"Illegal dump image command");
       } else error->all(FLERR,"Illegal dump image command");
       iarg += 4;
     } else if (strcmp(arg[iarg],"fix") == 0) {
@@ -370,7 +368,7 @@ DumpImage::DumpImage(LAMMPS *lmp, int narg, char **arg) :
       error->all(FLERR,"Dump image body yes requires atom style body");
   }
   if (bacillusflag) {
-      avec_body = dynamic_cast<AtomVecBody *>(atom->style_match("bacillus"));
+    avec_body = dynamic_cast<AtomVecBody *>(atom->style_match("bacillus"));
     if (!avec_bacillus)
       error->all(FLERR,"Dump image body yes requires atom style bacillus");
   }
@@ -712,7 +710,7 @@ void DumpImage::create_image()
   tagint tagprev;
   double diameter,delx,dely,delz;
   int *bodyvec,*fixvec;
-  // NUFEB
+  // NUFEB specific
   int bacillusvec;
   double *bacillusarray;
   double **bodyarray,**fixarray;
@@ -836,16 +834,17 @@ void DumpImage::create_image()
       diameter = bonus->diameter;
 
       if (!plasmidflag){
-	if (bonus->length == 0) { // spheres
-	  image->draw_sphere(x[i],color,diameter);
-	} else { // rods
-	  image->draw_cylinder(xp1,xp2,color,diameter,3);
-	}
+        if (bonus->length == 0) { // spheres
+          image->draw_sphere(x[i],color,diameter);
+        } else { // rods
+          image->draw_cylinder(xp1,xp2,color,diameter,3);
+        }
       } else{
-	int ifix = modify->find_fix_by_style("^nufeb/property/plasmid");
-	if (ifix < 0 ) error->all(FLERR,"Illegal dump_modify command: keyword plasmid requires fix nufeb/property/plasmid");
+	auto fixlist = modify->get_fix_by_style("^nufeb/property/plasmid");
+    if (fixlist.size() != 1)
+      error->all(FLERR, "There must be exactly one fix nufeb/property/plasmid defined for fix pour");
 #ifdef LMP_USER_PLASMID
-	FixPropertyPlasmid *fix = (FixPropertyPlasmid *) modify->fix[ifix];
+    auto fix = dynamic_cast<FixPropertyPlasmid *>(fixlist.front());
 
 	double plm_x[3];
 	plm_x[0] = plm_x[1] = plm_x[2] = 0.0;

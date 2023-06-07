@@ -43,18 +43,18 @@ AtomVecCoccus::AtomVecCoccus(LAMMPS *lmp) : AtomVec(lmp)
   // order of fields in a string does not matter
   // except: fields_data_atom & fields_data_vel must match data file
 
-  fields_grow = (char *) "radius rmass omega torque outer_mass outer_radius biomass";
-  fields_copy = (char *) "radius rmass omega outer_mass outer_radius biomass";
-  fields_comm = (char *) "";
-  fields_comm_vel = (char *) "omega";
-  fields_reverse = (char *) "torque";
-  fields_border = (char *) "radius rmass outer_mass outer_radius biomass";
-  fields_border_vel = (char *) "radius rmass omega outer_mass outer_radius biomass";
-  fields_exchange = (char *) "radius rmass omega outer_mass outer_radius biomass";
-  fields_restart = (char *) "radius rmass omega outer_mass outer_radius biomass";
-  fields_create = (char *) "radius rmass omega outer_mass outer_radius biomass";
-  fields_data_atom = (char *) "id type radius rmass x outer_radius";
-  fields_data_vel = (char *) "id v omega";
+  fields_grow = {"radius rmass omega torque outer_mass outer_radius biomass"};
+  fields_copy = {"radius rmass omega outer_mass outer_radius biomass"};
+  fields_comm = {""};
+  fields_comm_vel = {"omega"};
+  fields_reverse = {"torque"};
+  fields_border = {"radius rmass outer_mass outer_radius biomass"};
+  fields_border_vel = {"radius rmass omega outer_mass outer_radius biomass"};
+  fields_exchange = {"radius rmass omega outer_mass outer_radius biomass"};
+  fields_restart = {"radius rmass omega outer_mass outer_radius biomass"};
+  fields_create = {"radius rmass omega outer_mass outer_radius biomass"};
+  fields_data_atom = {"id type radius rmass x outer_radius"};
+  fields_data_vel =  {"id v omega"};
 }
 
 /* ----------------------------------------------------------------------
@@ -77,8 +77,8 @@ void AtomVecCoccus::process_args(int narg, char **arg)
   // dynamic particle properties must be communicated every step
 
   if (radvary) {
-    fields_comm = (char *) "radius rmass outer_mass outer_radius";
-    fields_comm_vel = (char *) "radius rmass omega outer_mass outer_radius";
+    fields_comm = {"radius rmass outer_mass outer_radius"};
+    fields_comm_vel = {"radius rmass omega outer_mass outer_radius"};
   }
 
   // delay setting up of fields until now

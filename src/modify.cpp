@@ -262,6 +262,11 @@ void Modify::init()
   list_init(MIN_POST_FORCE, n_min_post_force, list_min_post_force);
   list_init(MIN_ENERGY, n_min_energy, list_min_energy);
 
+  // two post_force_any counters used by integrators add in post_force_group
+
+  n_post_force_any = n_post_force + n_post_force_group;
+  n_post_force_respa_any = n_post_force_respa + n_post_force_group;
+
   // NUFEB specific
   list_init(BIOLOGY_NUFEB, n_biology_nufeb, list_biology_nufeb);
   list_init(POST_PHYSICS_NUFEB, n_post_physics_nufeb, list_post_physics_nufeb);

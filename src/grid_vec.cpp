@@ -39,9 +39,7 @@ void GridVec::store_args(int narg, char **arg)
   nargcopy = narg;
   argcopy = new char*[nargcopy];
   for (int i = 0; i < nargcopy; i++) {
-    int n = strlen(arg[i]) + 1;
-    argcopy[i] = new char[n];
-    strcpy(argcopy[i],arg[i]);
+    argcopy[i] = utils::strdup(arg[i]);
   }
 }
 

@@ -21,6 +21,7 @@
 #include "dihedral.h"
 #include "domain.h"
 #include "error.h"
+#include "fix.h"
 #include "force.h"
 #include "improper.h"
 #include "kspace.h"

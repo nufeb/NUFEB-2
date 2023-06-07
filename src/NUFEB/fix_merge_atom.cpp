@@ -20,7 +20,6 @@
 #include "error.h"
 #include "neigh_list.h"
 #include "neighbor.h"
-#include "neigh_request.h"
 #include "pair.h"
 #include "update.h"
 #include "memory.h"
@@ -90,10 +89,7 @@ void FixMergeAtom::init_list(int id, NeighList *ptr)
 
 void FixMergeAtom::init()
 {
-  int irequest = neighbor->request(this,instance_me);
-  neighbor->requests[irequest]->pair = 0;
-  neighbor->requests[irequest]->fix  = 1;
-  neighbor->requests[irequest]->size = 1;
+  neighbor->add_request(this,NeighConst::REQ_DEFAULT);
 }
 
 /* ---------------------------------------------------------------------- */

@@ -153,7 +153,7 @@ PACKMOST = \
 	bocs \
 	body \
 	bpm \
-        brownian \
+	brownian \
 	cg-dna \
 	cg-sdk \
 	class2 \
@@ -633,9 +633,6 @@ lib-%:
 	@if [ -e ../lib/$(LIBDIR)/Install.py ]; then \
 	  echo "Installing lib $(@:lib-%=%)"; \
 	  ( cd ../lib/$(LIBDIR); $(PYTHON) Install.py $(args) ); \
-	elif [ -e ../lib/$(LIBUSERDIR)/Install.py ]; then \
-	  echo "Installing lib $(@:lib-user-%=%)"; \
-	  ( cd ../lib/$(LIBUSERDIR); $(PYTHON) Install.py $(args) ); \
 	else \
 	  echo "Install script for lib $(@:lib-%=%) does not exist"; \
 	fi; touch main.cpp

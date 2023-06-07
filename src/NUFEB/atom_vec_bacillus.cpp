@@ -60,18 +60,18 @@ AtomVecBacillus::AtomVecBacillus(LAMMPS *lmp) : AtomVec(lmp)
   // order of fields in a string does not matter
   // except: fields_data_atom & fields_data_vel must match data file
 
-  fields_grow = (char *) "radius rmass angmom torque bacillus biomass";
-  fields_copy = (char *) "radius rmass angmom biomass";
-  fields_comm = (char *) "rmass";
-  fields_comm_vel = (char *) "angmom rmass";
-  fields_reverse = (char *) "torque";
-  fields_border = (char *) "radius rmass biomass";
-  fields_border_vel = (char *) "radius rmass angmom biomass";
-  fields_exchange = (char *) "radius rmass angmom biomass";
-  fields_restart = (char *) "radius rmass angmom biomass";
-  fields_create = (char *) "radius rmass angmom bacillus biomass";
-  fields_data_atom = (char *) "id type bacillus rmass x";
-  fields_data_vel = (char *) "id v angmom";
+  fields_grow = {"radius rmass angmom torque bacillus biomass"};
+  fields_copy = {"radius rmass angmom biomass"};
+  fields_comm = {"rmass"};
+  fields_comm_vel = {"angmom rmass"};
+  fields_reverse = {"torque"};
+  fields_border = {"radius rmass biomass"};
+  fields_border_vel = {"radius rmass angmom biomass"};
+  fields_exchange = {"radius rmass angmom biomass"};
+  fields_restart = {"radius rmass angmom biomass"};
+  fields_create = {"radius rmass angmom bacillus biomass"};
+  fields_data_atom = {"id type bacillus rmass x"};
+  fields_data_vel = {"id v angmom"};
 }
 
 /* ---------------------------------------------------------------------- */
@@ -101,8 +101,8 @@ void AtomVecBacillus::process_args(int narg, char **arg)
   // dynamic particle properties must be communicated every step
 
   if (radvary) {
-    fields_comm = (char *) "radius rmass";
-    fields_comm_vel = (char *) "radius rmass angmom";
+    fields_comm = {"radius rmass"};
+    fields_comm_vel =  {"radius rmass angmom"};
   }
 
   // delay setting up of fields until now

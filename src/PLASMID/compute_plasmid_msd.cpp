@@ -41,10 +41,10 @@ ComputePlasmidMSD::ComputePlasmidMSD(LAMMPS *lmp, int narg, char **arg) :
   if (!avec) error->all(FLERR,"compute nufeb/plasmid/msd requires "
       "atom style bacillus");
 
-  int ifix = modify->find_fix_by_style("^nufeb/property/plasmid");
-  if (ifix < 0 ) error->all(FLERR,"Illegal compute nufeb/plasmid/msd command: "
-      "keyword plasmid requires fix nufeb/property/plasmid");
-  fix_plasmid = (FixPropertyPlasmid *) modify->fix[ifix];
+  auto fixlist = modify->get_fix_by_style("^nufeb/property/plasmid");
+  if (fixlist.size() != 1)
+    error->all(FLERR, "There must be exactly one fix nufeb/property/plasmid defined for compute/plasmid/msd");
+  fix_plasmid = dynamic_cast<FixPropertyPlasmid *>(fixlist.front());
 
   vector_flag = 1;
   size_vector = 4;
