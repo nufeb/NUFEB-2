@@ -52,7 +52,9 @@ Thumbs.db
 .gitmodules
 .project
 
-nufeb_*
+nufeb_mpi
+nufeb_gpu
+nufeb_serial
 lammps_stable_*/
 thirdparty/VTK-8.0.0/
 thirdparty/hdf5-1.10.5/

@@ -59,7 +59,8 @@ ComputeAveGrid::ComputeAveGrid(LAMMPS *lmp, int narg, char **arg) :
   } else if (strcmp(arg[3], "act") == 0) {
     act_flag = 1;
     size_vector = grid->nsubs;
-  }
+  } else
+    error->all(FLERR,"Unknown keyword in compute nufeb/ave_grid");
 
   memory->create(vector,size_vector,"compute:vector");
 }

@@ -23,15 +23,15 @@ Syntax
 * zero or more keyword/value pairs may be appended
 * keyword = *growth* or *yield* or *decay* or *maintain* 
 
-	.. parsed-literal::
-	
-	    *growth* value = maximum growth rate 
-	    *yield* value = yield coefficient
-	    *decay* value = decay rate
-	    *maintain* value = maintenance coefficient
-	    *epsyield* value = yield coefficient for EPS production 
-	    *anoxic* value = reduction factor in anoxic condition
-	    *epsdens* value = EPS density
+.. parsed-literal::
+
+    *growth* value = maximum growth rate
+    *yield* value = yield coefficient
+    *decay* value = decay rate
+    *maintain* value = maintenance coefficient
+    *epsyield* value = yield coefficient for EPS production
+    *anoxic* value = reduction factor in anoxic condition
+    *epsdens* value = EPS density
          
 Examples
 """"""""

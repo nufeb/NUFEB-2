@@ -50,6 +50,7 @@ echo "Installing required packages.."
 
 cd $rootDir/lammps_stable_23Jun2022/src || exit 1
 make yes-nufeb
+make yes-granular
 
 for var in "$@"
 do 

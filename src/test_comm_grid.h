@@ -32,7 +32,7 @@ class TestCommGrid : public Integrate {
   void setup_minimal(int) override;
   void run(int) override;
   void force_clear() {};
-  void cleanup() override;
+  void cleanup() {};
 
  private:
   bool check();

@@ -160,7 +160,7 @@ thermo_modify lost warn
 #---------------------------------Run------------------------------------------#
 
 # issue run command, define timesteps for physical (pairdt) and chemical (diffdt) processes
-run_style nufeb diffdt 1e-4 difftol 1e-6 pairdt 1e-2 pairtol 1 pairmax 1000 diffmax 3000
+run_style nufeb diffdt 1e-4 difftol 1e-6 pairdt 1e-2 pairtol 1 pairmax 1000 diffmax 30
 
 timestep 900                                                  # define biological timesteps (900s)
 

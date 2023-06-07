@@ -786,7 +786,7 @@ void EnergyFileReader::substance_energy()
   char *next;
   char *buf = new char[grid->nsubs * MAXLINE];
 
-  int eof = utils::read_lines_from_file(fp,ngroups,MAXLINE,buf,me,world);
+  int eof = utils::read_lines_from_file(fp,grid->nsubs,MAXLINE,buf,me,world);
   if (eof) error->all(FLERR, "Unexpected end of data file");
 
   sstc_gibbs = memory->create(sstc_gibbs, grid->nsubs, 5, "energy_file_reader:sstc_gibbs");
