@@ -1,6 +1,12 @@
 # Settings that the LAMMPS build will import when this package library is used
-#
-#
-vtk_SYSINC = -I../../../thirdparty/VTK-8.0.0/vtk-build/vtk-8.0/include/vtk-8.0
-vtk_SYSLIB = -lvtksys-8.0 -lvtklz4-8.0 -lvtkzlib-8.0 -lvtkexpat-8.0 -lvtkCommonCore-8.0 -lvtkCommonExecutionModel-8.0 -lvtkCommonMisc-8.0 -lvtkCommonMath-8.0 -lvtkCommonSystem-8.0 -lvtkCommonTransforms-8.0 -lvtkIOCore-8.0 -lvtkIOXML-8.0 -lvtkIOXMLParser-8.0 -lvtkIOLegacy-8.0 -lvtkIOParallelXML-8.0 -lvtkCommonDataModel-8.0 -lvtkParallelCore-8.0 -L../../../thirdparty/VTK-8.0.0/vtk-build/vtk-8.0/lib
-vtk_SYSPATH =
+
+# settings for VTK-5.8.0 on RHEL/CentOS 6.x
+ vtk_SYSINC = -I/usr/include/vtk
+ vtk_SYSLIB = -lvtkCommon -lvtkIO 
+ vtk_SYSPATH = -L/usr/lib64/vtk
+
+# settings for VTK 6.2.0 on Fedora 23
+#vtk_SYSINC = -I/usr/include/vtk
+#vtk_SYSLIB = -lvtkCommonCore -lvtkIOCore -lvtkCommonDataModel -lvtkIOXML -lvtkIOLegacy -lvtkIOParallelXML
+#vtk_SYSPATH = -L/usr/lib64/vtk
+
