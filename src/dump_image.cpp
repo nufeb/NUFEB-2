@@ -368,7 +368,7 @@ DumpImage::DumpImage(LAMMPS *lmp, int narg, char **arg) :
       error->all(FLERR,"Dump image body yes requires atom style body");
   }
   if (bacillusflag) {
-    avec_body = dynamic_cast<AtomVecBody *>(atom->style_match("bacillus"));
+    avec_bacillus = dynamic_cast<AtomVecBacillus *>(atom->style_match("bacillus"));
     if (!avec_bacillus)
       error->all(FLERR,"Dump image body yes requires atom style bacillus");
   }

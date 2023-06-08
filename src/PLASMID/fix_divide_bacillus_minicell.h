@@ -39,7 +39,6 @@ class FixDivideBacillusMinicell : public FixDivide {
   int pack_exchange(int, double *);
   int unpack_exchange(int, double *);
 
-  double maxlength;
   double *birth_length;
 
  private:

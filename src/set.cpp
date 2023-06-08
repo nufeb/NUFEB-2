@@ -584,6 +584,7 @@ void Set::command(int narg, char **arg)
       set(EPSILON);
       iarg += 2;
 
+      // NUFEB specific
     } else if (strcmp(arg[iarg],"outer_mass") == 0) {
       if (iarg+2 > narg) error->all(FLERR,"Illegal set command");
       if (strcmp(arg[iarg+1],"NULL") == 0) dvalue = -1.0;
@@ -884,6 +885,7 @@ void Set::set(int keyword)
   auto avec_line = dynamic_cast<AtomVecLine *>(atom->style_match("line"));
   auto avec_tri = dynamic_cast<AtomVecTri *>(atom->style_match("tri"));
   auto avec_body = dynamic_cast<AtomVecBody *>(atom->style_match("body"));
+  auto avec_bacillus = dynamic_cast<AtomVecBacillus *>(atom->style_match("bacillus"));
 
   int nlocal = atom->nlocal;
   for (int i = 0; i < nlocal; i++) {
@@ -921,10 +923,18 @@ void Set::set(int keyword)
     else if (keyword == MASS) {
       if (dvalue <= 0.0) error->one(FLERR,"Invalid mass in set command");
       atom->rmass[i] = dvalue;
+      // NUFEB specific
+      atom->outer_mass[i] = dvalue;
     }
     else if (keyword == DIAMETER) {
       if (dvalue < 0.0) error->one(FLERR,"Invalid diameter in set command");
       atom->radius[i] = 0.5 * dvalue;
+      // NUFEB specific
+      if (atom->bacillus_flag) {
+        avec_bacillus->set_diameter(i,dvalue);
+      } else if (atom->coccus_flag) {
+        atom->outer_radius[i] = 0.5 * dvalue;
+      }
     }
     else if (keyword == VOLUME) {
       if (dvalue <= 0.0) error->one(FLERR,"Invalid volume in set command");
@@ -1022,6 +1032,15 @@ void Set::set(int keyword)
         double area = 0.5 * MathExtra::len3(norm);
         atom->rmass[i] = area * dvalue;
       } else atom->rmass[i] = dvalue;
+
+      // NUFEB specific
+      if (atom->coccus_flag)
+        atom->outer_mass[i] = atom->rmass[i];
+      if (atom->bacillus_flag){
+        double r = atom->radius[i];
+        atom->rmass[i] = dvalue * (4.0*MY_PI/3.0*r*r*r +
+            MY_PI*r*r*avec_bacillus->bonus[atom->bacillus[i]].length);
+      }
     }
 
     // set dipole moment
@@ -1159,6 +1178,42 @@ void Set::set(int keyword)
       atom->darray[index_custom][i][icol_custom-1] = dvalue;
     }
 
+      // NUFEB specific
+
+    else if (keyword == OUTER_MASS) {
+      if (dvalue <= 0.0) error->one(FLERR,"Invalid outer mass in set command");
+      atom->outer_mass[i] = dvalue;
+    }
+
+    else if (keyword == OUTER_DIAMETER) {
+      if (dvalue <= 0.0) error->one(FLERR,"Invalid outer diameter in set command");
+      atom->outer_radius[i] = 0.5 * dvalue;
+    }
+
+    else if (keyword == BIOMASS) {
+      if (dvalue < 0 || dvalue > 1) error->one(FLERR,"Invalid biomass in set command");
+      if (atom->rmass_flag)
+        atom->biomass[i] = dvalue;
+    }
+
+    else if (keyword == OUTER_DENSITY) {
+      if (dvalue <= 0.0) error->one(FLERR,"Invalid density in set command");
+      if (atom->outer_radius_flag && atom->outer_radius[i] > 0.0)
+        atom->outer_mass[i] = 4.0*MY_PI/3.0 *
+            (atom->outer_radius[i]*atom->outer_radius[i]*atom->outer_radius[i] -
+                atom->radius[i]*atom->radius[i]*atom->radius[i]) * dvalue;
+    }
+
+    else if (keyword == INERTIA_BACCILUS) {
+      avec_bacillus->set_quat(i,ixx,iyy,izz,ixy,ixz,iyz);
+    }
+
+      // set length of line particle
+
+    else if (keyword == LENGTH_BACILLUS) {
+      if (dvalue < 0.0) error->one(FLERR,"Invalid length in set command");
+      if (atom->bacillus_flag) avec_bacillus->set_length(i, dvalue);
+    }
     count++;
   }
 
@@ -1200,6 +1255,7 @@ void Set::setrandom(int keyword)
   auto avec_line = dynamic_cast<AtomVecLine *>(atom->style_match("line"));
   auto avec_tri = dynamic_cast<AtomVecTri *>(atom->style_match("tri"));
   auto avec_body = dynamic_cast<AtomVecBody *>(atom->style_match("body"));
+  auto avec_bacillus = dynamic_cast<AtomVecBacillus *>(atom->style_match("bacillus"));
 
   double **x = atom->x;
   int seed = ivalue;
@@ -1437,6 +1493,17 @@ void Set::setrandom(int keyword)
           error->one(FLERR,"Cannot set theta for atom that is not a line");
         ranpark->reset(seed,x[i]);
         avec_line->bonus[atom->line[i]].theta = MY_2PI*ranpark->uniform();
+        count++;
+      }
+    }
+
+    // NUFEB specific
+  } else if (keyword == POLE_RANDOM) {
+    int nlocal = atom->nlocal;
+    for (i = 0; i < nlocal; i++) {
+      if (select[i]) {
+        ranpark->reset(seed,x[i]);
+        avec_bacillus->set_pole_random(i,poleflag,ranpark->uniform(),ranpark->uniform());
         count++;
       }
     }

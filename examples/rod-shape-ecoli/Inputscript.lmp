@@ -1,0 +1,108 @@
+#-----------------------------------------------------------------------------#
+#                NUFEB Simulation: E.coli (rods) growth                       #
+#-----------------------------------------------------------------------------#
+
+
+#-----------------------------System Settings---------------------------------#
+
+units si                                    # using si units (m, s, kg)
+atom_style      bacillus                    # using nufeb bacillus atom style
+atom_modify     map array sort 10 0         # map array - find atoms using indices
+		                             # sort 10 5.0e-6: sort every 10
+					 
+boundary        pp pp pp                    # periodic boundaries in x, y, z
+                                           
+processors      * * 1                       # processor grid
+
+comm_modify     vel yes                     # communicate velocities for ghost atoms
+
+
+region simu_domain block 0.0 6.6e-5 0.0 6.6e-5 0.0 2e-6 units box
+create_box 1 simu_domain                   # create simulation domain	  
+
+
+#-----------------------------Microbial Atoms---------------------------------#
+
+lattice sc 1e-6 origin 0 0 0
+region reg block 32 33 32 33 0 1
+
+create_atoms 1 random 1 12345 reg     	 # create one ECOLI at the center
+
+set type 1 diameter 0.84313e-6         	 # set atom attribute: rod width
+set type 1 bacillus/length 2.54e-6     	 # distance between two hemispherical caps
+set type 1 density 370
+                   
+set type 1 bacillus/inertia 0 0 9.2e-23 0 0 0  # 6 moments of inertia
+set type 1 bacillus/pole/random xy 2345        # random orientation of rod. parallel to the bottom surface 
+set type 1 z 1e-6                               
+
+group           ECOLI   type 1                 # assign type 1 atoms to ECOLI group
+
+neighbor        6e-6 bin                       # setting neighbour skin distance and style
+
+neigh_modify    check yes                      # rebuild neighbour list if any atom
+                                               # had moved more than half the skin distance
+
+
+#--------------------------Mesh Grid and Substrates--------------------------#
+
+grid_style      nufeb/chemostat 1 sub 2e-6    # define grid sytle, substrate name, and grid size
+
+grid_modify     set sub pp pp nd 10    	# set substrates initial concentration  
+
+
+#--------------------------Biological Processes-------------------------------#
+
+# monod growth model
+fix growth_ecoli ECOLI nufeb/growth/monod sub 4e-04 growth 0.000495006 yield 0.43 
+
+# division length based on normal distribution with mean=5e-6 and sd=1e-6
+# also assume cell length is conserved
+fix div ECOLI nufeb/division/bacillus 5e-6 1234 conserve length normal 1e-6
+
+
+#---------------------------Physical Processes--------------------------------#
+
+variable cutoff     equal 0                         # define pair style
+variable k_n        equal 1e-12
+variable k_na       equal 0
+variable c_n        equal 0
+variable c_t        equal 0
+variable mu         equal 1
+
+
+pair_style bacillus ${c_n} ${c_t} ${mu} ${cutoff}   # pairwise interaction 
+pair_coeff * * ${k_n} ${k_na}
+
+fix nve all nve/bacillus/limit 1e-9                 # NVE integration with maximum 
+                                                    # distance limit
+
+fix vis all viscous 1e-13                           # viscous damping force
+
+
+#--------------------------Computations and Outputs----------------------------#
+
+#shell mkdir png                                    # dump simulation data in png images
+#dump du1 all image 1 png/image*.png type diameter zoom 2 bacillus type plasmid no size 1280 720 view 45 60
+#dump_modify du1 acolor 1 lightgrey                 # set atom color
+
+# output video
+dump du2 all movie 1 movie.avi type diameter zoom 2 bacillus type plasmid no size 1280 720 view 45 60
+dump_modify du2 acolor 1 lightgrey 
+
+
+thermo_style custom step atoms 		      # screen and log outputs
+thermo_modify lost error
+thermo 1
+
+
+#-----------------------------------Run----------------------------------------#
+
+# issue run command, define timesteps for physical (pairdt) and chemical (diffdt) processes
+run_style nufeb diffdt 1e-4 difftol 1e-11 pairdt 1e-3 pairmax 500 pairtol 0 diffmax 100 
+
+timestep 60						# define biological timesteps 
+
+run 150					        # growing biofilm for 150x60s
+
+

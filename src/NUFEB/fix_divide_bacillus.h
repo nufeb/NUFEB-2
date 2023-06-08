@@ -33,6 +33,8 @@ class FixDivideBacillus : public FixDivide {
   
  private:
   int seed;
+  int conserveflag;
+  double var;
 
   class RanPark *random;
   class AtomVecBacillus *avec;

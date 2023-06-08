@@ -66,16 +66,16 @@ FixDivideBacillusMinicell::FixDivideBacillusMinicell(LAMMPS *lmp, int narg, char
   } else if (strcmp(arg[5], "adder") == 0) {
     divflag = ADDER;
   } else {
-    error->all(FLERR, "Illegal fix nufeb/divide/bacillus/minicell command");
+    error->all(FLERR, "Illegal fix nufeb/division/bacillus/minicell command");
   }
 
   maxlength = utils::numeric(FLERR,arg[6],true,lmp);
   if (maxlength <= 0)
-    error->all(FLERR, "Critical division length cannot be negative");
+    error->all(FLERR, "Critical division length cannot be less or equal to 0");
   prob = utils::numeric(FLERR,arg[7],true,lmp);
 
   if (prob < 0 || prob > 1)
-    error->all(FLERR, "ILlegal minicell division probability value");
+    error->all(FLERR, "Illegal minicell division probability value");
   seed = utils::numeric(FLERR,arg[8],true,lmp);
 
   // Random number generator, same for all procs
@@ -88,17 +88,17 @@ FixDivideBacillusMinicell::FixDivideBacillusMinicell(LAMMPS *lmp, int narg, char
     if (strcmp(arg[iarg], "normal") == 0) {
       var = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       iarg += 2;
-    } if (strcmp(arg[iarg], "conserve") == 0) {
+    } else if (strcmp(arg[iarg], "conserve") == 0) {
       if (strcmp(arg[iarg+1], "mass") == 0) {
-	conserveflag = MASS;
+        conserveflag = MASS;
       } else if (strcmp(arg[iarg+1], "length") == 0) {
-	conserveflag = LENGTH;
+        conserveflag = LENGTH;
       } else {
-        error->all(FLERR, "Illegal fix nufeb/divide/bacillus/minicell command");
+        error->all(FLERR, "Illegal fix nufeb/division/bacillus/minicell command");
       }
       iarg += 2;
     } else {
-      error->all(FLERR,"Illegal fix nufeb/divide/bacillus/minicell command");
+      error->all(FLERR,"Illegal fix nufeb/division/bacillus/minicell command");
     }
   }
 
@@ -175,23 +175,23 @@ void FixDivideBacillusMinicell::compute()
       // normal division
       if (prob_mini > prob) {
 
-	// conserve mass
-	if (conserveflag == MASS) {
-	  imass = atom->rmass[i]/2;
-	  ilen = (imass / density - vsphere) / acircle;
-	// conserve length
-	} else {
-	  ilen = old_len/2;
-	  imass = density * (vsphere + acircle*ilen);
-	}
+        // conserve mass
+        if (conserveflag == MASS) {
+          imass = atom->rmass[i]/2;
+          ilen = (imass / density - vsphere) / acircle;
+        // conserve length
+        } else {
+          ilen = old_len/2;
+          imass = density * (vsphere + acircle*ilen);
+        }
 
-	jmass = imass;
+        jmass = imass;
 
-        // update parent
-	double dl = (0.5*ilen + atom->radius[i]) / (0.5*old_len);
-	atom->x[i][0] += (xp1[0] - oldx) * dl;
-	atom->x[i][1] += (xp1[1] - oldy) * dl;
-	atom->x[i][2] += (xp1[2] - oldz) * dl;
+            // update parent
+        double dl = (0.5*ilen + atom->radius[i]) / (0.5*old_len);
+        atom->x[i][0] += (xp1[0] - oldx) * dl;
+        atom->x[i][1] += (xp1[1] - oldy) * dl;
+        atom->x[i][2] += (xp1[2] - oldz) * dl;
 
         atom->rmass[i] = imass;
         birth_length[i] = ilen;
@@ -207,9 +207,9 @@ void FixDivideBacillusMinicell::compute()
         // create child
         double *coord = new double[3];
 
-	coord[0] = oldx + (xp2[0] - oldx) * dl;
-	coord[1] = oldy + (xp2[1] - oldy) * dl;
-	coord[2] = oldz + (xp2[2] - oldz) * dl;
+        coord[0] = oldx + (xp2[0] - oldx) * dl;
+        coord[1] = oldy + (xp2[1] - oldy) * dl;
+        coord[2] = oldz + (xp2[2] - oldz) * dl;
 
         avec->create_atom(atom->type[i], coord);
         j = atom->nlocal - 1;
@@ -222,59 +222,59 @@ void FixDivideBacillusMinicell::compute()
         birth_length[j] = d*2;
         delete[] coord;
       } else {
-	// abnormal division, generate one sphere (j) and one long rod (i)
-	double prob_pole = random->uniform();
+        // abnormal division, generate one sphere (j) and one long rod (i)
+        double prob_pole = random->uniform();
 
-	double *coord = new double[3];
-	double idl, jdl, pole1[3];
+        double *coord = new double[3];
+        double idl, jdl, pole1[3];
 
-	jmass = vsphere * density;
-        imass = atom->rmass[i] - jmass;
+        jmass = vsphere * density;
+            imass = atom->rmass[i] - jmass;
 
-        ilen = (imass / density - vsphere) / acircle;
-        idl = ilen / old_len;
-	jdl = (ilen + 2*atom->radius[i]) / old_len;
+            ilen = (imass / density - vsphere) / acircle;
+            idl = ilen / old_len;
+        jdl = (ilen + 2*atom->radius[i]) / old_len;
 
-	atom->rmass[i] = imass;
-        birth_length[i] = ilen;
-	bonus->length = ilen;
-	bonus->pole1[0] *= ilen / old_len;
-	bonus->pole1[1] *= ilen / old_len;
-	bonus->pole1[2] *= ilen / old_len;
-	bonus->pole2[0] *= ilen / old_len;
-	bonus->pole2[1] *= ilen / old_len;
-	bonus->pole2[2] *= ilen / old_len;
+        atom->rmass[i] = imass;
+            birth_length[i] = ilen;
+        bonus->length = ilen;
+        bonus->pole1[0] *= ilen / old_len;
+        bonus->pole1[1] *= ilen / old_len;
+        bonus->pole1[2] *= ilen / old_len;
+        bonus->pole2[0] *= ilen / old_len;
+        bonus->pole2[1] *= ilen / old_len;
+        bonus->pole2[2] *= ilen / old_len;
 
         if (prob_pole > 0.5) {
-	  // update parent
-	  atom->x[i][0] = xp1[0] + (oldx - xp1[0]) * idl;
-	  atom->x[i][1] = xp1[1] + (oldy - xp1[1]) * idl;
-	  atom->x[i][2] = xp1[2] + (oldz - xp1[2]) * idl;
+          // update parent
+          atom->x[i][0] = xp1[0] + (oldx - xp1[0]) * idl;
+          atom->x[i][1] = xp1[1] + (oldy - xp1[1]) * idl;
+          atom->x[i][2] = xp1[2] + (oldz - xp1[2]) * idl;
 
-	  // create child
-	  coord[0] = oldx + (xp2[0] - oldx) * jdl;
-	  coord[1] = oldy + (xp2[1] - oldy) * jdl;
-	  coord[2] = oldz + (xp2[2] - oldz) * jdl;
-        } else {
-  	  // update parent
-  	  atom->x[i][0] = xp2[0] + (oldx - xp2[0]) * idl;
-  	  atom->x[i][1] = xp2[1] + (oldy - xp2[1]) * idl;
-  	  atom->x[i][2] = xp2[2] + (oldz - xp2[2]) * idl;
+          // create child
+          coord[0] = oldx + (xp2[0] - oldx) * jdl;
+          coord[1] = oldy + (xp2[1] - oldy) * jdl;
+          coord[2] = oldz + (xp2[2] - oldz) * jdl;
+            } else {
+          // update parent
+          atom->x[i][0] = xp2[0] + (oldx - xp2[0]) * idl;
+          atom->x[i][1] = xp2[1] + (oldy - xp2[1]) * idl;
+          atom->x[i][2] = xp2[2] + (oldz - xp2[2]) * idl;
 
-  	  // create child
-  	  coord[0] = oldx + (xp1[0] - oldx) * jdl;
-  	  coord[1] = oldy + (xp1[1] - oldy) * jdl;
-  	  coord[2] = oldz + (xp1[2] - oldz) * jdl;
+          // create child
+          coord[0] = oldx + (xp1[0] - oldx) * jdl;
+          coord[1] = oldy + (xp1[1] - oldy) * jdl;
+          coord[2] = oldz + (xp1[2] - oldz) * jdl;
         }
 
-	avec->create_atom(type, coord);
-	j = atom->nlocal - 1;
-	atom->bacillus[j] = 0;
-	atom->mask[j] = 1 | mini_mask;
-	pole1[0] = pole1[1] = pole1[2] = 0;
-	avec->set_bonus(j, pole1, bonus->diameter, bonus->quat, bonus->inertia);
-	birth_length[j] = 0.0;
-	delete[] coord;
+        avec->create_atom(type, coord);
+        j = atom->nlocal - 1;
+        atom->bacillus[j] = 0;
+        atom->mask[j] = 1 | mini_mask;
+        pole1[0] = pole1[1] = pole1[2] = 0;
+        avec->set_bonus(j, pole1, bonus->diameter, bonus->quat, bonus->inertia);
+        birth_length[j] = 0.0;
+        delete[] coord;
       }
       // set daughter j attributes
       atom->tag[j] = 0;
@@ -327,8 +327,8 @@ void *FixDivideBacillusMinicell::extract(const char *str, int &itype)
   if (strcmp(str,"radius") == 0) {
     for (int i = 0; i < atom->nlocal; i++) {
       if (atom->bacillus[i] >= 0) {
-	double radius = atom->radius[i];
-	if (radius > maxradius) maxradius = radius;
+        double radius = atom->radius[i];
+        if (radius > maxradius) maxradius = radius;
       }
     }
     MPI_Allreduce(MPI_IN_PLACE, &maxradius, 1, MPI_DOUBLE, MPI_MAX, world);

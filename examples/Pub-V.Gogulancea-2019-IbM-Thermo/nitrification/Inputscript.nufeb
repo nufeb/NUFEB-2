@@ -50,7 +50,7 @@ neigh_modify    check yes                  # rebuild neighbour list if any atom
 
 #--------------------------Mesh Grid and Substrates--------------------------#
 
-# defining grid sytle, substrate names, and grid size
+# define grid sytle, substrate names, and grid size
 grid_style      nufeb/chemostat 7 nh3 no2 no3 o2 co2 h2o h 5e-6
 
 
