@@ -25,7 +25,7 @@ read_data       atom.in	                    # read atom.in file which defines do
                                             # and initial atoms	
 
 
-#-----------------------------Microbial Atoms---------------------------------#
+#--------------------Microbes and Functional Groups-------------------------#
 
 group           HET   type 1 2 3 4 5       # assign type 1-5 atoms to HET group
 

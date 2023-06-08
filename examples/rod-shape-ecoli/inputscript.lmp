@@ -21,7 +21,7 @@ region simu_domain block 0.0 6.6e-5 0.0 6.6e-5 0.0 2e-6 units box
 create_box 1 simu_domain                   # create simulation domain	  
 
 
-#-----------------------------Microbial Atoms---------------------------------#
+#--------------------Microbes and Functional Groups-------------------------#
 
 lattice sc 1e-6 origin 0 0 0
 region reg block 32 33 32 33 0 1

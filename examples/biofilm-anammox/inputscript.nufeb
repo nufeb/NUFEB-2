@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------#
-#                NUFEB Simulation: Anammox Biofilm Growth                  #
+#                NUFEB Simulation: Anammox Biofilm Growth                     #
 #-----------------------------------------------------------------------------#
 
 units si                                    # using si units (m, s, kg)
@@ -21,7 +21,8 @@ comm_modify     vel yes                     # communicate velocities for ghost a
 region simu_domain block 0.0 3e-4 0.0 3e-4 0.0 3e-4 units box
 create_box 5 simu_domain                    # create simulation domain
 
-##############Define initial coccus##############
+
+#--------------------Microbes and Functional Groups-------------------------#
 
 lattice sc 1e-5 origin 0 0 0
 region reg block 0 30 0 30 0 1

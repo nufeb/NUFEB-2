@@ -25,7 +25,7 @@ read_data       atom.in	             # read atom.in file which defines domain si
                                             # and initial atoms	
 
 
-#-----------------------------Microbial Atoms---------------------------------#
+#--------------------Microbes and Functional Groups-------------------------#
 
 group           HET   type 1               # assign type 1 atoms to HET group
 group           EPS   type 2               # assign type 2 atoms to EPS group

@@ -25,7 +25,7 @@ read_data       atom.in	                    # read atom.in file which defines do
                                             # and initial atoms
 
 
-#-----------------------------Microbial Atoms---------------------------------#
+#--------------------Microbes and Functional Groups-------------------------#
 
 group           CYANO type 1                # assign type 1 atoms to CYANO group
 group           ECW   type 2                # assign type 2 atoms to ECW group
