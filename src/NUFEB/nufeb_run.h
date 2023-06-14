@@ -36,7 +36,7 @@ class NufebRun : public Integrate {
   virtual void setup_minimal(int);
   virtual void run(int);
   virtual void reset_dt();
-  virtual void cleanup();
+  void cleanup();
 
  protected:
   bool init_diff_flag, info;
