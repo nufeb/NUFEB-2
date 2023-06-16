@@ -10,7 +10,7 @@ NUFEB (Newcastle University Frontier in Engineering Biology)
 is an open source tool for 3D individual-based simulation of microbial communities. 
 The tool is distributed under the terms of the GNU Public License (GPL). 
 
-NUFEB is built on top of the molecular dynamic simulator LAMMPS (version: stable_29Oct2020), 
+NUFEB is built on top of the molecular dynamic simulator LAMMPS (version: stable_23Jun2022),
 and extended with features for microbial modelling. LAMMPS is an open-source code, distributed under the terms of the
 GPL. For more information about LAMMPS look at `LAMMPS homepage <https://lammps.sandia.gov/>`_.
 

@@ -22,7 +22,7 @@ Syntax
 
 * one or more keyword/value pairs may be appended
 * keyword = *x* or *y* or *z* or *diameter* or *density* or *mass* or *outer_mass* or *outer_diameter* or *outer_density* or *biomass* or *bacillus/inertia*
-  or *bacillus/pole/random* or *bacillus/length* or keywords in `set* <https://docs.lammps.org/set.html>`_,
+  or *bacillus/pole/random* or *bacillus/length*
   *type* or *type/fraction* or *type/ratio* or *type/subset*
 
 .. parsed-literal::

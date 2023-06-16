@@ -27,10 +27,10 @@ README                  this file
 LICENSE                 the GNU General Public License (GPL)
 install.sh              script for building NUFEB 
 uninstall.sh            script for uninstalling NUFEB 
-doc                     user manual and other documentation 
+docs                    source of user manual and other documentations 
 examples                test problems and cases used in publications 
 lib                     libraries NUFEB can be linked with 
-lammps_stable_29Oct2020 LAMMPS source code
+lammps_stable_23Jun2022 LAMMPS source code
 src                     source files 
 thirdparty              thirdparty tools
 </pre>
