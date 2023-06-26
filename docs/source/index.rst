@@ -63,7 +63,6 @@ send an email to the developers.
    :maxdepth: 1
    :caption: Command Reference
 
-   list_general
    list_microbe_grid
    list_biology
    list_physics

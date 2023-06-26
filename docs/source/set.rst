@@ -66,7 +66,7 @@ Examples
     Properties for other LAMMPS atom types are detailed in `set* <https://docs.lammps.org/set.html>`_.
 
 Set one or more properties of coccus and bacillus atoms. The command can be useful for overriding the default or initial
-values assigned by the  `create_atom* <https://docs.lammps.org/crete_atom.html>`_, `read_data* <https://docs.lammps.org/read_data.html>`_
+values assigned by the  `create_atom* <https://docs.lammps.org/crete_atom.html>`_, :doc:`read_data <read_data>`
 or `read_restart* <https://docs.lammps.org/read_restart.html>`_ command.
 
 The style *atom* selects all the atoms in a range of atom IDs.
@@ -128,6 +128,11 @@ The length is the distance between the two hemispherical caps (i.e,
 the height of the cylinder).
 
 Keyword *bacillus/inertia* sets the 6 moments of inertia for the atoms defined as :doc:`atom_style bacillus <atom_vec_bacillus>`.
+The values should be consistent with the current orientation of the bacillus around its center of mass.
+The values are with respect to the simulation box XYZ axes,
+not with respect to the principal axes of the particle itself.
+NUFEB performs the latter calculation internally.
+The center-of-mass position of the particle is specified by the x,y,z values above.
 
 Keyword *bacillus/pole/random* sets initial orientation of atoms defined as :doc:`atom_style bacillus <atom_vec_bacillus>`.
 The orientation corresponds to the line segment with respect to one of the 7 directions:

@@ -2,15 +2,15 @@ Commands
 ============
 
 This section lists all NUFEB commands and 
-essential LAMMPS commands (with asterisk `*`) that can be used
-for (individual-based) modelling microbial systems. 
+extended LAMMPS commands (with asterisk `*`) that can be used
+for modelling microbial systems.
 Some commands are part of NUFEB or LAMMPS optional packages,
 which means they cannot be used unless the packages 
 were included when building NUFEB. 
 
  .. note::
  
-	The section only lists the LAMMPS commands which are commonly used for microbial modelling.
+	The section only lists the LAMMPS commands which have been modified or extended for microbial modelling.
 	Many of the commands not listed here are also compatible with NUFEB package and their descriptions
 	are available in `LAMMPS user manual <https://docs.lammps.org/Manual.html>`_.
 
@@ -27,19 +27,7 @@ were included when building NUFEB.
 
 .. _comm:
 
-
-General settings
--------------------------------------------
-
-+--------------------------------------------+-------------------------------------------------------------+
-| `comm_modify* <https://docs.lammps.org/comm_modify.html>`_: settings for inter-processor communication   |
-+--------------------------------------------+-------------------------------------------------------------+
-| `processors* <https://docs.lammps.org/processors.html>`_: parallel decomposition scheme                  |
-+--------------------------------------------+-------------------------------------------------------------+
-| `units* <https://docs.lammps.org/units.html>`_:  style of units (NUFEB supports SI only)                 |
-+--------------------------------------------+-------------------------------------------------------------+
-
-Microbes, substrates and simulation box 
+Microbes and substrates
 -------------------------------------------
 
 +--------------------------------------------+---------------------------------------------------------+
@@ -59,28 +47,11 @@ Microbes, substrates and simulation box
 +----------------------------------------------------+-------------------------------------------------+
 | :doc:`grid_style simple <grid_style_simple>`: simple grid style                                      |
 +--------------------------------------------+---------------------------------------------------------+
-| :doc:`set <set>`: set one or more properties of atoms                                                |
+| :doc:`read_data* <read_data>`: read external data file                                               |
 +--------------------------------------------+---------------------------------------------------------+
-| `atom_modify* <https://docs.lammps.org/atom_modify.html>`_: modify (system) attributes of atoms      |
+| :doc:`set* <set>`: set one or more properties of atoms                                               |
 +----------------------------------------------------+-------------------------------------------------+
-| `boundary* <https://docs.lammps.org/boundary.html>`_: boundaries for simulation box                  | 
-+----------------------------------------------------+-------------------------------------------------+
-| `create_atoms* <https://docs.lammps.org/create_atoms.html>`_: create atoms on a lattice              | 
-+----------------------------------------------------+-------------------------------------------------+
-| `create_box* <https://docs.lammps.org/create_box.html>`_: create a simulation box based on region    | 
-+----------------------------------------------------+-------------------------------------------------+
-| `group* <https://docs.lammps.org/group.html>`_: group a collection of atoms                          | 
-+--------------------------------------------+---------------------------------------------------------+
-| `lattice* <https://docs.lammps.org/lattice.html>`_: define a lattice stucture over simulation box    | 
-+--------------------------------------------+---------------------------------------------------------+
-| `read_data* <https://docs.lammps.org/read_data.html>`_: read external data file                      |
-+----------------------------------------------------+-------------------------------------------------+
-| `region* <https://docs.lammps.org/region.html>`_: defines a geometric region of space                |
-+----------------------------------------------------+-------------------------------------------------+
-| `neighbor* <https://docs.lammps.org/neighbor.html>`_: parameters for neighbor lists                  |
-+----------------------------------------------------+-------------------------------------------------+
-| `neigh_modify* <https://docs.lammps.org/neigh_modify.html>`_: modify parameters for neighbor lists   |
-+----------------------------------------------------+-------------------------------------------------+
+
 
 Biological processes
 -------------------------------------------
