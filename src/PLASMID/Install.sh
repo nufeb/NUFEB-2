@@ -52,7 +52,7 @@ if (test $mode = 1) then
 
   if (test -e ../Makefile.package) then
     sed -i -e 's/[^ \t]*PLASMID[^ \t]* //' ../Makefile.package
-    sed -i -e 's|^PKG_INC =[ \t]*|&-DLMP_USER_PLASMID |' ../Makefile.package
+    sed -i -e 's|^PKG_INC =[ \t]*|&-DLMP_PLASMID |' ../Makefile.package
   fi
 
 elif (test $mode = 0) then

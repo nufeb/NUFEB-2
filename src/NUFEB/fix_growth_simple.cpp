@@ -34,19 +34,13 @@ using namespace MathConst;
 FixGrowthSimple::FixGrowthSimple(LAMMPS *lmp, int narg, char **arg) :
   FixGrowth(lmp, narg, arg)
 {
-  if (narg < 4)
-    error->all(FLERR, "Illegal fix nufeb/growth/monod command");
+  if (narg < 3)
+    error->all(FLERR, "Illegal fix nufeb/growth/simple command");
 
-  isub = -1;
   growth = 0.0;
-
   avec = nullptr;
 
-  isub = grid->find(arg[3]);
-  if (isub < 0)
-    error->all(FLERR, "Can't find substrate name");
-
-  int iarg = 4;
+  int iarg = 3;
   while (iarg < narg) {
     if (strcmp(arg[iarg], "growth") == 0) {
       growth = utils::numeric(FLERR,arg[iarg+1],true,lmp);
@@ -62,10 +56,6 @@ FixGrowthSimple::FixGrowthSimple(LAMMPS *lmp, int narg, char **arg) :
 
 void FixGrowthSimple::update_atoms()
 {
-  double **conc = grid->conc;
-  double **reac = grid->reac;
-  double **dens = grid->dens;
-
   for (int i = 0; i < grid->ncells; i++) {
     grid->growth[igroup][i][0] = growth;
   }

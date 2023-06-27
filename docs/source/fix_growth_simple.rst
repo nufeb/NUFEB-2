@@ -8,11 +8,10 @@ Syntax
 
 .. parsed-literal::
     
-     fix ID group-ID nufeb/growth/simple sub-ID keyword value
+     fix ID group-ID nufeb/growth/simple keyword value
 
 * ID = user-assigned name for the fix
 * group-ID = ID of the group atoms to apply the fix to
-* sub-ID = ID of the substrate for atom growth
 * keyword = *growth* 
 
 	.. parsed-literal::
@@ -25,16 +24,15 @@ Examples
 .. code-block:: 
 
    group bac type 1
-   grid_style nufeb/chemostat 1 glucose 0.001
    
-   fix f_monod bac nufeb/growth/simple glucose growth 4e-4 
+   fix f_simple bac nufeb/growth/simple growth 4e-4
 
 Description
 """""""""""
 
 Perform exponential microbial growth (or decay) to the atoms defined in *group-ID*. 
 The fix is called at each biological step (see :doc:`run_style nufeb <run_style_nufeb>`)
-to update atom and grid attributes.
+to update atom attributes.
 The following forward Euler method is implemented to update the mass (*m*) of each atom in the group:
 
 .. math::

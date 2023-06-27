@@ -33,7 +33,6 @@ class FixGrowthSimple: public FixGrowth {
   virtual void update_cells() {}
 
  protected:
-  int isub;
   double growth;
   
   class AtomVecBacillus *avec;
