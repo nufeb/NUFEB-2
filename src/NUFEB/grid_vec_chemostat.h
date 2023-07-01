@@ -50,7 +50,7 @@ class GridVecChemostat : public GridVec {
   int **boundary;   // boundary conditions (-x, +x, -y, +y, -z, +z)
   double **diff_coeff;
   double *ph;
-  double *act;      // activity of substrate form for microbe uptakingw
+  double *act;      // activity of substrate form for microbe uptake
 };
 
 }

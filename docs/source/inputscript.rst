@@ -75,7 +75,7 @@ Define initial microbes, nutrients (substrates) that can be metabolised by the m
 and simulation box that microbes reside 
 
 Substrates are defined via grid_style command 
-(:doc:`grid_style chemostat <grid_style_chemostat>` or :doc:`grid_style simple <grid_style_simple>`).
+(:doc:`grid_style chemostat <grid_style_chemostat>`).
 There are 3 ways to define simulation box and initial microbes in NUFEB. 
 Read them in from
 (1) a data file via the `read_data* <https://docs.lammps.org/read_data.html>`_ command,

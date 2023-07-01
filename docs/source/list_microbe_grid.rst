@@ -11,6 +11,5 @@ Microbes and substrates
    fix_property_plasmid
    grid_modify
    grid_style_chemostat
-   grid_style_simple
    read_data
    set

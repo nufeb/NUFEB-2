@@ -35,7 +35,7 @@ Description
 """"""""""""""
 
 Set initial values of grid and substrate attributes defined in grid_style commands
-(:doc:`grid_style nufeb/simple <grid_style_simple>` or :doc:`grid_style nufeb/chemostat <grid_style_chemostat>`).
+(:doc:`grid_style nufeb/chemostat <grid_style_chemostat>`).
 
 The keywords *xboundary*, *yboundary* and *zboundary* determine the style of diffusion boundary conditions
 in each dimension of the simulation box. 

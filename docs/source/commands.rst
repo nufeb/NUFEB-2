@@ -39,14 +39,10 @@ Microbes and substrates
 +--------------------------------------------+---------------------------------------------------------+
 | :doc:`fix nufeb/property/generation <fix_property_generation>`: microbe attribute: cell generation   |
 +--------------------------------------------+---------------------------------------------------------+
-| :doc:`fix nufeb/property/plasmid <fix_property_plasmid>`: microbe attribute: plasmid                 |
-+--------------------------------------------+---------------------------------------------------------+
 | :doc:`grid_modify <grid_modify>`: modify grid attributes                                             |
 +----------------------------------------------------+-------------------------------------------------+
 | :doc:`grid_style chemostat <grid_style_chemostat>`: grid style for chemostat coupling                |
 +----------------------------------------------------+-------------------------------------------------+
-| :doc:`grid_style simple <grid_style_simple>`: simple grid style                                      |
-+--------------------------------------------+---------------------------------------------------------+
 | :doc:`read_data* <read_data>`: read external data file                                               |
 +--------------------------------------------+---------------------------------------------------------+
 | :doc:`set* <set>`: set one or more properties of atoms                                               |
@@ -81,19 +77,9 @@ Biological processes
 +--------------------------------------------+-------------------------------------------------------+
 | :doc:`fix nufeb/division/bacillus <fix_divide_bacillus>`: division for bacillus                    |
 +--------------------------------------------+-------------------------------------------------------+
-| :doc:`fix nufeb/division/bacillus/minicell <fix_divide_minicell>`: abnormal bacillus division      |
-+--------------------------------------------+-------------------------------------------------------+
-| :doc:`fix nufeb/eps_extract <fix_eps_extract>`: EPS excretion from heterotroph                     |
+| :doc:`fix nufeb/eps_extract <fix_eps_extract>`: EPS secretion from heterotroph                     |
 +--------------------------------------------+-------------------------------------------------------+
 | :doc:`fix nufeb/death/diameter <fix_death_diameter>`: microbe death (critical diameter)            |
-+--------------------------------------------+-------------------------------------------------------+
-| :doc:`fix nufeb/plasmid/conjugate <fix_plasmid_conjugate>`: conjugation for gram-positive bacteria |
-+--------------------------------------------+-------------------------------------------------------+
-| :doc:`fix nufeb/plasmid/kill <fix_plasmid_kill>`: microbe death (critical # of plasmids)           |
-+--------------------------------------------+-------------------------------------------------------+
-| :doc:`fix nufeb/plasmid/partition <fix_plasmid_partition>`: type II partitioning system            |
-+--------------------------------------------+-------------------------------------------------------+
-| :doc:`fix nufeb/plasmid/replicate <fix_plasmid_replicate>`: mass-based plasmid replication         |
 +--------------------------------------------+-------------------------------------------------------+
 
 
@@ -162,13 +148,6 @@ Computes
 +--------------------------------------------+-----------------------------------------------------------------+
 | :doc:`compute nufeb/volume <compute_volume>`: total microbe volume                                           |
 +--------------------------------------------+-----------------------------------------------------------------+
-| :doc:`compute nufeb/plasmid/ave_copy <compute_ave_copy>`: average plasmid copy number                        |
-+--------------------------------------------+-----------------------------------------------------------------+
-| :doc:`compute nufeb/plasmid/ave_nbirth <compute_plasmid_nbirth>`: average plasmid copy number at cell birth  |
-+--------------------------------------------+-----------------------------------------------------------------+
-| :doc:`compute nufeb/plasmid/copy <compute_plasmid_copy>`: plasmid copy number                                |
-+--------------------------------------------+-----------------------------------------------------------------+
-
 
 Outputs
 -------------------------------------------

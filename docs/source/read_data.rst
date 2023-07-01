@@ -1,6 +1,6 @@
 .. index:: read_data
 
-read_data command
+read_data* command
 ===================
 
 Syntax

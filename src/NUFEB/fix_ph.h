@@ -35,6 +35,8 @@ class FixPH : public Fix {
   virtual void init();
   virtual void compute();
 
+  double *ph, *sh;           // per-grid attributes: pH and H+ concentration
+
  protected:
   double **sstc_gibbs;       // Gibbs energy for the substrate in 5 forms
                              // 0:Non-Hydrated, 1:Hydrated, 2:1st Deprotonation
@@ -54,7 +56,6 @@ class FixPH : public Fix {
 
   double **act;             // activities of chemical forms for microbe uptaking
   double ***act_all;        // activities of 5 substrate forms
-  double *ph, *sh;
 
   void init_keq();
   void compute_ph(int, int);

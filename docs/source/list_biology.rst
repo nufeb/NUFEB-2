@@ -17,10 +17,5 @@ Biological processes
    fix_growth_simple
    fix_divide_coccus
    fix_divide_bacillus
-   fix_divide_minicell
    fix_eps_extract
    fix_death_diameter
-   fix_plasmid_conjugate
-   fix_plasmid_kill
-   fix_plasmid_partition
-   fix_plasmid_replicate

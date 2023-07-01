@@ -43,10 +43,10 @@ The fix implements the model presented in
 It is called at each biological step (see :doc:`run_style nufeb <run_style_nufeb>`)
 to update atom and grid attributes.
 
-In contract to the fix nufeb/monod/* command set, where the growth model of
+In contract to the other fix nufeb/growth/\*, where the growth model of
 each microbial functional group is directly embedded into the source code,
-the fix employs a generalizable framework allows users to create model with customizable
-(thermodynamic) parameters without modifying the underlying code.
+the fix employs a generalisable framework allows users to create model with
+customisable parameters without modifying the underlying code.
 
 The fix requires a separate data *file* containing information about kinetic and thermodynamic
 parameters. The file must be in ASCII text format,
@@ -54,7 +54,7 @@ and the specific format of the data file is detailed in the next section.
 
 .. note::
 
-   The fix is capable of automatic unit conversion as
+   This command is capable of automatic unit conversion as
    some parameters used are in moles (mol).
    However, the molecular weight of each substrate must be provided in :doc:`grid_modify <grid_modify>`
    using the *mw* keyword.
@@ -79,7 +79,7 @@ as well as the standard *Substrate Gibbs Energy* change defined in the data *fil
 
 .. math::
 
-    \Delta G & = \Delta G^{o} + RT ln(Q)
+    \Delta G & = \Delta G^{o} + R \cdot T \cdot ln(Q)
 
 In addition, the catabolic rate :math:`q_{cat}` (mol-eD/mol-X·s),
 maintenance rate :math:`m_{req}` (mol-eD / mol-X·s),
@@ -88,7 +88,7 @@ functional group are calculated as:
 
 .. math::
 
-  & q_{cat} =  q_{max} \frac{S_{sub_i}}{S_{sub_i} + Ks_{sub_i}}
+  & q_{cat} =  q_{max} \cdot \frac{S_{sub_i}}{S_{sub_i} + Ks_{sub_i}}
 
   & m_{req} = -\frac{m_{G}}{\Delta G_{cat}}
 
@@ -112,7 +112,7 @@ limitation, considering three possible scenarios for updating the biomass :math:
     \frac{dm}{dt} & = -D_{decay} \cdot \frac{(m_{req} - q_{cat})}{m_{req}} \cdot Y \cdot m   &  \text{if } q_{cat} < \beta \cdot m_{req}
 
 If :doc:`fix nufeb/diffusion_reaction <fix_diffusion>` is
-applied, the fix also update substrate utilization (reaction) rates R at each affected grid cell using the following
+applied, the fix also update substrate utilisation (reaction) rates R at each affected grid cell using the following
 equations:
 
 .. math::
@@ -224,8 +224,7 @@ The value in this section must be greater than or equal to 0.
          h2o -237.18
 
 Assign substrate Gibbs free energy to each substrate defined in the
-:doc:`grid_style chemostat <grid_style_chemostat>`
-or :doc:`grid_style simple <grid_style_simple>` command.
+:doc:`grid_style chemostat <grid_style_chemostat>` command.
 Substrate lines can come in any order.
 
 ----------
@@ -285,8 +284,7 @@ dissipated for microbial maintenance requirements.
          NOB no2 1.81e-7  o2 6.02e-5
 
 Define half-velocity coefficients (Ks) of each group.
-*sub-i* is the substrate ID defined in :doc:`grid_style chemostat <grid_style_chemostat>`
-or :doc:`grid_style simple <grid_style_simple>` command.
+*sub-i* is the substrate ID defined in :doc:`grid_style chemostat <grid_style_chemostat>`.
 The value in this section must be positive.
 
 ----------
@@ -309,8 +307,7 @@ The value in this section must be positive.
 Define microbial catabolic coefficients of each group.
 The coefficients indicate the stoichiometric relationship between the
 substrates and products in the microbial catabolic reaction.
-*sub-i* is the substrate ID defined in :doc:`grid_style chemostat <grid_style_chemostat>`
-or :doc:`grid_style simple <grid_style_simple>` command.
+*sub-i* is the substrate ID defined in :doc:`grid_style chemostat <grid_style_chemostat>` command.
 
 
 ----------
@@ -333,8 +330,7 @@ or :doc:`grid_style simple <grid_style_simple>` command.
 Define microbial anabolic coefficients of each group.
 The coefficients indicate the stoichiometric relationship between the
 substrates and products in the microbial anabolic reaction.
-*sub-i* is the substrate ID defined in :doc:`grid_style chemostat <grid_style_chemostat>`
-or :doc:`grid_style simple <grid_style_simple>` command.
+*sub-i* is the substrate ID defined in :doc:`grid_style chemostat <grid_style_chemostat>`.
 
 ----------
 
@@ -356,8 +352,7 @@ or :doc:`grid_style simple <grid_style_simple>` command.
 Define microbial decay coefficients of each group.
 The coefficients indicate the relative amount of substrates released to the environment
 during the microbial decay.
-*sub-i* is the substrate ID defined in :doc:`grid_style chemostat <grid_style_chemostat>`
-or :doc:`grid_style simple <grid_style_simple>` command.
+*sub-i* is the substrate ID defined in :doc:`grid_style chemostat <grid_style_chemostat>`.
 
 ----------
 

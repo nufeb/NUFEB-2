@@ -37,40 +37,43 @@ Examples
 
 Description
 """""""""""
-Perform microbial growth (or decay) to the atoms defined in *group-ID*. The fix is called at each biological step (see :doc:`run_style nufeb <run_style_nufeb>`)
+Impose a Monod-like growth process to the atoms defined in *group-ID*. The fix is called at each biological step (see :doc:`run_style nufeb <run_style_nufeb>`)
 to update atom and grid attributes.
+The value of the substrate ID keyword *sub-ID* must be consistent with the name defined in the
+:doc:`grid_style chemostat <grid_style_chemostat>` command.
 The following forward Euler method is implemented to update the mass (*m*) of each atom in the group:
 
 .. math::
 
-  m'= m + \mu \Delta t
+  m'= m + \mu \cdot \Delta t
   
 The specific growth rate :math:`\mu` is calculated based on the Monod equation:
 
 .. math::
 
-  \mu = \mu_{max} \frac{S_{sub}}{S_{sub} + Ks_{sub}} - b_{decay}
+  \mu = \mu_{max} \cdot \frac{S_{sub}}{S_{sub} + Ks_{sub}} - b_{decay}
   
 where:
 
-* :math:`\mu_{max}` is the maximum growth rate of the atoms (*growth*)
+* :math:`\mu_{max}` is the maximum growth rate (*growth*)
 * :math:`S_{sub}` is the local substrate concentration at the grid cell in which atom resides
 * :math:`Ks_{sub}` is the half-velocity constant for the substrate (*sub-Ks*)
-* :math:`b_{decay}` is the decay rate of the atoms (*decay*)
+* :math:`b_{decay}` is the decay rate (*decay*)
 
-The new mass is then used to update other atom attributes. For a coccus-style atom,
-its diameter changes accordingly. For a bacillus-style atom, the update is along
-the length of the atom while the variations in its width (diameter) are negligible.
+The new mass is then used to update atom attributes. In the case of
+:doc:`atom_style coccus <atom_vec_coccus>` is used,
+the diameter changes accordingly.
+For :doc:`atom_style bacillus <atom_vec_bacillus>`,
+update affects the length of the bacilli.
 
 If :doc:`fix nufeb/diffusion_reaction <fix_diffusion>` is
-applied, the fix also update substrate utilization (reaction) rate in all the affected grid cells. 
-The rate is related to the specific growth rate as follows:
+applied, the fix also update substrate utilisation (reaction) rate R in all the affected grid cells:
 
 .. math::
 
-  r = \frac{1}{Y} \mu X
+  R = \frac{1}{Y} \cdot \mu \cdot X
   
 where:
 
-* :math:`Y` is the yield coefficient of the atoms (*yield*)
-* :math:`X` is the biomass density in grid cell 
+* :math:`Y` is the yield coefficient (*yield*)
+* :math:`X` is the biomass density of the affected atoms in grid cell

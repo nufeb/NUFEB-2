@@ -35,6 +35,10 @@ The substrate names are used as references by other commands.
 For example, in order to use :doc:`fix nufeb/growth/aob <fix_growth_aob>` command,
 three substrates must be defined in the grid_style to represent ammonium, oxygen and nitrite.
 
+.. figure:: images/grid_mesh.png
+            :figwidth: 50%
+            :align: right
+
 A mesh is a set cubic grids in space that is replicated infinitely in all dimensions.
 The *scale* parameter defines grid length, 
 which must be consistent with the dimension of orthogonal simulation box to ensure 

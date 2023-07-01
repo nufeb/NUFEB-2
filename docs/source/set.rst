@@ -1,6 +1,6 @@
 .. index:: set
 
-set command
+set* command
 =============
 
 Syntax
