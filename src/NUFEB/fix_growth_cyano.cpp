@@ -57,8 +57,6 @@ FixGrowthCyano::FixGrowthCyano(LAMMPS *lmp, int narg, char **arg) :
   decay = 0.0;
   suc_exp = 0.0;
 
-  gco2_flag = 0;
-
   ilight = grid->find(arg[3]);
   if (ilight < 0)
     error->all(FLERR, "Can't find substrate(light) name");
@@ -102,9 +100,6 @@ FixGrowthCyano::FixGrowthCyano(LAMMPS *lmp, int narg, char **arg) :
     } else if (strcmp(arg[iarg], "suc_exp") == 0) {
       suc_exp = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       iarg += 2;
-    } else if (strcmp(arg[iarg], "gco2_flag") == 0) {
-      gco2_flag = utils::inumeric(FLERR,arg[iarg+1],true,lmp);
-      iarg += 2;
     } else {
       error->all(FLERR, "Illegal fix nufeb/growth/cyano command");
     }
@@ -124,8 +119,7 @@ void FixGrowthCyano::update_cells()
       // cyanobacterial growth rate based on light(sub) and co2
       double tmp1 = growth * conc[ilight][i] / (light_affinity + conc[ilight][i]) * conc[ico2][i] / (co2_affinity + conc[ico2][i]);
       // sucrose export-induced growth reduction
-      double tmp2 = 0.2 * tmp1 * suc_exp;
-      double tmp3 = 4 * tmp1 * suc_exp;
+      double tmp3 = tmp1 * (-3.4897 * exp(-suc_exp/0.048) + 3.4092);
 
       // nutrient utilization
       reac[ilight][i] -= 1 / yield * (tmp1 + tmp3) * dens[igroup][i];
@@ -135,9 +129,6 @@ void FixGrowthCyano::update_cells()
       reac[io2][i] +=  (0.727 / yield) * (tmp1 + tmp3) * dens[igroup][i];
       // sucrose export
       reac[isuc][i] += 0.65 / yield * tmp3 * dens[igroup][i];
-      // co2 dissolution
-      if (gco2_flag == 1)
-        reac[ico2][i] += (4.4e-6 * conc[igco2][i]) - (4.4e-6 * conc[ico2][i]);
     }
   }
 }
@@ -152,10 +143,11 @@ void FixGrowthCyano::update_atoms()
     // cyanobacterial growth rate based on light(sub) and co2
     double tmp1 = growth * conc[ilight][i] / (light_affinity + conc[ilight][i]) * conc[ico2][i] / (co2_affinity + conc[ico2][i]);
     // sucrose export-induced growth reduction
-    double tmp2 = 0.2 * tmp1 * suc_exp;
-    double tmp3 = 4 * tmp1 * suc_exp;
+    double tmp2 = tmp1 * (0.141 * exp(-suc_exp/0.063) + 0.9);
 
-    grid->growth[igroup][i][0] = tmp1 - tmp2 - decay - maintain;
+    // double tmp3 = 4 * tmp1 * suc_exp;
+
+    grid->growth[igroup][i][0] = tmp2 - decay - maintain;
   }
 
   if (atom->coccus_flag) {

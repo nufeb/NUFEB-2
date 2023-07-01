@@ -47,7 +47,6 @@ class FixGrowthCyano: public FixGrowth {
   double maintain;
   double decay;
   double suc_exp;
-  double gco2_flag;
   
   class AtomVecBacillus *avec;
 };
