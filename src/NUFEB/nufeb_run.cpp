@@ -152,7 +152,7 @@ void NufebRun::init()
 
   // allocate space for storing fix diffusion
   fix_diffusion = new FixDiffusionReaction*[modify->nfix];
-  
+
   for (int i = 0; i < modify->nfix; i++) {
     // find nufeb fixes
     if (strstr(modify->fix[i]->style, "nufeb/diffusion_reaction")) {
@@ -177,7 +177,7 @@ void NufebRun::init()
   modify->add_compute(3, volarg, 1);
   delete [] volarg;
   comp_volume = (ComputeVolume *)modify->compute[modify->ncompute-1];
-  
+
   // create compute pressure
   char **pressarg = new char*[6];
   pressarg[0] = (char *)"nufeb_pressure";
@@ -459,6 +459,11 @@ void NufebRun::run(int n)
       timer->stamp(Timer::OUTPUT);
     }
   }
+
+  modify->delete_compute("nufeb_pressure");
+  modify->delete_compute("nufeb_volume");
+  modify->delete_fix ("nufeb_density");
+  modify->delete_compute ("nufeb_ke");
 }
 
 /* ---------------------------------------------------------------------- */

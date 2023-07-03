@@ -8,7 +8,7 @@
 units si                                    # using si units (m, s, kg)
 atom_style      coccus                      # using nufeb coccus atom style
 atom_modify     map array sort 10 0         # map array - find atoms using indices
-		                            # sort 10 5.0e-6: sort every 10
+		                            # sort every 10
 
 boundary        pp pp ff                    # periodic boundaries in x and y
                                             # fixed boundary in z

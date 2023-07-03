@@ -1,7 +1,35 @@
+#!/bin/bash
+
+#-------------------------------------------------------------------------------------------
+# This script will download, configure, build and install sediFoam
+#-------------------------------------------------------------------------------------------
+
 cd ${0%/*} || exit 1 # Run from this directory
 
+# Read the information of current directory.
+# And collect information of the installation of LAMMPS from user.
+echo "Installing SediFOAM (for mac/linux).."
+
+echo "*******************************************"
+echo "select the system you are running, then press enter"
+echo "  1) Ubuntu14.x - Ubuntu16.x"
+echo "  2) Ubuntu17.x - Ubuntu18.x" 
+echo "  3) Centos"
+echo "  4) Mac" 
+echo "*******************************************"
+read n
+
+case $n in
+  1) echo "You chose 1) Ubuntu14.x - Ubuntu16.x";;
+  2) echo "You chose 2) Ubuntu17.x - Ubuntu20.x";;
+  3) echo "You chose 3) Centos";;
+  4) echo "You chose 4) Mac";;
+  5) echo "You chose 5) Other";;
+  *) echo "Unknown option"; exit;;
+esac
+
 sedi_dir="sediFoam"
-sedi_url="https://github.com/xiaoh/sediFoam/tarball/master"
+sedi_url="https://github.com/nufeb/sediFoam/tarball/master"
 
 download_source() {
 
@@ -10,27 +38,22 @@ download_source() {
   echo "Downloading and extracting $sedi_dir"
   wget -O - $sedi_url | tar xvz
 
-  mv xiaoh-sediFoam* sediFoam
+  mv nufeb-sediFoam* sediFoam
 }
 
 download_source
 
-sedifoam_dir=$PWD/sediFoam
-cd .. || exit 1
-nufeb_dir=$PWD
-lammps_dir=$PWD/lammps_stable_23Jun2022
+sedifoam_dir=$(readlink -f sediFoam)
+nufeb_dir=$(readlink -f ..)
+lammps_dir=$nufeb_dir/lammps_stable_23Jun2022
 lammps_src=$lammps_dir/src
 
-echo "Directory of LAMMPS is: " $lammpsDir
+echo "Directory of LAMMPS is: " $lammps_src
 
 echo "Copying packages to LAMMPS.."
-echo $lammps_src/
 cp -rf $sedifoam_dir/interfaceToLammps/* $lammps_src/
-echo $sedifoam_dir/interfaceToLammps/
-cp -rf $nufeb_dir/src/* $lammps_src/
-cp -rf $nufeb_dir/lib/* $lammps_src/lib/
 
-# Make STUBS
+# Make STUBS 
 cd $lammps_src/STUBS || exit 1
 make
 cd $lammps_src || exit 1
@@ -41,14 +64,37 @@ make yes-NUFEB
 make yes-COLLOID
 make yes-SEDIFOAM
 
-#make -j4 shanghailinux mode=shared
-cd $FOAM_USER_LIBBIN || exit 1
-ln -sf $lammps_dir/src/liblammps_shanghailinux.so .
-cd $sedifoam_dir/lammpsFoam || exit 1
-touch Make/options
-echo "LAMMPS_DIR ="$lammps_sir > Make/options
+# Use different options according to different versions
+if [ $n == 4 ]
+then 
+    make -j4 shanghaimac mode=shlib
+    cd $FOAM_LIBBIN || exit 1
+    ln -sf $lammps_dir/src/liblammps_shanghaimac.so .
+    cd $sedifoam_dir/lammpsFoam || exit 1
+    touch Make/options
+    echo "LAMMPS_DIR ="$lammps_src > Make/options
+    cat Make/options-mac-openmpi >> Make/options
+else
+    make -j4 shanghailinux mode=shlib
+    cd $FOAM_LIBBIN || exit 1
+    ln -sf $lammps_dir/src/liblammps_shanghailinux.so .
+    cd $sedifoam_dir/lammpsFoam || exit 1
+    touch Make/options
+    echo "LAMMPS_DIR ="$lammps_src > Make/options
 
-wmake libso dragModels
-wmake libso chPressureGrad
+    if [ $n == 1 ] 
+    then 
+	cat Make/options-ubuntu16-openmpi >> Make/options
+    elif [ $n == 2 ] 
+    then 
+	cat Make/options-ubuntu18-openmpi >> Make/options
+    elif [ $n == 3 ] 
+    then 
+	cat Make/options-linux-openmpi >> Make/options
+    fi
+fi 
+
+wmake libso dragModels 
+wmake libso chPressureGrad 
 wmake libso lammpsFoamTurbulenceModels
-wmake
+wmake 

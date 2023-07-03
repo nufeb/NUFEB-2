@@ -1,0 +1,72 @@
+#-----------------------------------------------------------------------------#
+#                NUFEB Simulation: Biofilm Deformation and Detachment         #
+#-----------------------------------------------------------------------------#
+
+
+#-----------------------------System Settings---------------------------------#
+
+units si                                    # using si units (m, s, kg)
+atom_style      coccus                      # using nufeb coccus atom style
+atom_modify     map array sort 10 0         # map array - find atoms using indices
+		                            # sort every 10
+
+processors      4 1 1                       # processor grid
+
+comm_modify     vel yes                     # communicate velocities for ghost atoms
+
+read_restart    restart.data                # read restart file generated from ../c1-growth-restart
+
+timestep 1e-8                                # define physical timesteps (1e-8s)
+  
+reset_timestep 0
+
+#--------------------Microbes and Functional Groups-------------------------#
+
+group           HET   type 1                # assign type 1 atoms to HET group
+group           EPS   type 2                # assign type 2 atoms to EPS group
+
+
+region bed block 0 EDGE 0 EDGE 0 2e-6 units box               # define biofilm bed region 
+region keep block 0 99.5e-6 0.5e-6 39.5e-6 0 EDGE units box   # define keep region
+
+group gbed region bed                       # assign all atoms in bed region to gbed group
+group gkeep region keep                     # assign all atoms in del region to gbed group
+
+group gbiofilm subtract all gbed            # assign atoms not in bed region to gbiofilm group
+group gdel     subtract all gkeep           # assign atoms not in keep region to gdel group
+ 
+delete_atoms group gdel                     # delete atoms in gdel group
+
+velocity all set 0.0 0.0 0.0                # initialise velocity
+
+set type 1 diameter 0.8e-6                  # set uniform diameter and mass 
+set type 1 mass 2.68083e-16                 
+                                            
+set type 2 diameter 0.8e-6                 
+set type 2 mass 2.68083e-16                 
+                                            
+
+neighbor        5e-7 bin                    # setting neighbour skin distance and style
+                                        
+neigh_modify    check yes                   # rebuild neighbour list if any atom
+                                            # had moved more than half the skin distance
+        
+
+#---------------------------Physical Processes--------------------------------#
+
+pair_style  gran/hooke/history 1 NULL 1e6 NULL 0.0 1   # pairwise interaction between atoms
+pair_coeff  * *
+
+fix 1 gbiofilm nve/sphere                              # NVE integration for sphere
+
+fix fco all cohesive 1e-16 1 1e-8 1e-6 1               # cohesive force
+
+fix fd all fdrag 1000                                  # drag force
+
+#--------------------------Computations and Outputs----------------------------#
+ 
+thermo_style    custom step cpu atoms                  # screen and log outputs
+thermo		100
+thermo_modify	lost error                             # ignore lost atoms
+
+
