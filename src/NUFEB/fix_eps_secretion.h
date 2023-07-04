@@ -13,21 +13,21 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/eps_extract,FixEPSExtract)
+FixStyle(nufeb/eps_secretion,FixEPSSecretion)
 
 #else
 
-#ifndef LMP_FIX_EPS_EXTRACT_H
-#define LMP_FIX_EPS_EXTRACT_H
+#ifndef LMP_FIX_EPS_SECRETION_H
+#define LMP_FIX_EPS_SECRETION_H
 
 #include "fix.h"
 
 namespace LAMMPS_NS {
 
-class FixEPSExtract : public Fix {
+class FixEPSSecretion : public Fix {
  public:
-  FixEPSExtract(class LAMMPS *, int, char **);
-  virtual ~FixEPSExtract();
+  FixEPSSecretion(class LAMMPS *, int, char **);
+  virtual ~FixEPSSecretion();
 
   int setmask();
   int modify_param(int, char **);

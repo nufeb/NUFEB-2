@@ -77,7 +77,7 @@ Biological processes
 +--------------------------------------------+-------------------------------------------------------+
 | :doc:`fix nufeb/division/bacillus <fix_divide_bacillus>`: division for bacillus                    |
 +--------------------------------------------+-------------------------------------------------------+
-| :doc:`fix nufeb/eps_extract <fix_eps_extract>`: EPS secretion from heterotroph                     |
+| :doc:`fix nufeb/eps_secretion <fix_eps_secretion>`: EPS secretion from heterotroph                 |
 +--------------------------------------------+-------------------------------------------------------+
 | :doc:`fix nufeb/death/diameter <fix_death_diameter>`: microbe death (critical diameter)            |
 +--------------------------------------------+-------------------------------------------------------+

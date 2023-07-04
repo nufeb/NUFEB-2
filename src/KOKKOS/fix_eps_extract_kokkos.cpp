@@ -33,7 +33,7 @@ using namespace FixConst;
 
 template <class DeviceType>
 FixEPSExtractKokkos<DeviceType>::FixEPSExtractKokkos(LAMMPS *lmp, int narg, char **arg) :
-  FixEPSExtract(lmp, narg, arg),rand_pool(seed + comm->me)
+  FixEPSSecretion(lmp, narg, arg), rand_pool(seed + comm->me)
 {
   kokkosable = 1;
   atomKK = (AtomKokkos *) atom;

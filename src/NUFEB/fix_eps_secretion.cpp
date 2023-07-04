@@ -14,7 +14,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include "fix_eps_extract.h"
+#include "fix_eps_secretion.h"
 #include "atom.h"
 #include "atom_vec.h"
 #include "error.h"
@@ -34,7 +34,7 @@ using namespace MathConst;
 
 /* ---------------------------------------------------------------------- */
 
-FixEPSExtract::FixEPSExtract(LAMMPS *lmp, int narg, char **arg) :
+FixEPSSecretion::FixEPSSecretion(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
   if (narg < 8)
@@ -56,14 +56,14 @@ FixEPSExtract::FixEPSExtract(LAMMPS *lmp, int narg, char **arg) :
 
 /* ---------------------------------------------------------------------- */
 
-FixEPSExtract::~FixEPSExtract()
+FixEPSSecretion::~FixEPSSecretion()
 {
   delete random;
 }
 
 /* ---------------------------------------------------------------------- */
 
-int FixEPSExtract::setmask()
+int FixEPSSecretion::setmask()
 {
   int mask = 0;
   mask |= BIOLOGY_NUFEB;
@@ -73,7 +73,7 @@ int FixEPSExtract::setmask()
 
 /* ---------------------------------------------------------------------- */
 
-int FixEPSExtract::modify_param(int narg, char **arg)
+int FixEPSSecretion::modify_param(int narg, char **arg)
 {
   int iarg = 0;
   while (iarg < narg) {
@@ -90,7 +90,7 @@ int FixEPSExtract::modify_param(int narg, char **arg)
 
 /* ---------------------------------------------------------------------- */
 
-void FixEPSExtract::biology_nufeb()
+void FixEPSSecretion::biology_nufeb()
 {
   if (update->ntimestep % nevery) return;
   compute();
@@ -100,7 +100,7 @@ void FixEPSExtract::biology_nufeb()
 
 /* ---------------------------------------------------------------------- */
 
-void FixEPSExtract::post_neighbor()
+void FixEPSSecretion::post_neighbor()
 {
   // reset reneighbor flag
   next_reneighbor = 0;
@@ -108,7 +108,7 @@ void FixEPSExtract::post_neighbor()
 
 /* ---------------------------------------------------------------------- */
 
-void FixEPSExtract::compute()
+void FixEPSSecretion::compute()
 {
   int nlocal = atom->nlocal;
   int eps_mask = group->bitmask[ieps];

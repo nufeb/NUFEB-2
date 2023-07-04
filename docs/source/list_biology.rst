@@ -17,5 +17,5 @@ Biological processes
    fix_growth_simple
    fix_divide_coccus
    fix_divide_bacillus
-   fix_eps_extract
+   fix_eps_secretion
    fix_death_diameter

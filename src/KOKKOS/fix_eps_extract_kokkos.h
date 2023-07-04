@@ -32,7 +32,7 @@ namespace LAMMPS_NS {
 struct FixEPSExtractComputeTag {};
   
 template <class DeviceType>
-class FixEPSExtractKokkos : public FixEPSExtract {
+class FixEPSExtractKokkos : public FixEPSSecretion {
  public:
   FixEPSExtractKokkos(class LAMMPS *, int, char **);
   ~FixEPSExtractKokkos();
