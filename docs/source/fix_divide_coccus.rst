@@ -24,8 +24,9 @@ Syntax
 Examples
 """"""""
 
-
 .. code-block::
+
+   #--- examples/biofilm-heterotroph ---#
 
     fix f_div all nufeb/division/coccus 1.36e-6 1234
 
@@ -33,7 +34,7 @@ Examples
 Description
 """"""""""""""
 
-Perform microbial division to the atoms defined in *group-ID*.
+Perform microbial division to the coccus style atoms (:doc:`atom_style coccus <atom_vec_coccus>`) defined in *group-ID*.
 Division occurs when the diameter reaches the
 threshold *diameter* value. The cell then divides into two
 daughter cells. The total mass of the two daughter cells is always conserved from the

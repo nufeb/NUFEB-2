@@ -30,7 +30,9 @@ Syntax
 Examples
 """"""""
 
-.. code-block:: 
+.. code-block::
+
+   #--- examples/biofilm-anammox ---#
 
    group nob type 1
    grid_style nufeb/chemostat 3 o2 no2 no3 4e-6

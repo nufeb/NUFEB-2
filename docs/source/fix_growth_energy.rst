@@ -29,6 +29,8 @@ Examples
 
 .. code-block::
 
+   #--- examples/Pub-V.Gogulancea-2019-IbM-Thermo ---#
+
    group AOB type 1
    group NOB type 2
 

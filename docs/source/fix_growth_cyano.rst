@@ -36,6 +36,8 @@ Examples
 
 .. code-block::
 
+   #--- examples/Pub-J.Sakkos-2023-Phototroph ---#
+
    group ecoli type 1
    grid_style nufeb/chemostat 3 suc o2 co2 4e-6
 

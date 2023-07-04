@@ -21,7 +21,7 @@ read n
 
 case $n in
   1) echo "You chose 1) Ubuntu14.x - Ubuntu16.x";;
-  2) echo "You chose 2) Ubuntu17.x - Ubuntu20.x";;
+  2) echo "You chose 2) Ubuntu17.x - Ubuntu18.x";;
   3) echo "You chose 3) Centos";;
   4) echo "You chose 4) Mac";;
   *) echo "Unknown option"; exit;;

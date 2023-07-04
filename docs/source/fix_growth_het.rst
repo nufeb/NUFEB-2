@@ -36,7 +36,9 @@ Syntax
 Examples
 """"""""
 
-.. code-block:: 
+.. code-block::
+
+   #--- examples/biofilm-heterotroph ---#
 
    group het type 1
    grid_style nufeb/chemostat 4 sub o2 no2 no3 4e-6

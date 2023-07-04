@@ -35,6 +35,8 @@ Examples
 
 .. code-block:: 
 
+   #--- examples/biofilm-anammox ---#
+
    group ana type 1
    grid_style nufeb/chemostat 5 nh4 o2 no2 no3 n2 4e-6
    
