@@ -100,13 +100,13 @@ void AtomVecCoccus::init()
       if (fix->diamflag && radvary == 0)
         error->all(FLERR,"Fix adapt changes particle radii "
                    "but atom_style coccus is not dynamic");
-    } else if (strcmp(modify->fix[i]->style,"nufeb/monod") == 0) {
+    } else if (strcmp(modify->fix[i]->style,"nufeb/growth") == 0) {
 	if (radvary == 0)
-	  error->all(FLERR,"Fix nufeb/monod changes particle radii "
+	  error->all(FLERR,"Fix nufeb/growth changes particle radii "
 		     "but atom_style coccus is not dynamic");
-    } else if (strcmp(modify->fix[i]->style,"nufeb/divide") == 0) {
+    } else if (strcmp(modify->fix[i]->style,"nufeb/division/coccus") == 0) {
 	if (radvary == 0)
-	  error->all(FLERR,"Fix nufeb/divide changes particle radii "
+	  error->all(FLERR,"Fix nufeb/division/coccus changes particle radii "
 		     "but atom_style coccus is not dynamic");
     }
 }
