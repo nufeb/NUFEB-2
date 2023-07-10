@@ -198,5 +198,4 @@ void AtomVecCoccus::pack_data_post(int ilocal)
   radius[ilocal] = radius_one;
   rmass[ilocal] = rmass_one;
   outer_radius[ilocal] = outer_radius_one;
-  biomass[ilocal] = 1.0;
 }

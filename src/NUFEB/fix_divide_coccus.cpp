@@ -38,6 +38,9 @@ using namespace MathConst;
 FixDivideCoccus::FixDivideCoccus(LAMMPS *lmp, int narg, char **arg) :
   FixDivide(lmp, narg, arg)
 {
+  if (!atom->coccus_flag)
+    error->all(FLERR, "fix nufeb/division/coccus requires coccus atom style");
+
   if (narg < 5)
     error->all(FLERR, "Illegal fix nufeb/division/coccus command");
 

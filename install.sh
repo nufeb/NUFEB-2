@@ -5,16 +5,16 @@ set -euo pipefail
 cd ${0%/*} || exit 1 # Run from this directory
 
 echo "Installing NUFEB.."
-rootDir=$PWD
+root_dir=$PWD
 
 #### Copy package and lib files to LAMMPS directory #####
 echo "Copying packages to LAMMPS.."
-cp -rpf $rootDir/src/* $rootDir/lammps_stable_23Jun2022/src/
-cp -rpf $rootDir/lib/* $rootDir/lammps_stable_23Jun2022/lib/
+cp -rpf $root_dir/src/* $root_dir/lammps_stable_23Jun2022/src/
+cp -rpf $root_dir/lib/* $root_dir/lammps_stable_23Jun2022/lib/
 
 echo "Configuring Makefile.lammps.."
 
-cd $rootDir/lammps_stable_23Jun2022/lib/nufeb || exit 1 
+cd $root_dir/lammps_stable_23Jun2022/lib/nufeb || exit 1
 cp Makefile.lammps_core Makefile.lammps
 
 declare -i vtk_hdf=0
@@ -40,39 +40,38 @@ do
     fi
 done
 
-if [ $vtk_hdf = 2 ]; then
-echo $PWD
-    cp Makefile.lammps_hdf5_vtk8.0 Makefile.lammps
+if [ $vtk_hdf -eq 2 ]; then
+  cp Makefile.lammps_hdf5_vtk8.0 Makefile.lammps
 fi
 
 #### Build LAMMPS with NUFEB and user defined packages#####
 echo "Installing required packages.."
 
-cd $rootDir/lammps_stable_23Jun2022/src || exit 1
+cd $root_dir/lammps_stable_23Jun2022/src || exit 1
 make yes-nufeb
 make yes-granular
 
 for var in "$@"
 do 
-    if [ $var == "--enable-vtk" ]; then
-	make yes-vtk
-    elif [ $var == "--enable-hdf5" ]; then
-	make yes-hdf5
-    elif [ $var == "--enable-misc" ]; then
-	make yes-misc
-    elif [ $var == "--enable-plasmid" ]; then
-	make yes-plasmid
-    elif [ $var == "--gpu" ]; then
-	make yes-kokkos
-    fi
+  if [ $var == "--enable-vtk" ]; then
+    make yes-vtk
+  elif [ $var == "--enable-hdf5" ]; then
+    make yes-hdf5
+  elif [ $var == "--enable-misc" ]; then
+    make yes-misc
+  elif [ $var == "--enable-plasmid" ]; then
+    make yes-plasmid
+  elif [ $var == "--gpu" ]; then
+    make yes-kokkos
+  fi
 done
 
 #### Write path to .bashrc#####
-#if grep -q  "export PATH=\$PATH:$rootDir" ~/.bashrc; then
+#if grep -q  "export PATH=\$PATH:$root_dir" ~/.bashrc; then
 #   echo -n
 #else
 #   echo "Writing NUFEB root path to .bashrc"
-#   echo "export PATH=\$PATH:$rootDir" >> ~/.bashrc
+#   echo "export PATH=\$PATH:$root_dir" >> ~/.bashrc
 #fi
 
 
@@ -84,7 +83,7 @@ do
         make
         cd .. || exit 1;
         make -j4 serial
-        mv lmp_serial $rootDir/nufeb_serial
+        mv lmp_serial $root_dir/nufeb_serial
         exit 1
     elif [ $var == "--static" ]; then   
         make -j4 mpi mode=lib
@@ -94,12 +93,12 @@ do
         exit 1
     elif [ $var == "--gpu" ]; then   
         make -j4 kokkos_cuda_mpi
-        mv lmp_kokkos_cuda_mpi $rootDir/nufeb_gpu
+        mv lmp_kokkos_cuda_mpi $root_dir/nufeb_gpu
         exit 1 
    fi
 done
 
 make -j4 mpi
-mv lmp_mpi $rootDir/nufeb_mpi
+mv lmp_mpi $root_dir/nufeb_mpi
 exit 1
 
