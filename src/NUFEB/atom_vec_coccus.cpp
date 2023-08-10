@@ -45,7 +45,6 @@ AtomVecCoccus::AtomVecCoccus(LAMMPS *lmp) : AtomVec(lmp)
 
   fields_grow = {"radius", "rmass", "omega", "torque", "outer_mass", "outer_radius", "biomass"};
   fields_copy = {"radius", "rmass", "omega", "outer_mass", "outer_radius", "biomass"};
-  fields_comm = {""};
   fields_comm_vel = {"omega"};
   fields_reverse = {"torque"};
   fields_border = {"radius", "rmass", "outer_mass", "outer_radius", "biomass"};
@@ -94,21 +93,22 @@ void AtomVecCoccus::init()
 
   // check if optional radvary setting should have been set to 1
 
-  for (int i = 0; i < modify->nfix; i++)
-    if (strcmp(modify->fix[i]->style,"adapt") == 0) {
+  for (int i = 0; i < modify->nfix; i++) {
+    if (strcmp(modify->fix[i]->style, "adapt") == 0) {
       FixAdapt *fix = (FixAdapt *) modify->fix[i];
       if (fix->diamflag && radvary == 0)
-        error->all(FLERR,"Fix adapt changes particle radii "
-                   "but atom_style coccus is not dynamic");
-    } else if (strcmp(modify->fix[i]->style,"nufeb/growth") == 0) {
-	if (radvary == 0)
-	  error->all(FLERR,"Fix nufeb/growth changes particle radii "
-		     "but atom_style coccus is not dynamic");
-    } else if (strcmp(modify->fix[i]->style,"nufeb/division/coccus") == 0) {
-	if (radvary == 0)
-	  error->all(FLERR,"Fix nufeb/division/coccus changes particle radii "
-		     "but atom_style coccus is not dynamic");
+        error->all(FLERR, "Fix adapt changes particle radii "
+                          "but atom_style coccus is not dynamic");
+    } else if (strcmp(modify->fix[i]->style, "nufeb/growth") == 0) {
+      if (radvary == 0)
+        error->all(FLERR, "Fix nufeb/growth changes particle radii "
+                          "but atom_style coccus is not dynamic");
+    } else if (strcmp(modify->fix[i]->style, "nufeb/division/coccus") == 0) {
+      if (radvary == 0)
+        error->all(FLERR, "Fix nufeb/division/coccus changes particle radii "
+                          "but atom_style coccus is not dynamic");
     }
+  }
 }
 
 /* ----------------------------------------------------------------------

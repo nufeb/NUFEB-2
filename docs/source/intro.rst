@@ -20,12 +20,11 @@ What is NUFEB
 ----------------
 
 NUFEB is an open-source individual based model tool
-for simulating the 3D dynamics of microbial communities at the micro-scale.
-
-NUFEB is built on top of the state-of-the-art molecular dynamic simulator LAMMPS,
-extended with extended with features for microbial modelling.
-As a result, NUFEB has the realistic explicit models of biological, chemical and
-physical processes, including individual microbes in different shapes. 
+for simulating the 3D dynamics of cell populations at the micro-scale.
+The tool is built on top of the molecular dynamic simulator LAMMPS,
+extended with features for biological system modelling.
+NUFEB offers the realistic explicit models of biological, chemical and
+physical processes, as well as individual cell in different shapes.
 
 NUFEB takes full advantage of the LAMMPS parallel infrastructure,
 allowing for massive parallel simulations on both CPU- and GPU-based parallel computers. 
@@ -37,7 +36,7 @@ What is Individual-based Model
 
 Individual-based Model (IbM) is a computational model for 
 simulating the actions and interactions of autonomous individuals,
-which, in our case, are the microbes.
+which, in our case, are the cells.
 
 IbMs precisely capture how the heterogeneity of 
 individual organisms and local interactions influence emergent behaviours, 
@@ -46,7 +45,7 @@ such as bacterial colony morphology.
 In IbM, microbes are represented as rigid particles, 
 each with their own set of biological and physical properties. 
 These properties are affected by internal or external processes, 
-resulting in microbial growth, decay, motility, etc. 
+resulting in cell growth, decay, motility, etc.
 
 NUFEB general features
 ------------------------
@@ -67,13 +66,12 @@ NUFEB general features
 NUFEB model features
 ------------------------
 
-* spherical microbe representation
-* rod-shaped microbe representation
-* flexible definition of microbe distributions
+* spherical, rod, and ellipsoid cell representations
+* flexible definition of cell distributions
 * 3d computational domain
 * continuous field for solute or gas distribution
 * biological processes (growth, division, plasmid replication, etc)
-* chemical processes (nutrient diffusion, gas-liquid transfer, etc)
+* chemical processes (nutrient diffusion, pH, energy, etc)
 * DEM-based physical processes (repulsive force, adhesion, etc)
 * OpenFOAM integration for simulating fluid dynamics (CFD-DEM coupling)
 

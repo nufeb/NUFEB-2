@@ -1,7 +1,7 @@
 Install NUFEB on Linux & Mac
 ================================
 
-This section describes how to install NUFEB (version 2) on Linux and Mac OS. 
+This section describes how to install NUFEB-2 on Linux and Mac OS.
 
 .. contents:: 
 		:local:
@@ -60,7 +60,7 @@ Use GIT checkout and update commands to get the NUFEB files once and then stay c
 To do this, use the clone command to create a local copy of NUFEB Github repository:
 
  .. parsed-literal::
-   git clone --recursive https://github.com/nufeb/NUFEB-2.git
+   git clone https://github.com/nufeb/NUFEB-2.git
    
 Once the command completes, a new directory named "NUFEB-2" will be 
 created on your machine which contains the latest NUFEB source code, examples, 

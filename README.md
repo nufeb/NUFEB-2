@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="https://github.com/nufeb/NUFEB-dev/blob/master/docs/source/images/log.png" | width=500/>
+  <img src="https://github.com/nufeb/NUFEB-2/blob/master/docs/source/images/log.png" | width=500/>
 </p>
 
-<h1 align="center">NUFEB: Agent-based Simulator for Microbial System Modelling</h1>
+<h1 align="center">NUFEB: Agent-based Simulator for Modelling Cell Populations</h1>
 
 
-This is the NUFEB development repository.
+This is the NUFEB repository.
 
 NUFEB (Newcastle University Frontier in Engineering Biology) is an open source tool for 3D agent-based simulation of microbial systems.
 The tool is built on top of the molecular dynamic simulator [LAMMPS](https://lammps.sandia.gov), and extended with features for microbial modelling. 
@@ -57,7 +57,7 @@ Follow the [tutorial](https://nufeb.readthedocs.io/en/master/install_win.html) t
 ### Getting source
 Get NUFEB source code:
 <pre>
-git clone https://github.com/nufeb/NUFEB-dev
+git clone https://github.com/nufeb/NUFEB-2
 </pre>
 
 ### Building
