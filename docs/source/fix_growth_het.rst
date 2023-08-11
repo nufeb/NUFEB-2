@@ -40,16 +40,16 @@ Examples
 
    #--- examples/biofilm-heterotroph ---#
 
-   group het type 1
+   group HET type 1
    grid_style nufeb/chemostat 4 sub o2 no2 no3 4e-6
    
-   fix f_ghet het nufeb/growth/het sub 4e-3 o2 2e-4 no2 3e-4 no3 3e-4 growth 6.9e-5 yield 0.61
-   
-   fix f_ghet het nufeb/growth/het sub 4e-3 o2 2e-4 no2 3e-4 no3 3e-4 & 
-   growth 6.9e-5 yield 0.61 epsyield 0.18 epsdens 30
-      
-   fix f_ghet het nufeb/growth/het sub 4e-3 o2 2e-4 no2 3e-4 no3 3e-4 & 
-   growth 6.9e-5 yield 0.61 decay 9.2e-7 maintain 3.7e-6 epsyield 0.18 anoxic 0.6 epsdens 30
+   fix f_ghet HET nufeb/growth/het sub 4e-3 o2 2e-4 no2 3e-4 no3 3e-4 growth 6.9e-5 yield 0.61
+
+
+   #--- examples/biofilm-anammox ---#
+
+   fix growth_het HET nufeb/growth/het sub 4e-3 o2 2e-4 no2 0.5e-3 no3 0.5e-3 &
+   growth 6.9444e-5 yield 0.63 maintain 4.63e-6 decay 9.17e-7 anoxic 0.8
    
    
 Description
