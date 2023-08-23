@@ -18,6 +18,7 @@
 #include "atom.h"
 #include "memory.h"
 #include "error.h"
+#include "group.h"
 
 using namespace LAMMPS_NS;
 using namespace FixConst;
@@ -63,11 +64,14 @@ void FixPropertyGeneration::set_arrays(int j)
 
 /* ----------------------------------------------------------------------
    update array values of two daughter cells i, j
-   called in fix_divide
+   called from fix_divide
 ------------------------------------------------------------------------- */
 void FixPropertyGeneration::update_arrays(int i, int j)
 {
-  vprop[j] = vprop[i] + 1;
+  if (atom->mask[i] & groupbit)
+    vprop[i]++;
+  if (atom->mask[j] & groupbit)
+    vprop[j] = vprop[i];
 }
 
 
