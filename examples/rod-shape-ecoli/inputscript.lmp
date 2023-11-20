@@ -90,6 +90,14 @@ fix vis all viscous 1e-13                           # viscous damping force
 dump du2 all movie 1 movie.avi type diameter zoom 2 bacillus type plasmid no size 1280 720 view 45 60
 dump_modify du2 acolor 1 lightgrey 
 
+# for OVITA visualisation
+compute         quat all property/atom quati quatj quatk quatw 
+compute         shape all property/atom radius length
+
+dump            d0 all custom 1 dump.bacillus id type x y z  c_quat[1] c_quat[2] c_quat[3] c_quat[4] c_shape[1] c_shape[2]  
+dump_modify 	d0 colname c_quat[1] quati colname c_quat[2] quatj colname c_quat[3] quatk colname c_quat[4] quatw
+dump_modify     d0 colname c_shape[1] shapex colname c_shape[2] shapez
+
 
 thermo_style custom step atoms 		      # screen and log outputs
 thermo_modify lost error
