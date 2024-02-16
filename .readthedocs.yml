@@ -10,6 +10,8 @@ build:
   os: ubuntu-22.04
   tools:
     python: "latest"
+  commands:
+    - pip install sphinx-rtd-theme
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
