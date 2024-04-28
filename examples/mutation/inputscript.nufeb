@@ -1,0 +1,115 @@
+#-----------------------------------------------------------------------------#
+#                NUFEB Simulation: Heterotrophic Biofilm Growth               #
+#-----------------------------------------------------------------------------#
+
+
+#-----------------------------System Settings---------------------------------#
+
+units si                                    # using si units (m, s, kg)
+atom_style      coccus                      # using nufeb coccus atom style
+atom_modify     map array sort 10 0         # map array - find atoms using indices
+		                            # sort every 10
+
+boundary        pp pp ff                    # periodic boundaries in x and y
+                                            # fixed boundary in z
+
+newton          off                         # forces between local and ghost
+                                            # atoms are computed in each
+					     # processor without communication
+					     
+processors      * * 1                       # processor grid
+
+comm_modify     vel yes                     # communicate velocities for ghost atoms
+
+read_data       atom.in	             # read atom.in file which defines domain size
+                                            # and initial atoms	
+
+
+#--------------------Microbes and Functional Groups-------------------------#
+
+group           MUTA   type 1               # assign type 1 atoms to MUTA group
+group           MUTB   type 2               # assign type 2 atoms to MUTB group
+
+neighbor        5e-7 bin                   # setting neighbour skin distance and style
+
+neigh_modify    check yes                  # rebuild neighbour list if any atom
+                                           # had moved more than half the skin distance
+
+
+#--------------------------Mesh Grid and Substrates--------------------------#
+
+# defining grid sytle, substrate names, and grid size
+grid_style      nufeb/chemostat 2 sub inh 4e-6  
+
+# set diffusion boundary conditions and initial concentrations (liquid:kg/m3)
+grid_modify     set sub  pp pp nd  1e-4  
+grid_modify     set inh   pp pp nd  1e-4 
+
+
+#--------------------------Biological Processes-------------------------------#
+
+# mutant_a growth
+fix f1 MUTA mutation/growth/mutant sub 1e-5 inh &
+growth 0.0001 gamma 0.1 ic50 0.1 nl 0.1
+
+# mutant_b growth
+fix f2 MUTB mutation/growth/mutant sub 2e-5 inh &
+growth 0.0002 gamma 0.2 ic50 0.2 nl 0.2  
+
+# mutate from MUTA to MUTB
+fix f3 MUTA mutation/mutate MUTB 0.5 2024
+
+# mutant division, division diameter: 1.36e-6
+fix div all nufeb/division/coccus 1.36e-6 2025
+
+#---------------------------Physical Processes--------------------------------#
+
+pair_style  gran/hooke/history 1e-4 NULL 1e-5 NULL 0.0 0    # pairwise interaction
+pair_coeff  * *                                             # between atoms
+
+# pairwise interaction between z-wall and atoms
+fix wall all wall/gran hooke/history 1e-3 NULL 1e-4 NULL 0 0 zplane 0.0 1e-04
+
+fix vis all viscous 1e-5                                    # viscous damping force
+
+fix nve all nve/limit 1e-7                                  # NVE integration with 
+                                                            # maximum distance limit       
+
+
+#---------------------------Chemical Processes---------------------------------#
+
+fix diff_sub all nufeb/diffusion_reaction sub 1.6e-9        # diffusion reaction for updating
+                                                            # distribusion of substrate concentration
+
+
+#--------------------------Computations and Outputs----------------------------#
+
+variable mass equal "mass(all)"                             # total mass
+variable nmuta equal "count(MUTA)"                            # total # of HET
+variable nmutb equal "count(MUTB)"                            # total # of EPS
+
+#shell mkdir vtk                                            # dump vtk files to /vtk folder
+#dump du1 all vtk 10 vtk/dump*.vtu id type diameter         # require build NUFEB with vtk option
+#dump du2 all grid/vtk 10 vtk/dump_%_*.vti con rea den gro
+
+
+dump du3 all movie 10 movie.avi type diameter view 80 60    # dump video
+dump_modify du3 acolor 1 blue acolor 2 lightgrey framerate 10
+
+
+                                                            # dump hdf5 files to /hdf5 folder
+#shell mkdir hdf5                                           # require build NUFEB with hdf5 option
+#dump du3 all nufeb/hdf5 10 dump.h5 id type x y z vx vy vz fx fy fz radius conc reac 
+
+thermo_style custom step cpu atoms v_nmuta v_nmutb v_mass     # screen and log outputs
+thermo 1
+
+#-----------------------------------Run----------------------------------------#
+
+# issue run command, define timesteps for physical (pairdt) and chemical (diffdt) processes
+run_style nufeb diffdt 1e-4 difftol 1e-6 pairdt 1e-2 pairtol 1 pairmax 1000 diffmax 5000
+
+timestep 1000                                               # define biological timesteps (1000s)
+
+run 900                                                    # growing biofilm for 900x1000s
+
