@@ -30,8 +30,8 @@ FixPropertyAncestor::FixPropertyAncestor(LAMMPS *lmp, int narg, char **arg) :
   if (narg < 3) error->all(FLERR,"Illegal fix property/nufeb/ancestor command");
 
   create_attribute = 1;
-  // use vprop if size_peratom_cols = 0
-  size_peratom_cols = 0;
+  // use vprop if size_peratom_cols = 1
+  size_peratom_cols = 1;
   grow_arrays(atom->nmax);
 }
 

@@ -79,7 +79,7 @@ int FixProperty::modify_param(int narg, char **arg)
 double FixProperty::memory_usage()
 {
   double bytes;
-  if (size_peratom_cols > 0)
+  if (size_peratom_cols > 1)
     bytes = atom->nmax*size_peratom_cols*sizeof(double);
   else
     bytes = atom->nmax*sizeof(double);
@@ -93,7 +93,7 @@ double FixProperty::memory_usage()
 
 void FixProperty::grow_arrays(int nmax)
 {
-  if (size_peratom_cols > 0) {
+  if (size_peratom_cols > 1) {
     memory->grow(aprop,nmax,size_peratom_cols,"fix_property:array");
     array_atom = aprop;
   } else {
@@ -108,7 +108,7 @@ void FixProperty::grow_arrays(int nmax)
 
 void FixProperty::copy_arrays(int i, int j, int /*delflag*/)
 {
-  if (size_peratom_cols > 0) {
+  if (size_peratom_cols > 1) {
     for (int m = 0; m < size_peratom_cols; m++)
       aprop[j][m] = aprop[i][m];
   } else {
@@ -122,7 +122,7 @@ void FixProperty::copy_arrays(int i, int j, int /*delflag*/)
 
 int FixProperty::pack_exchange(int i, double *buf)
 {
-  if (size_peratom_cols > 0) {
+  if (size_peratom_cols > 1) {
     for (int m = 0; m < size_peratom_cols; m++)
       buf[m] = aprop[i][m];
   } else {
@@ -137,7 +137,7 @@ int FixProperty::pack_exchange(int i, double *buf)
 
 int FixProperty::unpack_exchange(int nlocal, double *buf)
 {
-  if (size_peratom_cols > 0) {
+  if (size_peratom_cols > 1) {
     for (int m = 0; m < size_peratom_cols; m++)
       aprop[nlocal][m] = buf[m];
   } else {
@@ -153,7 +153,7 @@ int FixProperty::unpack_exchange(int nlocal, double *buf)
 int FixProperty::pack_restart(int i, double *buf)
 {
   buf[0] = size_peratom_cols + 1;
-  if (size_peratom_cols > 0) {
+  if (size_peratom_cols > 1) {
     for (int m = 0; m < size_peratom_cols; m++)
       buf[m+1] = aprop[i][m];
   } else {
@@ -174,9 +174,9 @@ void FixProperty::unpack_restart(int nlocal, int nth)
   int m = 0;
   for (int i = 0; i < nth; i++) m += static_cast<int> (extra[nlocal][m]);
   m++;
-  if (size_peratom_cols > 0) {
+  if (size_peratom_cols > 1) {
     for (int i = 0; i < size_peratom_cols; i++)
-      aprop[nlocal][i] = extra[nlocal][m];
+      aprop[nlocal][i] = extra[nlocal][m++];
   } else {
     vprop[nlocal] = extra[nlocal][m];
   }

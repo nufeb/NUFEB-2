@@ -78,7 +78,7 @@ FixPropertyPlasmid::FixPropertyPlasmid(LAMMPS *lmp, int narg, char **arg) :
   if (plm_init > plm_max) error->all(FLERR,"Illegal fix nufeb/property/plasmid command: "
       "initial plasmid cannot be more than maximum plasmid number");
 
-  size_peratom_cols = 0;
+  size_peratom_cols = 1;
   fila_max = plm_max * (plm_max - 1) / 2;
 
   grow_arrays(atom->nmax);

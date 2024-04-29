@@ -31,8 +31,8 @@ FixPropertyGeneration::FixPropertyGeneration(LAMMPS *lmp, int narg, char **arg) 
   if (narg < 3) error->all(FLERR,"Illegal fix nufeb/property/generation command");
 
   create_attribute = 1;
-  // use vprop if size_peratom_cols = 0
-  size_peratom_cols = 0;
+  // use vprop if size_peratom_cols = 1
+  size_peratom_cols = 1;
   grow_arrays(atom->nmax);
 }
 
@@ -68,9 +68,7 @@ void FixPropertyGeneration::set_arrays(int j)
 ------------------------------------------------------------------------- */
 void FixPropertyGeneration::update_arrays(int i, int j)
 {
-  if (atom->mask[i] & groupbit)
     vprop[i]++;
-  if (atom->mask[j] & groupbit)
     vprop[j] = vprop[i];
 }
 
