@@ -124,8 +124,7 @@ will allow NUFEB simulation to output both vtk and hdf5 data formats.
 
 When the installation finished, you should have an executable ``nufeb_mpi`` or
 ``nufeb_serial`` or ``nufeb_gpu`` in 
-``NUFEB-2`` directory deponeding on configuration. The path to the executable 
-will be automatically added to the system (.bashrc).
+``NUFEB-2`` directory deponeding on configuration.
 
  .. note::
    For convenience, the executables built from install.sh are limited to mpi, gpu (cuda + mpi), and serial versions.
