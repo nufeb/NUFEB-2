@@ -94,7 +94,7 @@ void FixMutate::compute()
     if (mask[i] & groupbit) {
       if (random->uniform() < prob) {
         mask[i] = imutant;
-      }MUT
+      }
     }
   }
 }
