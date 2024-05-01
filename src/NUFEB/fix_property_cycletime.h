@@ -25,17 +25,27 @@ FixStyle(nufeb/property/cycletime,FixPropertyCycletime)
 namespace LAMMPS_NS {
 
 class FixPropertyCycletime : public FixProperty {
- public:
+public:
 
   FixPropertyCycletime(class LAMMPS *, int, char **);
   virtual ~FixPropertyCycletime() {};
 
-  void init();
   int setmask();
   void biology_nufeb();
   void set_arrays(int);
   void update_arrays(int, int);
   double compute_scalar();
+
+//  int pack_restart(int, double *);
+//  void unpack_restart(int, int);
+//  int size_restart(int);
+//  int maxsize_restart();
+
+protected:
+  int seed, ran_flag;
+  double max_time;
+
+  class RanPark *random;
 };
 
 }

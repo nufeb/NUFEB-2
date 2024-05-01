@@ -141,6 +141,7 @@ PACKAGE = \
 	phonon \
 	nufeb \
 	hdf5 \
+	mutation \
 	plasmid # NUFEB-specific
 
 # NOTE: the last four packages must remain at the end since
@@ -204,6 +205,7 @@ PACKMOST = \
 	phonon \
 	nufeb \
 	hdf5 \
+	mutation \
 	plasmid
 
 # NOTE ^^^^^: the last three packages must remain at the end since

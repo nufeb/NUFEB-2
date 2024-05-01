@@ -108,7 +108,7 @@ void FixDivideBacillus::compute()
         double imass, jmass;
         double ilen, xp1[3], xp2[3];
 
-    //	double phiz = random->uniform() * 2e-8;
+    	// double phiz = random->uniform() * 2e-8;
 
         double vsphere = four_thirds_pi * atom->radius[i]*atom->radius[i]*atom->radius[i];
         double acircle = MY_PI*atom->radius[i]*atom->radius[i];
