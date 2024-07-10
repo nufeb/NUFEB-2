@@ -28,17 +28,15 @@ class FixMutate : public Fix {
  public:
   FixMutate(class LAMMPS *, int, char **);
   ~FixMutate() {}
-  int modify_param(int, char **);
 
   void init() {}
   int setmask();
-  void biology_nufeb();
-  void compute();
+  void update_arrays(int, int);
 
  private:
   class RanPark *random;
 
-  int imutant;  // group index of target species
+  int imutant, itype;  // group index of target species
   double prob;  // mutation probability
   int seed;     // random seed
 };

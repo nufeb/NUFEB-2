@@ -30,7 +30,7 @@ using namespace FixConst;
 FixMutate::FixMutate(LAMMPS *lmp, int narg, char **arg) :
     Fix(lmp, narg, arg)
 {
-  if (narg < 6)
+  if (narg < 7)
     error->all(FLERR, "Illegal fix mutation/mutate command");
 
   imutant = group->find(arg[3]);
@@ -38,11 +38,15 @@ FixMutate::FixMutate(LAMMPS *lmp, int narg, char **arg) :
     error->all(FLERR, "Can't find group in fix mutation/mutate");
   imutant = 1 | group->bitmask[imutant];
 
-  prob = utils::numeric(FLERR,arg[4],true,lmp);
-  if (prob > 1 || prob < 0)
-    error->all(FLERR, "Illegal fix mutation/mutate command");
+  itype = utils::inumeric(FLERR,arg[4],true,lmp);
+  if (itype > atom->ntypes || itype < 1)
+    error->all(FLERR, "Illegal fix mutation/mutate command: itype");
 
-  seed = utils::inumeric(FLERR,arg[5],true,lmp);
+  prob = utils::numeric(FLERR,arg[5],true,lmp);
+  if (prob > 1 || prob < 0)
+    error->all(FLERR, "Illegal fix mutation/mutate command: prob");
+
+  seed = utils::inumeric(FLERR,arg[6],true,lmp);
   if (seed < 0)
     error->all(FLERR, "Illegal fix mutation/mutate command");
 
@@ -59,42 +63,22 @@ int FixMutate::setmask()
   return mask;
 }
 
-/* ---------------------------------------------------------------------- */
-
-int FixMutate::modify_param(int narg, char **arg)
-{
-  int iarg = 0;
-  while (iarg < narg) {
-    if (strcmp(arg[iarg], "nevery") == 0) {
-      nevery = utils::inumeric(FLERR,arg[iarg+1],false,lmp);
-      if (nevery <= 0) error->all(FLERR,"Illegal fix_modify command");
-      iarg += 2;
-    } else {
-      error->all(FLERR, "Illegal fix_modify command");
-    }
-  }
-  return iarg;
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixMutate::biology_nufeb()
-{
-  if (update->ntimestep % nevery) return;
-  compute();
-}
-
-/* ---------------------------------------------------------------------- */
-
-void FixMutate::compute()
+/* ----------------------------------------------------------------------
+   update array values of two daughter cells i, j
+   called in fix_divide
+------------------------------------------------------------------------- */
+void FixMutate::update_arrays(int i, int j)
 {
   int *mask = atom->mask;
+  int *type = atom->type;
 
-  for (int i = 0; i < atom->nlocal; i++) {
-    if (mask[i] & groupbit) {
-      if (random->uniform() < prob) {
-        mask[i] = imutant;
-      }
+  if (random->uniform() < prob) {
+      // mutation for daughter cell i
+      mask[i] = imutant;
+      type[i] = itype;
+
+      // mutation for daughter cell j
+      mask[j] = imutant;
+      type[j] = itype;
     }
-  }
 }
