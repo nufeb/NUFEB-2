@@ -1,0 +1,4 @@
+cluster: "sbatch --time={resources.time_min} --mem={resources.mem_mb} --partition=defq -A tcnufeb -c {resources.cpus} -o slurm/logs/{rule}_{wildcards} -e slurm/logs/{rule}_{wildcards} -J hrseed_{rule}_{wildcards} --mail-type=FAIL,TIME_LIMIT_80"
+jobs: 999
+default-resources: [cpus=1, mem_mb=2000, time_min=2160]
+resources: [cpus=999, mem_mb=400000]

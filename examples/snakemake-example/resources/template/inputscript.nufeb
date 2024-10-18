@@ -1,0 +1,134 @@
+#-----------------------------------------------------------------------------#
+#                NUFEB Simulation: Multiple runs with Snakemake               #
+#-----------------------------------------------------------------------------#
+
+
+#-----------------------------System Settings---------------------------------#
+
+units si                                    # using si units (m, s, kg)
+atom_style      coccus                      # using nufeb coccus atom style
+atom_modify     map array sort 10 0         # map array - find atoms using indices
+		                            # sort every 10
+
+boundary        pp pp ff                    # periodic boundaries in x and y
+                                            # fixed boundary in z
+
+newton          off                         # forces between local and ghost
+                                            # atoms are computed in each
+					     # processor without communication
+					     
+processors      * * 1                       # processor grid
+
+comm_modify     vel yes                     # communicate velocities for ghost atoms
+
+read_data       atom.in	             # read atom.in file which defines domain size
+                                            # and initial atoms	
+
+
+#--------------------Microbes and Functional Groups-------------------------#
+
+group           HET_1   type 1               # assign type N atoms to HET_N group
+group           HET_2   type 2               
+group           HET_3   type 3              
+group           HET_4   type 4             
+group           HET_ALL   union HET_1 HET_2 HET_3 HET_4  # for fixes which should apply to all HETs             
+group           EPS   type 6               # assign type 6 atoms to EPS group
+
+neighbor        5e-7 bin                   # setting neighbour skin distance and style
+
+neigh_modify    check yes                  # rebuild neighbour list if any atom
+                                           # had moved more than half the skin distance
+
+
+#--------------------------Mesh Grid and Substrates--------------------------#
+
+# defining grid sytle, substrate names, and grid size
+grid_style      nufeb/chemostat 4 sub o2 no2 no3 5e-6  
+
+# set diffusion boundary conditions and initial concentrations (liquid:kg/m3)
+grid_modify     set sub  pp pp nd  1e-4  
+grid_modify     set o2   pp pp nd  1e-4 
+grid_modify     set no2  pp pp nd  1e-4 
+grid_modify     set no3  pp pp nd  1e-4 
+
+
+#--------------------------Biological Processes-------------------------------#
+
+# heterotrophs growth
+fix growth_het HET_ALL nufeb/growth/het sub 3.5e-5 o2 0 no2 0 no3 0 &
+growth 0.00028 yield 0.61 decay 0.0 epsyield 0.18 anoxic 0.0 epsdens 30
+
+# heterotrophs division, division diameter: 1.36e-6
+fix div HET_ALL nufeb/division/coccus 1.36e-6 het_seed
+
+# EPS secretion from heterotrophs
+fix eps_ext HET_ALL nufeb/eps_secretion 2 EPS 1.3 30 het_seed
+
+
+#---------------------------Physical Processes--------------------------------#
+
+pair_style  gran/hooke/history 1e-4 NULL 1e-5 NULL 0.0 0    # pairwise interaction
+pair_coeff  * *                                             # between atoms
+
+# pairwise interaction between z-wall and atoms
+fix wall all wall/gran hooke/history 1e-3 NULL 1e-4 NULL 0 0 zplane 0.0 1e-04
+
+fix vis all viscous 1e-5                                    # viscous damping force
+
+fix nve all nve/limit 1e-7                                  # NVE integration with 
+                                                            # maximum distance limit       
+
+    
+#---------------------------Post-Physical Processes---------------------------#
+
+fix coeff_sub all nufeb/diffusion_coeff sub ratio 0.8       # defining diffusion coeff in the biofilm 
+                                                            # region is 80% of the value in liquid
+
+
+#---------------------------Chemical Processes---------------------------------#
+
+fix diff_sub all nufeb/diffusion_reaction sub 1.6e-9        # diffusion reaction for updating
+                                                            # distribusion of substrate concentration
+
+
+#--------------------------Computations and Outputs----------------------------#
+
+variable mass equal "mass(all)"                             # total mass
+variable nhet1 equal "count(HET_1)"                            # total # of HET_1
+variable nhet2 equal "count(HET_2)"                            # total # of HET_2
+variable nhet3 equal "count(HET_3)"                            # total # of HET_3
+variable nhet4 equal "count(HET_4)"                            # total # of HET_4
+variable nhett equal "v_nhet1+v_nhet2+v_nhet3+v_nhet4"                            # total # of all HET
+variable neps equal "count(EPS)"                            # total # of EPS
+
+compute vol all nufeb/volume                               # volume of all biomass
+variable fullvol equal "template_fullvol"                  # total sim volume
+variable fillpct equal "c_vol/v_fullvol"                   # calculate percent volume filled with biomass
+
+shell mkdir vtk                                            # dump vtk files to /vtk folder
+dump du1 all vtk 10 vtk/dump*.vtu id type diameter         # require build NUFEB with vtk option
+dump du2 all grid/vtk 10 vtk/dump_%_*.vti con rea den gro
+
+
+#dump du3 all movie 10 movie.avi type diameter view 80 60    # dump video
+#dump_modify du3 acolor 1 blue acolor 2 lightgrey framerate 10
+
+
+                                                            # dump hdf5 files to /hdf5 folder
+#shell mkdir hdf5                                           # require build NUFEB with hdf5 option
+#dump du3 all nufeb/hdf5 10 dump.h5 id type x y z vx vy vz fx fy fz radius conc reac 
+
+thermo_style custom step cpu atoms v_nhett v_neps v_mass v_fillpct     # screen and log outputs
+thermo 1
+
+#-----------------------------------Run----------------------------------------#
+
+# issue run command, define timesteps for physical (pairdt) and chemical (diffdt) processes
+run_style nufeb diffdt 1e-4 difftol 1e-6 pairdt 1e-2 pairtol 1 pairmax 1000 diffmax 5000
+
+timestep 1000                                               # define biological timesteps (1000s)
+
+run 900                                                    # growing biofilm for 900x1000s
+
+# create an empty file at end used to signify the run was completed
+shell touch done.tkn
