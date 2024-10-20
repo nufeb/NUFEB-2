@@ -55,7 +55,7 @@ send an email to the developers.
 
    work_microbe_soil
    tut_add_growth_model
-
+   tut_multi_snakemake
 
 .. _command_reference:
 .. toctree::
