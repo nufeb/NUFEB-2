@@ -57,6 +57,16 @@ send an email to the developers.
    tut_add_growth_model
    tut_multi_snakemake
 
+.. _cookbook:
+.. toctree::
+   :maxdepth: 1
+   :numbered: 3
+   :caption: Cookbook
+   :name: cookdoc
+   :includehidden:
+
+   cook_percent_biomass 
+
 .. _command_reference:
 .. toctree::
    :name: reference
