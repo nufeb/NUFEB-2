@@ -69,6 +69,7 @@ send an email to the developers.
    cook_done_token
    cook_alter_simbox
    cook_csv_output
+   cook_rel_abs
 
 .. _command_reference:
 .. toctree::
