@@ -68,6 +68,7 @@ send an email to the developers.
    cook_percent_biomass 
    cook_done_token
    cook_alter_simbox
+   cook_csv_output
 
 .. _command_reference:
 .. toctree::
