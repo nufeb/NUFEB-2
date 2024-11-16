@@ -66,6 +66,7 @@ send an email to the developers.
    :includehidden:
 
    cook_percent_biomass 
+   cook_done_token
 
 .. _command_reference:
 .. toctree::
