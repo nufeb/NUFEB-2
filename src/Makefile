@@ -142,7 +142,8 @@ PACKAGE = \
 	nufeb \
 	hdf5 \
 	mutation \
-	plasmid # NUFEB-specific
+	plasmid \
+	t6ss # NUFEB-specific
 
 # NOTE: the last four packages must remain at the end since
 # they depend on other packages to be installed first.
@@ -206,7 +207,8 @@ PACKMOST = \
 	nufeb \
 	hdf5 \
 	mutation \
-	plasmid
+	plasmid \
+    t6ss 
 
 # NOTE ^^^^^: the last three packages must remain at the end since
 # they depend on other packages to be installed first.
