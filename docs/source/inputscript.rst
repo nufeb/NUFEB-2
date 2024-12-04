@@ -29,7 +29,7 @@ General settings
 ------------------------------
 
 Set parameters that need to be defined before atoms and substrates are created or read-in from a file.
-
+Reading in from a file is very common and often used in the examples. Details of the file format are described in the :doc:`NUFEB read_data command reference <read_data>`.
 
 The relevant commands are 
 :doc:`atom_style coccus <atom_vec_coccus>`,
