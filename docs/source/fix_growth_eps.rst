@@ -47,6 +47,8 @@ The following forward Euler method is implemented to update the mass
 
 .. math::
   m' & = m - b_{decay} \cdot \Delta t
+  
+  \hfill
 
 The new mass is then used to update the diameter.
 

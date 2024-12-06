@@ -69,6 +69,8 @@ to the chemical energy of the environment:
 
   Y & = \frac{ \Delta G_{cat}}{ \Delta G_{ana} + \Delta G_{dis} }
 
+  \hfill
+
 where:
 
 * :math:`\Delta G_{cat}` is the free energy required for microbial anabolic pathway, using its absolute value
@@ -82,6 +84,8 @@ as well as the standard *Substrate Gibbs Energy* change defined in the data *fil
 .. math::
 
     \Delta G & = \Delta G^{o} + R \cdot T \cdot ln(Q)
+    
+    \hfill
 
 In addition, the catabolic rate :math:`q_{cat}` (mol-eD/mol-X·s),
 maintenance rate :math:`m_{req}` (mol-eD / mol-X·s),

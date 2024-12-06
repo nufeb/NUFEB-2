@@ -47,6 +47,8 @@ The following forward Euler method is implemented to update the mass (*m*) of ea
 
   m'= m + \mu \cdot \Delta t
   
+  \hfill
+
 The specific growth rate :math:`\mu` is calculated based on the Monod equation:
 
 .. math::

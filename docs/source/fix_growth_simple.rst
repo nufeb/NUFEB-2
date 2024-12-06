@@ -38,6 +38,8 @@ The following forward Euler method is implemented to update the mass (*m*) of ea
 .. math::
 
   m'= m + \mu \Delta t
+
+  \hfill
   
 where :math:`\mu` is the growth rate of the atoms (*growth*). 
 The new mass is then used to update other atom attributes. For a coccus-style atom,

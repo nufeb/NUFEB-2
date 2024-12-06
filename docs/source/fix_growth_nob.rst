@@ -59,6 +59,8 @@ The following forward Euler method is implemented to update the mass
 .. math::
 
   m' & = m + \mu \cdot \Delta t
+
+  \hfill
   
 The specific growth rates :math:`\mu` is 
 calculated based on the equations described in :ref:`(Ofiteru, I.D., et al, 2013) <ofiteru13>`: 

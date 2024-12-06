@@ -58,9 +58,12 @@ The value of the substrate ID keyword *XX-ID* must be consistent with the name d
 :doc:`grid_style chemostat <grid_style_chemostat>` command.
 The following forward Euler method is implemented to update the mass 
 (*m*) of each atom in the group:
- 
+
 .. math::
+
   m' & = m + \mu \cdot \Delta t
+  
+  \hfill
   
 The specific growth rates :math:`\mu` is 
 calculated based on the equations described in :ref:`(Hao, X., et al, 2002) <hao02>`: 
