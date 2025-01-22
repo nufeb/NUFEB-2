@@ -56,6 +56,7 @@ send an email to the developers.
    work_microbe_soil
    tut_add_growth_model
    tut_multi_snakemake
+   tut_editing_nufeb_code
 
 .. _cookbook:
 .. toctree::
