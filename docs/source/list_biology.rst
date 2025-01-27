@@ -19,3 +19,4 @@ Biological processes
    fix_divide_bacillus
    fix_eps_secretion
    fix_death_diameter
+   fix_T6SS_lysis

@@ -57,6 +57,7 @@ Description
 Perform microbial growth to the atoms defined in *group-ID*.
 The affected atoms are considered as heterotrophic bacteria, having a spherical shape (:doc:`atom_style coccus <atom_vec_coccus>`)
 with outer mass and outer diameter to represent their EPS (Extracellular Polymeric Substance) shells.
+
 The model assumes that heterotrophs grow by consuming organic substrate in
 oxygenated conditions or nitrate in anoxic denitrifying conditions.
 Additionally, the model takes into account microbial decay and endogenous respiration processes.
