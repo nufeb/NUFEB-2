@@ -52,6 +52,8 @@ The value of the ``sub-ID`` must be consistent with the name defined in the
 :doc:`grid_style chemostat <grid_style_chemostat>` command.
 
 
+This fix requires that NUFEB be installed/built by including the ``--enable-t6ss`` argument when installing via ``install.sh`` or by including ``make yes-t6ss`` as part of the build process. 
+
 Restrictions
 """""""""""""
 This fix is not compatible with the following commands:
