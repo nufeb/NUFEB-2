@@ -87,8 +87,6 @@ FixT6SSContact::FixT6SSContact(LAMMPS *lmp, int narg, char **arg)
     printf("\t Cooldown ID: %d\n",cooldowns[i]);
   }
 
-  printf("Bug type %d has attack_index %d\n",4,attacker_lookup[4]);
-  printf("Bug type %d has attack_index %d\n",6,attacker_lookup[6]);
   n_susceptible_types = utils::inumeric(FLERR, arg[arg_n++], true, lmp);
   printf("%d types of bugs are susceptible to T6SS effectors. Parsing:\n", n_susceptible_types);
 
