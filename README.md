@@ -15,6 +15,8 @@ NUFEB is distributed under the terms of the GNU Public License. The development 
 
 Online user manual is avaiable at: https://nufeb.readthedocs.io/en/master/ 
 
+Because NUFEB-2 is under active development and experimental, we would like you contact us if you use it. We'd enjoy hearing about how we could make it better AND we'd like to have a list of people to contact if major bugs are found.  The best person to contact at this time would be Joseph E. Weaver: joe.weaver@newcastle.ac.uk
+
 <p align="center">
   <img src="https://github.com/nufeb/NUFEB-dev/blob/master/docs/source/images/IBM-NUFEB.png">
 </p>
