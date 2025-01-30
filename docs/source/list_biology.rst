@@ -20,3 +20,4 @@ Biological processes
    fix_eps_secretion
    fix_death_diameter
    fix_T6SS_lysis
+   fix_T6SS_contact
