@@ -35,6 +35,8 @@ NUFEB has a :doc:`compute_volume` which calculates the volume of all the organis
 
 Generally, the volume computation should occur within the input script after all relevant growth fixes.  The halt fix should be near the end of the input script, generally just prior to the ``run_style`` command.  
 
+.. note:: Due to how ``halt`` works, once the percent biomass is reached, the console may be spammed with multiple lines stating the halt condition was met. This is a known issue which does not affect operation. It will go on for a moment and then the end of simulation statistics will be displayed.
+
 .. seealso::
     Computing biomass volume
         :doc:`compute_volume`
