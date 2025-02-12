@@ -24,7 +24,7 @@ Use the NUFEB :doc:`compute_volume` to calculate the biomass percentage, which t
     #... skip to just before run_style
 
     # halt the simulation when the biomass reaches 10 percent
-    fix halt_vol all halt 1 v_biomass_pct > 0.01 error soft
+    fix halt_vol all halt 1 v_biomass_pct > 0.10 error soft
 
 Discussion
 ----------
