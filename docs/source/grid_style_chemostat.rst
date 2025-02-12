@@ -12,7 +12,7 @@ Syntax
     
 * nsubs = # of substrates 
 * subID-i = ID of i\ :sup:`th` substrate 
-* grid-size = scale factor between mesh grid and simulation box
+* scale = scale factor between mesh grid and simulation box
 
 Examples
 """"""""
