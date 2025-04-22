@@ -21,12 +21,24 @@ processors      * * 1                       # processor grid
 
 comm_modify     vel yes                     # communicate velocities for ghost atoms
 
-read_data       atom.in	             # read atom.in file which defines domain size
+#read_data       atom.in	             # read atom.in file which defines domain size
                                             # and initial atoms
+
+region sim_box block 0.0 2e-4 0.0 2e-4 0.0 2e-5 units box
+create_box 1 sim_box                         # create simulation domain
 
 
 #--------------------Microbes and Functional Groups-------------------------#
 
+lattice sc 2e-6 origin 0 0 0
+region reg block 0 100 0 100 3 4
+
+create_atoms 1 random 100 2025 reg 
+
+set type 1 diameter 1e-5                 # defining atom diameter and density
+set type 1 density 150                     # diameter must come before density   
+                                           # no need to specify mass
+                                           
 group           CELL   type 1               # assign type 1 atoms to CELL group
 
 neighbor        2e-5 bin                   # setting neighbour skin distance and style
@@ -80,11 +92,11 @@ variable ncell equal "count(CELL)"                            # total # of cells
 
 shell mkdir vtk                                            # dump vtk files to /vtk folder
 dump du1 all vtk 1 vtk/dump*.vtu id type radius         # require build NUFEB with vtk option
-dump du2 all grid/vtk 1 vtk/dump_%_*.vti con rea den gro
+dump du2 all grid/vtk 1 vtk/dump_%_*.vti con den gro
 
 
-dump du3 all movie 10 movie.avi type max_dia view 80 60    # dump video
-dump_modify du3 acolor 1 blue framerate 1
+#dump du3 all movie 10 movie.avi type max_dia view 80 60    # dump video
+#dump_modify du3 acolor 1 blue framerate 1
 
 
 thermo_style custom step cpu atoms v_ncell v_mass     # screen and log outputs
