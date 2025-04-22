@@ -13,35 +13,31 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nufeb/division/coccus,FixDivideCoccus)
+FixStyle(nufeb/growth/mammalian,FixGrowthMammalian)
 
 #else
 
-#ifndef LMP_FIX_DIVIDE_COCCUS_H
-#define LMP_FIX_DIVIDE_COCCUS_H
+#ifndef LMP_FIX_GROWTH_MAMMALIAN_H
+#define LMP_FIX_GROWTH_MAMMALIAN_H
 
-#include "fix_divide.h"
+#include "fix_growth.h"
 
 namespace LAMMPS_NS {
 
-class FixDivideCoccus : public FixDivide {
+class FixGrowthMammalian: public FixGrowth {
  public:
-  
-  FixDivideCoccus(class LAMMPS *, int, char **);
-  virtual ~FixDivideCoccus();
-  virtual void compute();
-  void post_constructor();
-  
- protected:
-  int size_flag, time_flag, fix_flag;
-  int x_flag, y_flag, z_flag;
-  double max_dia, max_time;
-  double eps_density;
-  char *group_id;
-  int seed;  
+  FixGrowthMammalian(class LAMMPS *, int, char **);
+  virtual ~FixGrowthMammalian() {}
 
-  class RanPark *random;
-  class FixPropertyCycletime *fix_ct;
+  virtual void update_atoms();
+  virtual void update_cells();
+
+ protected:
+  int isub, ivirus;
+  double sub_affinity;
+
+  double growth;
+  double yield;
 };
 
 }

@@ -1,0 +1,101 @@
+#-----------------------------------------------------------------------------#
+#                NUFEB Simulation: Mammalian cell aggragation                 #
+#-----------------------------------------------------------------------------#
+
+
+#-----------------------------System Settings---------------------------------#
+
+units si                                    # using si units (m, s, kg)
+atom_style      coccus                      # using nufeb coccus atom style
+atom_modify     map array sort 10 0         # map array - find atoms using indices
+		                            # sort every 10
+
+boundary        pp pp ff                    # periodic boundaries in x and y
+                                            # fixed boundary in z
+
+newton          off                         # forces between local and ghost
+                                            # atoms are computed in each
+					     # processor without communication
+					     
+processors      * * 1                       # processor grid
+
+comm_modify     vel yes                     # communicate velocities for ghost atoms
+
+read_data       atom.in	             # read atom.in file which defines domain size
+                                            # and initial atoms
+
+
+#--------------------Microbes and Functional Groups-------------------------#
+
+group           CELL   type 1               # assign type 1 atoms to CELL group
+
+neighbor        2e-5 bin                   # setting neighbour skin distance and style
+
+neigh_modify    check yes                  # rebuild neighbour list if any atom
+                                           # had moved more than half the skin distance
+
+
+#--------------------------Mesh Grid and Substrates--------------------------#
+
+# defining grid sytle, substrate names, and grid size
+grid_style      nufeb/chemostat 2 sub virus 2e-6
+
+# set diffusion boundary conditions and initial concentrations (liquid:kg/m3)
+grid_modify     set sub     dd dd nn  1e-4
+grid_modify     set virus   dd dd nn  0.0
+
+#--------------------------Biological Processes-------------------------------#
+
+# Monod cell growth
+fix growth_het CELL nufeb/growth/mammalian sub 3.5e-5 virus growth 8e-6 yield 0.61
+
+# Cell division, max doubling time = 1 day
+# fix div CELL nufeb/division/coccus time 36000 2025 z 0 fix
+
+
+#---------------------------Physical Processes--------------------------------#
+
+pair_style  gran/hooke/history 1e-4 NULL 1e-5 NULL 0.0 0    # pairwise interaction
+pair_coeff  * *                                             # between atoms
+
+# pairwise interaction between z-wall and atoms
+fix wall all wall/gran hooke/history 1e-3 NULL 1e-4 NULL 0 0 zplane 0.0 2e-05
+
+fix vis all viscous 1e-5                                    # viscous damping force
+
+fix nve all nve/limit 1e-6                                  # NVE integration with 
+                                                            # maximum distance limit       
+
+
+#---------------------------Chemical Processes---------------------------------#
+
+fix diff_sub all nufeb/diffusion_reaction sub 1.6e-9        # diffusion reaction for updating
+                                                            # distribusion of substrate concentration
+
+
+#--------------------------Computations and Outputs----------------------------#
+
+variable mass equal "mass(all)"                             # total mass
+variable ncell equal "count(CELL)"                            # total # of cells
+
+shell mkdir vtk                                            # dump vtk files to /vtk folder
+dump du1 all vtk 1 vtk/dump*.vtu id type radius         # require build NUFEB with vtk option
+dump du2 all grid/vtk 1 vtk/dump_%_*.vti con rea den gro
+
+
+dump du3 all movie 10 movie.avi type max_dia view 80 60    # dump video
+dump_modify du3 acolor 1 blue framerate 1
+
+
+thermo_style custom step cpu atoms v_ncell v_mass     # screen and log outputs
+thermo 1
+
+#-----------------------------------Run----------------------------------------#
+
+# issue run command, define timesteps for physical (pairdt) and chemical (diffdt) processes
+run_style nufeb diffdt 1e-4 difftol 1e-6 pairdt 1e-2 pairtol 1 pairmax 1000 diffmax 100
+
+timestep 3600                                               # define biological timesteps (1000s)
+
+run 10                                                    # growing biofilm for 900x1000s
+
