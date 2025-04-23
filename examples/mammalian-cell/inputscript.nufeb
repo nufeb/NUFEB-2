@@ -21,23 +21,11 @@ processors      * * 1                       # processor grid
 
 comm_modify     vel yes                     # communicate velocities for ghost atoms
 
-#read_data       atom.in	             # read atom.in file which defines domain size
+read_data       atom.in	             # read atom.in file which defines domain size
                                             # and initial atoms
-
-region sim_box block 0.0 2e-4 0.0 2e-4 0.0 2e-5 units box
-create_box 1 sim_box                         # create simulation domain
 
 
 #--------------------Microbes and Functional Groups-------------------------#
-
-lattice sc 2e-6 origin 0 0 0
-region reg block 0 100 0 100 3 4
-
-create_atoms 1 random 100 2025 reg 
-
-set type 1 diameter 1e-5                 # defining atom diameter and density
-set type 1 density 150                     # diameter must come before density   
-                                           # no need to specify mass
                                            
 group           CELL   type 1               # assign type 1 atoms to CELL group
 
@@ -50,34 +38,35 @@ neigh_modify    check yes                  # rebuild neighbour list if any atom
 #--------------------------Mesh Grid and Substrates--------------------------#
 
 # defining grid sytle, substrate names, and grid size
-grid_style      nufeb/chemostat 2 sub virus 2e-6
+grid_style      nufeb/chemostat 2 sub virus 5e-6
 
-# set diffusion boundary conditions and initial concentrations (liquid:kg/m3)
+# set diffusion boundary conditions and initial concentrations (liquid:kg/m3) d=Dirichlet n=Neumann
 grid_modify     set sub     dd dd nn  1e-4
 grid_modify     set virus   dd dd nn  0.0
 
 #--------------------------Biological Processes-------------------------------#
 
-# Monod cell growth
+# Monod cell growth sub=Ks; growth=growth rate; yield=substrate consumption 
 fix growth_het CELL nufeb/growth/mammalian sub 3.5e-5 virus growth 8e-6 yield 0.61
 
 # Cell division, max doubling time = 1 day
-# fix div CELL nufeb/division/coccus time 36000 2025 z 0 fix
+fix div CELL nufeb/division/coccus time 36000 2025 z 0 fix
 
 
 #---------------------------Physical Processes--------------------------------#
 
-pair_style  gran/hooke/history 1e-4 NULL 1e-5 NULL 0.0 0    # pairwise interaction
+pair_style  gran/hooke/history 1e-2 NULL 1e-3 NULL 0.0 0    # pairwise interaction
 pair_coeff  * *                                             # between atoms
 
 # pairwise interaction between z-wall and atoms
-fix wall all wall/gran hooke/history 1e-3 NULL 1e-4 NULL 0 0 zplane 0.0 2e-05
+fix wall all wall/gran hooke/history 10 NULL 5 NULL 0 0 zplane 0.0 1e-5
 
-fix vis all viscous 1e-5                                    # viscous damping force
+fix vis all viscous 1e-8                                    # viscous damping force
 
-fix nve all nve/limit 1e-6                                  # NVE integration with 
+fix nve all nve/limit 2e-6                                  # NVE integration with 
                                                             # maximum distance limit       
-
+#fix adh all nufeb/adhesion 1e-6 1e-5                       # Cell adhesion 
+#fix_modify adh ah * * 1.2e-13                              # uncomment to model aggregation
 
 #---------------------------Chemical Processes---------------------------------#
 
@@ -95,11 +84,9 @@ dump du1 all vtk 1 vtk/dump*.vtu id type radius         # require build NUFEB wi
 dump du2 all grid/vtk 1 vtk/dump_%_*.vti con den gro
 
 
-#dump du3 all movie 10 movie.avi type max_dia view 80 60    # dump video
-#dump_modify du3 acolor 1 blue framerate 1
-
 
 thermo_style custom step cpu atoms v_ncell v_mass     # screen and log outputs
+thermo_modify lost warn
 thermo 1
 
 #-----------------------------------Run----------------------------------------#
@@ -107,7 +94,7 @@ thermo 1
 # issue run command, define timesteps for physical (pairdt) and chemical (diffdt) processes
 run_style nufeb diffdt 1e-4 difftol 1e-6 pairdt 1e-2 pairtol 1 pairmax 1000 diffmax 100
 
-timestep 3600                                               # define biological timesteps (1000s)
+timestep 3600                                               # define biological timesteps (3600s)
 
-run 10                                                    # growing biofilm for 900x1000s
+run 480                                                    # simulate for 20days
 
