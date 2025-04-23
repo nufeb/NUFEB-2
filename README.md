@@ -11,11 +11,11 @@ NUFEB (Newcastle University Frontier in Engineering Biology) is an open source t
 The tool is built on top of the molecular dynamic simulator [LAMMPS](https://lammps.sandia.gov), and extended with features for microbial modelling. 
 For more details about NUFEB and its agent-based model, please refer to our [software paper](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007125).
 
-NUFEB is distributed under the terms of the GNU Public License. The development has been funded by the UK’s EPSRC EP/K039083/1 Frontiers in Engineering Biology project. Further development was funded by the USF NSF Postdoctoral Research Fellowship in Biology Award #2007151.
+NUFEB is distributed under the terms of the GNU Public License. The development has been funded by the UK’s EPSRC EP/K039083/1 Frontiers in Engineering Biology project. 
 
 Online user manual is avaiable at: https://nufeb.readthedocs.io/en/master/ 
 
-Because NUFEB-2 is under active development and experimental, we would like you contact us if you use it. We'd enjoy hearing about how we could make it better AND we'd like to have a list of people to contact if major bugs are found.  The best person to contact at this time would be Joseph E. Weaver: joe.weaver@newcastle.ac.uk
+Because NUFEB-2 is under active development and experimental, we would like you contact us if you use it. We'd enjoy hearing about how we could make it better AND we'd like to have a list of people to contact if major bugs are found. 
 
 <p align="center">
   <img src="https://github.com/nufeb/NUFEB-dev/blob/master/docs/source/images/IBM-NUFEB.png">
@@ -75,10 +75,20 @@ mpirun -np 4 ../../nufeb_mpi -in Inputscript.nufeb
 </pre>
 
 ---------------------------------------------------------------------------
-Developers:
+### Current Developers:
 
 Bowen Li: bowen.li2@newcastle.ac.uk
 
-Denis Taniguchi: denis.taniguchi@newcastle.ac.uk
-
 Joseph E. Weaver: joe.weaver@newcastle.ac.uk
+
+---------------------------------------------------------------------------
+### Further development was funded by:
+
+EPSRC Portabolomics (Grant EP/N031962/1)
+
+EPSRC Impact Acceleration Account (IAA) Award
+
+USF NSF Postdoctoral Research Fellowship in Biology (Award #2007151)
+
+Rosetrees Trust AI-PSORT (Award CF-2021-2\111)
+
