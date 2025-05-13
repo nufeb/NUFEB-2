@@ -24,7 +24,7 @@ Use the NUFEB :doc:`compute_volume` to calculate the biomass percentage, which t
     #... skip to just before run_style
 
     # halt the simulation when the biomass reaches 10 percent
-    fix halt_vol all halt 1 v_biomass_pct > 0.01 error soft
+    fix halt_vol all halt 1 v_biomass_pct > 0.10 error soft
 
 Discussion
 ----------
@@ -34,6 +34,8 @@ Biofilms may grow at very different rates depending on simulation conditions; so
 NUFEB has a :doc:`compute_volume` which calculates the volume of all the organisms matching the relevant group identifier. Meanwhile, LAMMPS has a built-in ``halt`` fix which can perform logical comparisons to determine when (and how) to terminate a simulation.
 
 Generally, the volume computation should occur within the input script after all relevant growth fixes.  The halt fix should be near the end of the input script, generally just prior to the ``run_style`` command.  
+
+.. note:: Due to how ``halt`` works, once the percent biomass is reached, the console may be spammed with multiple lines stating the halt condition was met. This is a known issue which does not affect operation. It will go on for a moment and then the end of simulation statistics will be displayed.
 
 .. seealso::
     Computing biomass volume
