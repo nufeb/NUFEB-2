@@ -33,7 +33,7 @@ FixGrowthNOB::FixGrowthNOB(LAMMPS *lmp, int narg, char **arg) :
   FixGrowth(lmp, narg, arg)
 {
   if (narg < 8)
-    error->all(FLERR, "Illegal fix nufeb/growth/aob command");
+    error->all(FLERR, "Illegal fix nufeb/growth/nob command");
 
   if (!grid->chemostat_flag)
     error->all(FLERR, "fix nufeb/growth/nob requires grid_style nufeb/chemostat");
