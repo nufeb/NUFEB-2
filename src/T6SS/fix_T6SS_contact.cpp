@@ -70,6 +70,7 @@ FixT6SSContact::FixT6SSContact(LAMMPS *lmp, int narg, char **arg)
   int arg_n = 5;
   for(int i = 0; i < n_t6ss_types; i++){
     t6ss_types[i] = utils::inumeric(FLERR, arg[arg_n++], true, lmp);
+    
     attacker_lookup[t6ss_types[i]]=i;
     // TODO validate bug type exists
     printf("Bug %d type code: %d\n",i,t6ss_types[i]);
@@ -87,8 +88,8 @@ FixT6SSContact::FixT6SSContact(LAMMPS *lmp, int narg, char **arg)
     printf("\t Cooldown ID: %d\n",cooldowns[i]);
   }
 
-  printf("Bug type %d has attack_index %d\n",4,attacker_lookup[4]);
-  printf("Bug type %d has attack_index %d\n",6,attacker_lookup[6]);
+  //printf("Bug type %d has attack_index %d\n",4,attacker_lookup[4]);
+  //printf("Bug type %d has attack_index %d\n",6,attacker_lookup[6]);
   n_susceptible_types = utils::inumeric(FLERR, arg[arg_n++], true, lmp);
   printf("%d types of bugs are susceptible to T6SS effectors. Parsing:\n", n_susceptible_types);
 
@@ -241,6 +242,7 @@ int FixT6SSContact::get_attack_index(int bug_id){
     int *type = atom->type;
     
     int i = -1;
+    //printf("Looking up attack index of bug %d of type %d\n",bug_id,type[bug_id]);
     auto lookup = attacker_lookup.find(type[bug_id]);
     bool is_attacker = lookup != attacker_lookup.end();
     if(is_attacker){
@@ -266,7 +268,7 @@ bool FixT6SSContact::is_susceptible(int i, int j){
         //when true, k is an index into susceptibility data associated 
         //with bug i's type
         if(type[i] == susceptible_types[k]){
-            //printf("Bug %d type %d is susceptible to effector %d. Bug %d has effector %d\n",i,type[i],susceptible_effectors[k],j,j_effector);
+            //printf("Bug %d type %d is susceptible to effector %d. Bug %d is of type %d and has effector %d\n",i,type[i],susceptible_effectors[k],j,type[j],j_effector);
             if(susceptible_effectors[k] == j_effector) return true;
         }
     }
