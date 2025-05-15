@@ -32,8 +32,8 @@ using namespace MathConst;
 FixGrowthDenit::FixGrowthDenit(LAMMPS *lmp, int narg, char **arg) :
   FixGrowth(lmp, narg, arg)
 {
-  if (narg < 38)
-    error->all(FLERR, "Illegal fix nufeb/growth/denit command. Expected at least 38 parameters");
+  if (narg != 40)
+    error->all(FLERR, "Illegal fix nufeb/growth/denit command. Expected 40  parameters");
 
   if (!grid->chemostat_flag)
     error->all(FLERR, "fix nufeb/growth/denit requires grid_style nufeb/chemostat");
@@ -77,7 +77,7 @@ FixGrowthDenit::FixGrowthDenit(LAMMPS *lmp, int narg, char **arg) :
 
   iss = grid->find(arg[3]);
   if (iss < 0)
-    error->all(FLERR, "Fix GrowthDenit can't find substrate named S");
+    error->all(FLERR, "Fix GrowthDenit can't find substrate named " +std::string(arg[3]));
   k_s1 = utils::numeric(FLERR,arg[4],true,lmp);
   k_s2 = utils::numeric(FLERR,arg[5],true,lmp);
   k_s3 = utils::numeric(FLERR,arg[6],true,lmp);
@@ -86,38 +86,38 @@ FixGrowthDenit::FixGrowthDenit(LAMMPS *lmp, int narg, char **arg) :
 
   io2 = grid->find(arg[9]);
   if (io2 < 0)
-    error->all(FLERR, "Fix GrowthDenit can't find substrate named O2");
+    error->all(FLERR, "Fix GrowthDenit can't find substrate named " +std::string(arg[9]));
   k_oh1 = utils::numeric(FLERR,arg[10],true,lmp);
   k_oh2 = utils::numeric(FLERR,arg[11],true,lmp);
-  k_oh3 = utils::numeric(FLERR,arg[11],true,lmp);
-  k_oh4 = utils::numeric(FLERR,arg[12],true,lmp);
-  k_oh5 = utils::numeric(FLERR,arg[13],true,lmp);
+  k_oh3 = utils::numeric(FLERR,arg[12],true,lmp);
+  k_oh4 = utils::numeric(FLERR,arg[13],true,lmp);
+  k_oh5 = utils::numeric(FLERR,arg[14],true,lmp);
 
-  ino3 = grid->find(arg[14]);
+  ino3 = grid->find(arg[15]);
   if (ino3 < 0)
-    error->all(FLERR, "Fix GrowthDenit can't find substrate named NO3");
-  k_no3 = utils::numeric(FLERR,arg[15],true,lmp);
+    error->all(FLERR, "Fix GrowthDenit can't find substrate named " +std::string(arg[15]));
+  k_no3 = utils::numeric(FLERR,arg[16],true,lmp);
   
-  ino2 = grid->find(arg[16]);
+  ino2 = grid->find(arg[17]);
   if (ino2 < 0)
-    error->all(FLERR, "Fix GrowthDenit can't find substrate named NO2");
-  k_no2 = utils::numeric(FLERR,arg[17],true,lmp);
+    error->all(FLERR, "Fix GrowthDenit can't find substrate named " +std::string(arg[17]));
+  k_no2 = utils::numeric(FLERR,arg[18],true,lmp);
   
-  in2o = grid->find(arg[18]);
+  in2o = grid->find(arg[19]);
   if (in2o < 0)
-    error->all(FLERR, "Fix GrowthDenit can't find substrate named N2O");
-  k_n2o = utils::numeric(FLERR,arg[19],true,lmp);
+    error->all(FLERR, "Fix GrowthDenit can't find substrate named " + std::string(arg[19]));
+  k_n2o = utils::numeric(FLERR,arg[20],true,lmp);
 
-  ino = grid->find(arg[20]);
+  ino = grid->find(arg[21]);
   if (ino < 0)
-    error->all(FLERR, "Fix GrowthDenit can't find substrate named NO");
-  k_no = utils::numeric(FLERR,arg[21],true,lmp);
-  k_13no = utils::numeric(FLERR,arg[22],true,lmp);
-  k_14no = utils::numeric(FLERR,arg[23],true,lmp);
-  k_15no = utils::numeric(FLERR,arg[24],true,lmp);
+    error->all(FLERR, "Fix GrowthDenit can't find substrate named " + std::string(arg[21]));
+  k_no = utils::numeric(FLERR,arg[22],true,lmp);
+  k_13no = utils::numeric(FLERR,arg[23],true,lmp);
+  k_14no = utils::numeric(FLERR,arg[24],true,lmp);
+  k_15no = utils::numeric(FLERR,arg[25],true,lmp);
 
 
-  int iarg = 25;
+  int iarg = 26;
   while (iarg < narg) {
     if (strcmp(arg[iarg], "growth") == 0) {
       growth = utils::numeric(FLERR,arg[iarg+1],true,lmp);
