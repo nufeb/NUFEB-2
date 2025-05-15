@@ -40,11 +40,13 @@ class FixGrowthDenit: public FixGrowth {
   int ino;
   int in2o;
   
+  double k_s1;
   double k_s2;
   double k_s3;
   double k_s4;
   double k_s5;
   
+  double k_oh1;
   double k_oh2;
   double k_oh3;
   double k_oh4;
