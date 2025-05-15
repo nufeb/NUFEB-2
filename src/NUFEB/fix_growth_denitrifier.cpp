@@ -224,6 +224,15 @@ void FixGrowthDenit::update_cells()
 
   for (int i = 0; i < grid->ncells; i++) {
     if (grid->mask[i] & GRID_MASK) {
+      //using the terminology from Hiatt and Grady 2008
+      //R1: aerobic growth 
+      //R2: anoxic growth, nitrate -> nitrite
+      //R3: anoxic growth, nitrite -> nitric oxide
+      //R4: anoxic growth, nitric oxide -> nitrous oxide
+      //R5: anoxic growth, nitrous oxide -> nitrogen
+      //the variable 'growth' here refers to mu_het, but is left as 'growth' for consistency with existing fixes
+      //we calculate each separately, so g1 is R1 applied to 'growth'
+      //
       //double tmp1 = growth * conc[ino2][i] / (no2_affinity + conc[ino2][i]) * conc[io2][i] / (o2_affinity + conc[io2][i]);
       //double tmp2 = maintain * conc[io2][i] / (o2_affinity + conc[io2][i]);
 
@@ -241,10 +250,32 @@ void FixGrowthDenit::update_atoms()
   double **conc = grid->conc;
 
   for (int i = 0; i < grid->ncells; i++) {
-    //double tmp1 = growth * conc[ino2][i] / (no2_affinity + conc[ino2][i]) * conc[io2][i] / (o2_affinity + conc[io2][i]);
-    //double tmp2 = maintain * conc[io2][i] / (o2_affinity + conc[io2][i]);
+      //using the terminology from Hiatt and Grady 2008
+      //R1: aerobic growth 
+      //R2: anoxic growth, nitrate -> nitrite
+      //R3: anoxic growth, nitrite -> nitric oxide
+      //R4: anoxic growth, nitric oxide -> nitrous oxide
+      //R5: anoxic growth, nitrous oxide -> nitrogen
+      //the variable 'growth' here refers to mu_het, but is left as 'growth' within the class
+      double mu = growth;
+     
+      // reusing a lot of concentrations, so for readability assign concentration at i to local vars 
+      // compiler should optimize away under reasonable conditions (02, 03)
+      double SS = conc[iss][i];
+      double SO = conc[io2][i];
+      double SNO3 = conc[ino3][i];
+      double SNO2 = conc[ino2][i];
+      double SNO = conc[ino][i];
+      double SN2O = conc[in2o][i];
 
-    //grid->growth[igroup][i][0] = tmp1 - tmp2 - decay;
+      double r1 = mu * SS/(k_s1+SS) * SO/(k_oh1+SO);
+      double r2 = mu * eta_g2 * SS/(k_s2+SS) * SNO3/(k_no3+SNO3) * k_oh2/(k_oh2 + SO); 
+      //#TODO check on KOH3 vs KOH typo in original paper
+      double r3 = mu * eta_g3 * (SS/(k_s3+SS)) * (SNO2/(k_no2+SNO2)) * (k_oh3/(k_oh3+SO)) * (k_13no/(k_13no+SNO));
+      double r4 = mu * eta_g4 * (SS/(k_s4+SS)) * (SNO/(k_no + SNO + (SNO*SNO)/k_14no)) * (k_oh4/(k_oh4+SO));
+      double r5 = mu * eta_g5 * (SS/(k_s5+SS)) * (SN2O/(k_n2o + SN2O)) * (k_oh5/(k_oh5+SO)) * (k_15no/(k_15no+SNO));
+
+      grid->growth[igroup][i][0] = r1 + r2 + r3 + r4 +r5 - decay;
   }
 
   update_atoms_coccus();
