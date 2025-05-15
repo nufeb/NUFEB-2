@@ -66,7 +66,6 @@ class FixGrowthDenit: public FixGrowth {
 
   double growth;
   double yield;
-  double maintain;
   double decay;
 };
 

@@ -29,11 +29,11 @@ using namespace MathConst;
 
 /* ---------------------------------------------------------------------- */
 
-FixGrowDenit::FixGrowDenit(LAMMPS *lmp, int narg, char **arg) :
+FixGrowthDenit::FixGrowthDenit(LAMMPS *lmp, int narg, char **arg) :
   FixGrowth(lmp, narg, arg)
 {
-  if (narg < 38)
-    error->all(FLERR, "Illegal fix nufeb/growth/denit command");
+  if (narg < 36)
+    error->all(FLERR, "Illegal fix nufeb/growth/denit command. Expected at least 36 parameters");
 
   if (!grid->chemostat_flag)
     error->all(FLERR, "fix nufeb/growth/denit requires grid_style nufeb/chemostat");
@@ -71,7 +71,6 @@ FixGrowDenit::FixGrowDenit(LAMMPS *lmp, int narg, char **arg) :
 
   growth = 0.0;
   yield = 1.0;
-  maintain = 0.0;
   decay = 0.0;
 
   iss = grid->find(arg[3]);
@@ -122,22 +121,19 @@ FixGrowDenit::FixGrowDenit(LAMMPS *lmp, int narg, char **arg) :
     } else if (strcmp(arg[iarg], "yield") == 0) {
       yield = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       iarg += 2;
-    } else if (strcmp(arg[iarg], "maintain") == 0) {
-      maintain = utils::numeric(FLERR,arg[iarg+1],true,lmp);
-      iarg += 2;
     } else if (strcmp(arg[iarg], "decay") == 0) {
       decay = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       iarg += 2;
-    } else if(strcmp[iarg], "eta_g2") == 0 {
+    } else if(strcmp(arg[iarg], "eta_g2") == 0) {
        eta_g2 = utils::numeric(FLERR,arg[iarg+1],true,lmp);
        iarg += 2;
-    } else if(strcmp[iarg], "eta_g3") == 0 {
+    } else if(strcmp(arg[iarg], "eta_g3") == 0) {
        eta_g3 = utils::numeric(FLERR,arg[iarg+1],true,lmp);
        iarg += 2;
-    } else if(strcmp[iarg], "eta_g4") == 0 {
+    } else if(strcmp(arg[iarg], "eta_g4") == 0) {
        eta_g4 = utils::numeric(FLERR,arg[iarg+1],true,lmp);
        iarg += 2;
-    } else if(strcmp[iarg], "eta_g5") == 0 {
+    } else if(strcmp(arg[iarg], "eta_g5") == 0) {
        eta_g5 = utils::numeric(FLERR,arg[iarg+1],true,lmp);
        iarg += 2;
     } else {
@@ -148,7 +144,7 @@ FixGrowDenit::FixGrowDenit(LAMMPS *lmp, int narg, char **arg) :
 
 /* ---------------------------------------------------------------------- */
 
-void FixGrowDenit::update_cells()
+void FixGrowthDenit::update_cells()
 {
   double **conc = grid->conc;
   double **reac = grid->reac;
@@ -168,7 +164,7 @@ void FixGrowDenit::update_cells()
 
 /* ---------------------------------------------------------------------- */
 
-void FixGrowDenit::update_atoms()
+void FixGrowthDenit::update_atoms()
 {
   double **conc = grid->conc;
 
