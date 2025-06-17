@@ -39,6 +39,7 @@ class FixGrowthDenit: public FixGrowth {
   int ino2;
   int ino;
   int in2o;
+  int inh;
   
   double k_s1;
   double k_s2;
@@ -61,10 +62,14 @@ class FixGrowthDenit: public FixGrowth {
   double k_14no;
   double k_15no;
 
+  double inxb;
+
   double eta_g2;
   double eta_g3;
   double eta_g4;
   double eta_g5;
+
+  double eta_Y;
 
   double growth;
   double yield;
