@@ -112,8 +112,6 @@ FixGrowthAnammoxTwoPathway::FixGrowthAnammoxTwoPathway(LAMMPS *lmp, int narg, ch
   printf("\t\tk_nh_an: %E\n", k_nh_an);
   printf("\t\tinxb: %E\n", inxb);
   #endif
- 
-  //TODO add N2, this breaks the build on purpose
 
   name = std::string(arg[idx]);
   ino3 = grid->find(arg[idx++]);
@@ -187,11 +185,7 @@ void FixGrowthAnammoxTwoPathway::update_cells()
       reac[ino3][i] -= -1 * (rI_AN * (1/1.14) + rS_AN * (1/1.71) )* dens[igroup][i];
       reac[ino2][i] -= (1/yield + (1/1.14))* rI_AN * dens[igroup][i];
       reac[ino][i] -= (1/yield + (1/1.71))* rS_AN * dens[igroup][i];
-      reac[inh][i] -= (1/yield)*rI_AN*dens[igroup][i];
-//      if(reac[inh][i] < 0){
-//        std::cout<< "rIAN: " << rI_AN << std::endl;
-//        std::cout<< "inh: " << reac[inh][i] << std::endl;
-//      }
+      reac[inh][i] -= ((1/yield)*(rI_AN + rS_AN))*dens[igroup][i];
     }
   }
 }
@@ -218,7 +212,7 @@ void FixGrowthAnammoxTwoPathway::update_atoms()
       //should also only calculate onece per timestep
       double rI_AN = mu * eta_I_an * k_oh_an/(k_oh_an+SO) * SNO2/(k_no2_an+SNO2) * SNH/(k_nh_an+SNH);
       double rS_AN = mu * eta_S_an * k_oh_an/(k_oh_an+SO) * SNO/(k_no_an+SNO) * SNH/(k_nh_an+SNH);
-      grid->growth[igroup][i][0] = rI_AN + rS_AN;// - decay;
+      grid->growth[igroup][i][0] = rI_AN + rS_AN - decay;
   }
 
   update_atoms_coccus();
