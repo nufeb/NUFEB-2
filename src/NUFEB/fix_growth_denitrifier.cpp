@@ -36,7 +36,7 @@ FixGrowthDenit::FixGrowthDenit(LAMMPS *lmp, int narg, char **arg) :
   FixGrowth(lmp, narg, arg)
 {
   if (narg != 44)
-    error->all(FLERR, "Illegal fix nufeb/growth/denit command. Expected 44  parameters, found ");
+    error->all(FLERR, "Illegal fix nufeb/growth/denit command. Expected 44  parameters. ");
 
   if (!grid->chemostat_flag)
     error->all(FLERR, "fix nufeb/growth/denit requires grid_style nufeb/chemostat");
@@ -69,6 +69,8 @@ FixGrowthDenit::FixGrowthDenit(LAMMPS *lmp, int narg, char **arg) :
   k_14no = 0.0;
   k_15no = 0.0;
 
+  eta_Y = 0.0;
+
   eta_g2 = 0.0;
   eta_g3 = 0.0;
   eta_g4 = 0.0;
@@ -80,7 +82,7 @@ FixGrowthDenit::FixGrowthDenit(LAMMPS *lmp, int narg, char **arg) :
 
   iss = grid->find(arg[3]);
   if (iss < 0)
-    error->all(FLERR, "Fix GrowthDenit can't find substrate named " +std::string(arg[3]));
+    error->all(FLERR, "Fix GrowthDenit can't find substrate named " + std::string(arg[3]));
   k_s1 = utils::numeric(FLERR,arg[4],true,lmp);
   k_s2 = utils::numeric(FLERR,arg[5],true,lmp);
   k_s3 = utils::numeric(FLERR,arg[6],true,lmp);
@@ -101,7 +103,7 @@ FixGrowthDenit::FixGrowthDenit(LAMMPS *lmp, int narg, char **arg) :
 
   io2 = grid->find(arg[9]);
   if (io2 < 0)
-    error->all(FLERR, "Fix GrowthDenit can't find substrate named " +std::string(arg[9]));
+    error->all(FLERR, "Fix GrowthDenit can't find substrate named " + std::string(arg[9]));
   k_oh1 = utils::numeric(FLERR,arg[10],true,lmp);
   k_oh2 = utils::numeric(FLERR,arg[11],true,lmp);
   k_oh3 = utils::numeric(FLERR,arg[12],true,lmp);
@@ -119,7 +121,7 @@ FixGrowthDenit::FixGrowthDenit(LAMMPS *lmp, int narg, char **arg) :
 
   ino3 = grid->find(arg[15]);
   if (ino3 < 0)
-    error->all(FLERR, "Fix GrowthDenit can't find substrate named " +std::string(arg[15]));
+    error->all(FLERR, "Fix GrowthDenit can't find substrate named " + std::string(arg[15]));
   k_no3 = utils::numeric(FLERR,arg[16],true,lmp);
   
   #ifdef FIX_GROWTH_DENIT_VERBOSE
@@ -129,7 +131,7 @@ FixGrowthDenit::FixGrowthDenit(LAMMPS *lmp, int narg, char **arg) :
 
   ino2 = grid->find(arg[17]);
   if (ino2 < 0)
-    error->all(FLERR, "Fix GrowthDenit can't find substrate named " +std::string(arg[17]));
+    error->all(FLERR, "Fix GrowthDenit can't find substrate named " + std::string(arg[17]));
   k_no2 = utils::numeric(FLERR,arg[18],true,lmp);
   
   #ifdef FIX_GROWTH_DENIT_VERBOSE
@@ -246,6 +248,7 @@ void FixGrowthDenit::update_cells()
       //R4: anoxic growth, nitric oxide -> nitrous oxide
       //R5: anoxic growth, nitrous oxide -> nitrogen
       //the variable 'growth' here refers to mu_het, but is left as 'growth' within the class
+      //TODO pull out of loop and verify
       double mu = growth;
      
       // reusing a lot of concentrations, so for readability assign concentration at i to local vars 
@@ -259,13 +262,14 @@ void FixGrowthDenit::update_cells()
 
       double r1 = mu * SS/(k_s1+SS) * SO/(k_oh1+SO);
       double r2 = mu * eta_g2 * SS/(k_s2+SS) * SNO3/(k_no3+SNO3) * k_oh2/(k_oh2 + SO); 
-      //#TODO check on KOH3 vs KOH typo in original paper
       double r3 = mu * eta_g3 * (SS/(k_s3+SS)) * (SNO2/(k_no2+SNO2)) * (k_oh3/(k_oh3+SO)) * (k_13no/(k_13no+SNO));
       double r4 = mu * eta_g4 * (SS/(k_s4+SS)) * (SNO/(k_no + SNO + (SNO*SNO)/k_14no)) * (k_oh4/(k_oh4+SO));
       double r5 = mu * eta_g5 * (SS/(k_s5+SS)) * (SN2O/(k_n2o + SN2O)) * (k_oh5/(k_oh5+SO)) * (k_15no/(k_15no+SNO));
 
+      //TODO A and B can be calculated once at instantiation
       double A = (1-yield*eta_Y)/(1.143*yield*eta_Y);
       double B = (1-yield*eta_Y)/(0.571*yield*eta_Y);
+      
       reac[iss][i] -= (1/yield *r1 + 1/(yield*eta_Y)*(r2+r3+r4+r5) ) * dens[igroup][i];
       reac[io2][i] -= (1-yield)/yield * (r1) * dens[igroup][i];
       reac[ino3][i] -= A * r2 * dens[igroup][i];
@@ -283,18 +287,11 @@ void FixGrowthDenit::update_atoms()
 {
   double **conc = grid->conc;
 
+  //TODO DRY with respect to update_cells() and calc once per timestep
   for (int i = 0; i < grid->ncells; i++) {
-      //using the terminology from Hiatt and Grady 2008
-      //R1: aerobic growth 
-      //R2: anoxic growth, nitrate -> nitrite
-      //R3: anoxic growth, nitrite -> nitric oxide
-      //R4: anoxic growth, nitric oxide -> nitrous oxide
-      //R5: anoxic growth, nitrous oxide -> nitrogen
-      //the variable 'growth' here refers to mu_het, but is left as 'growth' within the class
+      //TODO pull out of loop and verify
       double mu = growth;
-    
-      // reusing a lot of concentrations, so for readability assign concentration at i to local vars 
-      // compiler should optimize away under reasonable conditions (02, 03)
+
       double SS = conc[iss][i];
       double SO = conc[io2][i];
       double SNO3 = conc[ino3][i];
@@ -304,18 +301,12 @@ void FixGrowthDenit::update_atoms()
 
       double r1 = mu * SS/(k_s1+SS) * SO/(k_oh1+SO);
       double r2 = mu * eta_g2 * SS/(k_s2+SS) * SNO3/(k_no3+SNO3) * k_oh2/(k_oh2 + SO); 
-      //#TODO check on KOH3 vs KOH typo in original paper
       double r3 = mu * eta_g3 * (SS/(k_s3+SS)) * (SNO2/(k_no2+SNO2)) * (k_oh3/(k_oh3+SO)) * (k_13no/(k_13no+SNO));
       double r4 = mu * eta_g4 * (SS/(k_s4+SS)) * (SNO/(k_no + SNO + (SNO*SNO)/k_14no)) * (k_oh4/(k_oh4+SO));
       double r5 = mu * eta_g5 * (SS/(k_s5+SS)) * (SN2O/(k_n2o + SN2O)) * (k_oh5/(k_oh5+SO)) * (k_15no/(k_15no+SNO));
 
 
       grid->growth[igroup][i][0] = r1 + r2 + r3 + r4 +r5 - decay;
-       #ifdef FIX_GROWTH_DENIT_VERBOSE
-//        printf("\tUpdate_atom for grid cell: %d\n ", i);
-//        printf("\t\tgrowth: %E\n", r1+r2+r3+r4+r5-decay);
-      #endif
-
   }
 
   update_atoms_coccus();

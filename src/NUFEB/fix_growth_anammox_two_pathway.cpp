@@ -36,8 +36,6 @@ using namespace MathConst;
 FixGrowthAnammoxTwoPathway::FixGrowthAnammoxTwoPathway(LAMMPS *lmp, int narg, char **arg) :
   FixGrowth(lmp, narg, arg)
 {
-
-  printf("Found %d params\n",narg);
   if (narg != 23)
     error->all(FLERR, "Illegal fix nufeb/growth/AnammoxTwoPathway command. Expected 23  parameters. ");
 
@@ -151,7 +149,7 @@ FixGrowthAnammoxTwoPathway::FixGrowthAnammoxTwoPathway(LAMMPS *lmp, int narg, ch
        #endif
        iarg += 2;
     } else {
-      error->all(FLERR, "Illegal fix nufeb/growth/AnammoxTwoPathway command. Did not recognize argument name. Expected either growth, yield, decay,eta_Y, or eta_I_an, eta_S_an got " + std::string(arg[iarg]));
+      error->all(FLERR, "Illegal fix nufeb/growth/AnammoxTwoPathway command. Did not recognize argument name. Expected either growth, yield, decay, or eta_I_an, eta_S_an got " + std::string(arg[iarg]));
     }
   }
 }
@@ -166,7 +164,8 @@ void FixGrowthAnammoxTwoPathway::update_cells()
 
   for (int i = 0; i < grid->ncells; i++) {
     if (grid->mask[i] & GRID_MASK) {
-       //the variable 'growth' here refers to mu_het, but is left as 'growth' within the class
+      //the variable 'growth' here refers to mu_het, but is left as 'growth' within the class
+      //TODO pull out of loop and check
       double mu = growth;
      
       // reusing a lot of concentrations, so for readability assign concentration at i to local vars 
@@ -176,9 +175,6 @@ void FixGrowthAnammoxTwoPathway::update_cells()
       double SNO = conc[ino][i];
       double SNH = conc[inh][i];
 
-      //TODO these rates are also calculated in update_atoms
-      //should DRY
-      //should also only calculate once per timestep
       double rI_AN = mu * eta_I_an * k_oh_an/(k_oh_an+SO) * SNO2/(k_no2_an+SNO2) * SNH/(k_nh_an+SNH);
       double rS_AN = mu * eta_S_an * k_oh_an/(k_oh_an+SO) * SNO/(k_no_an+SNO) * SNH/(k_nh_an+SNH);
 
@@ -196,20 +192,15 @@ void FixGrowthAnammoxTwoPathway::update_atoms()
 {
   double **conc = grid->conc;
 
+  //TODO DRY with update_cells() and timestepping
   for (int i = 0; i < grid->ncells; i++) {
-      //the variable 'growth' here refers to mu_het, but is left as 'growth' within the class
       double mu = growth;
     
-      // reusing a lot of concentrations, so for readability assign concentration at i to local vars 
-      // compiler should optimize away under reasonable conditions (02, 03)
       double SO = conc[io2][i];
       double SNO2 = conc[ino2][i];
       double SNO = conc[ino][i];
       double SNH = conc[inh][i];
 
-      //TODO these rates are also calculated in update_atoms
-      //should DRY
-      //should also only calculate onece per timestep
       double rI_AN = mu * eta_I_an * k_oh_an/(k_oh_an+SO) * SNO2/(k_no2_an+SNO2) * SNH/(k_nh_an+SNH);
       double rS_AN = mu * eta_S_an * k_oh_an/(k_oh_an+SO) * SNO/(k_no_an+SNO) * SNH/(k_nh_an+SNH);
       grid->growth[igroup][i][0] = rI_AN + rS_AN - decay;

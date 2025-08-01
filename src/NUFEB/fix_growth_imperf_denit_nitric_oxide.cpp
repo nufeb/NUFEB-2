@@ -35,9 +35,8 @@ using namespace MathConst;
 FixGrowthImperfDenitNitricOxide::FixGrowthImperfDenitNitricOxide(LAMMPS *lmp, int narg, char **arg) :
   FixGrowth(lmp, narg, arg)
 {
-  printf("Found %d params\n",narg);
   if (narg != 31)
-    error->all(FLERR, "Illegal fix nufeb/growth/ImperfDenitNO command. Expected 31  parameters, found ");
+    error->all(FLERR, "Illegal fix nufeb/growth/ImperfDenitNO command. Expected 31  parameters.");
 
   if (!grid->chemostat_flag)
     error->all(FLERR, "fix nufeb/growth/ImperfDenitNO requires grid_style nufeb/chemostat");
@@ -64,7 +63,6 @@ FixGrowthImperfDenitNitricOxide::FixGrowthImperfDenitNitricOxide(LAMMPS *lmp, in
   eta_g2 = 0.0;
   eta_g3 = 0.0;
 
-  //TODO add default value init to eta_Y in full denit fix
   eta_Y = 0.0;
 
   growth = 0.0;
@@ -73,7 +71,7 @@ FixGrowthImperfDenitNitricOxide::FixGrowthImperfDenitNitricOxide(LAMMPS *lmp, in
 
   iss = grid->find(arg[3]);
   if (iss < 0)
-    error->all(FLERR, "Fix GrowthImperfDenitNO can't find substrate named " +std::string(arg[3]));
+    error->all(FLERR, "Fix GrowthImperfDenitNO can't find substrate named " + std::string(arg[3]));
   k_s1 = utils::numeric(FLERR,arg[4],true,lmp);
   k_s2 = utils::numeric(FLERR,arg[5],true,lmp);
   k_s3 = utils::numeric(FLERR,arg[6],true,lmp);
@@ -89,7 +87,7 @@ FixGrowthImperfDenitNitricOxide::FixGrowthImperfDenitNitricOxide(LAMMPS *lmp, in
 
   io2 = grid->find(arg[7]);
   if (io2 < 0)
-    error->all(FLERR, "Fix ImperfDenitNO can't find substrate named " +std::string(arg[7]));
+    error->all(FLERR, "Fix ImperfDenitNO can't find substrate named " + std::string(arg[7]));
   k_oh1 = utils::numeric(FLERR,arg[8],true,lmp);
   k_oh2 = utils::numeric(FLERR,arg[9],true,lmp);
   k_oh3 = utils::numeric(FLERR,arg[10],true,lmp);
@@ -103,7 +101,7 @@ FixGrowthImperfDenitNitricOxide::FixGrowthImperfDenitNitricOxide(LAMMPS *lmp, in
 
   ino3 = grid->find(arg[11]);
   if (ino3 < 0)
-    error->all(FLERR, "Fix ImperfDeniNO can't find substrate named " +std::string(arg[11]));
+    error->all(FLERR, "Fix ImperfDeniNO can't find substrate named " + std::string(arg[11]));
   k_no3 = utils::numeric(FLERR,arg[12],true,lmp);
   
   #ifdef FIX_GROWTH_IMPERF_DENIT_NO_VERBOSE
@@ -113,7 +111,7 @@ FixGrowthImperfDenitNitricOxide::FixGrowthImperfDenitNitricOxide(LAMMPS *lmp, in
 
   ino2 = grid->find(arg[13]);
   if (ino2 < 0)
-    error->all(FLERR, "Fix ImperfDenitNO can't find substrate named " +std::string(arg[13]));
+    error->all(FLERR, "Fix ImperfDenitNO can't find substrate named " + std::string(arg[13]));
   k_no2 = utils::numeric(FLERR,arg[14],true,lmp);
   
   #ifdef FIX_GROWTH_IMPERF_DENIT_NO_VERBOSE
@@ -200,6 +198,7 @@ void FixGrowthImperfDenitNitricOxide::update_cells()
       //R2: anoxic growth, nitrate -> nitrite
       //R3: anoxic growth, nitrite -> nitric oxide
       //the variable 'growth' here refers to mu_het, but is left as 'growth' within the class
+      //TODO pull out of loop and check
       double mu = growth;
      
       // reusing a lot of concentrations, so for readability assign concentration at i to local vars 
@@ -210,17 +209,14 @@ void FixGrowthImperfDenitNitricOxide::update_cells()
       double SNO2 = conc[ino2][i];
       double SNO = conc[ino][i];
 
-      //TODO these rates are also calculated in update_atoms
-      //should DRY
-      //should also only calculate onece per timestep
       double r1 = mu * SS/(k_s1+SS) * SO/(k_oh1+SO);
       double r2 = mu * eta_g2 * SS/(k_s2+SS) * SNO3/(k_no3+SNO3) * k_oh2/(k_oh2 + SO); 
-      //#TODO check on KOH3 vs KOH typo in original paper
       double r3 = mu * eta_g3 * (SS/(k_s3+SS)) * (SNO2/(k_no2+SNO2)) * (k_oh3/(k_oh3+SO)) * (k_13no/(k_13no+SNO));
 
       //TODO A and B can be calculated once at instantiation
       double A = (1-yield*eta_Y)/(1.143*yield*eta_Y);
       double B = (1-yield*eta_Y)/(0.571*yield*eta_Y);
+
       reac[iss][i] -= (1/yield *r1 + 1/(yield*eta_Y)*(r2+r3) ) * dens[igroup][i];
       reac[io2][i] -= (1-yield)/yield * (r1) * dens[igroup][i];
       reac[ino3][i] -= A * r2 * dens[igroup][i];
@@ -237,16 +233,10 @@ void FixGrowthImperfDenitNitricOxide::update_atoms()
 {
   double **conc = grid->conc;
 
+  //TODO DRY with update_cells() and only calculate once per step
   for (int i = 0; i < grid->ncells; i++) {
-      //using the terminology from Hiatt and Grady 2008
-      //R1: aerobic growth 
-      //R2: anoxic growth, nitrate -> nitrite NO3 to NO2
-      //R3: anoxic growth, nitrite -> nitric oxide NO2 to NO
-      //the variable 'growth' here refers to mu_het, but is left as 'growth' within the class
       double mu = growth;
     
-      // reusing a lot of concentrations, so for readability assign concentration at i to local vars 
-      // compiler should optimize away under reasonable conditions (02, 03)
       double SS = conc[iss][i];
       double SO = conc[io2][i];
       double SNO3 = conc[ino3][i];
@@ -255,9 +245,7 @@ void FixGrowthImperfDenitNitricOxide::update_atoms()
 
       double r1 = mu * SS/(k_s1+SS) * SO/(k_oh1+SO);
       double r2 = mu * eta_g2 * SS/(k_s2+SS) * SNO3/(k_no3+SNO3) * k_oh2/(k_oh2 + SO); 
-      //#TODO check on KOH3 vs KOH typo in original paper
       double r3 = mu * eta_g3 * (SS/(k_s3+SS)) * (SNO2/(k_no2+SNO2)) * (k_oh3/(k_oh3+SO)) * (k_13no/(k_13no+SNO));
-
 
       grid->growth[igroup][i][0] = r1 + r2 + r3 - decay;
 
