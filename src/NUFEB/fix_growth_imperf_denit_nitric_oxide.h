@@ -71,9 +71,36 @@ class FixGrowthImperfDenitNitricOxide: public FixGrowth {
 
   double eta_Y;
 
-  double growth;
+  double mu_max;
   double yield;
   double decay;
+
+private:
+  // components of reaction or yield equations which can be reused and don't vary with timestep
+  double A;
+  double B;
+
+  // rate equations
+  //terminology from Hiatt and Grady 2008
+  //R1: aerobic growth 
+  //R2: anoxic growth, nitrate -> nitrite
+  //R3: anoxic growth, nitrite -> nitric oxide
+  //we use raten() to signify functions which calc RN
+  //within the code we use rn=raten() - mainly for readability
+  double rate1(double SS, double SO);
+  double rate2(double SS, double SNO3, double SO);
+  double rate3(double SS, double SNO2, double SO, double SNO);
+  double rate4(double SS, double SNO, double SO);
+  double rate5(double SS, double SN2O, double SO, double SNO);
+ 
+  //rate for each of the above at a timestep and cell index
+  //updated by computeRates
+  //used in update_cells() and update_atoms()
+  double r1;
+  double r2;
+  double r3;
+
+  void computeRates(int cellIndex);
 };
 
 }

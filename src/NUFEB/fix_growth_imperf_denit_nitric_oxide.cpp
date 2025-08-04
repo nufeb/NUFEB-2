@@ -41,34 +41,6 @@ FixGrowthImperfDenitNitricOxide::FixGrowthImperfDenitNitricOxide(LAMMPS *lmp, in
   if (!grid->chemostat_flag)
     error->all(FLERR, "fix nufeb/growth/ImperfDenitNO requires grid_style nufeb/chemostat");
 
-  iss = -1;
-  io2 = -1;
-  ino3 = -1;
-  ino2 = -1;
-  ino = -1;
-  
-  k_s1 = 0.0;
-  k_s2 = 0.0;
-  k_s3 = 0.0;
-  
-  k_oh1 = 0.0;
-  k_oh2 = 0.0;
-  k_oh3 = 0.0;
-
-  k_no3 = 0.0;
-  k_no2 = 0.0;
-
-  k_13no = 0.0;
-
-  eta_g2 = 0.0;
-  eta_g3 = 0.0;
-
-  eta_Y = 0.0;
-
-  growth = 0.0;
-  yield = 1.0;
-  decay = 0.0;
-
   iss = grid->find(arg[3]);
   if (iss < 0)
     error->all(FLERR, "Fix GrowthImperfDenitNO can't find substrate named " + std::string(arg[3]));
@@ -142,9 +114,9 @@ FixGrowthImperfDenitNitricOxide::FixGrowthImperfDenitNitricOxide(LAMMPS *lmp, in
   int iarg = 19;
   while (iarg < narg) {
     if (strcmp(arg[iarg], "growth") == 0) {
-      growth = utils::numeric(FLERR,arg[iarg+1],true,lmp);
+      mu_max = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       #ifdef FIX_GROWTH_IMPERF_DENIT_NO_VERBOSE
-      printf("\tGrowth: %E\n ", growth);
+      printf("\tGrowth: %E\n ", mu_max);
       #endif
       iarg += 2;
     } else if (strcmp(arg[iarg], "yield") == 0) {
@@ -181,9 +153,44 @@ FixGrowthImperfDenitNitricOxide::FixGrowthImperfDenitNitricOxide(LAMMPS *lmp, in
       error->all(FLERR, "Illegal fix nufeb/growth/ImperfDenitNO command. Did not recognize argument name. Expected either growth, yield, decay,eta_Y, or eta_g2, eta_g3 got " + std::string(arg[iarg]));
     }
   }
+  
+  //these are used in reaction or yield results, but don't change between timesteps
+  A = (1-yield*eta_Y)/(1.143*yield*eta_Y);
+  B = (1-yield*eta_Y)/(0.571*yield*eta_Y);
 }
 
-/* ---------------------------------------------------------------------- */
+// extracted to DRY update_cells() and update_atoms()
+// this may still get called twice on a timestep, but usually rarely and the
+// add complexity of memoization doesn't seem worth it right now
+// code review note - do we need rate1..raten functions? maybe if we pull them out into a common class?
+// but that more closely couples denit and imperf denit, right now prefering to keep growth fixes rather separated
+void FixGrowthImperfDenitNitricOxide::computeRates(int cellIndex){
+  double **conc = grid->conc;
+  
+  // readability, compiler should optimize away under reasonable conditions (02, 03)
+  double SS = conc[iss][cellIndex];
+  double SO = conc[io2][cellIndex];
+  double SNO3 = conc[ino3][cellIndex];
+  double SNO2 = conc[ino2][cellIndex];
+  double SNO = conc[ino][cellIndex];
+  double SN2O = conc[in2o][cellIndex];
+
+  r1 = rate1(SS, SO);
+  r2 = rate2(SS, SNO3, SO);
+  r3 = rate3(SS, SNO2, SO, SNO);
+}
+
+double FixGrowthImperfDenitNitricOxide::rate1(double SS, double SO){
+     return (mu_max * SS/(k_s1+SS) * SO/(k_oh1+SO));
+}
+
+double FixGrowthImperfDenitNitricOxide::rate2(double SS, double SNO3, double SO){
+     return (mu_max * eta_g2 * SS/(k_s2+SS) * SNO3/(k_no3+SNO3) * k_oh2/(k_oh2 + SO)); 
+}
+
+double FixGrowthImperfDenitNitricOxide::rate3(double SS, double SNO2, double SO, double SNO){
+      return (mu_max * eta_g3 * (SS/(k_s3+SS)) * (SNO2/(k_no2+SNO2)) * (k_oh3/(k_oh3+SO)) * (k_13no/(k_13no+SNO)));
+}
 
 void FixGrowthImperfDenitNitricOxide::update_cells()
 {
@@ -193,29 +200,7 @@ void FixGrowthImperfDenitNitricOxide::update_cells()
 
   for (int i = 0; i < grid->ncells; i++) {
     if (grid->mask[i] & GRID_MASK) {
-      //using the terminology from Hiatt and Grady 2008
-      //R1: aerobic growth 
-      //R2: anoxic growth, nitrate -> nitrite
-      //R3: anoxic growth, nitrite -> nitric oxide
-      //the variable 'growth' here refers to mu_het, but is left as 'growth' within the class
-      //TODO pull out of loop and check
-      double mu = growth;
-     
-      // reusing a lot of concentrations, so for readability assign concentration at i to local vars 
-      // compiler should optimize away under reasonable conditions (02, 03)
-      double SS = conc[iss][i];
-      double SO = conc[io2][i];
-      double SNO3 = conc[ino3][i];
-      double SNO2 = conc[ino2][i];
-      double SNO = conc[ino][i];
-
-      double r1 = mu * SS/(k_s1+SS) * SO/(k_oh1+SO);
-      double r2 = mu * eta_g2 * SS/(k_s2+SS) * SNO3/(k_no3+SNO3) * k_oh2/(k_oh2 + SO); 
-      double r3 = mu * eta_g3 * (SS/(k_s3+SS)) * (SNO2/(k_no2+SNO2)) * (k_oh3/(k_oh3+SO)) * (k_13no/(k_13no+SNO));
-
-      //TODO A and B can be calculated once at instantiation
-      double A = (1-yield*eta_Y)/(1.143*yield*eta_Y);
-      double B = (1-yield*eta_Y)/(0.571*yield*eta_Y);
+      computeRates(i);
 
       reac[iss][i] -= (1/yield *r1 + 1/(yield*eta_Y)*(r2+r3) ) * dens[igroup][i];
       reac[io2][i] -= (1-yield)/yield * (r1) * dens[igroup][i];
@@ -235,20 +220,9 @@ void FixGrowthImperfDenitNitricOxide::update_atoms()
 
   //TODO DRY with update_cells() and only calculate once per step
   for (int i = 0; i < grid->ncells; i++) {
-      double mu = growth;
-    
-      double SS = conc[iss][i];
-      double SO = conc[io2][i];
-      double SNO3 = conc[ino3][i];
-      double SNO2 = conc[ino2][i];
-      double SNO = conc[ino][i];
-
-      double r1 = mu * SS/(k_s1+SS) * SO/(k_oh1+SO);
-      double r2 = mu * eta_g2 * SS/(k_s2+SS) * SNO3/(k_no3+SNO3) * k_oh2/(k_oh2 + SO); 
-      double r3 = mu * eta_g3 * (SS/(k_s3+SS)) * (SNO2/(k_no2+SNO2)) * (k_oh3/(k_oh3+SO)) * (k_13no/(k_13no+SNO));
+      computeRates(i);
 
       grid->growth[igroup][i][0] = r1 + r2 + r3 - decay;
-
   }
 
   update_atoms_coccus();
