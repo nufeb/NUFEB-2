@@ -27,8 +27,8 @@ using namespace LAMMPS_NS;
 using namespace FixConst;
 using namespace MathConst;
 
-
-#define FIX_GROWTH_IMPERF_DENIT_NO_VERBOSE
+//uncomment for more verbose output
+//#define FIX_GROWTH_IMPERF_DENIT_NO_VERBOSE
 
 /* ---------------------------------------------------------------------- */
 
