@@ -49,13 +49,16 @@ class FixGrowthAnammoxTwoPathway: public FixGrowth {
   double eta_I_an;
   double eta_S_an;
 
-  double growth;
+  double mu_max;
   double yield;
   double decay;
+
+ private:
+  void computeRates(int cellIndex);
+  double rI_AN;
+  double rS_AN;
 };
-
 }
-
 #endif
 #endif
 

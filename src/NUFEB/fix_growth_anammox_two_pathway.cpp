@@ -42,25 +42,6 @@ FixGrowthAnammoxTwoPathway::FixGrowthAnammoxTwoPathway(LAMMPS *lmp, int narg, ch
   if (!grid->chemostat_flag)
     error->all(FLERR, "fix nufeb/growth/AnammoxTwoPathway requires grid_style nufeb/chemostat");
 
-  io2 = -1;
-  ino2 = -1;
-  ino = -1;
-  inh = -1;
-  ino3 = -1;
-
-  k_oh_an = 0.0;
-  k_no2_an = 0.0;
-  k_nh_an = 0.0;
-  k_no_an = 0.0;
-
-  eta_I_an = 0.0;
-  eta_S_an = 0.0;
-
-  growth = 0.0;
-  yield = 1.0;
-  decay = 0.0;
-  inxb = 0;
-
   std::string name;
   int idx = 3;
   name = std::string(arg[idx]);
@@ -119,9 +100,9 @@ FixGrowthAnammoxTwoPathway::FixGrowthAnammoxTwoPathway(LAMMPS *lmp, int narg, ch
   int iarg = idx;
   while (iarg < narg) {
     if (strcmp(arg[iarg], "growth") == 0) {
-      growth = utils::numeric(FLERR,arg[iarg+1],true,lmp);
+      mu_max = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       #ifdef FIX_GROWTH_ANAMMOX_TWO_PATHWAY_VERBOSE
-      printf("\tGrowth: %E\n ", growth);
+      printf("\tGrowth: %E\n ", mu_max);
       #endif
       iarg += 2;
     } else if (strcmp(arg[iarg], "yield") == 0) {
@@ -154,29 +135,28 @@ FixGrowthAnammoxTwoPathway::FixGrowthAnammoxTwoPathway(LAMMPS *lmp, int narg, ch
   }
 }
 
-/* ---------------------------------------------------------------------- */
+void FixGrowthAnammoxTwoPathway::computeRates(int cellIndex){
+  double **conc = grid->conc;
+  
+  // reusing a lot of concentrations, so for readability assign concentration at i to local vars 
+  // compiler should optimize away under reasonable conditions (02, 03)
+  double SO = conc[io2][cellIndex];
+  double SNO2 = conc[ino2][cellIndex];
+  double SNO = conc[ino][cellIndex];
+  double SNH = conc[inh][cellIndex];
+
+  rI_AN = mu_max * eta_I_an * k_oh_an/(k_oh_an+SO) * SNO2/(k_no2_an+SNO2) * SNH/(k_nh_an+SNH);
+  rS_AN = mu_max * eta_S_an * k_oh_an/(k_oh_an+SO) * SNO/(k_no_an+SNO) * SNH/(k_nh_an+SNH);
+}
 
 void FixGrowthAnammoxTwoPathway::update_cells()
 {
-  double **conc = grid->conc;
   double **reac = grid->reac;
   double **dens = grid->dens;
 
   for (int i = 0; i < grid->ncells; i++) {
     if (grid->mask[i] & GRID_MASK) {
-      //the variable 'growth' here refers to mu_het, but is left as 'growth' within the class
-      //TODO pull out of loop and check
-      double mu = growth;
-     
-      // reusing a lot of concentrations, so for readability assign concentration at i to local vars 
-      // compiler should optimize away under reasonable conditions (02, 03)
-      double SO = conc[io2][i];
-      double SNO2 = conc[ino2][i];
-      double SNO = conc[ino][i];
-      double SNH = conc[inh][i];
-
-      double rI_AN = mu * eta_I_an * k_oh_an/(k_oh_an+SO) * SNO2/(k_no2_an+SNO2) * SNH/(k_nh_an+SNH);
-      double rS_AN = mu * eta_S_an * k_oh_an/(k_oh_an+SO) * SNO/(k_no_an+SNO) * SNH/(k_nh_an+SNH);
+      computeRates(i);
 
       reac[ino3][i] -= -1 * (rI_AN * (1/1.14) + rS_AN * (1/1.71) )* dens[igroup][i];
       reac[ino2][i] -= (1/yield + (1/1.14))* rI_AN * dens[igroup][i];
@@ -190,19 +170,9 @@ void FixGrowthAnammoxTwoPathway::update_cells()
 
 void FixGrowthAnammoxTwoPathway::update_atoms()
 {
-  double **conc = grid->conc;
-
   //TODO DRY with update_cells() and timestepping
   for (int i = 0; i < grid->ncells; i++) {
-      double mu = growth;
-    
-      double SO = conc[io2][i];
-      double SNO2 = conc[ino2][i];
-      double SNO = conc[ino][i];
-      double SNH = conc[inh][i];
-
-      double rI_AN = mu * eta_I_an * k_oh_an/(k_oh_an+SO) * SNO2/(k_no2_an+SNO2) * SNH/(k_nh_an+SNH);
-      double rS_AN = mu * eta_S_an * k_oh_an/(k_oh_an+SO) * SNO/(k_no_an+SNO) * SNH/(k_nh_an+SNH);
+      computeRates(i);
       grid->growth[igroup][i][0] = rI_AN + rS_AN - decay;
   }
 
