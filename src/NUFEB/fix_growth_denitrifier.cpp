@@ -41,44 +41,14 @@ FixGrowthDenit::FixGrowthDenit(LAMMPS *lmp, int narg, char **arg) :
   if (!grid->chemostat_flag)
     error->all(FLERR, "fix nufeb/growth/denit requires grid_style nufeb/chemostat");
 
-  iss = -1;
-  io2 = -1;
-  ino3 = -1;
-  ino2 = -1;
-  ino = -1;
-  in2o= -1;
-  
-  k_s1 = 0.0;
-  k_s2 = 0.0;
-  k_s3 = 0.0;
-  k_s4 = 0.0;
-  k_s5 = 0.0;
-  
-  k_oh1 = 0.0;
-  k_oh2 = 0.0;
-  k_oh3 = 0.0;
-  k_oh4 = 0.0;
-  k_oh5 = 0.0;
+  //TODO when we start refactoring parsing, look into making these static methods or some
+  //other such thing which allows us to use const with parameters that don't change. also
+  //sanity checking etc on input values.
 
-  k_no3 = 0.0;
-  k_no2 = 0.0;
-  k_n2o = 0.0;
-  k_no = 0.0;
-
-  k_13no = 0.0;
-  k_14no = 0.0;
-  k_15no = 0.0;
-
-  eta_Y = 0.0;
-
-  eta_g2 = 0.0;
-  eta_g3 = 0.0;
-  eta_g4 = 0.0;
-  eta_g5 = 0.0;
-
-  growth = 0.0;
-  yield = 1.0;
-  decay = 0.0;
+  // a bunch of default value assignments were removed. don't put them back in
+  // the philosophy is parsing should fail (maybe a bit more gracefully)
+  // rather than feed in 'good' default parameters that silently make the sim
+  // only *appear* to run the way the user expected
 
   iss = grid->find(arg[3]);
   if (iss < 0)
@@ -178,9 +148,9 @@ FixGrowthDenit::FixGrowthDenit(LAMMPS *lmp, int narg, char **arg) :
   int iarg = 28;
   while (iarg < narg) {
     if (strcmp(arg[iarg], "growth") == 0) {
-      growth = utils::numeric(FLERR,arg[iarg+1],true,lmp);
+      mu_max = utils::numeric(FLERR,arg[iarg+1],true,lmp);
       #ifdef FIX_GROWTH_DENIT_VERBOSE
-      printf("\tGrowth: %E\n ", growth);
+      printf("\tGrowth: %E\n ", mu_max);
       #endif
       iarg += 2;
     } else if (strcmp(arg[iarg], "yield") == 0) {
@@ -229,9 +199,62 @@ FixGrowthDenit::FixGrowthDenit(LAMMPS *lmp, int narg, char **arg) :
       error->all(FLERR, "Illegal fix nufeb/growth/denit command. Did not recognize argument name. Expected either growth, yield, decay,eta_Y, or eta_g2, through eta_g5");
     }
   }
+  
+  //these are used in reaction or yield results, but don't change between timesteps
+  A = (1-yield*eta_Y)/(1.143*yield*eta_Y);
+  B = (1-yield*eta_Y)/(0.571*yield*eta_Y);
 }
 
-/* ---------------------------------------------------------------------- */
+//R1: aerobic growth 
+double FixGrowthDenit::rate1(double SS, double SO)
+{
+      return (mu_max * SS/(k_s1+SS) * SO/(k_oh1+SO));
+}
+
+//R2: anoxic growth, nitrate -> nitrite
+double FixGrowthDenit::rate2(double SS, double SNO3, double SO)
+{
+      return (mu_max * eta_g2 * SS/(k_s2+SS) * SNO3/(k_no3+SNO3) * k_oh2/(k_oh2 + SO));
+}
+
+//R3: anoxic growth, nitrite -> nitric oxide
+double FixGrowthDenit::rate3(double SS, double SNO2, double SO, double SNO)
+{
+      return (mu_max * eta_g3 * (SS/(k_s3+SS)) * (SNO2/(k_no2+SNO2)) * (k_oh3/(k_oh3+SO)) * (k_13no/(k_13no+SNO)));
+}
+
+//R4: anoxic growth, nitric oxide -> nitrous oxide
+double FixGrowthDenit::rate4(double SS, double SNO, double SO)
+{
+      return ( mu_max * eta_g4 * (SS/(k_s4+SS)) * (SNO/(k_no + SNO + (SNO*SNO)/k_14no)) * (k_oh4/(k_oh4+SO)));
+}
+
+//R5: anoxic growth, nitrous oxide -> nitrogen
+double FixGrowthDenit::rate5(double SS, double SN2O, double SO, double SNO)
+{
+      return (mu_max * eta_g5 * (SS/(k_s5+SS)) * (SN2O/(k_n2o + SN2O)) * (k_oh5/(k_oh5+SO)) * (k_15no/(k_15no+SNO)));
+}
+
+// extracted to DRY update_cells() and update_atoms()
+// this may still get called twice on a timestep, but usually rarely and the
+// add complexity of memoization doesn't seem worth it right now
+void FixGrowthDenit::computeRates(int cellIndex){
+  double **conc = grid->conc;
+  
+  // readability, compiler should optimize away under reasonable conditions (02, 03)
+  double SS = conc[iss][cellIndex];
+  double SO = conc[io2][cellIndex];
+  double SNO3 = conc[ino3][cellIndex];
+  double SNO2 = conc[ino2][cellIndex];
+  double SNO = conc[ino][cellIndex];
+  double SN2O = conc[in2o][cellIndex];
+
+  r1 = rate1(SS, SO);
+  r2 = rate2(SS, SNO3, SO);
+  r3 = rate3(SS, SNO2, SO, SNO);
+  r4 = rate4(SS, SNO, SO);
+  r5 = rate5(SS, SN2O, SO, SNO);
+}
 
 void FixGrowthDenit::update_cells()
 {
@@ -239,37 +262,10 @@ void FixGrowthDenit::update_cells()
   double **reac = grid->reac;
   double **dens = grid->dens;
 
-  for (int i = 0; i < grid->ncells; i++) {
-    if (grid->mask[i] & GRID_MASK) {
-      //using the terminology from Hiatt and Grady 2008
-      //R1: aerobic growth 
-      //R2: anoxic growth, nitrate -> nitrite
-      //R3: anoxic growth, nitrite -> nitric oxide
-      //R4: anoxic growth, nitric oxide -> nitrous oxide
-      //R5: anoxic growth, nitrous oxide -> nitrogen
-      //the variable 'growth' here refers to mu_het, but is left as 'growth' within the class
-      //TODO pull out of loop and verify
-      double mu = growth;
-     
-      // reusing a lot of concentrations, so for readability assign concentration at i to local vars 
-      // compiler should optimize away under reasonable conditions (02, 03)
-      double SS = conc[iss][i];
-      double SO = conc[io2][i];
-      double SNO3 = conc[ino3][i];
-      double SNO2 = conc[ino2][i];
-      double SNO = conc[ino][i];
-      double SN2O = conc[in2o][i];
+  for (int i = 0; i < grid->ncells; i++){
+    if (grid->mask[i] & GRID_MASK){
+      computeRates(i);
 
-      double r1 = mu * SS/(k_s1+SS) * SO/(k_oh1+SO);
-      double r2 = mu * eta_g2 * SS/(k_s2+SS) * SNO3/(k_no3+SNO3) * k_oh2/(k_oh2 + SO); 
-      double r3 = mu * eta_g3 * (SS/(k_s3+SS)) * (SNO2/(k_no2+SNO2)) * (k_oh3/(k_oh3+SO)) * (k_13no/(k_13no+SNO));
-      double r4 = mu * eta_g4 * (SS/(k_s4+SS)) * (SNO/(k_no + SNO + (SNO*SNO)/k_14no)) * (k_oh4/(k_oh4+SO));
-      double r5 = mu * eta_g5 * (SS/(k_s5+SS)) * (SN2O/(k_n2o + SN2O)) * (k_oh5/(k_oh5+SO)) * (k_15no/(k_15no+SNO));
-
-      //TODO A and B can be calculated once at instantiation
-      double A = (1-yield*eta_Y)/(1.143*yield*eta_Y);
-      double B = (1-yield*eta_Y)/(0.571*yield*eta_Y);
-      
       reac[iss][i] -= (1/yield *r1 + 1/(yield*eta_Y)*(r2+r3+r4+r5) ) * dens[igroup][i];
       reac[io2][i] -= (1-yield)/yield * (r1) * dens[igroup][i];
       reac[ino3][i] -= A * r2 * dens[igroup][i];
@@ -281,31 +277,13 @@ void FixGrowthDenit::update_cells()
   }
 }
 
-/* ---------------------------------------------------------------------- */
-
 void FixGrowthDenit::update_atoms()
 {
   double **conc = grid->conc;
 
   //TODO DRY with respect to update_cells() and calc once per timestep
   for (int i = 0; i < grid->ncells; i++) {
-      //TODO pull out of loop and verify
-      double mu = growth;
-
-      double SS = conc[iss][i];
-      double SO = conc[io2][i];
-      double SNO3 = conc[ino3][i];
-      double SNO2 = conc[ino2][i];
-      double SNO = conc[ino][i];
-      double SN2O = conc[in2o][i];
-
-      double r1 = mu * SS/(k_s1+SS) * SO/(k_oh1+SO);
-      double r2 = mu * eta_g2 * SS/(k_s2+SS) * SNO3/(k_no3+SNO3) * k_oh2/(k_oh2 + SO); 
-      double r3 = mu * eta_g3 * (SS/(k_s3+SS)) * (SNO2/(k_no2+SNO2)) * (k_oh3/(k_oh3+SO)) * (k_13no/(k_13no+SNO));
-      double r4 = mu * eta_g4 * (SS/(k_s4+SS)) * (SNO/(k_no + SNO + (SNO*SNO)/k_14no)) * (k_oh4/(k_oh4+SO));
-      double r5 = mu * eta_g5 * (SS/(k_s5+SS)) * (SN2O/(k_n2o + SN2O)) * (k_oh5/(k_oh5+SO)) * (k_15no/(k_15no+SNO));
-
-
+      computeRates(i);
       grid->growth[igroup][i][0] = r1 + r2 + r3 + r4 +r5 - decay;
   }
 
