@@ -258,7 +258,6 @@ void FixGrowthDenit::computeRates(int cellIndex){
 
 void FixGrowthDenit::update_cells()
 {
-  double **conc = grid->conc;
   double **reac = grid->reac;
   double **dens = grid->dens;
 
@@ -279,8 +278,6 @@ void FixGrowthDenit::update_cells()
 
 void FixGrowthDenit::update_atoms()
 {
-  double **conc = grid->conc;
-
   //TODO DRY with respect to update_cells() and calc once per timestep
   for (int i = 0; i < grid->ncells; i++) {
       computeRates(i);

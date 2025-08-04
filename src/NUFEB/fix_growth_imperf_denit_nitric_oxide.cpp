@@ -194,7 +194,6 @@ double FixGrowthImperfDenitNitricOxide::rate3(double SS, double SNO2, double SO,
 
 void FixGrowthImperfDenitNitricOxide::update_cells()
 {
-  double **conc = grid->conc;
   double **reac = grid->reac;
   double **dens = grid->dens;
 
@@ -216,8 +215,6 @@ void FixGrowthImperfDenitNitricOxide::update_cells()
 
 void FixGrowthImperfDenitNitricOxide::update_atoms()
 {
-  double **conc = grid->conc;
-
   //TODO DRY with update_cells() and only calculate once per step
   for (int i = 0; i < grid->ncells; i++) {
       computeRates(i);
