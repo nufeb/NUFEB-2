@@ -38,36 +38,25 @@ class FixGrowthImperfDenitNitricOxide: public FixGrowth {
   int ino3;
   int ino2;
   int ino;
-  int in2o;
   int inh;
   
   double k_s1;
   double k_s2;
   double k_s3;
-  double k_s4;
-  double k_s5;
   
   double k_oh1;
   double k_oh2;
   double k_oh3;
-  double k_oh4;
-  double k_oh5;
 
   double k_no3;
   double k_no2;
-  double k_n2o;
-  double k_no;
 
-  double k_13no;
-  double k_14no;
-  double k_15no;
+  double k_I3no;
 
   double inxb;
 
   double eta_g2;
   double eta_g3;
-  double eta_g4;
-  double eta_g5;
 
   double eta_Y;
 
@@ -90,8 +79,6 @@ private:
   double rate1(double SS, double SO);
   double rate2(double SS, double SNO3, double SO);
   double rate3(double SS, double SNO2, double SO, double SNO);
-  double rate4(double SS, double SNO, double SO);
-  double rate5(double SS, double SN2O, double SO, double SNO);
  
   //rate for each of the above at a timestep and cell index
   //updated by computeRates

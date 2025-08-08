@@ -94,11 +94,11 @@ FixGrowthImperfDenitNitricOxide::FixGrowthImperfDenitNitricOxide(LAMMPS *lmp, in
   ino = grid->find(arg[15]);
   if (ino < 0)
     error->all(FLERR, "Fix ImperfDenitNO can't find substrate named " + std::string(arg[15]));
-  k_13no = utils::numeric(FLERR,arg[16],true,lmp);
+  k_I3no = utils::numeric(FLERR,arg[16],true,lmp);
 
   #ifdef FIX_GROWTH_IMPERF_DENIT_NO_VERBOSE
   printf("\tSubstrate: %s\n ", arg[15]);
-  printf("\t\tk_13no: %E\n", k_13no);
+  printf("\t\tk_I3no: %E\n", k_I3no);
   #endif
 
   inh = grid->find(arg[17]);
@@ -173,7 +173,6 @@ void FixGrowthImperfDenitNitricOxide::computeRates(int cellIndex){
   double SNO3 = conc[ino3][cellIndex];
   double SNO2 = conc[ino2][cellIndex];
   double SNO = conc[ino][cellIndex];
-  double SN2O = conc[in2o][cellIndex];
 
   r1 = rate1(SS, SO);
   r2 = rate2(SS, SNO3, SO);
@@ -189,7 +188,7 @@ double FixGrowthImperfDenitNitricOxide::rate2(double SS, double SNO3, double SO)
 }
 
 double FixGrowthImperfDenitNitricOxide::rate3(double SS, double SNO2, double SO, double SNO){
-      return (mu_max * eta_g3 * (SS/(k_s3+SS)) * (SNO2/(k_no2+SNO2)) * (k_oh3/(k_oh3+SO)) * (k_13no/(k_13no+SNO)));
+      return (mu_max * eta_g3 * (SS/(k_s3+SS)) * (SNO2/(k_no2+SNO2)) * (k_oh3/(k_oh3+SO)) * (k_I3no/(k_I3no+SNO)));
 }
 
 void FixGrowthImperfDenitNitricOxide::update_cells()
