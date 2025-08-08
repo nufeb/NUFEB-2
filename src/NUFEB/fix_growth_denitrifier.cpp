@@ -123,16 +123,16 @@ FixGrowthDenit::FixGrowthDenit(LAMMPS *lmp, int narg, char **arg) :
   if (ino < 0)
     error->all(FLERR, "Fix GrowthDenit can't find substrate named " + std::string(arg[21]));
   k_no = utils::numeric(FLERR,arg[22],true,lmp);
-  k_13no = utils::numeric(FLERR,arg[23],true,lmp);
-  k_14no = utils::numeric(FLERR,arg[24],true,lmp);
-  k_15no = utils::numeric(FLERR,arg[25],true,lmp);
+  k_I3no = utils::numeric(FLERR,arg[23],true,lmp);
+  k_I4no = utils::numeric(FLERR,arg[24],true,lmp);
+  k_I5no = utils::numeric(FLERR,arg[25],true,lmp);
 
   #ifdef FIX_GROWTH_DENIT_VERBOSE
   printf("\tSubstrate: %s\n ", arg[21]);
   printf("\t\tk_no: %E\n", k_no);
-  printf("\t\tk_13no: %E\n", k_13no);
-  printf("\t\tk_14no: %E\n", k_14no);
-  printf("\t\tk_15no: %E\n", k_15no);
+  printf("\t\tk_I3no: %E\n", k_I3no);
+  printf("\t\tk_I4no: %E\n", k_I4no);
+  printf("\t\tk_I5no: %E\n", k_I5no);
   #endif
 
   inh = grid->find(arg[26]);
@@ -220,19 +220,19 @@ double FixGrowthDenit::rate2(double SS, double SNO3, double SO)
 //R3: anoxic growth, nitrite -> nitric oxide
 double FixGrowthDenit::rate3(double SS, double SNO2, double SO, double SNO)
 {
-      return (mu_max * eta_g3 * (SS/(k_s3+SS)) * (SNO2/(k_no2+SNO2)) * (k_oh3/(k_oh3+SO)) * (k_13no/(k_13no+SNO)));
+      return (mu_max * eta_g3 * (SS/(k_s3+SS)) * (SNO2/(k_no2+SNO2)) * (k_oh3/(k_oh3+SO)) * (k_I3no/(k_I3no+SNO)));
 }
 
 //R4: anoxic growth, nitric oxide -> nitrous oxide
 double FixGrowthDenit::rate4(double SS, double SNO, double SO)
 {
-      return ( mu_max * eta_g4 * (SS/(k_s4+SS)) * (SNO/(k_no + SNO + (SNO*SNO)/k_14no)) * (k_oh4/(k_oh4+SO)));
+      return ( mu_max * eta_g4 * (SS/(k_s4+SS)) * (SNO/(k_no + SNO + (SNO*SNO)/k_I4no)) * (k_oh4/(k_oh4+SO)));
 }
 
 //R5: anoxic growth, nitrous oxide -> nitrogen
 double FixGrowthDenit::rate5(double SS, double SN2O, double SO, double SNO)
 {
-      return (mu_max * eta_g5 * (SS/(k_s5+SS)) * (SN2O/(k_n2o + SN2O)) * (k_oh5/(k_oh5+SO)) * (k_15no/(k_15no+SNO)));
+      return (mu_max * eta_g5 * (SS/(k_s5+SS)) * (SN2O/(k_n2o + SN2O)) * (k_oh5/(k_oh5+SO)) * (k_I5no/(k_I5no+SNO)));
 }
 
 // extracted to DRY update_cells() and update_atoms()

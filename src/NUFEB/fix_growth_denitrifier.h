@@ -58,9 +58,9 @@ class FixGrowthDenit: public FixGrowth {
   double k_n2o;
   double k_no;
 
-  double k_13no;
-  double k_14no;
-  double k_15no;
+  double k_I3no;
+  double k_I4no;
+  double k_I5no;
 
   double inxb;
 
