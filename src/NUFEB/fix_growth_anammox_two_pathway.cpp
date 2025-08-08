@@ -158,10 +158,10 @@ void FixGrowthAnammoxTwoPathway::update_cells()
     if (grid->mask[i] & GRID_MASK) {
       computeRates(i);
 
-      reac[ino3][i] -= -1 * (rI_AN * (1/1.14) + rS_AN * (1/1.71) )* dens[igroup][i];
-      reac[ino2][i] -= (1/yield + (1/1.14))* rI_AN * dens[igroup][i];
-      reac[ino][i] -= (1/yield + (1/1.71))* rS_AN * dens[igroup][i];
-      reac[inh][i] -= ((1/yield)*(rI_AN + rS_AN))*dens[igroup][i];
+      reac[ino3][i] +=  (rI_AN/1.14 + rS_AN/1.71) * dens[igroup][i];
+      reac[ino2][i] -= (1/yield + 1/1.14) * rI_AN * dens[igroup][i];
+      reac[ino][i] -= (1/yield + 1/1.71) * rS_AN * dens[igroup][i];
+      reac[inh][i] -= ((1/yield-inxb)*rI_AN + (1/yield-inxb)*rS_AN) * dens[igroup][i];
     }
   }
 }

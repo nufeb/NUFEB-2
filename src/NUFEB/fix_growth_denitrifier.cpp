@@ -265,12 +265,12 @@ void FixGrowthDenit::update_cells()
     if (grid->mask[i] & GRID_MASK){
       computeRates(i);
 
-      reac[iss][i] -= (1/yield *r1 + 1/(yield*eta_Y)*(r2+r3+r4+r5) ) * dens[igroup][i];
-      reac[io2][i] -= (1-yield)/yield * (r1) * dens[igroup][i];
+      reac[iss][i] -= ((1/yield * r1) + 1/(yield * eta_Y) * (r2+r3+r4+r5)) * dens[igroup][i];
+      reac[io2][i] -= ((1-yield)/yield * r1) * dens[igroup][i];
       reac[ino3][i] -= A * r2 * dens[igroup][i];
-      reac[ino2][i] -= (-A*r2+B*r3) * dens[igroup][i];
-      reac[ino][i] -= (-B*r3+B*r4) * dens[igroup][i];
-      reac[in2o][i] -= (-B*r4+B*r5) * dens[igroup][i];
+      reac[ino2][i] += (A*r2 - B*r3) * dens[igroup][i];
+      reac[ino][i] += (B*r3-B*r4) * dens[igroup][i];
+      reac[in2o][i] += (B*r4-B*r5) * dens[igroup][i];
       reac[inh][i] -= inxb*(r1+r2+r3+r4+r5)*dens[igroup][i];
     }
   }
